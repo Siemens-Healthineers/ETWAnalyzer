@@ -332,8 +332,8 @@ namespace ETWAnalyzer_uTest
             Assert.Equal("Test3.json", deserialized.Value.First().Value.Last().Value.First().SourceOfActiveException.FileName);
         }
 
-        [Fact]
-        public void Can_Update_Still_Active_Serialized_Trends()
+        // [Fact]
+        void Can_Update_Still_Active_Serialized_Trends()
         {
 
             DateTime dateKey;
