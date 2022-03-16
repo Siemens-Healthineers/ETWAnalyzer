@@ -24,7 +24,7 @@ StackWalk/Stack                                         Count:     2,076,774 Siz
 ```
 
 This is similar to what you see in WPA Trace- System Configuration - Trace Statistics
-![alt text](Images\WPA_TraceStatistics.png "WPA Trace Statistics")
+![alt text](Images/WPA_TraceStatistics.png "WPA Trace Statistics")
 
 You would want to use that data to tailor your recording profiles to record just the things you need for a specific issue. It is also useful to check if the events you 
 intended to record are part of the trace or if something did go wrong while recording the data.
@@ -36,7 +36,7 @@ When you use -Dump Stats with extracted Json files you get a different view on t
 similar to WPA - Trace - System Configuration - General:
 
 
-![alt text](Images\WPA_Trace_General.png "WPA Trace General")
+![alt text](Images/WPA_Trace_General.png "WPA Trace General")
 
 
 You can get the same data also from the command line:

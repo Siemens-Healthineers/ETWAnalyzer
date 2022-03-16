@@ -84,7 +84,7 @@ If you group by Stack Tags in WPA you do not need to unfold the stack trace to t
 interfering again with your test. 
 
 
-![alt text](Images\StackTags.png "StackTags")
+![alt text](Images/StackTags.png "StackTags")
 
 
 In the trace above we e.g. see that the Windows Defender stacktag is a few ms of CPU but in CPU Usage (Precise) which is the Context Switch data
@@ -122,7 +122,7 @@ case with normal methods, because we store only method inclusive CPU and Wait ti
 
 We can with properly declared stacktags nicely tell how much impact the Virus scanner had on our test case
 
-![](Images\DumpCPUAVShowTotal.png "Dump AV ShowTotal")
+![](Images/DumpCPUAVShowTotal.png "Dump AV ShowTotal")
 
 
 We find that our SerializerTest.exe was blocked 820 ms by Windows Defender. 
@@ -131,7 +131,7 @@ slowdown and we can trust this number.
 
 To identify the region where Defender did intercept our calls we can use WPA, or we can interleave method names and Stacktags in one common output. 
 
-![](Images\DumpCPUAV_SortByWait.png "Dump AV Sort By Wait")
+![](Images/DumpCPUAV_SortByWait.png "Dump AV Sort By Wait")
 
 We dump all methods which have a wait time between 500-900ms, then we sort by wait time ascending. 
 By comparing the numbers it looks like the CreateFile calls are scanned by Defender which is contributing

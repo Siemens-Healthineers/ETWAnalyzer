@@ -29,7 +29,7 @@ are consistent with the names WPA is using. In WPA you can configure every colum
 By default WPA will show time as time in seconds since trace start which is for ETWAnalyzer *-timefmt s*. 
 
 
-![alt text](Images\WPA_TimeFormat.png "WPA Time Format")
+![alt text](Images/WPA_TimeFormat.png "WPA Time Format")
 
 
 Supported values for *-TimeFmt* are:
@@ -160,4 +160,4 @@ so one can see what the true run time was.
 
 ## -ShowFileOnLine  
 Do not print for each file the input ETL name, but print the source file name on each output line.
-![alt text](Images\ShowFileOnLine.png "Show File On Line")
+![alt text](Images/ShowFileOnLine.png "Show File On Line")
