@@ -77,7 +77,7 @@ jobs:
 
     # Execute all unit tests in the solution
     - name: Execute unit tests
-      run: dotnet test -parallel None
+      run: dotnet test -p:ParallelizeTestCollections=false
 
     # Restore the application to populate the obj folder with RuntimeIdentifiers
     - name: Restore the application
