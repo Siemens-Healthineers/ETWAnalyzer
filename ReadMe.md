@@ -70,7 +70,7 @@ are normally not relevant for performance regression issues to keep the file siz
 ## Querying the Data
 After extraction you have from the over 600 MB input file a small ca. 6 MB file in the output folder. 
 
-![alt text](ETWAnalyzer\Documentation\Images\ExtractedDataFiles.png "Extracted Data Files")
+![alt text](ETWAnalyzer/Documentation/Images/ExtractedDataFiles.png "Extracted Data Files")
 
 ETWanalyzer will query all files in the current directory if you do not use -filedir/-fd xxx.  
 The first query would be to check on which machine with how much memory, CPU and Windows version it was running. 
@@ -86,85 +86,85 @@ The first query would be to check on which machine with how much memory, CPU and
   </span><span style='font-size:12.0pt;font-family:"Lucida Console";color:#3A96DD;
   background:black'>c:\temp\extract\ZScaler_Download_Slow_100KB_Over100MBit_MouseLags.json<br>
   </span><span style='font-size:12.0pt;font-family:"Lucida Console";color:#CCCCCC;
-  background:black'>        </span><span style='font-size:12.0pt;font-family:
-  "Lucida Console";color:#F9F1A5;background:black'>TestCase            </span><span
+  background:black'>Â Â Â Â Â Â Â  </span><span style='font-size:12.0pt;font-family:
+  "Lucida Console";color:#F9F1A5;background:black'>TestCaseÂ Â Â Â Â Â Â Â Â Â Â  </span><span
   style='font-size:12.0pt;font-family:"Lucida Console";color:#CCCCCC;background:
   black'>: ZScaler_Download_Slow_100KB_Over100MBit_MouseLags<br>
-          </span><span style='font-size:12.0pt;font-family:"Lucida Console";
-  color:#F9F1A5;background:black'>PerformedAt         </span><span
+  Â Â Â Â Â Â Â  </span><span style='font-size:12.0pt;font-family:"Lucida Console";
+  color:#F9F1A5;background:black'>PerformedAtÂ Â Â Â Â Â Â Â  </span><span
   style='font-size:12.0pt;font-family:"Lucida Console";color:#CCCCCC;background:
   black'>: 2/4/2022 9:55:43 AM<br>
-          </span><span style='font-size:12.0pt;font-family:"Lucida Console";
-  color:#F9F1A5;background:black'>Source              </span><span
+  Â Â Â Â Â Â Â  </span><span style='font-size:12.0pt;font-family:"Lucida Console";
+  color:#F9F1A5;background:black'>SourceÂ Â Â Â Â Â Â Â Â Â Â Â Â  </span><span
   style='font-size:12.0pt;font-family:"Lucida Console";color:#CCCCCC;background:
   black'>:
   c:\temp\extract\ZScaler_Download_Slow_100KB_Over100MBit_MouseLags.json<br>
-          </span><span style='font-size:12.0pt;font-family:"Lucida Console";
-  color:#F9F1A5;background:black'>SourceETLFileName   </span><span
+  Â Â Â Â Â Â Â  </span><span style='font-size:12.0pt;font-family:"Lucida Console";
+  color:#F9F1A5;background:black'>SourceETLFileNameÂ Â  </span><span
   style='font-size:12.0pt;font-family:"Lucida Console";color:#CCCCCC;background:
   black'>: c:\temp\ZScaler_Download_Slow_100KB_Over100MBit_MouseLags.etl<br>
-          </span><span style='font-size:12.0pt;font-family:"Lucida Console";
-  color:#F9F1A5;background:black'>OSName              </span><span
+  Â Â Â Â Â Â Â  </span><span style='font-size:12.0pt;font-family:"Lucida Console";
+  color:#F9F1A5;background:black'>OSNameÂ Â Â Â Â Â Â Â Â Â Â Â Â  </span><span
   style='font-size:12.0pt;font-family:"Lucida Console";color:#CCCCCC;background:
   black'>: Windows 10 Enterprise<br>
-          </span><span style='font-size:12.0pt;font-family:"Lucida Console";
-  color:#F9F1A5;background:black'>OSBuild             </span><span
+  Â Â Â Â Â Â Â  </span><span style='font-size:12.0pt;font-family:"Lucida Console";
+  color:#F9F1A5;background:black'>OSBuildÂ Â Â Â Â Â Â Â Â Â Â Â  </span><span
   style='font-size:12.0pt;font-family:"Lucida Console";color:#CCCCCC;background:
   black'>: 19h1_release<br>
-          </span><span style='font-size:12.0pt;font-family:"Lucida Console";
-  color:#F9F1A5;background:black'>OSVersion           </span><span
+  Â Â Â Â Â Â Â  </span><span style='font-size:12.0pt;font-family:"Lucida Console";
+  color:#F9F1A5;background:black'>OSVersionÂ Â Â Â Â Â Â Â Â Â  </span><span
   style='font-size:12.0pt;font-family:"Lucida Console";color:#CCCCCC;background:
   black'>: 10.0.18363<br>
-          </span><span style='font-size:12.0pt;font-family:"Lucida Console";
-  color:#F9F1A5;background:black'>MemorySizeMB        </span><span
+  Â Â Â Â Â Â Â  </span><span style='font-size:12.0pt;font-family:"Lucida Console";
+  color:#F9F1A5;background:black'>MemorySizeMBÂ Â Â Â Â Â Â  </span><span
   style='font-size:12.0pt;font-family:"Lucida Console";color:#CCCCCC;background:
   black'>: 34234<br>
-          </span><span style='font-size:12.0pt;font-family:"Lucida Console";
-  color:#F9F1A5;background:black'>NumberOfProcessors  </span><span
+  Â Â Â Â Â Â Â  </span><span style='font-size:12.0pt;font-family:"Lucida Console";
+  color:#F9F1A5;background:black'>NumberOfProcessorsÂ  </span><span
   style='font-size:12.0pt;font-family:"Lucida Console";color:#CCCCCC;background:
   black'>: 4<br>
-          </span><span style='font-size:12.0pt;font-family:"Lucida Console";
-  color:#F9F1A5;background:black'>CPUSpeedMHz         </span><span
+  Â Â Â Â Â Â Â  </span><span style='font-size:12.0pt;font-family:"Lucida Console";
+  color:#F9F1A5;background:black'>CPUSpeedMHzÂ Â Â Â Â Â Â Â  </span><span
   style='font-size:12.0pt;font-family:"Lucida Console";color:#CCCCCC;background:
   black'>: 2496<br>
-          </span><span style='font-size:12.0pt;font-family:"Lucida Console";
-  color:#F9F1A5;background:black'>CPUVendor           </span><span
+  Â Â Â Â Â Â Â  </span><span style='font-size:12.0pt;font-family:"Lucida Console";
+  color:#F9F1A5;background:black'>CPUVendorÂ Â Â Â Â Â Â Â Â Â  </span><span
   style='font-size:12.0pt;font-family:"Lucida Console";color:#CCCCCC;background:
   black'>: GenuineIntel<br>
-          </span><span style='font-size:12.0pt;font-family:"Lucida Console";
-  color:#F9F1A5;background:black'>CPUName             </span><span
+  Â Â Â Â Â Â Â  </span><span style='font-size:12.0pt;font-family:"Lucida Console";
+  color:#F9F1A5;background:black'>CPUNameÂ Â Â Â Â Â Â Â Â Â Â Â  </span><span
   style='font-size:12.0pt;font-family:"Lucida Console";color:#CCCCCC;background:
   black'>: Intel(R) Core(TM) i5-6300U CPU @ 2.40GHz<br>
-          </span><span style='font-size:12.0pt;font-family:"Lucida Console";
-  color:#F9F1A5;background:black'>HyperThreading      </span><span
+  Â Â Â Â Â Â Â  </span><span style='font-size:12.0pt;font-family:"Lucida Console";
+  color:#F9F1A5;background:black'>HyperThreadingÂ Â Â Â Â  </span><span
   style='font-size:12.0pt;font-family:"Lucida Console";color:#CCCCCC;background:
   black'>: True<br>
-          </span><span style='font-size:12.0pt;font-family:"Lucida Console";
-  color:#F9F1A5;background:black'>SessionStart        </span><span
+  Â Â Â Â Â Â Â  </span><span style='font-size:12.0pt;font-family:"Lucida Console";
+  color:#F9F1A5;background:black'>SessionStartÂ Â Â Â Â Â Â  </span><span
   style='font-size:12.0pt;font-family:"Lucida Console";color:#CCCCCC;background:
   black'>: 2/4/2022 9:55:43 AM +01:00<br>
-          </span><span style='font-size:12.0pt;font-family:"Lucida Console";
-  color:#F9F1A5;background:black'>SessionEnd          </span><span
+  Â Â Â Â Â Â Â  </span><span style='font-size:12.0pt;font-family:"Lucida Console";
+  color:#F9F1A5;background:black'>SessionEndÂ Â Â Â Â Â Â Â Â  </span><span
   style='font-size:12.0pt;font-family:"Lucida Console";color:#CCCCCC;background:
   black'>: 2/4/2022 9:58:07 AM +01:00<br>
-          </span><span style='font-size:12.0pt;font-family:"Lucida Console";
-  color:#F9F1A5;background:black'>SessionDurationS    </span><span
+  Â Â Â Â Â Â Â  </span><span style='font-size:12.0pt;font-family:"Lucida Console";
+  color:#F9F1A5;background:black'>SessionDurationSÂ Â Â  </span><span
   style='font-size:12.0pt;font-family:"Lucida Console";color:#CCCCCC;background:
   black'>: 143<br>
-          </span><span style='font-size:12.0pt;font-family:"Lucida Console";
-  color:#F9F1A5;background:black'>Model               </span><span
+  Â Â Â Â Â Â Â  </span><span style='font-size:12.0pt;font-family:"Lucida Console";
+  color:#F9F1A5;background:black'>ModelÂ Â Â Â Â Â Â Â Â Â Â Â Â Â  </span><span
   style='font-size:12.0pt;font-family:"Lucida Console";color:#CCCCCC;background:
   black'>: HP ProBook 640 G2<br>
-          </span><span style='font-size:12.0pt;font-family:"Lucida Console";
-  color:#F9F1A5;background:black'>AdDomain            </span><span
+  Â Â Â Â Â Â Â  </span><span style='font-size:12.0pt;font-family:"Lucida Console";
+  color:#F9F1A5;background:black'>AdDomainÂ Â Â Â Â Â Â Â Â Â Â  </span><span
   style='font-size:12.0pt;font-family:"Lucida Console";color:#CCCCCC;background:
   black'>: corp.net<br>
-          </span><span style='font-size:12.0pt;font-family:"Lucida Console";
-  color:#F9F1A5;background:black'>IsDomainJoined      </span><span
+  Â Â Â Â Â Â Â  </span><span style='font-size:12.0pt;font-family:"Lucida Console";
+  color:#F9F1A5;background:black'>IsDomainJoinedÂ Â Â Â Â  </span><span
   style='font-size:12.0pt;font-family:"Lucida Console";color:#CCCCCC;background:
   black'>: True<br>
-          </span><span style='font-size:12.0pt;font-family:"Lucida Console";
-  color:#F9F1A5;background:black'>Displays            </span><span
+  Â Â Â Â Â Â Â  </span><span style='font-size:12.0pt;font-family:"Lucida Console";
+  color:#F9F1A5;background:black'>DisplaysÂ Â Â Â Â Â Â Â Â Â Â  </span><span
   style='font-size:12.0pt;font-family:"Lucida Console";color:#CCCCCC;background:
   black'>: Horizontal: 3840~0~0 Vertical: 2160~0~0 MemoryMiB: 1024~1024~1024 Name:
   Intel(R) HD Graphics 520~Intel(R) HD Graphics 520~Intel(R) HD Graphics 520</span></p>
@@ -185,52 +185,52 @@ Now we want to get an overview what the CPU consumption was of the top 9 CPU con
   style='font-size:12.0pt;font-family:"Lucida Console";color:#CCCCCC;background:
   black'>c:\&gt;EtwAnalyzer -filedir
   c:\temp\extract\ZScaler_Download_Slow_100KB_Over100MBit_MouseLags -dump CPU -topN 9<br>
-  2/4/2022 9:55:43 AM    ZScaler_Download_Slow_100KB_Over100MBit_MouseLags<br>
-          </span><span style='font-size:12.0pt;font-family:"Lucida Console";
-  color:#16C60C;background:black'>4477    ms </span><span style='font-size:
-  12.0pt;font-family:"Lucida Console";color:#F9F1A5;background:black'>WPRUI.exe(29260)    
+  2/4/2022 9:55:43 AMÂ Â Â  ZScaler_Download_Slow_100KB_Over100MBit_MouseLags<br>
+  Â Â Â Â Â Â Â  </span><span style='font-size:12.0pt;font-family:"Lucida Console";
+  color:#16C60C;background:black'>4477Â Â Â  ms </span><span style='font-size:
+  12.0pt;font-family:"Lucida Console";color:#F9F1A5;background:black'>WPRUI.exe(29260)Â Â Â Â 
   </span><span style='font-size:12.0pt;font-family:"Lucida Console";color:#3A96DD;
   background:black'>wprui<br>
   </span><span style='font-size:12.0pt;font-family:"Lucida Console";color:#CCCCCC;
-  background:black'>        </span><span style='font-size:12.0pt;font-family:
-  "Lucida Console";color:#16C60C;background:black'>4566    ms </span><span
+  background:black'>Â Â Â Â Â Â Â  </span><span style='font-size:12.0pt;font-family:
+  "Lucida Console";color:#16C60C;background:black'>4566Â Â Â  ms </span><span
   style='font-size:12.0pt;font-family:"Lucida Console";color:#F9F1A5;background:
   black'>MsSense.exe(5520)<br>
   </span><span style='font-size:12.0pt;font-family:"Lucida Console";color:#CCCCCC;
-  background:black'>        </span><span style='font-size:12.0pt;font-family:
-  "Lucida Console";color:#16C60C;background:black'>5620    ms</span><span
+  background:black'>Â Â Â Â Â Â Â  </span><span style='font-size:12.0pt;font-family:
+  "Lucida Console";color:#16C60C;background:black'>5620Â Â Â  ms</span><span
   style='font-size:12.0pt;font-family:"Lucida Console";color:#3A96DD;background:
   black'> </span><span style='font-size:12.0pt;font-family:"Lucida Console";
   color:#F9F1A5;background:black'>ZSATunnel.exe(10832)<br>
   </span><span style='font-size:12.0pt;font-family:"Lucida Console";color:#CCCCCC;
-  background:black'>        </span><span style='font-size:12.0pt;font-family:
-  "Lucida Console";color:#16C60C;background:black'>5684    ms </span><span
+  background:black'>Â Â Â Â Â Â Â  </span><span style='font-size:12.0pt;font-family:
+  "Lucida Console";color:#16C60C;background:black'>5684Â Â Â  ms </span><span
   style='font-size:12.0pt;font-family:"Lucida Console";color:#F9F1A5;background:
-  black'>Taskmgr.exe(9400)     </span><span style='font-size:12.0pt;font-family:
+  black'>Taskmgr.exe(9400)Â Â Â Â  </span><span style='font-size:12.0pt;font-family:
   "Lucida Console";color:#3A96DD;background:black'>/2<br>
   </span><span style='font-size:12.0pt;font-family:"Lucida Console";color:#CCCCCC;
-  background:black'>        </span><span style='font-size:12.0pt;font-family:
-  "Lucida Console";color:#16C60C;background:black'>5955    ms </span><span
+  background:black'>Â Â Â Â Â Â Â  </span><span style='font-size:12.0pt;font-family:
+  "Lucida Console";color:#16C60C;background:black'>5955Â Â Â  ms </span><span
   style='font-size:12.0pt;font-family:"Lucida Console";color:#F9F1A5;background:
   black'>devenv.exe(6764)<br>
   </span><span style='font-size:12.0pt;font-family:"Lucida Console";color:#CCCCCC;
-  background:black'>        </span><span style='font-size:12.0pt;font-family:
-  "Lucida Console";color:#16C60C;background:black'>10756   ms </span><span
+  background:black'>Â Â Â Â Â Â Â  </span><span style='font-size:12.0pt;font-family:
+  "Lucida Console";color:#16C60C;background:black'>10756Â Â  ms </span><span
   style='font-size:12.0pt;font-family:"Lucida Console";color:#F9F1A5;background:
   black'>dwm.exe(1428)<br>
   </span><span style='font-size:12.0pt;font-family:"Lucida Console";color:#CCCCCC;
-  background:black'>        </span><span style='font-size:12.0pt;font-family:
-  "Lucida Console";color:#16C60C;background:black'>14619   ms </span><span
+  background:black'>Â Â Â Â Â Â Â  </span><span style='font-size:12.0pt;font-family:
+  "Lucida Console";color:#16C60C;background:black'>14619Â Â  ms </span><span
   style='font-size:12.0pt;font-family:"Lucida Console";color:#F9F1A5;background:
   black'>explorer.exe(10696)<br>
   </span><span style='font-size:12.0pt;font-family:"Lucida Console";color:#CCCCCC;
-  background:black'>        </span><span style='font-size:12.0pt;font-family:
-  "Lucida Console";color:#16C60C;background:black'>15170   ms </span><span
+  background:black'>Â Â Â Â Â Â Â  </span><span style='font-size:12.0pt;font-family:
+  "Lucida Console";color:#16C60C;background:black'>15170Â Â  ms </span><span
   style='font-size:12.0pt;font-family:"Lucida Console";color:#F9F1A5;background:
   black'>ETWController.exe(18908)<br>
   </span><span style='font-size:12.0pt;font-family:"Lucida Console";color:#CCCCCC;
-  background:black'>        </span><span style='font-size:12.0pt;font-family:
-  "Lucida Console";color:#16C60C;background:black'>63540   ms </span><span
+  background:black'>Â Â Â Â Â Â Â  </span><span style='font-size:12.0pt;font-family:
+  "Lucida Console";color:#16C60C;background:black'>63540Â Â  ms </span><span
   style='font-size:12.0pt;font-family:"Lucida Console";color:#F9F1A5;background:
   black'>System(4)</span></p>
   </td>
@@ -250,265 +250,265 @@ The by far highest CPU consumer was the Windows Kernel which sits in the System 
   black'>c:\&gt;EtwAnalyzer -filedir
   c:\temp\extract\ZScaler_Download_Slow_100KB_Over100MBit_MouseLags -dump cpu
   -processName System -methods * -topnmethods 50<br>
-        </span><span style='font-size:12.0pt;font-family:"Lucida Console";
-  color:#16C60C;background:black'>CPU ms     </span><span style='font-size:
+  Â Â Â Â Â  </span><span style='font-size:12.0pt;font-family:"Lucida Console";
+  color:#16C60C;background:black'>CPU msÂ Â Â Â  </span><span style='font-size:
   12.0pt;font-family:"Lucida Console";color:#F9F1A5;background:black'>Wait ms </span><span
   style='font-size:12.0pt;font-family:"Lucida Console";color:#CCCCCC;background:
   black'>Method<br>
   </span><span style='font-size:12.0pt;font-family:"Lucida Console";color:#3A96DD;
   background:black'>2/4/2022 9:55:43 AM
   ZScaler_Download_Slow_100KB_Over100MBit_MouseLags<br>
-     </span><span style='font-size:12.0pt;font-family:"Lucida Console";
+  Â Â  </span><span style='font-size:12.0pt;font-family:"Lucida Console";
   color:#CCCCCC;background:black'>System(4)<br>
-       </span><span style='font-size:12.0pt;font-family:"Lucida Console";
+  Â Â Â Â  </span><span style='font-size:12.0pt;font-family:"Lucida Console";
   color:#16C60C;background:black'>1603 ms</span><span style='font-size:12.0pt;
-  font-family:"Lucida Console";color:#CCCCCC;background:black'>        </span><span
+  font-family:"Lucida Console";color:#CCCCCC;background:black'>Â Â Â Â Â Â Â  </span><span
   style='font-size:12.0pt;font-family:"Lucida Console";color:#F9F1A5;background:
   black'>0 ms </span><span style='font-size:12.0pt;font-family:"Lucida Console";
   color:#CCCCCC;background:black'>RtlEqualSid<br>
-       </span><span style='font-size:12.0pt;font-family:"Lucida Console";
-  color:#16C60C;background:black'>1660 ms        </span><span style='font-size:
+  Â Â Â Â  </span><span style='font-size:12.0pt;font-family:"Lucida Console";
+  color:#16C60C;background:black'>1660 msÂ Â Â Â Â Â Â  </span><span style='font-size:
   12.0pt;font-family:"Lucida Console";color:#F9F1A5;background:black'>0 ms </span><span
   style='font-size:12.0pt;font-family:"Lucida Console";color:#CCCCCC;background:
   black'>TcpInspectReceive<br>
-       </span><span style='font-size:12.0pt;font-family:"Lucida Console";
-  color:#16C60C;background:black'>1895 ms        </span><span style='font-size:
+  Â Â Â Â  </span><span style='font-size:12.0pt;font-family:"Lucida Console";
+  color:#16C60C;background:black'>1895 msÂ Â Â Â Â Â Â  </span><span style='font-size:
   12.0pt;font-family:"Lucida Console";color:#F9F1A5;background:black'>0 ms </span><span
   style='font-size:12.0pt;font-family:"Lucida Console";color:#CCCCCC;background:
   black'>TcpDeliverDataToClient<br>
-       </span><span style='font-size:12.0pt;font-family:"Lucida Console";
-  color:#16C60C;background:black'>1896 ms        </span><span style='font-size:
+  Â Â Â Â  </span><span style='font-size:12.0pt;font-family:"Lucida Console";
+  color:#16C60C;background:black'>1896 msÂ Â Â Â Â Â Â  </span><span style='font-size:
   12.0pt;font-family:"Lucida Console";color:#F9F1A5;background:black'>0 ms </span><span
   style='font-size:12.0pt;font-family:"Lucida Console";color:#CCCCCC;background:
   black'>TcpDeliverReceive<br>
-       </span><span style='font-size:12.0pt;font-family:"Lucida Console";
-  color:#16C60C;background:black'>4795 ms        </span><span style='font-size:
+  Â Â Â Â  </span><span style='font-size:12.0pt;font-family:"Lucida Console";
+  color:#16C60C;background:black'>4795 msÂ Â Â Â Â Â Â  </span><span style='font-size:
   12.0pt;font-family:"Lucida Console";color:#F9F1A5;background:black'>0 ms </span><span
   style='font-size:12.0pt;font-family:"Lucida Console";color:#CCCCCC;background:
   black'>KxWaitForSpinLockAndAcquire<br>
-       </span><span style='font-size:12.0pt;font-family:"Lucida Console";
-  color:#16C60C;background:black'>4801 ms        </span><span style='font-size:
+  Â Â Â Â  </span><span style='font-size:12.0pt;font-family:"Lucida Console";
+  color:#16C60C;background:black'>4801 msÂ Â Â Â Â Â Â  </span><span style='font-size:
   12.0pt;font-family:"Lucida Console";color:#F9F1A5;background:black'>0 ms </span><span
   style='font-size:12.0pt;font-family:"Lucida Console";color:#CCCCCC;background:
   black'>KeAcquireSpinLockAtDpcLevel<br>
-       </span><span style='font-size:12.0pt;font-family:"Lucida Console";
-  color:#16C60C;background:black'>4886 ms        </span><span style='font-size:
+  Â Â Â Â  </span><span style='font-size:12.0pt;font-family:"Lucida Console";
+  color:#16C60C;background:black'>4886 msÂ Â Â Â Â Â Â  </span><span style='font-size:
   12.0pt;font-family:"Lucida Console";color:#F9F1A5;background:black'>0 ms </span><span
   style='font-size:12.0pt;font-family:"Lucida Console";color:#CCCCCC;background:
   black'>IpNlpSendDatagrams<br>
-       </span><span style='font-size:12.0pt;font-family:"Lucida Console";
+  Â Â Â Â  </span><span style='font-size:12.0pt;font-family:"Lucida Console";
   color:#16C60C;background:black'>6639 ms </span><span style='font-size:12.0pt;
-  font-family:"Lucida Console";color:#F9F1A5;background:black'>       0 ms </span><span
+  font-family:"Lucida Console";color:#F9F1A5;background:black'>Â Â Â Â Â Â Â 0 ms </span><span
   style='font-size:12.0pt;font-family:"Lucida Console";color:#CCCCCC;background:
   black'>TcpTcbCarefulDatagram<br>
-       </span><span style='font-size:12.0pt;font-family:"Lucida Console";
-  color:#16C60C;background:black'>9558 ms        </span><span style='font-size:
+  Â Â Â Â  </span><span style='font-size:12.0pt;font-family:"Lucida Console";
+  color:#16C60C;background:black'>9558 msÂ Â Â Â Â Â Â  </span><span style='font-size:
   12.0pt;font-family:"Lucida Console";color:#F9F1A5;background:black'>0 ms </span><span
   style='font-size:12.0pt;font-family:"Lucida Console";color:#CCCCCC;background:
   black'>MatchValues<br>
-       </span><span style='font-size:12.0pt;font-family:"Lucida Console";
-  color:#16C60C;background:black'>9770 ms        </span><span style='font-size:
+  Â Â Â Â  </span><span style='font-size:12.0pt;font-family:"Lucida Console";
+  color:#16C60C;background:black'>9770 msÂ Â Â Â Â Â Â  </span><span style='font-size:
   12.0pt;font-family:"Lucida Console";color:#F9F1A5;background:black'>0 ms </span><span
   style='font-size:12.0pt;font-family:"Lucida Console";color:#CCCCCC;background:
   black'>TcpTcbSend<br>
-      </span><span style='font-size:12.0pt;font-family:"Lucida Console";
-  color:#16C60C;background:black'>14979 ms        </span><span
+  Â Â Â  </span><span style='font-size:12.0pt;font-family:"Lucida Console";
+  color:#16C60C;background:black'>14979 msÂ Â Â Â Â Â Â  </span><span
   style='font-size:12.0pt;font-family:"Lucida Console";color:#F9F1A5;background:
   black'>0 ms </span><span style='font-size:12.0pt;font-family:"Lucida Console";
   color:#CCCCCC;background:black'>IpNlpFastSendDatagram<br>
-      </span><span style='font-size:12.0pt;font-family:"Lucida Console";
-  color:#16C60C;background:black'>19086 ms        </span><span
+  Â Â Â  </span><span style='font-size:12.0pt;font-family:"Lucida Console";
+  color:#16C60C;background:black'>19086 msÂ Â Â Â Â Â Â  </span><span
   style='font-size:12.0pt;font-family:"Lucida Console";color:#F9F1A5;background:
   black'>0 ms </span><span style='font-size:12.0pt;font-family:"Lucida Console";
   color:#CCCCCC;background:black'>IppInspectLocalDatagramsOut<br>
-      </span><span style='font-size:12.0pt;font-family:"Lucida Console";
-  color:#16C60C;background:black'>19845 ms        </span><span
+  Â Â Â  </span><span style='font-size:12.0pt;font-family:"Lucida Console";
+  color:#16C60C;background:black'>19845 msÂ Â Â Â Â Â Â  </span><span
   style='font-size:12.0pt;font-family:"Lucida Console";color:#F9F1A5;background:
   black'>0 ms </span><span style='font-size:12.0pt;font-family:"Lucida Console";
   color:#CCCCCC;background:black'>TcpTcbHeaderSend<br>
-      </span><span style='font-size:12.0pt;font-family:"Lucida Console";
-  color:#16C60C;background:black'>19847 ms        </span><span
+  Â Â Â  </span><span style='font-size:12.0pt;font-family:"Lucida Console";
+  color:#16C60C;background:black'>19847 msÂ Â Â Â Â Â Â  </span><span
   style='font-size:12.0pt;font-family:"Lucida Console";color:#F9F1A5;background:
   black'>0 ms </span><span style='font-size:12.0pt;font-family:"Lucida Console";
   color:#CCCCCC;background:black'>IppSendDatagramsCommon<br>
-      </span><span style='font-size:12.0pt;font-family:"Lucida Console";
-  color:#16C60C;background:black'>23857 ms        </span><span
+  Â Â Â  </span><span style='font-size:12.0pt;font-family:"Lucida Console";
+  color:#16C60C;background:black'>23857 msÂ Â Â Â Â Â Â  </span><span
   style='font-size:12.0pt;font-family:"Lucida Console";color:#F9F1A5;background:
   black'>0 ms </span><span style='font-size:12.0pt;font-family:"Lucida Console";
   color:#CCCCCC;background:black'>InetInspectReceiveTcpDatagram<br>
-      </span><span style='font-size:12.0pt;font-family:"Lucida Console";
-  color:#16C60C;background:black'>31317 ms        </span><span
+  Â Â Â  </span><span style='font-size:12.0pt;font-family:"Lucida Console";
+  color:#16C60C;background:black'>31317 msÂ Â Â Â Â Â Â  </span><span
   style='font-size:12.0pt;font-family:"Lucida Console";color:#F9F1A5;background:
   black'>0 ms </span><span style='font-size:12.0pt;font-family:"Lucida Console";
   color:#CCCCCC;background:black'>TcpTcbReceive<br>
-      </span><span style='font-size:12.0pt;font-family:"Lucida Console";
-  color:#16C60C;background:black'>34487 ms        </span><span
+  Â Â Â  </span><span style='font-size:12.0pt;font-family:"Lucida Console";
+  color:#16C60C;background:black'>34487 msÂ Â Â Â Â Â Â  </span><span
   style='font-size:12.0pt;font-family:"Lucida Console";color:#F9F1A5;background:
   black'>0 ms </span><span style='font-size:12.0pt;font-family:"Lucida Console";
   color:#CCCCCC;background:black'>TcpMatchReceive<br>
-      </span><span style='font-size:12.0pt;font-family:"Lucida Console";
-  color:#16C60C;background:black'>42063 ms        </span><span
+  Â Â Â  </span><span style='font-size:12.0pt;font-family:"Lucida Console";
+  color:#16C60C;background:black'>42063 msÂ Â Â Â Â Â Â  </span><span
   style='font-size:12.0pt;font-family:"Lucida Console";color:#F9F1A5;background:
   black'>0 ms </span><span style='font-size:12.0pt;font-family:"Lucida Console";
   color:#CCCCCC;background:black'>IndexListClassify<br>
-      </span><span style='font-size:12.0pt;font-family:"Lucida Console";
-  color:#16C60C;background:black'>42717 ms        </span><span
+  Â Â Â  </span><span style='font-size:12.0pt;font-family:"Lucida Console";
+  color:#16C60C;background:black'>42717 msÂ Â Â Â Â Â Â  </span><span
   style='font-size:12.0pt;font-family:"Lucida Console";color:#F9F1A5;background:
   black'>0 ms </span><span style='font-size:12.0pt;font-family:"Lucida Console";
   color:#CCCCCC;background:black'>AleInspectTcpDatagram<br>
-      </span><span style='font-size:12.0pt;font-family:"Lucida Console";
-  color:#16C60C;background:black'>42728 ms        </span><span
+  Â Â Â  </span><span style='font-size:12.0pt;font-family:"Lucida Console";
+  color:#16C60C;background:black'>42728 msÂ Â Â Â Â Â Â  </span><span
   style='font-size:12.0pt;font-family:"Lucida Console";color:#F9F1A5;background:
   black'>0 ms </span><span style='font-size:12.0pt;font-family:"Lucida Console";
   color:#CCCCCC;background:black'>WfpAlepReauthorizeOutboundConnection<br>
-      </span><span style='font-size:12.0pt;font-family:"Lucida Console";
-  color:#16C60C;background:black'>42738 ms        </span><span
+  Â Â Â  </span><span style='font-size:12.0pt;font-family:"Lucida Console";
+  color:#16C60C;background:black'>42738 msÂ Â Â Â Â Â Â  </span><span
   style='font-size:12.0pt;font-family:"Lucida Console";color:#F9F1A5;background:
   black'>0 ms </span><span style='font-size:12.0pt;font-family:"Lucida Console";
   color:#CCCCCC;background:black'>WfpAleReauthorizeOutboundConnection<br>
-      </span><span style='font-size:12.0pt;font-family:"Lucida Console";
-  color:#16C60C;background:black'>42749 ms        </span><span
+  Â Â Â  </span><span style='font-size:12.0pt;font-family:"Lucida Console";
+  color:#16C60C;background:black'>42749 msÂ Â Â Â Â Â Â  </span><span
   style='font-size:12.0pt;font-family:"Lucida Console";color:#F9F1A5;background:
   black'>0 ms </span><span style='font-size:12.0pt;font-family:"Lucida Console";
   color:#CCCCCC;background:black'>WfpAleReauthorizeConnection<br>
-      </span><span style='font-size:12.0pt;font-family:"Lucida Console";
+  Â Â Â  </span><span style='font-size:12.0pt;font-family:"Lucida Console";
   color:#16C60C;background:black'>43131 ms</span><span style='font-size:12.0pt;
-  font-family:"Lucida Console";color:#CCCCCC;background:black'>        </span><span
+  font-family:"Lucida Console";color:#CCCCCC;background:black'>Â Â Â Â Â Â Â  </span><span
   style='font-size:12.0pt;font-family:"Lucida Console";color:#F9F1A5;background:
   black'>0 ms </span><span style='font-size:12.0pt;font-family:"Lucida Console";
   color:#CCCCCC;background:black'>KfdClassify<br>
-      </span><span style='font-size:12.0pt;font-family:"Lucida Console";
-  color:#16C60C;background:black'>49756 ms        </span><span
+  Â Â Â  </span><span style='font-size:12.0pt;font-family:"Lucida Console";
+  color:#16C60C;background:black'>49756 msÂ Â Â Â Â Â Â  </span><span
   style='font-size:12.0pt;font-family:"Lucida Console";color:#F9F1A5;background:
   black'>0 ms </span><span style='font-size:12.0pt;font-family:"Lucida Console";
   color:#CCCCCC;background:black'>TcpReceive<br>
-      </span><span style='font-size:12.0pt;font-family:"Lucida Console";
-  color:#16C60C;background:black'>49757 ms        </span><span
+  Â Â Â  </span><span style='font-size:12.0pt;font-family:"Lucida Console";
+  color:#16C60C;background:black'>49757 msÂ Â Â Â Â Â Â  </span><span
   style='font-size:12.0pt;font-family:"Lucida Console";color:#F9F1A5;background:
   black'>0 ms </span><span style='font-size:12.0pt;font-family:"Lucida Console";
   color:#CCCCCC;background:black'>TcpNlClientReceiveDatagrams<br>
-      </span><span style='font-size:12.0pt;font-family:"Lucida Console";
-  color:#16C60C;background:black'>49830 ms        </span><span
+  Â Â Â  </span><span style='font-size:12.0pt;font-family:"Lucida Console";
+  color:#16C60C;background:black'>49830 msÂ Â Â Â Â Â Â  </span><span
   style='font-size:12.0pt;font-family:"Lucida Console";color:#F9F1A5;background:
   black'>0 ms </span><span style='font-size:12.0pt;font-family:"Lucida Console";
   color:#CCCCCC;background:black'>IppProcessDeliverList<br>
-      </span><span style='font-size:12.0pt;font-family:"Lucida Console";
-  color:#16C60C;background:black'>49848 ms        </span><span
+  Â Â Â  </span><span style='font-size:12.0pt;font-family:"Lucida Console";
+  color:#16C60C;background:black'>49848 msÂ Â Â Â Â Â Â  </span><span
   style='font-size:12.0pt;font-family:"Lucida Console";color:#F9F1A5;background:
   black'>0 ms </span><span style='font-size:12.0pt;font-family:"Lucida Console";
   color:#CCCCCC;background:black'>IppReceiveHeaderBatch<br>
-      </span><span style='font-size:12.0pt;font-family:"Lucida Console";
-  color:#16C60C;background:black'>49883 ms        </span><span
+  Â Â Â  </span><span style='font-size:12.0pt;font-family:"Lucida Console";
+  color:#16C60C;background:black'>49883 msÂ Â Â Â Â Â Â  </span><span
   style='font-size:12.0pt;font-family:"Lucida Console";color:#F9F1A5;background:
   black'>0 ms </span><span style='font-size:12.0pt;font-family:"Lucida Console";
   color:#CCCCCC;background:black'>IppFlcReceivePacketsCore<br>
-      </span><span style='font-size:12.0pt;font-family:"Lucida Console";
-  color:#16C60C;background:black'>49938 ms        </span><span
+  Â Â Â  </span><span style='font-size:12.0pt;font-family:"Lucida Console";
+  color:#16C60C;background:black'>49938 msÂ Â Â Â Â Â Â  </span><span
   style='font-size:12.0pt;font-family:"Lucida Console";color:#F9F1A5;background:
   black'>0 ms </span><span style='font-size:12.0pt;font-family:"Lucida Console";
   color:#CCCCCC;background:black'>IppIndicatePrevalidatedPacketsToIpsServiceChain<br>
-      </span><span style='font-size:12.0pt;font-family:"Lucida Console";
-  color:#16C60C;background:black'>49944 ms        </span><span
+  Â Â Â  </span><span style='font-size:12.0pt;font-family:"Lucida Console";
+  color:#16C60C;background:black'>49944 msÂ Â Â Â Â Â Â  </span><span
   style='font-size:12.0pt;font-family:"Lucida Console";color:#F9F1A5;background:
   black'>0 ms </span><span style='font-size:12.0pt;font-family:"Lucida Console";
   color:#CCCCCC;background:black'>IpFlcReceivePreValidatedPackets<br>
-      </span><span style='font-size:12.0pt;font-family:"Lucida Console";
-  color:#16C60C;background:black'>50009 ms        </span><span
+  Â Â Â  </span><span style='font-size:12.0pt;font-family:"Lucida Console";
+  color:#16C60C;background:black'>50009 msÂ Â Â Â Â Â Â  </span><span
   style='font-size:12.0pt;font-family:"Lucida Console";color:#F9F1A5;background:
   black'>0 ms</span><span style='font-size:12.0pt;font-family:"Lucida Console";
   color:#CCCCCC;background:black'> FlReceiveNetBufferListChainCalloutRoutine<br>
-      </span><span style='font-size:12.0pt;font-family:"Lucida Console";
-  color:#16C60C;background:black'>50027 ms        </span><span
+  Â Â Â  </span><span style='font-size:12.0pt;font-family:"Lucida Console";
+  color:#16C60C;background:black'>50027 msÂ Â Â Â Â Â Â  </span><span
   style='font-size:12.0pt;font-family:"Lucida Console";color:#F9F1A5;background:
   black'>0 ms </span><span style='font-size:12.0pt;font-family:"Lucida Console";
   color:#CCCCCC;background:black'>FlReceiveNetBufferListChain<br>
-      </span><span style='font-size:12.0pt;font-family:"Lucida Console";
-  color:#16C60C;background:black'>50133 ms        </span><span
+  Â Â Â  </span><span style='font-size:12.0pt;font-family:"Lucida Console";
+  color:#16C60C;background:black'>50133 msÂ Â Â Â Â Â Â  </span><span
   style='font-size:12.0pt;font-family:"Lucida Console";color:#F9F1A5;background:
   black'>0 ms </span><span style='font-size:12.0pt;font-family:"Lucida Console";
   color:#CCCCCC;background:black'>VmsMpNicPvtReceiveRssProcessNblGroup<br>
-      </span><span style='font-size:12.0pt;font-family:"Lucida Console";
-  color:#16C60C;background:black'>50156 ms        </span><span
+  Â Â Â  </span><span style='font-size:12.0pt;font-family:"Lucida Console";
+  color:#16C60C;background:black'>50156 msÂ Â Â Â Â Â Â  </span><span
   style='font-size:12.0pt;font-family:"Lucida Console";color:#F9F1A5;background:
   black'>0 ms </span><span style='font-size:12.0pt;font-family:"Lucida Console";
   color:#CCCCCC;background:black'>ndisMIndicateNetBufferListsToOpen<br>
-      </span><span style='font-size:12.0pt;font-family:"Lucida Console";
-  color:#16C60C;background:black'>50164 ms        </span><span
+  Â Â Â  </span><span style='font-size:12.0pt;font-family:"Lucida Console";
+  color:#16C60C;background:black'>50164 msÂ Â Â Â Â Â Â  </span><span
   style='font-size:12.0pt;font-family:"Lucida Console";color:#F9F1A5;background:
   black'>0 ms </span><span style='font-size:12.0pt;font-family:"Lucida Console";
   color:#CCCCCC;background:black'>VmsVrssDpc<br>
-      </span><span style='font-size:12.0pt;font-family:"Lucida Console";
-  color:#16C60C;background:black'>50166 ms        </span><span
+  Â Â Â  </span><span style='font-size:12.0pt;font-family:"Lucida Console";
+  color:#16C60C;background:black'>50166 msÂ Â Â Â Â Â Â  </span><span
   style='font-size:12.0pt;font-family:"Lucida Console";color:#F9F1A5;background:
   black'>0 ms </span><span style='font-size:12.0pt;font-family:"Lucida Console";
   color:#CCCCCC;background:black'>ndisMTopReceiveNetBufferLists<br>
-      </span><span style='font-size:12.0pt;font-family:"Lucida Console";
-  color:#16C60C;background:black'>50336 ms        </span><span
+  Â Â Â  </span><span style='font-size:12.0pt;font-family:"Lucida Console";
+  color:#16C60C;background:black'>50336 msÂ Â Â Â Â Â Â  </span><span
   style='font-size:12.0pt;font-family:"Lucida Console";color:#F9F1A5;background:
   black'>0 ms </span><span style='font-size:12.0pt;font-family:"Lucida Console";
   color:#CCCCCC;background:black'>NdisMIndicateReceiveNetBufferLists<br>
-      </span><span style='font-size:12.0pt;font-family:"Lucida Console";
-  color:#16C60C;background:black'>50338 ms        </span><span
+  Â Â Â  </span><span style='font-size:12.0pt;font-family:"Lucida Console";
+  color:#16C60C;background:black'>50338 msÂ Â Â Â Â Â Â  </span><span
   style='font-size:12.0pt;font-family:"Lucida Console";color:#F9F1A5;background:
   black'>0 ms </span><span style='font-size:12.0pt;font-family:"Lucida Console";
   color:#CCCCCC;background:black'>ndisCallReceiveHandler<br>
-      </span><span style='font-size:12.0pt;font-family:"Lucida Console";
-  color:#16C60C;background:black'>50341 ms        </span><span
+  Â Â Â  </span><span style='font-size:12.0pt;font-family:"Lucida Console";
+  color:#16C60C;background:black'>50341 msÂ Â Â Â Â Â Â  </span><span
   style='font-size:12.0pt;font-family:"Lucida Console";color:#F9F1A5;background:
   black'>0 ms </span><span style='font-size:12.0pt;font-family:"Lucida Console";
   color:#CCCCCC;background:black'>ndisInvokeNextReceiveHandler<br>
-      </span><span style='font-size:12.0pt;font-family:"Lucida Console";
-  color:#16C60C;background:black'>50361 ms        </span><span
+  Â Â Â  </span><span style='font-size:12.0pt;font-family:"Lucida Console";
+  color:#16C60C;background:black'>50361 msÂ Â Â Â Â Â Â  </span><span
   style='font-size:12.0pt;font-family:"Lucida Console";color:#F9F1A5;background:
   black'>0 ms </span><span style='font-size:12.0pt;font-family:"Lucida Console";
   color:#CCCCCC;background:black'>KiExecuteAllDpcs<br>
-      </span><span style='font-size:12.0pt;font-family:"Lucida Console";
-  color:#16C60C;background:black'>50377 ms        </span><span
+  Â Â Â  </span><span style='font-size:12.0pt;font-family:"Lucida Console";
+  color:#16C60C;background:black'>50377 msÂ Â Â Â Â Â Â  </span><span
   style='font-size:12.0pt;font-family:"Lucida Console";color:#F9F1A5;background:
   black'>0 ms </span><span style='font-size:12.0pt;font-family:"Lucida Console";
   color:#CCCCCC;background:black'>KzLowerIrql<br>
-      </span><span style='font-size:12.0pt;font-family:"Lucida Console";
-  color:#16C60C;background:black'>50397 ms        </span><span
+  Â Â Â  </span><span style='font-size:12.0pt;font-family:"Lucida Console";
+  color:#16C60C;background:black'>50397 msÂ Â Â Â Â Â Â  </span><span
   style='font-size:12.0pt;font-family:"Lucida Console";color:#F9F1A5;background:
   black'>0 ms </span><span style='font-size:12.0pt;font-family:"Lucida Console";
   color:#CCCCCC;background:black'>KxRetireDpcList<br>
-      </span><span style='font-size:12.0pt;font-family:"Lucida Console";
-  color:#16C60C;background:black'>50397 ms        </span><span
+  Â Â Â  </span><span style='font-size:12.0pt;font-family:"Lucida Console";
+  color:#16C60C;background:black'>50397 msÂ Â Â Â Â Â Â  </span><span
   style='font-size:12.0pt;font-family:"Lucida Console";color:#F9F1A5;background:
   black'>0 ms </span><span style='font-size:12.0pt;font-family:"Lucida Console";
   color:#CCCCCC;background:black'>KiRetireDpcList<br>
-      </span><span style='font-size:12.0pt;font-family:"Lucida Console";
-  color:#16C60C;background:black'>50399 ms        </span><span
+  Â Â Â  </span><span style='font-size:12.0pt;font-family:"Lucida Console";
+  color:#16C60C;background:black'>50399 msÂ Â Â Â Â Â Â  </span><span
   style='font-size:12.0pt;font-family:"Lucida Console";color:#F9F1A5;background:
   black'>0 ms </span><span style='font-size:12.0pt;font-family:"Lucida Console";
   color:#CCCCCC;background:black'>KiDispatchInterruptContinue<br>
-      </span><span style='font-size:12.0pt;font-family:"Lucida Console";
-  color:#16C60C;background:black'>50441 ms       </span><span style='font-size:
+  Â Â Â  </span><span style='font-size:12.0pt;font-family:"Lucida Console";
+  color:#16C60C;background:black'>50441 ms Â Â Â Â Â Â </span><span style='font-size:
   12.0pt;font-family:"Lucida Console";color:#F9F1A5;background:black'>75 ms </span><span
   style='font-size:12.0pt;font-family:"Lucida Console";color:#CCCCCC;background:
   black'>KeExpandKernelStackAndCalloutEx<br>
-      </span><span style='font-size:12.0pt;font-family:"Lucida Console";
-  color:#16C60C;background:black'>50441 ms       </span><span style='font-size:
+  Â Â Â  </span><span style='font-size:12.0pt;font-family:"Lucida Console";
+  color:#16C60C;background:black'>50441 msÂ Â Â Â Â Â  </span><span style='font-size:
   12.0pt;font-family:"Lucida Console";color:#F9F1A5;background:black'>75 ms </span><span
   style='font-size:12.0pt;font-family:"Lucida Console";color:#CCCCCC;background:
   black'>KeExpandKernelStackAndCalloutInternal<br>
-      </span><span style='font-size:12.0pt;font-family:"Lucida Console";
-  color:#16C60C;background:black'>50475 ms        </span><span
+  Â Â Â  </span><span style='font-size:12.0pt;font-family:"Lucida Console";
+  color:#16C60C;background:black'>50475 msÂ Â Â Â Â Â Â  </span><span
   style='font-size:12.0pt;font-family:"Lucida Console";color:#F9F1A5;background:
   black'>0 ms </span><span style='font-size:12.0pt;font-family:"Lucida Console";
   color:#CCCCCC;background:black'>KiDpcInterrupt<br>
-      </span><span style='font-size:12.0pt;font-family:"Lucida Console";
-  color:#16C60C;background:black'>50476 ms   </span><span style='font-size:
+  Â Â Â  </span><span style='font-size:12.0pt;font-family:"Lucida Console";
+  color:#16C60C;background:black'>50476 msÂ Â  </span><span style='font-size:
   12.0pt;font-family:"Lucida Console";color:#F9F1A5;background:black'>167607 ms </span><span
   style='font-size:12.0pt;font-family:"Lucida Console";color:#CCCCCC;background:
   black'>bridge.sys<br>
-      </span><span style='font-size:12.0pt;font-family:"Lucida Console";
-  color:#16C60C;background:black'>54480 ms  </span><span style='font-size:12.0pt;
+  Â Â Â  </span><span style='font-size:12.0pt;font-family:"Lucida Console";
+  color:#16C60C;background:black'>54480 msÂ  </span><span style='font-size:12.0pt;
   font-family:"Lucida Console";color:#F9F1A5;background:black'>2655067 ms </span><span
   style='font-size:12.0pt;font-family:"Lucida Console";color:#CCCCCC;background:
   black'>KiStartSystemThread<br>
-      </span><span style='font-size:12.0pt;font-family:"Lucida Console";
-  color:#16C60C;background:black'>54480 ms  </span><span style='font-size:12.0pt;
+  Â Â Â  </span><span style='font-size:12.0pt;font-family:"Lucida Console";
+  color:#16C60C;background:black'>54480 msÂ  </span><span style='font-size:12.0pt;
   font-family:"Lucida Console";color:#F9F1A5;background:black'>2655067 ms </span><span
   style='font-size:12.0pt;font-family:"Lucida Console";color:#CCCCCC;background:
   black'>PspSystemThreadStartup</span></p>
@@ -527,7 +527,7 @@ Once the issue is understood you can create [WPA stacktags](https://docs.microso
 in the other file also appears without the need to drill deep into the call stacks. In this case it is obvious that we have again a Firewall problem where each network packet 
 gets an expensive check in WfpAlepReauthorizeOutboundConnection which traverses long (many firewall rules?) lists. 
 
-![alt text](ETWAnalyzer\Documentation\Images\WPA_HighCPUAnalysis.png "WPA Analysis")
+![alt text](ETWAnalyzer/Documentation/Images/WPA_HighCPUAnalysis.png "WPA Analysis")
 
 Bad things keep coming back. After having identified a pattern in WPA we can check other ETW files either manually or we query the data with ETWAnalyzer and save a 
 lot of time. Since WPA and ETWAnalyzer support stacktags we can dump the top 10 stacktags for the System process. 
@@ -545,63 +545,63 @@ After adding "-stacktags *" to the command line we get all stacktags. If you add
   black'>c:\&gt;EtwAnalyzer -filedir
   c:\temp\extract\ZScaler_Download_Slow_100KB_Over100MBit_MouseLags -dump cpu
   -processName System -stacktags * -topnmethods 10<br>
-        </span><span style='font-size:12.0pt;font-family:"Lucida Console";
-  color:#16C60C;background:black'>CPU ms     </span><span style='font-size:
+  Â Â Â Â Â  </span><span style='font-size:12.0pt;font-family:"Lucida Console";
+  color:#16C60C;background:black'>CPU msÂ Â Â Â  </span><span style='font-size:
   12.0pt;font-family:"Lucida Console";color:#F9F1A5;background:black'>Wait ms </span><span
   style='font-size:12.0pt;font-family:"Lucida Console";color:#CCCCCC;background:
   black'>Method<br>
   </span><span style='font-size:12.0pt;font-family:"Lucida Console";color:#3A96DD;
   background:black'>2/4/2022 9:55:43 AM
   ZScaler_Download_Slow_100KB_Over100MBit_MouseLags<br>
-     </span><span style='font-size:12.0pt;font-family:"Lucida Console";
+  Â Â  </span><span style='font-size:12.0pt;font-family:"Lucida Console";
   color:#CCCCCC;background:black'>System(4)<br>
-         </span><span style='font-size:12.0pt;font-family:"Lucida Console";
-  color:#16C60C;background:black'>24 ms    </span><span style='font-size:12.0pt;
+  Â Â Â Â Â Â  </span><span style='font-size:12.0pt;font-family:"Lucida Console";
+  color:#16C60C;background:black'>24 msÂ Â Â  </span><span style='font-size:12.0pt;
   font-family:"Lucida Console";color:#F9F1A5;background:black'>15450 ms </span><span
   style='font-size:12.0pt;font-family:"Lucida Console";color:#CCCCCC;background:
   black'>Waits\Normal Waits\OS Wait<br>
-         </span><span style='font-size:12.0pt;font-family:"Lucida Console";
-  color:#16C60C;background:black'>25 ms        </span><span style='font-size:
+  Â Â Â Â Â Â  </span><span style='font-size:12.0pt;font-family:"Lucida Console";
+  color:#16C60C;background:black'>25 msÂ Â Â Â Â Â Â  </span><span style='font-size:
   12.0pt;font-family:"Lucida Console";color:#F9F1A5;background:black'>0 ms </span><span
   style='font-size:12.0pt;font-family:"Lucida Console";color:#CCCCCC;background:
   black'>Waits\File System Callback - possible Virus Scanner<br>
-         </span><span style='font-size:12.0pt;font-family:"Lucida Console";
+  Â Â Â Â Â Â  </span><span style='font-size:12.0pt;font-family:"Lucida Console";
   color:#16C60C;background:black'>60 ms </span><span style='font-size:12.0pt;
-  font-family:"Lucida Console";color:#F9F1A5;background:black'>   54417 ms </span><span
+  font-family:"Lucida Console";color:#F9F1A5;background:black'>Â Â Â 54417 ms </span><span
   style='font-size:12.0pt;font-family:"Lucida Console";color:#CCCCCC;background:
   black'>Waits\Normal Waits\GatherMappedPages-Timer<br>
-         </span><span style='font-size:12.0pt;font-family:"Lucida Console";
-  color:#16C60C;background:black'>88 ms   </span><span style='font-size:12.0pt;
+  Â Â Â Â Â Â  </span><span style='font-size:12.0pt;font-family:"Lucida Console";
+  color:#16C60C;background:black'>88 msÂ Â  </span><span style='font-size:12.0pt;
   font-family:"Lucida Console";color:#F9F1A5;background:black'>264875 ms </span><span
   style='font-size:12.0pt;font-family:"Lucida Console";color:#CCCCCC;background:
   black'>Antivirus - Windows Defender<br>
-        </span><span style='font-size:12.0pt;font-family:"Lucida Console";
-  color:#16C60C;background:black'>110 ms     </span><span style='font-size:
+  Â Â Â Â Â  </span><span style='font-size:12.0pt;font-family:"Lucida Console";
+  color:#16C60C;background:black'>110 msÂ Â Â Â  </span><span style='font-size:
   12.0pt;font-family:"Lucida Console";color:#F9F1A5;background:black'>3094 ms </span><span
   style='font-size:12.0pt;font-family:"Lucida Console";color:#CCCCCC;background:
   black'>Windows\Write Modified Data To Disk<br>
-        </span><span style='font-size:12.0pt;font-family:"Lucida Console";
-  color:#16C60C;background:black'>431 ms        </span><span style='font-size:
+  Â Â Â Â Â  </span><span style='font-size:12.0pt;font-family:"Lucida Console";
+  color:#16C60C;background:black'>431 msÂ Â Â Â Â Â Â  </span><span style='font-size:
   12.0pt;font-family:"Lucida Console";color:#F9F1A5;background:black'>0 ms </span><span
   style='font-size:12.0pt;font-family:"Lucida Console";color:#CCCCCC;background:
   black'>Windows\WorkingSetTrim<br>
-        </span><span style='font-size:12.0pt;font-family:"Lucida Console";
-  color:#16C60C;background:black'>714 ms        </span><span style='font-size:
+  Â Â Â Â Â  </span><span style='font-size:12.0pt;font-family:"Lucida Console";
+  color:#16C60C;background:black'>714 msÂ Â Â Â Â Â Â  </span><span style='font-size:
   12.0pt;font-family:"Lucida Console";color:#F9F1A5;background:black'>0 ms </span><span
   style='font-size:12.0pt;font-family:"Lucida Console";color:#CCCCCC;background:
   black'>Tracing Overhead\ETW Stackwalks<br>
-       </span><span style='font-size:12.0pt;font-family:"Lucida Console";
-  color:#16C60C;background:black'>1125 ms    </span><span style='font-size:
+  Â Â Â Â  </span><span style='font-size:12.0pt;font-family:"Lucida Console";
+  color:#16C60C;background:black'>1125 msÂ Â Â  </span><span style='font-size:
   12.0pt;font-family:"Lucida Console";color:#F9F1A5;background:black'>45753 ms </span><span
   style='font-size:12.0pt;font-family:"Lucida Console";color:#CCCCCC;background:
   black'>Windows\Zero Page Thread<br>
-      </span><span style='font-size:12.0pt;font-family:"Lucida Console";
-  color:#16C60C;background:black'>17625 ms        </span><span
+  Â Â Â  </span><span style='font-size:12.0pt;font-family:"Lucida Console";
+  color:#16C60C;background:black'>17625 msÂ Â Â Â Â Â Â  </span><span
   style='font-size:12.0pt;font-family:"Lucida Console";color:#F9F1A5;background:
   black'>0 ms </span><span style='font-size:12.0pt;font-family:"Lucida Console";
   color:#CCCCCC;background:black'>Other<br>
-      </span><span style='font-size:12.0pt;font-family:"Lucida Console";
-  color:#16C60C;background:black'>43315 ms        </span><span
+  Â Â Â  </span><span style='font-size:12.0pt;font-family:"Lucida Console";
+  color:#16C60C;background:black'>43315 msÂ Â Â Â Â Â Â  </span><span
   style='font-size:12.0pt;font-family:"Lucida Console";color:#F9F1A5;background:
   black'>0 ms</span><span style='font-size:12.0pt;font-family:"Lucida Console";
   color:#CCCCCC;background:black'> Windows\Windows Firewall</span></p>
@@ -622,7 +622,7 @@ If you are not using a console with a high console buffer width the output becom
 you can add -Clip to all commands of ETWAnalyzer to prevent wraparound of output. Besides the version we would need the dll which is by default
 not printed. But you can add *-IncludeDll* or *-id* to get besides method names also the dll name. 
 
-![alt text](ETWAnalyzer\Documentation\Images\ETWAnalyzer_ClippedOutput.png "Clipped Output")
+![alt text](ETWAnalyzer/Documentation/Images/ETWAnalyzer_ClippedOutput.png "Clipped Output")
 
 That small intro showed some of the key features of ETWAnalyzer. With this tool it is easy to detect patterns in thousands of ETL files which
 was an impossible task with other publicly available tools. If you have performance trending tests it makes a lot of sense to run them with ETW profiling enabled 
