@@ -189,7 +189,7 @@ namespace ETWAnalyzer_iTest
             //
             CPUPerProcessMethodList list = extractedServer.CPU.PerProcessMethodCostsInclusive;
 
-            if (!TestContext.IsInAzurePipeline())
+            if (!TestContext.IsInGithubPipeline())
             {
                 Assert.True(list.MethodNames.Count > 1000); // depending on local symbol cache state method count might fluctuate quite a lot!
             }
@@ -203,7 +203,7 @@ namespace ETWAnalyzer_iTest
             Assert.Equal(3.7385f, cost.FirstOccurenceInSecond);
             Assert.Equal(7.9859f, cost.LastOccurenceInSecond);
 
-            if (!TestContext.IsInAzurePipeline())
+            if (!TestContext.IsInGithubPipeline())
             {
                 var firstMethod = methods.Costs.Where(x => x.Method == "kernel32.dll!BaseThreadInitThunk").First();
                 Assert.Equal("kernel32.dll!BaseThreadInitThunk", firstMethod.Method);

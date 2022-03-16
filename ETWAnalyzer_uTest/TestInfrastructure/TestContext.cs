@@ -11,9 +11,9 @@ namespace ETWAnalyzer_uTest.TestInfrastructure
 {
     public class TestContext
     {
-        public static bool IsInAzurePipeline()
+        public static bool IsInGithubPipeline()
         {
-            return Environment.GetEnvironmentVariable("TF_BUILD") != null;
+            return Environment.GetEnvironmentVariable("GITHUB_ACTION") != null;
         }
     }
 }
