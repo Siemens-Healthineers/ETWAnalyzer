@@ -6,7 +6,7 @@ methods with a CPU consumption < 10ms. If you want to see all methods like you d
 
 The picture below illustrates what data is stored per method for all processes of the ETL file: 
 
-![alt text](Images\CPUTimeFirstLast.png "CPU Time First Last")
+![alt text](Images/CPUTimeFirstLast.png "CPU Time First Last")
 
 The extracted data contains for each method in a process
 - CPU usage from sampling data summed across all threads
