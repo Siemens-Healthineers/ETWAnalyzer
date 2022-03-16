@@ -1,0 +1,4 @@
+﻿the clases are copied from 
+$/TAU/Framework/Main/Toolkit/Source/TAU.Toolkit.Diagnostics/Profiling/Simplified
+to reuse the parsing code. We do not want to generate compile dependency between this tool and Tau therefore we copy the relevant classes
+Current Version: CS 1038436

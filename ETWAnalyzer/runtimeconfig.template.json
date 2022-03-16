@@ -1,0 +1,7 @@
+﻿{
+  "configProperties": {
+    "System.GC.Server": true,
+    "System.GC.HeapCount": 4,
+    "System.GC.NoAffinitize": true
+  }
+}

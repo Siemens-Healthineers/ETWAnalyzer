@@ -1,0 +1,685 @@
+<ExceptionFilters xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <Filters>
+    <ExceptionFilterItem>
+      <ProcessName>devenv;PerfWatson;XDesProc;ServiceHub.;testhost.;vstest.;MSBuild;VBCSCompiler</ProcessName>
+      <IsPositiveFilter>false</IsPositiveFilter>
+      <IsActive>true</IsActive>
+      <IsCustom>false</IsCustom>
+      <Reason>Visual Studio Internal Process</Reason>
+    </ExceptionFilterItem>
+    <ExceptionFilterItem>
+      <ProcessName>Syncplicity</ProcessName>
+      <IsPositiveFilter>false</IsPositiveFilter>
+      <IsActive>true</IsActive>
+      <IsCustom>false</IsCustom>
+      <Reason>Write an IT ticket and hope for the best.</Reason>
+    </ExceptionFilterItem>
+    <ExceptionFilterItem>
+      <ProcessName>syngo.Tools.ConfigureServiceKey</ProcessName>
+      <IsPositiveFilter>false</IsPositiveFilter>
+      <IsActive>true</IsActive>
+      <IsCustom>false</IsCustom>
+      <Reason>Internal errors of this tool are of no interest. If errors occur these should show up in the installer logs.</Reason>
+    </ExceptionFilterItem>
+    <ExceptionFilterItem>
+      <ProcessName>HWScan_V2.0.0.2_Client</ProcessName>
+      <IsPositiveFilter>false</IsPositiveFilter>
+      <IsActive>true</IsActive>
+      <IsCustom>false</IsCustom>
+      <Reason>IT Errors are of no interest</Reason>
+    </ExceptionFilterItem>
+    <ExceptionFilterItem>
+      <ProcessName>InitAdobeAcrobatIdentity</ProcessName>
+      <IsPositiveFilter>false</IsPositiveFilter>
+      <IsActive>true</IsActive>
+      <IsCustom>false</IsCustom>
+    </ExceptionFilterItem>
+    <ExceptionFilterItem>
+      <ProcessName>circuitcontactcard</ProcessName>
+      <IsPositiveFilter>false</IsPositiveFilter>
+      <IsActive>true</IsActive>
+      <IsCustom>false</IsCustom>
+    </ExceptionFilterItem>
+    <ExceptionFilterItem>
+      <ProcessName>powershell</ProcessName>
+      <IsPositiveFilter>false</IsPositiveFilter>
+      <IsActive>true</IsActive>
+      <IsCustom>false</IsCustom>
+    </ExceptionFilterItem>
+    <ExceptionFilterItem>
+      <ProcessName>syngo.Services.Workflow.Server</ProcessName>
+      <IsPositiveFilter>false</IsPositiveFilter>
+      <IsActive>true</IsActive>
+      <ExceptionType>MaxSizeExceededException</ExceptionType>
+      <IsCustom>false</IsCustom>
+      <Reason>Internally handled by Workflow tracing. Harmless</Reason>
+    </ExceptionFilterItem>
+    <ExceptionFilterItem>
+      <IsPositiveFilter>false</IsPositiveFilter>
+      <IsActive>true</IsActive>
+      <Message>Invalid FORMATETC structure</Message>
+      <IsCustom>false</IsCustom>
+      <Reason>Copy Paste Internal error. Harmless</Reason>
+    </ExceptionFilterItem>
+    <ExceptionFilterItem>
+      <IsPositiveFilter>false</IsPositiveFilter>
+      <IsActive>true</IsActive>
+      <ExceptionType>System.NotImplementedException</ExceptionType>
+      <StackTracePart>IDataObject.SetData</StackTracePart>
+      <IsCustom>false</IsCustom>
+      <Reason>Copy Paste Internal error. Harmless</Reason>
+    </ExceptionFilterItem>
+    <ExceptionFilterItem>
+      <IsPositiveFilter>false</IsPositiveFilter>
+      <IsActive>true</IsActive>
+      <ExceptionType>System.IO.IOException</ExceptionType>
+      <StackTracePart>PerformanceCounterLib.CategoryExists</StackTracePart>
+      <IsCustom>false</IsCustom>
+      <Reason>Internally handled by .NET Framework. Harmless.</Reason>
+    </ExceptionFilterItem>
+    <ExceptionFilterItem>
+      <IsPositiveFilter>false</IsPositiveFilter>
+      <IsActive>true</IsActive>
+      <ExceptionType>System.Threading.SynchronizationLockException</ExceptionType>
+      <IsCustom>false</IsCustom>
+      <Reason>Internally handled by Enterprise Library. Harmless.</Reason>
+    </ExceptionFilterItem>
+    <ExceptionFilterItem>
+      <IsPositiveFilter>false</IsPositiveFilter>
+      <IsActive>true</IsActive>
+      <ExceptionType>System.Security.SecurityException</ExceptionType>
+      <StackTracePart>EventLog.SourceExists</StackTracePart>
+      <IsCustom>false</IsCustom>
+      <Reason>Internally handled by Eventlog. Harmless.</Reason>
+    </ExceptionFilterItem>
+    <ExceptionFilterItem>
+      <IsPositiveFilter>false</IsPositiveFilter>
+      <IsActive>true</IsActive>
+      <ExceptionType>System.InvalidOperationException</ExceptionType>
+      <StackTracePart>System.Diagnostics.PerformanceCounter.InitializeImpl</StackTracePart>
+      <IsCustom>false</IsCustom>
+      <Reason>Too many performance counters were registered. The system wide shared memory (default is 512KB) is used. Remove counters or increase shared memory for counters. Mostly Harmless.</Reason>
+    </ExceptionFilterItem>
+    <ExceptionFilterItem>
+      <IsPositiveFilter>false</IsPositiveFilter>
+      <IsActive>true</IsActive>
+      <ExceptionType>System.InvalidOperationException</ExceptionType>
+      <StackTracePart>System.Diagnostics.Process.get_MainModule</StackTracePart>
+      <IsCustom>false</IsCustom>
+      <Reason>Process has already exited. Normally harmless.</Reason>
+    </ExceptionFilterItem>
+    <ExceptionFilterItem>
+      <IsPositiveFilter>false</IsPositiveFilter>
+      <IsActive>true</IsActive>
+      <StackTracePart>DMServiceWarmupTask.Warmup;Warmupper.Warmup</StackTracePart>
+      <IsCustom>false</IsCustom>
+      <Reason>SDM Warmump calls can cause internal exceptions. If the machine is not working we will see it later anyway. Harmless.</Reason>
+    </ExceptionFilterItem>
+    <ExceptionFilterItem>
+      <IsPositiveFilter>false</IsPositiveFilter>
+      <IsActive>true</IsActive>
+      <ExceptionType>System.NullReferenceException</ExceptionType>
+      <StackTracePart>AutoMapper.Mappers.TypeMapObjectMapperRegistry+PropertyMapMappingStrategy.Map</StackTracePart>
+      <IsCustom>false</IsCustom>
+      <Reason>Automapper internal error. Harmless.</Reason>
+    </ExceptionFilterItem>
+    <ExceptionFilterItem>
+      <IsPositiveFilter>false</IsPositiveFilter>
+      <IsActive>true</IsActive>
+      <StackTracePart>MoveDirectoryIfExistsOperation</StackTracePart>
+      <IsCustom>false</IsCustom>
+      <Reason>SDM cannot move files which are pending. Harmless.</Reason>
+    </ExceptionFilterItem>
+    <ExceptionFilterItem>
+      <IsPositiveFilter>false</IsPositiveFilter>
+      <IsActive>true</IsActive>
+      <StackTracePart>ArchivePreviousLogs</StackTracePart>
+      <IsCustom>false</IsCustom>
+      <Reason>SDM log file handling. Harmless.</Reason>
+    </ExceptionFilterItem>
+    <ExceptionFilterItem>
+      <IsPositiveFilter>false</IsPositiveFilter>
+      <IsActive>true</IsActive>
+      <ExceptionType>System.Xml.XmlException</ExceptionType>
+      <StackTracePart>DataContract.IsValidNCName</StackTracePart>
+      <IsCustom>false</IsCustom>
+      <Reason>Internally handled by DataContractFormatter. Harmless.</Reason>
+    </ExceptionFilterItem>
+    
+    <ExceptionFilterItem>
+      <IsPositiveFilter>false</IsPositiveFilter>
+      <IsActive>true</IsActive>
+      <ExceptionType>System.Xml.XmlException</ExceptionType>
+      <Message>0x3C</Message>
+      <IsCustom>false</IsCustom>
+      <Reason>Internally handled by DataContractFormatter. Harmless.</Reason>
+    </ExceptionFilterItem>
+
+    <ExceptionFilterItem>
+      <IsPositiveFilter>false</IsPositiveFilter>
+      <IsActive>true</IsActive>
+      <ExceptionType>System.Xml.XmlException</ExceptionType>
+      <StackTracePart>System.Xml.XmlConvert.VerifyNCName</StackTracePart>
+      <IsCustom>false</IsCustom>
+      <Reason>Internally handled by DataContractFormatter. Harmless.</Reason>
+    </ExceptionFilterItem>
+    <ExceptionFilterItem>
+      <ProcessName>syngo.Common.LCMService</ProcessName>
+      <IsPositiveFilter>false</IsPositiveFilter>
+      <IsActive>true</IsActive>
+      <StackTracePart>syngo.Common.LCMService.Public.CleanUp.StopProcess;syngo.Common.LCMService.Public.WebServiceUI.UIClient.GetStartTime</StackTracePart>
+      <IsCustom>false</IsCustom>
+      <Reason>Internally handled by LCM. Harmless.</Reason>
+    </ExceptionFilterItem>
+    <ExceptionFilterItem>
+      <IsPositiveFilter>false</IsPositiveFilter>
+      <IsActive>true</IsActive>
+      <StackTracePart>syngo.Common.Starter.Processing.FileWriter.GetStreamWriter</StackTracePart>
+      <IsCustom>false</IsCustom>
+      <Reason>Log file concurrently accessed, or destination is not writable. Harmless.</Reason>
+    </ExceptionFilterItem>
+    <ExceptionFilterItem>
+      <IsPositiveFilter>false</IsPositiveFilter>
+      <IsActive>true</IsActive>
+      <ExceptionType>System.InvalidOperationException</ExceptionType>
+      <StackTracePart>AbstractFusedOnOffOrder..ctor</StackTracePart>
+      <IsCustom>false</IsCustom>
+      <Reason>Internal LINQ exceeption in Fused Order. Harmless.</Reason>
+    </ExceptionFilterItem>
+    <ExceptionFilterItem>
+      <IsPositiveFilter>false</IsPositiveFilter>
+      <IsActive>true</IsActive>
+      <ExceptionType>System.IO.FileNotFoundException</ExceptionType>
+      <Message>.XmlSerializers;WPFToolkit.Extended.AeroLite;PresentationUI.Aero2</Message>
+      <IsCustom>false</IsCustom>
+      <Reason>Only minor perf issue can be ignored. WPF assembly not deployed. Old theme not existing. Harmless.</Reason>
+    </ExceptionFilterItem>
+    <ExceptionFilterItem>
+      <IsPositiveFilter>false</IsPositiveFilter>
+      <IsActive>true</IsActive>
+      <ExceptionType>System.IO.FileNotFoundException</ExceptionType>
+      <StackTracePart>XmlSchemaValidator.LoadSchema</StackTracePart>
+      <IsCustom>false</IsCustom>
+      <Reason>Missing XSD schema file. Normally Harmless.</Reason>
+    </ExceptionFilterItem>
+    <ExceptionFilterItem>
+      <IsPositiveFilter>false</IsPositiveFilter>
+      <IsActive>true</IsActive>
+      <ExceptionType>System.IO.FileNotFoundException</ExceptionType>
+      <StackTracePart>System.Xaml.XamlXmlReader.Initialize</StackTracePart>
+      <IsCustom>false</IsCustom>
+      <Reason>WPF or WF xaml files contain namespace declarations for assemblies which are not deployed. Harmless.</Reason>
+    </ExceptionFilterItem>
+    <ExceptionFilterItem>
+      <IsPositiveFilter>false</IsPositiveFilter>
+      <IsActive>true</IsActive>
+      <ExceptionType>System.IO.FileNotFoundException</ExceptionType>
+      <StackTracePart>System.Activities.Expressions.AssemblyReference.GetAssembly</StackTracePart>
+      <IsCustom>false</IsCustom>
+      <Reason>WF xaml files contain namespace declarations for assemblies which are not deployed. Harmless.</Reason>
+    </ExceptionFilterItem>
+    <ExceptionFilterItem>
+      <IsPositiveFilter>false</IsPositiveFilter>
+      <IsActive>true</IsActive>
+      <ExceptionType>System.IO.FileNotFoundException</ExceptionType>
+      <StackTracePart>System.Management.Automation.PSSnapInInfo.LoadIndirectResources</StackTracePart>
+      <IsCustom>false</IsCustom>
+      <Reason>Powershell resource files are not deployed. Harmless.</Reason>
+    </ExceptionFilterItem>
+    <ExceptionFilterItem>
+      <IsPositiveFilter>false</IsPositiveFilter>
+      <IsActive>true</IsActive>
+      <ExceptionType>System.IO.FileNotFoundException</ExceptionType>
+      <StackTracePart>Microsoft.PowerShell.Commands.ModuleCmdletBase.LoadBinaryModule</StackTracePart>
+      <IsCustom>false</IsCustom>
+      <Reason>Powershell extension dll not deployed. Harmless.</Reason>
+    </ExceptionFilterItem>
+    <ExceptionFilterItem>
+      <IsPositiveFilter>false</IsPositiveFilter>
+      <IsActive>true</IsActive>
+      <StackTracePart>syngo.Common.Core.Internal.ResourceManagement.GetString</StackTracePart>
+      <IsCustom>false</IsCustom>
+      <Reason>syngo resource file not deployed. Harmless.</Reason>
+    </ExceptionFilterItem>
+    <ExceptionFilterItem>
+      <IsPositiveFilter>false</IsPositiveFilter>
+      <IsActive>true</IsActive>
+      <ExceptionType>System.IO.FileNotFoundException</ExceptionType>
+      <StackTracePart>XmlSchemaSet.Add</StackTracePart>
+      <IsCustom>false</IsCustom>
+      <Reason>Missing referenced xsd schema file while adding XmlSchemaSet. Harmless but annoying during debugging.</Reason>
+    </ExceptionFilterItem>
+    <ExceptionFilterItem>
+      <IsPositiveFilter>false</IsPositiveFilter>
+      <IsActive>true</IsActive>
+      <ExceptionType>System.Reflection.TargetInvocationException</ExceptionType>
+      <IsCustom>false</IsCustom>
+      <Reason>Usually only a rethrown exception. The real exception comes before as long as no one explicitly throws this one. E.g. SDM WCF Interceptor throws this a lot.</Reason>
+    </ExceptionFilterItem>
+    <ExceptionFilterItem>
+      <IsPositiveFilter>false</IsPositiveFilter>
+      <IsActive>true</IsActive>
+      <ExceptionType>System.Configuration.ConfigurationErrorsException</ExceptionType>
+      <StackTracePart>ConfigurationHelpers.GetEvaluationContext</StackTracePart>
+      <IsCustom>false</IsCustom>
+      <Reason>Internally handled by System.ServiceModel</Reason>
+    </ExceptionFilterItem>
+    <ExceptionFilterItem>
+      <IsPositiveFilter>false</IsPositiveFilter>
+      <IsActive>true</IsActive>
+      <ExceptionType>System.IO.FileLoadException</ExceptionType>
+      <Message>.XmlSerializers</Message>
+      <IsCustom>false</IsCustom>
+      <Reason>Only minor perf issue can be ignored. Harmless.</Reason>
+    </ExceptionFilterItem>
+    <ExceptionFilterItem>
+      <IsPositiveFilter>false</IsPositiveFilter>
+      <IsActive>true</IsActive>
+      <ExceptionType>System.ArgumentException</ExceptionType>
+      <Message>\AppData\Roaming\syngo</Message>
+      <IsCustom>false</IsCustom>
+      <Reason>This directory never exists. Harmless</Reason>
+    </ExceptionFilterItem>
+    <ExceptionFilterItem>
+      <IsPositiveFilter>false</IsPositiveFilter>
+      <IsActive>true</IsActive>
+      <ExceptionType>System.ArgumentException</ExceptionType>
+      <StackTracePart>System.Diagnostics.Process.GetProcessById;syngo.Common.Components.IntfRepository.Register;syngo.Services.DataUtilities.DataDefinition.ElementDictionary.Core</StackTracePart>
+      <IsCustom>false</IsCustom>
+      <Reason>Process to query data from no longer exists. Normally Harmless</Reason>
+    </ExceptionFilterItem>
+    <ExceptionFilterItem>
+      <IsPositiveFilter>false</IsPositiveFilter>
+      <IsActive>true</IsActive>
+      <StackTracePart>MS.Internal.Automation.UiaCoreApi.OnGetProvider;MS.Internal.Automation.HwndProxyElementProvider.IsWindowPatternWindow</StackTracePart>
+      <IsCustom>false</IsCustom>
+      <Reason>UI Control not found via UI Automation. Harmless</Reason>
+    </ExceptionFilterItem>
+    <ExceptionFilterItem>
+      <IsPositiveFilter>false</IsPositiveFilter>
+      <IsActive>true</IsActive>
+      <ExceptionType>System.ArgumentException</ExceptionType>
+      <StackTracePart>HashTableElementDictionary.LoadPrivate</StackTracePart>
+      <IsCustom>false</IsCustom>
+      <Reason>HashTablElementDictionary calls add instead of using the indexer which would prevent that exception. Please fix.</Reason>
+    </ExceptionFilterItem>
+    <ExceptionFilterItem>
+      <IsPositiveFilter>false</IsPositiveFilter>
+      <IsActive>true</IsActive>
+      <ExceptionType>System.ArgumentException</ExceptionType>
+      <StackTracePart>System.IO.Path.LegacyNormalizePath</StackTracePart>
+      <IsCustom>false</IsCustom>
+      <Reason>Internally handled by .NET Framework. Harmless.</Reason>
+    </ExceptionFilterItem>
+    <ExceptionFilterItem>
+      <IsPositiveFilter>false</IsPositiveFilter>
+      <IsActive>true</IsActive>
+      <ExceptionType>System.ArgumentException</ExceptionType>
+      <Message>An object with the same log name has already been registered:</Message>
+      <IsCustom>false</IsCustom>
+      <Reason>Same tool registered by different components. Harmless.</Reason>
+    </ExceptionFilterItem>
+    <ExceptionFilterItem>
+      <IsPositiveFilter>false</IsPositiveFilter>
+      <IsActive>true</IsActive>
+      <ExceptionType>System.ArgumentOutOfRangeException</ExceptionType>
+      <StackTracePart>Xceed.Wpf.Toolkit</StackTracePart>
+      <IsCustom>false</IsCustom>
+      <Reason>Xceed internal exception. Harmless.</Reason>
+    </ExceptionFilterItem>
+    <ExceptionFilterItem>
+      <IsPositiveFilter>false</IsPositiveFilter>
+      <IsActive>true</IsActive>
+      <ExceptionType>System.Threading.AbandonedMutexException</ExceptionType>
+      <IsCustom>false</IsCustom>
+      <Reason>Process owning the mutex was terminated. Usually harmless and occurs in Pattern publish service if a container was terminated.</Reason>
+    </ExceptionFilterItem>
+    <ExceptionFilterItem>
+      <IsPositiveFilter>false</IsPositiveFilter>
+      <IsActive>true</IsActive>
+      <ExceptionType>System.IO.PipeException</ExceptionType>
+      <IsCustom>false</IsCustom>
+      <Reason>Remote client already shut down or not yet ready. Harmless</Reason>
+    </ExceptionFilterItem>
+    <ExceptionFilterItem>
+      <IsPositiveFilter>false</IsPositiveFilter>
+      <IsActive>true</IsActive>
+      <ExceptionType>System.ServiceModel.CommunicationException</ExceptionType>
+      <IsCustom>false</IsCustom>
+      <Reason>Remote client already shut down or not yet ready. Harmless.</Reason>
+    </ExceptionFilterItem>
+    <ExceptionFilterItem>
+      <IsPositiveFilter>false</IsPositiveFilter>
+      <IsActive>true</IsActive>
+      <ExceptionType>System.ServiceModel.CommunicationObjectFaultedException</ExceptionType>
+      <IsCustom>false</IsCustom>
+      <Reason>WCF connectivity issue. Harmless.</Reason>
+    </ExceptionFilterItem>
+    <ExceptionFilterItem>
+      <IsPositiveFilter>false</IsPositiveFilter>
+      <IsActive>true</IsActive>
+      <ExceptionType>System.ServiceModel.AddressAlreadyInUseException</ExceptionType>
+      <IsCustom>false</IsCustom>
+      <Reason>WCF connectivity issue. Harmless.</Reason>
+    </ExceptionFilterItem>
+    <ExceptionFilterItem>
+      <IsPositiveFilter>false</IsPositiveFilter>
+      <IsActive>true</IsActive>
+      <ExceptionType>System.TimeoutException</ExceptionType>
+      <Message>asynchronous</Message>
+      <IsCustom>false</IsCustom>
+      <Reason>Remote client already shut down or not yet ready. Harmless</Reason>
+    </ExceptionFilterItem>
+    <ExceptionFilterItem>
+      <IsPositiveFilter>false</IsPositiveFilter>
+      <IsActive>true</IsActive>
+      <ExceptionType>System.TimeoutException</ExceptionType>
+      <StackTracePart>DurableInstanceManager</StackTracePart>
+      <IsCustom>false</IsCustom>
+      <Reason>Workflow durable save to SQL server failed. Seems to be harmless. Could be an issue. But so far it was never tracked down what is taking 10 minutes in WF to time out</Reason>
+    </ExceptionFilterItem>
+    <ExceptionFilterItem>
+      <IsPositiveFilter>false</IsPositiveFilter>
+      <IsActive>true</IsActive>
+      <ExceptionType>System.Net.Sockets.SocketException</ExceptionType>
+      <Message>remote host;I/O operation has been aborted;Only one usage of each socket</Message>
+      <IsCustom>false</IsCustom>
+      <Reason>Remote client already shut down. Harmless</Reason>
+    </ExceptionFilterItem>
+    <ExceptionFilterItem>
+      <IsPositiveFilter>false</IsPositiveFilter>
+      <IsActive>true</IsActive>
+      <ExceptionType>System.IO.IOException</ExceptionType>
+      <Message>remote host</Message>
+      <IsCustom>false</IsCustom>
+      <Reason>Remote client already shut down. Harmless.</Reason>
+    </ExceptionFilterItem>
+    <ExceptionFilterItem>
+      <IsPositiveFilter>false</IsPositiveFilter>
+      <IsActive>true</IsActive>
+      <ExceptionType>System.IO.IOException</ExceptionType>
+      <StackTracePart>PurgeGarbageFilesFromOtherProcesses</StackTracePart>
+      <IsCustom>false</IsCustom>
+      <Reason>Log Rollover can find locked files.</Reason>
+    </ExceptionFilterItem>
+    <ExceptionFilterItem>
+      <IsPositiveFilter>false</IsPositiveFilter>
+      <IsActive>false</IsActive>
+      <ExceptionType>System.IO.IOException</ExceptionType>
+      <StackTracePart>RollingFileTraceListener.AdjustFileNameAndAddHeader</StackTracePart>
+      <IsCustom>false</IsCustom>
+      <Reason>Server logging configuration is used while another process is also using the server logging configuration.</Reason>
+    </ExceptionFilterItem>
+    <ExceptionFilterItem>
+      <IsPositiveFilter>false</IsPositiveFilter>
+      <IsActive>true</IsActive>
+      <ExceptionType>System.UnauthorizedAccessException</ExceptionType>
+      <StackTracePart>TempFileCollection.Delete(</StackTracePart>
+      <IsCustom>false</IsCustom>
+      <Reason>Generated dll is still in use. Possibly by virus scanner.</Reason>
+    </ExceptionFilterItem>
+    <ExceptionFilterItem>
+      <IsPositiveFilter>false</IsPositiveFilter>
+      <IsActive>true</IsActive>
+      <ExceptionType>System.UnauthorizedAccessException</ExceptionType>
+      <StackTracePart>syngo.Common.Core.Internal.BaseLog.Init(</StackTracePart>
+      <IsCustom>false</IsCustom>
+      <Reason>GenCmd logging is writing from different processes into the same file.</Reason>
+    </ExceptionFilterItem>
+    <ExceptionFilterItem>
+      <IsPositiveFilter>false</IsPositiveFilter>
+      <IsActive>true</IsActive>
+      <ExceptionType>System.Security.Cryptography.CryptographicException</ExceptionType>
+      <StackTracePart>syngo.Common.Communication.Internal.Channels.Aes.AesStream.ReadFromInnerStream</StackTracePart>
+      <IsCustom>false</IsCustom>
+      <Reason>Normal for not existing or already closed connection. Harmless.</Reason>
+    </ExceptionFilterItem>
+    <ExceptionFilterItem>
+      <IsPositiveFilter>false</IsPositiveFilter>
+      <IsActive>true</IsActive>
+      <ExceptionType>System.DirectoryServices.Protocols.DirectoryOperationException</ExceptionType>
+      <Message>The object exists</Message>
+      <IsCustom>false</IsCustom>
+      <Reason>Config.NET data was already imported.</Reason>
+    </ExceptionFilterItem>
+    <ExceptionFilterItem>
+      <IsPositiveFilter>false</IsPositiveFilter>
+      <IsActive>true</IsActive>
+      <ExceptionType>System.Threading.WaitHandleCannotBeOpenedException</ExceptionType>
+      <IsCustom>false</IsCustom>
+      <Reason>Was the first to open the handle. If the code handles this properly itis harmless.</Reason>
+    </ExceptionFilterItem>
+    <ExceptionFilterItem>
+      <IsPositiveFilter>false</IsPositiveFilter>
+      <IsActive>true</IsActive>
+      <ExceptionType>System.Runtime.InteropServices.COMException</ExceptionType>
+      <StackTracePart>WebBrowser.Refresh</StackTracePart>
+      <IsCustom>false</IsCustom>
+      <Reason>ExpertI internally handled.</Reason>
+    </ExceptionFilterItem>
+    <ExceptionFilterItem>
+      <IsPositiveFilter>false</IsPositiveFilter>
+      <IsActive>true</IsActive>
+      <ExceptionType>Microsoft.CSharp.RuntimeBinder.RuntimeBinderException</ExceptionType>
+      <Message>QueryPredicate</Message>
+      <IsCustom>false</IsCustom>
+      <Reason>Workflow internal Mapping which uses dynamic things. Harmless.</Reason>
+    </ExceptionFilterItem>
+    <ExceptionFilterItem>
+      <IsPositiveFilter>false</IsPositiveFilter>
+      <IsActive>true</IsActive>
+      <ExceptionType>Microsoft.CSharp.RuntimeBinder.RuntimeBinderException</ExceptionType>
+      <Message>SynchronizationCollection</Message>
+      <IsCustom>false</IsCustom>
+      <Reason>Imaging Reflines use dynamic objects. Harmless.</Reason>
+    </ExceptionFilterItem>
+    <ExceptionFilterItem>
+      <IsPositiveFilter>false</IsPositiveFilter>
+      <IsActive>true</IsActive>
+      <ExceptionType>System.Threading.ThreadAbortException</ExceptionType>
+      <IsCustom>false</IsCustom>
+      <Reason>Externally triggered to shut down a thread. Harmless</Reason>
+    </ExceptionFilterItem>
+    <ExceptionFilterItem>
+      <IsPositiveFilter>false</IsPositiveFilter>
+      <IsActive>true</IsActive>
+      <ExceptionType>System.Threading.ThreadInterruptedException</ExceptionType>
+      <IsCustom>false</IsCustom>
+      <Reason>Externally triggered to shut down a thread. Harmless</Reason>
+    </ExceptionFilterItem>
+    <ExceptionFilterItem>
+      <IsPositiveFilter>false</IsPositiveFilter>
+      <IsActive>true</IsActive>
+      <ExceptionType>System.Threading.Tasks.TaskCanceledException</ExceptionType>
+      <IsCustom>false</IsCustom>
+      <Reason>Externally triggered to cancel a running task. Harmless</Reason>
+    </ExceptionFilterItem>
+    <ExceptionFilterItem>
+      <IsPositiveFilter>false</IsPositiveFilter>
+      <IsActive>true</IsActive>
+      <ExceptionType>System.OperationCanceledException</ExceptionType>
+      <IsCustom>false</IsCustom>
+      <Reason>Expected way to cancel a concurrent operation. Harmless</Reason>
+    </ExceptionFilterItem>
+    <ExceptionFilterItem>
+      <IsPositiveFilter>false</IsPositiveFilter>
+      <IsActive>true</IsActive>
+      <ExceptionType>System.ObjectDisposedException</ExceptionType>
+      <StackTracePart>Socket.EndAccept</StackTracePart>
+      <IsCustom>false</IsCustom>
+      <Reason>Socket was already closed. Harmless</Reason>
+    </ExceptionFilterItem>
+    <ExceptionFilterItem>
+      <IsPositiveFilter>false</IsPositiveFilter>
+      <IsActive>true</IsActive>
+      <ExceptionType>System.ObjectDisposedException</ExceptionType>
+      <StackTracePart>GenCmdServerChannelBaseImpl.DisconnectFromClients</StackTracePart>
+      <IsCustom>false</IsCustom>
+      <Reason>Socket was already closed. Harmless</Reason>
+    </ExceptionFilterItem>
+    <ExceptionFilterItem>
+      <IsPositiveFilter>false</IsPositiveFilter>
+      <IsActive>true</IsActive>
+      <ExceptionType>System.ComponentModel.Win32Exception</ExceptionType>
+      <StackTracePart>System.Diagnostics.ProcessManager.GetModuleInfos;System.Diagnostics.Process.get_MainModule()</StackTracePart>
+      <IsCustom>false</IsCustom>
+      <Reason>Handled by .NET Framework internally or by application if a process has no access rights to access module infos or if a process with a different bitness tries to access module infos. Harmless</Reason>
+    </ExceptionFilterItem>
+    <ExceptionFilterItem>
+      <IsPositiveFilter>false</IsPositiveFilter>
+      <IsActive>true</IsActive>
+      <ExceptionType>System.ObjectDisposedException</ExceptionType>
+      <StackTracePart>get_TransactionInformation</StackTracePart>
+      <IsCustom>false</IsCustom>
+      <Reason>Entity Framework internally handled. Harmless.</Reason>
+    </ExceptionFilterItem>
+    <ExceptionFilterItem>
+      <IsPositiveFilter>false</IsPositiveFilter>
+      <IsActive>true</IsActive>
+      <ExceptionType>System.NotSupportedException</ExceptionType>
+      <Message>BitmapMetadata</Message>
+      <IsCustom>false</IsCustom>
+      <Reason>Wpf internal exception: https://StackTracePartoverflow.com/questions/16941520/exception-on-bitmapframe-create-bug-in-wpf-framework</Reason>
+    </ExceptionFilterItem>
+    <ExceptionFilterItem>
+      <IsPositiveFilter>false</IsPositiveFilter>
+      <IsActive>true</IsActive>
+      <ExceptionType>syngo.Common.Communication.CommunicationException</ExceptionType>
+      <Message>is not avilable yet;There is no connection from this node</Message>
+      <IsCustom>false</IsCustom>
+      <Reason>ServiceContract internal connection retry or GenCmd Shutdown. Harmless</Reason>
+    </ExceptionFilterItem>
+    <ExceptionFilterItem>
+      <IsPositiveFilter>false</IsPositiveFilter>
+      <IsActive>true</IsActive>
+      <ExceptionType>System.Xaml.XamlObjectWriterException</ExceptionType>
+      <IsCustom>false</IsCustom>
+      <Reason>See https://Stackoverflow.com/questions/24251244/wpf-and-unity-no-matching-constructor-found-on-type should be fixed.</Reason>
+    </ExceptionFilterItem>
+    <ExceptionFilterItem>
+      <IsPositiveFilter>false</IsPositiveFilter>
+      <IsActive>true</IsActive>
+      <ExceptionType>System.MissingMethodException</ExceptionType>
+      <Message>Constructor on type</Message>
+      <IsCustom>false</IsCustom>
+      <Reason>See https://Stackoverflow.com/questions/24251244/wpf-and-unity-no-matching-constructor-found-on-type should be fixed.</Reason>
+    </ExceptionFilterItem>
+    <ExceptionFilterItem>
+      <IsPositiveFilter>false</IsPositiveFilter>
+      <IsActive>false</IsActive>
+      <ExceptionType>System.IO.FileNotFoundException</ExceptionType>
+      <Message>.xsd</Message>
+      <IsCustom>false</IsCustom>
+      <Reason>Layout Management adds custom schemas without deploying the corresponding files. Please fix or remove schema from loaded resources in LayoutConfiguration..cctor()</Reason>
+    </ExceptionFilterItem>
+    <ExceptionFilterItem>
+      <IsPositiveFilter>false</IsPositiveFilter>
+      <IsActive>true</IsActive>
+      <ExceptionType>System.TypeLoadException</ExceptionType>
+      <Message>syngo.BizLogic.Modules.Viewing.BasicImaging.Tools.Core.MeasurementTools.Plugins.PixelLensPlugin</Message>
+      <IsCustom>false</IsCustom>
+      <Reason>Automatded Trending Exclusion Rule</Reason>
+    </ExceptionFilterItem>
+    <ExceptionFilterItem>
+      <IsPositiveFilter>false</IsPositiveFilter>
+      <IsActive>true</IsActive>
+      <ExceptionType>System.TimeoutException</ExceptionType>
+      <Message>A WaitForEvents or BeginWaitForEvents operation timed out after 00:10:00. The time allotted to this operation may have been a portion of a longer timeout.</Message>
+      <IsCustom>false</IsCustom>
+      <Reason>Automatded Trending Exclusion Rule</Reason>
+    </ExceptionFilterItem>
+    <ExceptionFilterItem>
+      <IsPositiveFilter>false</IsPositiveFilter>
+      <IsActive>true</IsActive>
+      <ExceptionType>syngo.Common.Core.ATException</ExceptionType>
+      <Message>PixelLens3DPlugin</Message>
+      <IsCustom>false</IsCustom>
+      <Reason>Automatded Trending Exclusion Rule</Reason>
+    </ExceptionFilterItem>
+    <ExceptionFilterItem>
+      <IsPositiveFilter>false</IsPositiveFilter>
+      <IsActive>true</IsActive>
+      <ExceptionType>syngo.Common.Core.ATObjectCreationException</ExceptionType>
+      <Message>PixelLensPlugin</Message>
+      <IsCustom>false</IsCustom>
+      <Reason>Automatded Trending Exclusion Rule</Reason>
+    </ExceptionFilterItem>
+    <ExceptionFilterItem>
+      <IsPositiveFilter>false</IsPositiveFilter>
+      <IsActive>true</IsActive>
+      <ExceptionType>syngo.Services.Workflow.Exceptions.AdapterException</ExceptionType>
+      <IsCustom>false</IsCustom>
+      <Reason>Automatded Trending Exclusion Rule</Reason>
+    </ExceptionFilterItem>
+    <ExceptionFilterItem>
+      <IsPositiveFilter>false</IsPositiveFilter>
+      <IsActive>true</IsActive>
+      <ExceptionType>System.ArgumentException</ExceptionType>
+      <Message>Object does not support interface syngo.BizLogic.Modules.Viewing.BasicImaging.Tools.MeasurementTools.Controllers.IMeasurementCursorFactory</Message>
+      <IsCustom>false</IsCustom>
+      <Reason>No support interface syngo. Harmless</Reason>
+    </ExceptionFilterItem>
+    <ExceptionFilterItem>
+      <IsPositiveFilter>false</IsPositiveFilter>
+      <IsActive>true</IsActive>
+      <ExceptionType>System.ObjectDisposedException</ExceptionType>
+      <StackTracePart>CommunicationObject.ThrowIfDisposed()</StackTracePart>
+      <IsCustom>false</IsCustom>
+      <Reason>Normal for not existing or already closed connection. Harmless.</Reason>
+    </ExceptionFilterItem>
+    <ExceptionFilterItem>
+      <IsPositiveFilter>false</IsPositiveFilter>
+      <IsActive>true</IsActive>
+      <ExceptionType>syngo.Services.Workflow.Common.Exceptions.RootCauseException</ExceptionType>
+      <Message>Workitem already claimed</Message>
+      <IsCustom>false</IsCustom>
+      <Reason>Harmless</Reason>
+    </ExceptionFilterItem>
+    <ExceptionFilterItem>
+      <IsPositiveFilter>false</IsPositiveFilter>
+      <IsActive>true</IsActive>
+      <ExceptionType>System.ServiceModel.FaultException`1[syngo.Services.Workflow.FaultContracts.AdapterFaultReport]</ExceptionType>
+      <Message>Adapter Workitem</Message>
+      <IsCustom>false</IsCustom>
+      <Reason>Harmless</Reason>
+    </ExceptionFilterItem>
+    <ExceptionFilterItem>
+      <IsPositiveFilter>false</IsPositiveFilter>
+      <IsActive>true</IsActive>
+      <ExceptionType>System.Net.Sockets.SocketException</ExceptionType>
+      <Message>No connection could be made because the target machine actively refused it</Message>
+      <IsCustom>false</IsCustom>
+      <Reason>Harmless</Reason>
+    </ExceptionFilterItem>
+    <ExceptionFilterItem>
+      <ProcessName>SDInstaller.exe;syngo.Common.Diagnostics.SDC.CollectorTask.exe;syngo.RemoteAccess.ExpertI.ExtensionService.exe;syngo.RemoteServices.OM.SystemStatusMonitoringRSC.CleanupTool.exe;syngo.Services.FileTransferService.exe</ProcessName>
+      <IsPositiveFilter>false</IsPositiveFilter>
+      <IsActive>true</IsActive>
+      <IsCustom>false</IsCustom>
+    </ExceptionFilterItem>
+    <ExceptionFilterItem>
+      <IsPositiveFilter>false</IsPositiveFilter>
+      <IsActive>true</IsActive>
+      <ExceptionType>System.Xml.XmlException</ExceptionType>
+      <Message>Name cannot begin with the</Message>
+      <IsCustom>false</IsCustom>
+      <Reason>Harmless</Reason>
+    </ExceptionFilterItem>
+    <ExceptionFilterItem>
+      <IsPositiveFilter>false</IsPositiveFilter>
+      <IsActive>true</IsActive>
+      <ExceptionType>System.NotSupportedException</ExceptionType>
+      <Message>The invoked member is not supported in a dynamic assembly.</Message>
+      <IsCustom>false</IsCustom>
+      <Reason>Harmless</Reason>
+    </ExceptionFilterItem>
+    <ExceptionFilterItem>
+      <IsPositiveFilter>false</IsPositiveFilter>
+      <IsActive>true</IsActive>
+      <ExceptionType>System.Windows.Automation.ElementNotAvailableException</ExceptionType>
+      <Message>The target element corresponds to UI that is no longer available</Message>
+      <IsCustom>false</IsCustom>
+      <Reason>Harmless</Reason>
+    </ExceptionFilterItem>
+  </Filters>
+</ExceptionFilters>

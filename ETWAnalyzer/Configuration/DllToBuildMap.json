@@ -1,0 +1,9 @@
+{
+    "MarkerFiles": [
+        {
+            "DllName": "SomeDll.dll",
+            "VersionVector": "Some"
+        },
+
+    ]
+}

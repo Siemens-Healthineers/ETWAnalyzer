@@ -1,0 +1,7 @@
+﻿// Flat list of pdb files names which must be loaded to be able to properly use stacktags
+// .NET Runtime, some Windows dlls and ivt for volume loading must be present
+clr.pdb
+ntdll.pdb
+kernel32.pdb
+gdi32.pdb
+

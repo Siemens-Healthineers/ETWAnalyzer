@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Tag Name=""> 
+	<Tag Name="GC" Priority="1600">
+		<Entrypoint Module="clr.dll" Method="*gc_heap*" />
+		<Entrypoint Module="clr.dll" Method="*JIT_New*" />
+		<Entrypoint Module="coreclr.dll" Method="*gc_heap*" />
+		<Entrypoint Module="coreclr.dll" Method="*JIT_New*" />
+	
+	</Tag>
+	<Tag Name="JIT" Priority="1600">
+		<Entrypoint Module="clr.dll" Method="*ThePreStub*" />
+		<Entrypoint Module="coreclr.dll" Method="*ThePreStub*" />
+		<Tag Name="Compat JIT (Slow!)" Priority="1600">
+			<Entrypoint Module="compatjit.dll" Method="*"/>
+		</Tag>
+		<Tag Name="Normal JIT" Priority="1600">
+			<Entrypoint Module="clrjit.dll" Method="*"/>
+		</Tag>
+	</Tag>
+</Tag>

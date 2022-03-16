@@ -1,0 +1,18 @@
+﻿<?xml version='1.0' encoding='utf-8'?>
+<SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="ETWAnalyzer" GeneratedClassName="Settings">
+  <Profiles />
+  <Settings>
+    <Setting Name="SymbolDownloadFolder" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">C:\Symbols</Value>
+    </Setting>
+    <Setting Name="SymbolServerMS" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">SRV*C:\Symbols*https://msdl.microsoft.com/download/symbols</Value>
+    </Setting>
+    <Setting Name="SymbolServerSyngo" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">SRV*C:\Symbols*https://build-syngo.healthcare.siemens.com/symbols/</Value>
+    </Setting>
+    <Setting Name="SymbolServerGoogle" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">SRV*C:\Symbols*https://chromium-browser-symsrv.commondatastorage.googleapis.com</Value>
+    </Setting>
+  </Settings>
+</SettingsFile>
