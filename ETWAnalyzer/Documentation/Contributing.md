@@ -31,7 +31,7 @@ You can also use .NET 4.8 and debug as usual. That will always work.
 | Directory   | Contains    |
 | ----------- | ----------- |
 | Extractors  | Code used to extract data from ETL files | 
-| Extract     | ETWExtract instance which gets all data as property and associated structures | 
+| Extract     | ETWExtract class which contains the deserialized Json object model | 
 | EventDump   | -Dump xxx commands |
 | Commands    | Command line parsing logic to create specific commands such as -extract, -dump ...  |
 

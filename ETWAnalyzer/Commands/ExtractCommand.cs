@@ -69,8 +69,8 @@ namespace ETWAnalyzer.Commands
          " -recursive           Search below -filedir directory recursively for data to extract." + Environment.NewLine +
          " -outdir xxxx         By default the extracted data will be put into the folder \"Extract\" besides the input file. You can override the output folder with that switch." + Environment.NewLine +
          " -tempdir xxxx        If input data needs to be unzipped you can enter here an alternate path to e.g. prevent extraction on slow network shares. " + Environment.NewLine + 
-         " -unzipoperation \"cmd\" Execute command after a compressed zip archive was uncompressed. The variables #EtlFileName# and #EtlFileDir# are expanded. " + Environment.NewLine +
-         "                      You can use ' to escape an exe with spaces. E.g. -unzipoperation \"'C:\\Program Files\\Relogger.exe' #EtlFileDir#\"" + Environment.NewLine + 
+        $" -unzipoperation \"cmd\" Execute command after a compressed zip archive was uncompressed. The variables {ETLFileNameVariable} and {ETLFileDirVariable} are expanded. " + Environment.NewLine +
+        $"                      You can use ' to escape an exe with spaces. E.g. -unzipoperation \"'C:\\Program Files\\Relogger.exe' {ETLFileNameVariable}\"" + Environment.NewLine + 
          " -nocolor             Do not colorize output on shells with different color schemes. Writing console output is also much faster if it is not colorized." + Environment.NewLine +
 
          "[yellow]Examples[/yellow]" + Environment.NewLine +
@@ -86,8 +86,14 @@ namespace ETWAnalyzer.Commands
          "" + Environment.NewLine
          ;
 
-
+        /// <summary>
+        /// Expanded by custom command after a zip file was extracted via -unzipcommand
+        /// </summary>
         internal const string ETLFileDirVariable = "#EtlFileDir#";
+
+        /// <summary>
+        /// Expanded by custom command after a zip file was extracted via -unzipcommand
+        /// </summary>
         internal const string ETLFileNameVariable = "#ETLFileName#";
 
         public override string Help => HelpString;
@@ -184,11 +190,18 @@ namespace ETWAnalyzer.Commands
         /// </summary>
         List<ExtractorBase> Extractors { get; } = new List<ExtractorBase>() { new MachineDetailsExtractor() };
 
+        /// <summary>
+        /// -fd/-filedir
+        /// </summary>
         public string InputFileOrDirectory { get; private set; }
+
+        /// <summary>
+        /// By default exceptions are filtered during extraction already if in the file Configuration/ExceptionFilters.xml rules are defined.
+        /// </summary>
         public bool DisableExceptionFilter { get; private set; }
 
         /// <summary>
-        /// Command which is exected after a ETL zip file was uncompressed to e.g. rewrite it to enrich it with additional marker events or to filter out
+        /// Command which is executed after a ETL zip file was uncompressed to e.g. rewrite it to enrich it with additional marker events or to filter out
         /// specific events
         /// </summary>
         public string AfterUnzipCommand { get; set; }
@@ -197,22 +210,37 @@ namespace ETWAnalyzer.Commands
         /// Extract all CPU data which disables the 10ms default threshold during extraction.
         /// </summary>
         public bool ExtractAllCPUData { get; private set; }
+
+        /// <summary>
+        /// Extract and temp extraction directories
+        /// </summary>
         public OutDir OutDir { get; private set; } = new OutDir();
+
         /// <summary>
         /// When true execute extraction single threaded in every case
         /// </summary>
         public bool IsChildProcess { get; private set; }
+
         /// <summary>
         /// If the option -nooverwrite is used during extraction the output Json files are not overwritten as this is currently the default
         /// </summary>
         public bool OverwriteJsonExtractFiles { get; set; } = true;
 
 
-
+        /// <summary>
+        /// Create an extract command with given command line switches
+        /// </summary>
+        /// <param name="args"></param>
         public ExtractCommand(string[] args):base(args)
         {
         }
 
+        /// <summary>
+        /// Parse command line arguments
+        /// </summary>
+        /// <exception cref="DirectoryNotFoundException"></exception>
+        /// <exception cref="InvalidDataException"></exception>
+        /// <exception cref="NotSupportedException"></exception>
         public override void Parse()
         {
             while (myInputArguments.Count > 0)

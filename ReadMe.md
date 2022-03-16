@@ -14,7 +14,7 @@ These ETL files are usually large (multi GB) and load slow into analysis tools s
 or [PerfView](https://github.com/microsoft/perfview). The design goal of ETWAnalyzer is to make the huge ETL files small by keeping just the data that is necessary to identify performance bottlenenecks or regression issues in 
 one or a collection of thousands of ETL files. 
 
-After the extraction ETWAnalyzer has many query commands to make the data much more accessible. It can query one or many files where the output is either printed to console, 
+After extraction ETWAnalyzer has many query commands to make the data much more accessible. It can query one or many files where the output is either printed to console, 
 or written to a CSV file for further analysis. 
 
 The Json files can also be accessed via a C# interface [**IETWExtract**](ETWAnalyzer/Documentation/ProgramaticAccess.md) which enables you to write custom analyzers.
@@ -24,7 +24,7 @@ It is based on years of field experience with ETW file analysis to keep the extr
 An ETW Json file is typically a few MB while the input .etl file including PDBs is hundreds of MB. 
 
 ## Contributing
-Persons who want to contribute, miss specific data, or want to add your specific dump command? Check out [Contributing](ETWAnalyzer/Documentation/Contributing.md) to get started.
+You want to contribute, miss specific data, or want to add your specific dump command? Check out [Contributing](ETWAnalyzer/Documentation/Contributing.md) to get started.
 
 ## Data Extraction
 Data extraction is done for one or a directory of ETL files. Zipped ETL files are extracted. By default 75% of all cores are used.
