@@ -38,7 +38,7 @@ Lets look inside the top 20 methods of SerializerTests
 
 The dump command supports many additional options to add context data depending on what you are after:
 
-![alt text](Images\DumpCPU_All.png "Dump CPU All")
+![alt text](Images/DumpCPU_All.png "Dump CPU All")
 
 The CPU consumption and wait time of a method in a process are summed over all threads. This is the main reason 
 why the extracted Json data is so much smaller. For performance regression issues this data is in most cases sufficient
@@ -93,27 +93,27 @@ can be explained how profiling works. Whenever a CPU sample interrupt is fired w
 taken. If the process did fully utilize a CPU then we have got 1000 stack traces in 1s. If the process was blocked then we would get 0 stack 
 traces. 
 
-| Stack1| Stack2 | Stack3 | Stack4 | Total CPU in ms
-| ----------- | ----------- | -----------| ----------- |
-| Main() | Main()  | Main() | Main() | 4 |
-| F1() | F1() | F1() | F1() | 4 |
-| A()|  A()| B() | B()| 4|
-| C()| C()| D()| D()| 4|
-| F()| F()| | | 2|
-| F2()| | | | 1|
+| Stack1      | Stack2      | Stack3     | Stack4      | Total CPU in ms   |
+| ----------- | ----------- | -----------| ----------- | --------------    |
+| Main()      | Main()      | Main()     | Main()      | 4  |
+| F1()        | F1()        | F1()       | F1()        | 4 |
+| A()         | A()         | B()        | B()         | 4|
+| C()         | C()         | D()        | D()         | 4|
+| F()         | F()         | |          | 2           |  |
+| F2()        |             | |          | 1           |  |
 
 Summation Stacktrace
 
-| Level 0| Level 1 | Level 3 | CPU in ms
-| ----------- | ----------- |  ----------- |
-| Main() |  | | 4 |
-| F1() | | |  4 |
-| | ->A()|  | 2|
-| |  ->C()| |  2|
-| | ->F()|  | 2|
-| | | ->F2()| 1|
-| | ->B() | | 2|
-| | ->D() | |  2|
+| Level 0     | Level 1     | Level 3      | CPU in ms |
+| ----------- | ----------- |  ----------- | --------- |
+| Main()      |             |              | 4         |
+| F1()        |             |              | 4         |
+|             | ->A()       |              | 2         |
+|             |  ->C()      |              | 2         |
+|             | ->F()       |              | 2         |
+|             | | ->F2()    | 1            |           
+|             | ->B()       |              | 2         |
+|             | ->D()       |              | 2         |
 
 When you give method D a stacktag and method A then WPA assigns for the complete stack just one stacktag, where the deepest method 
 stacktag wins. As a consequence you cannot count CPU twice when multiple stacktags compete for a given stacktrace.

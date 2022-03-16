@@ -23,7 +23,7 @@ namespace ETWAnalyzer.Extract
         public int ProcessID { get; set; }
 
         /// <summary>
-        /// Process name without .exe suffix
+        /// Process name with exe suffix
         /// </summary>
         public string ProcessName { get; set; }
 
