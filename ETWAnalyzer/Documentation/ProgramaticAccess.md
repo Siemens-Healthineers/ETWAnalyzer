@@ -46,47 +46,7 @@ namespace AutoQuery
 
 This very simple application gives you already the top 10 CPU consumers of a file or a directory of files:
 
-<table class=MsoTableGrid border=1 cellspacing=0 cellpadding=0
- style='border-collapse:collapse;border:none'>
- <tr style='height:143.25pt'>
-  <td width=994 valign=top style='width:745.7pt;border:solid windowtext 1.0pt;
-  background:black;padding:0in 5.4pt 0in 5.4pt;height:143.25pt'>
-  <p class=MsoNormal style='line-height:normal'><span style='font-size:12.0pt;
-  font-family:"Lucida Console";color:#CCCCCC;background:black'>c:\Temp\Extract&gt;AutoQuery.exe
-  SlowDownload100PercentCPU_4.json<br>
-  </span><span style='font-size:12.0pt;font-family:"Lucida Console";color:#16C60C;
-  background:black'>114419 ms </span><span style='font-size:12.0pt;font-family:
-  "Lucida Console";color:#F9F1A5;background:black'>System(4)<br>
-  </span><span style='font-size:12.0pt;font-family:"Lucida Console";color:#16C60C;
-  background:black'>17350  ms </span><span style='font-size:12.0pt;font-family:
-  "Lucida Console";color:#F9F1A5;background:black'>ETWController.exe(10460)<br>
-  </span><span style='font-size:12.0pt;font-family:"Lucida Console";color:#16C60C;
-  background:black'>15954  ms </span><span style='font-size:12.0pt;font-family:
-  "Lucida Console";color:#F9F1A5;background:black'>explorer.exe(11048)<br>
-  </span><span style='font-size:12.0pt;font-family:"Lucida Console";color:#16C60C;
-  background:black'>15055  ms </span><span style='font-size:12.0pt;font-family:
-  "Lucida Console";color:#F9F1A5;background:black'>ZSATunnel.exe(21740)<br>
-  </span><span style='font-size:12.0pt;font-family:"Lucida Console";color:#16C60C;
-  background:black'>8079   ms </span><span style='font-size:12.0pt;font-family:
-  "Lucida Console";color:#F9F1A5;background:black'>dwm.exe(1496)<br>
-  </span><span style='font-size:12.0pt;font-family:"Lucida Console";color:#16C60C;
-  background:black'>6653   ms </span><span style='font-size:12.0pt;font-family:
-  "Lucida Console";color:#F9F1A5;background:black'>Taskmgr.exe(8380)<br>
-  </span><span style='font-size:12.0pt;font-family:"Lucida Console";color:#16C60C;
-  background:black'>6062   ms </span><span style='font-size:12.0pt;font-family:
-  "Lucida Console";color:#F9F1A5;background:black'>svchost.exe(2176)<br>
-  </span><span style='font-size:12.0pt;font-family:"Lucida Console";color:#16C60C;
-  background:black'>5141   ms </span><span style='font-size:12.0pt;font-family:
-  "Lucida Console";color:#F9F1A5;background:black'>devenv.exe(6864)<br>
-  </span><span style='font-size:12.0pt;font-family:"Lucida Console";color:#16C60C;
-  background:black'>4747   ms </span><span style='font-size:12.0pt;font-family:
-  "Lucida Console";color:#F9F1A5;background:black'>svchost.exe(5140)<br>
-  </span><span style='font-size:12.0pt;font-family:"Lucida Console";color:#16C60C;
-  background:black'>4573   ms </span><span style='font-size:12.0pt;font-family:
-  "Lucida Console";color:#F9F1A5;background:black'>devenv.exe(3748)</span></p>
-  </td>
- </tr>
-</table>
+![](Images/ProgramaticAccess.png "Programatic Access")
 
 Below is the class Diagram of IETWExtract
 

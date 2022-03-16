@@ -5,32 +5,7 @@ timepoints. Each rethrow, finally, and using blocks which also use a finally blo
 
 Exceptions are filtered during extraction time with filters defined in the file Configuration/ExceptionFilters.xml.
 If you do not want to apply the default filters use during extraction the option *-allExceptions*. 
-
-<table class=MsoTableGrid border=1 cellspacing=0 cellpadding=0 width=1804
- style='width:1352.65pt;border-collapse:collapse;border:none'>
- <tr style='height:79.1pt'>
-  <td width=1804 valign=top style='width:1352.65pt;border:solid windowtext 1.0pt;
-  background:black;padding:0in 5.4pt 0in 5.4pt;height:79.1pt'>
-  <p class=MsoNormal><span style='font-size:12.0pt;font-family:"Lucida Console";
-  color:#CCCCCC;background:black'>C:\&gt;EtwAnalyzer -dump Exception -fd
-  &quot;C:\Temp\Extract\CallupAdhocWarmReadingCT_3117msDEFOR09T121SRV.20200717-124447.json&quot;<br>
-  </span><span style='font-size:12.0pt;font-family:"Lucida Console";color:#61D6D6;
-  background:black'>CallupAdhocWarmReadingCT_3117msDEFOR09T121SRV.20200717-124447<br>
-  </span><span style='font-size:12.0pt;font-family:"Lucida Console";color:#B4009E;
-  background:black'>SerializerTests.exe(22416)  +- </span><span
-  style='font-size:12.0pt;font-family:"Lucida Console";color:#3A96DD;background:
-  black'>SerializerTests  -Runs 1 -N 1000000 -test combined -serializer
-  XmlSerializer<br>
-  </span><span style='font-size:12.0pt;font-family:"Lucida Console";color:#CCCCCC;
-  background:black'>        </span><span style='font-size:12.0pt;font-family:
-  "Lucida Console";color:#16C60C;background:black'>System.IO.FileNotFoundException<br>
-  </span><span style='font-size:12.0pt;font-family:"Lucida Console";color:#CCCCCC;
-  background:black'>                1    Could not load file or assembly
-  'notExistingToTriggerGACPrefetch, Version=1.0.0.0, Culture=neutral,
-  PublicKeyToken=null'. The system cannot find the file specified.</span></p>
-  </td>
- </tr>
-</table>
+![](Images/DumpException.png "Dump Exception")
 
 Exceptions are grouped by File/Process/Type/Message to get readable output. There are multiple options to filter by 
 - Process ( *-ProcessName* )
