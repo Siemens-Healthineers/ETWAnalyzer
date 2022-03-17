@@ -132,7 +132,7 @@ Perfview
 
 [MicrosoftWindowsEventTracingProcessing]:                   <../3rdParty/Microsoft.Windows.EventTracing.Processing>
 [MicrosoftWindowsEventTracingProcessing_nugetorg]:          <https://www.nuget.org/packages/Microsoft.Windows.EventTracing.Processing.All>
-[MicrosoftWindowsEventTracingProcessingLicense]:            <../3rdParty/Microsoft.Windows.EventTracing.Processing/traceprocessing-eula.rtf>
+[MicrosoftWindowsEventTracingProcessingLicense]:            <../3rdParty/Microsoft.Windows.EventTracing.Processing/traceprocessing-eula.pdf>
 [MicrosoftWindowsEventTracingProcessingLicense_akams]:      <https://aka.ms/TraceProcessingLicense>
 
 [NewtonSoftJson]:                                           <../3rdParty/NewtonSoft.Json>
