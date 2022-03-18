@@ -68,7 +68,7 @@ Now we want to get an overview what the CPU consumption was of the top 9 CPU con
 ![alt text](ETWAnalyzer/Documentation/Images/DumpCPUTop9.png "Dump CPU Top 9")
 
 The mouse was hanging while I was downloading data. At the same time the CPU was fully utilized on my quad core notebook.
-The by far highest CPU consumer was the Windows Kernel which sits in the System process. Lets pick that one and print the top 50 methods.
+The by far highest CPU consumer was the Windows Kernel which sits in the System process. Lets pick that one and print the top 30 methods.
 
 
 ![alt text](ETWAnalyzer/Documentation/Images/DumpCPUTop30Methods.png "Dump CPU Top 30 Methods")
