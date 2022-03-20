@@ -23,6 +23,7 @@ the queuing time and not the actual disk IO duration.**
 
 The data shown by WPA for the C:\ drive must match also with the extracted data:
 
+![](Images/WPA_FILEIO.png)
 ![](Images/DumpFile_Details.png)
 
 At API level of TraceProcessing there are two sizes exposed. 
