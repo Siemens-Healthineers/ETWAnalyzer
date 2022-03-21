@@ -9,7 +9,7 @@ which needs a ETW Tracing session id (0 is the default kernel session of the NT 
 You can also use in other -dump commands which support -ZeroTime one of these markers as zero timepoint to e.g. get all
 method timings relative to the e.g. the Profiling_Start marker message which indicates the start of a profiling action.
 
-To see all marker events relatvie to the start marker you can use this command
+To see all marker events relative to the start marker you can use this command
 
 > EtwAnalyzer -dump mark -timefmt s -ZeroTime marker *Profiling_Start*
 
