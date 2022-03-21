@@ -216,9 +216,12 @@ namespace ETWAnalyzer.ProcessTools
         /// <returns>Clipped string which fits onto the console line without wrapping.</returns>
         static string ClipToConsole(string text)
         {
-            if(ClipToConsoleWidth && myConsoleWidth != int.MaxValue &&  (Console.CursorLeft + LenWithTabs(text)) >= myConsoleWidth )
+            // cmd and Windows Terminal behave differently
+            // cmd wraps at one character less while Windows Terminal allows one more. We need to 
+            // clip correctly in cmd and Windows Terminal
+            if(ClipToConsoleWidth && myConsoleWidth != int.MaxValue &&  (Console.CursorLeft + LenWithTabs(text)) > myConsoleWidth )
             {
-                int len = myConsoleWidth - Console.CursorLeft - 4;
+                int len = myConsoleWidth - Console.CursorLeft - 5;
                 if (len < 0)
                 {
                     text = "";
