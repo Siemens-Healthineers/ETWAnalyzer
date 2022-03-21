@@ -19,6 +19,9 @@ namespace ETWAnalyzer.TraceProcessorHelpers
         public static string GetToolkitPath()
         {
             string folderPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+
+            // defined in Microsoft.Windows.EventTracing.ToolkitTraceProcessingEngine.GetLocalAppDataDefaultToolkitPath when a newer Nuget package contains a change
+            // it we need to update it.
             string toolkitPath = Path.Combine(folderPath, "Microsoft", "Windows.EventTracing.Processing", "1.2.1", "x64");
             return toolkitPath;
         }

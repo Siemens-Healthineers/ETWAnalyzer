@@ -128,7 +128,7 @@ namespace ETWAnalyzer
 
         /// <summary>
         /// TraceProcessor installs a MSI which will fail if we spawn child processes. Ensure in main process that the installer
-        /// has run by trying to load a dummy file.
+        /// has run.
         /// </summary>
         internal static void EnsureWPTIsInstalled()
         {
@@ -138,7 +138,9 @@ namespace ETWAnalyzer
             {
                 global.WaitOne();
 
-                // Install C:\Users\kraualaz\AppData\Local\Microsoft\Windows.EventTracing.Processing\1.1.0\x64
+                // Install to C:\Users\<User>\AppData\Local\Microsoft\Windows.EventTracing.Processing\<Version>\x64
+                // We need to install the MSI by ourself because TraceProcessing crashes when we compile to a self contained .NET 6.0 application where it
+                // cannot find its bin Directory
                 string installLocation = ETWAnalyzer.TraceProcessorHelpers.Extensions.GetToolkitPath();
                 string extractDestination = Path.ChangeExtension(installLocation, "tmp");
                 bool alreadyExits = Directory.Exists(ETWAnalyzer.TraceProcessorHelpers.Extensions.GetToolkitPath());
