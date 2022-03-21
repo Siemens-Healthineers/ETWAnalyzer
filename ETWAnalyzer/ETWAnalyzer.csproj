@@ -11,14 +11,19 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <ApplicationManifest>Properties\app.manifest</ApplicationManifest>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Authors>Alois Kraus</Authors>
-    <RepositoryUrl>https://dev.azure.com/SHS-DI-SY-ETWAnalyzer/_git/ETWAnalyzer</RepositoryUrl>
-    <PackageTags>ETW</PackageTags>
+    <Authors>Siemens Healthineers</Authors>
+    <RepositoryUrl></RepositoryUrl>
+    <PackageTags>ETW;C#;TraceProcessing;</PackageTags>
     <PackageCopyToOutput>true</PackageCopyToOutput>
     <DocumentationFile>..\bin\$(Configuration)\ETWAnalyzer.xml</DocumentationFile>
     <NoWarn>NU5100;CS0618</NoWarn>
     <DebugType>embedded</DebugType>
     <EmbedAllSources>true</EmbedAllSources>
+    <PackageLicenseFile>License</PackageLicenseFile>
+    <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
+    <PackageProjectUrl>https://github.com/Siemens-Healthineers/ETWAnalyzer</PackageProjectUrl>
+    <PackageReadmeFile>ProgramaticAccess.md</PackageReadmeFile>
+    <Version>2.2.0</Version>
   </PropertyGroup>
   <PropertyGroup Condition="'$(TargetFramework)' == 'net6.0-windows'">
     <SuppressTrimAnalysisWarnings>false</SuppressTrimAnalysisWarnings>
@@ -112,8 +117,28 @@
     <Content Include="Configuration\TestRunConfiguration.xml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <PackageCopyToOutput>true</PackageCopyToOutput>
-
     </Content>
+    <None Include="Documentation\ProgramaticAccess.md">
+      <Pack>True</Pack>
+      <PackagePath>/</PackagePath>
+    </None>
+    <None Include="Documentation\Images\ProgramaticAccess.png ">
+      <Pack>True</Pack>
+      <PackagePath>Images</PackagePath>
+    </None>
+    <None Include="Documentation\Images\IEtwExtract.png ">
+      <Pack>True</Pack>
+      <PackagePath>Images</PackagePath>
+    </None>
+    <None Include="Documentation\Images\ExtractedDataFiles.png ">
+      <Pack>True</Pack>
+      <PackagePath>Images</PackagePath>
+    </None>
+    
+    <None Include="../License">
+      <Pack>True</Pack>
+      <PackagePath>/</PackagePath>
+    </None>
     <None Update="Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
