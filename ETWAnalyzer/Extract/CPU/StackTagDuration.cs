@@ -68,7 +68,7 @@ namespace ETWAnalyzer.Extract
         /// Time when this stacktag did occur the first time in this process
         /// This is calculated of the timestamps of CPU sampling and Context Switchin times
         /// </summary>
-        public DateTimeOffset FirstOccurence { get; set; } = DateTime.MaxValue;
+        public DateTimeOffset FirstOccurence { get; set; } = DateTimeOffset.MaxValue;
 
 
         /// <summary>
