@@ -206,7 +206,7 @@
 	<Tag Name="Antivirus - Palo Alto Networks - FSFilter Activity Monitor" Priority="1">
 		<Entrypoint Module="cyvrlpc.sys" Method="*"/>
 	</Tag>
-	<Tag Name="Antirvus - ESET NOD32">
+	<Tag Name="Antivirus - ESET NOD32">
 		<Tag Name="FSFilter">
 			<Entrypoint Module="ehdrv.sys" Method="*"/>
 		</Tag>
