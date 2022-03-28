@@ -303,11 +303,11 @@ namespace ETWAnalyzer.EventDump
 
                 if (ShowDetails)
                 {
-                    ColorConsole.WriteEmbeddedColorLine($"[red]r {fileReadKB,12} KB {fileReadTime,10} s {totalFileReadCount,6}[/red] [magenta]w {fileWriteKB,12} KB {fileWriteTimeS,10} s {totalFileWriteCount,6} [/magenta] [yellow] O+C {fileOpenCloseTimeS,10} s Open: {totalFileOpenCount,6} Close: {totalFileCloseCount,6} SetSecurity: {totalFileSetSecurityCount,6} Del: {totalFileDeleteCount,5}, Ren: {totalFileRenameCount,5}[/yellow] File Total with {totalFileCount} accessed file. Process Count: {processes.Count}");
+                    ColorConsole.WriteEmbeddedColorLine($"[red]r {fileReadKB,12} KB {fileReadTime,10} s {totalFileReadCount,6}[/red] [magenta]w {fileWriteKB,12} KB {fileWriteTimeS,10} s {totalFileWriteCount,6} [/magenta] [yellow] O+C {fileOpenCloseTimeS,10} s Open: {totalFileOpenCount,6} Close: {totalFileCloseCount,6} SetSecurity: {totalFileSetSecurityCount,6} Del: {totalFileDeleteCount,5}, Ren: {totalFileRenameCount,5}[/yellow] File/s Total with {totalFileCount} accessed file/s. Process Count: {processes.Count}");
                 }
                 else
                 {
-                    ColorConsole.WriteEmbeddedColorLine($"[red]r {fileReadKB,12} KB {fileReadTime,10} s {totalFileReadCount,6}[/red] [magenta]w {fileWriteKB,12} KB {fileWriteTimeS,10} s {totalFileWriteCount,6} [/magenta] [yellow] O+C {fileOpenCloseTimeS,10} s Open: {totalFileOpenCount,6} Close: {totalFileCloseCount,6}[/yellow] File Total with {totalFileCount} accessed file. Process Count: {processes.Count}");
+                    ColorConsole.WriteEmbeddedColorLine($"[red]r {fileReadKB,12} KB {fileReadTime,10} s {totalFileReadCount,6}[/red] [magenta]w {fileWriteKB,12} KB {fileWriteTimeS,10} s {totalFileWriteCount,6} [/magenta] [yellow] O+C {fileOpenCloseTimeS,10} s Open: {totalFileOpenCount,6} Close: {totalFileCloseCount,6}[/yellow] File/s Total with {totalFileCount} accessed file/s. Process Count: {processes.Count}");
                 }
             }
         }
