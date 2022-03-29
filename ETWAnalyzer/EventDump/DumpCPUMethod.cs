@@ -233,7 +233,10 @@ namespace ETWAnalyzer.EventDump
             }
 
             List<MatchData> printed = matches;
-            if (Merge || !IsProcessTotalMode)
+
+            // Total matches are printed while files are loaded 
+            // the rest will be shown/printed to CSV file here
+            if (Merge || !IsProcessTotalMode || IsCSVEnabled)
             {
                 printed = PrintMatches(matches);
             }
@@ -431,7 +434,7 @@ namespace ETWAnalyzer.EventDump
                     CpuString = $" [green]CPU {cpuTotal:N0} ms[/green] ";
                     CpuString = $"{CpuString,10}";
                 }
-                ColorConsole.WriteEmbeddedColorLine($"{file.PerformedAt,-22} {CpuString}{Path.GetFileNameWithoutExtension(file.JsonExtractFileWhenPresent)}");
+                ColorConsole.WriteEmbeddedColorLine($"{file.PerformedAt,-22} {CpuString}{Path.GetFileNameWithoutExtension(file.JsonExtractFileWhenPresent)} {file.Extract.MainModuleVersion}");
             }
 
             // When printing data with -topN dd we sort by CPU ascending because in a shell console window we do not want
