@@ -259,6 +259,7 @@ namespace ETWAnalyzer.Extractors
             {
                 if (!pdb.IsLoaded)
                 {
+                    Logger.Info($"Pdb load failure: {pdb.Id} {pdb.Path}");
                     string notloadedPDBFileName = Path.GetFileName(pdb.Path).ToLowerInvariant();
                     if (requiredPdbs.Contains(notloadedPDBFileName))
                     {
