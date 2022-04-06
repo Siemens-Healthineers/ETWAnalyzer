@@ -19,7 +19,7 @@ or written to a CSV file for further analysis.
 
 The Json files can also be accessed via a C# interface [**IETWExtract**](ETWAnalyzer/Documentation/ProgramaticAccess.md) which enables you to write custom analyzers.
 
-Json files are much faster to query than the input ETL files without any slow symbol server lookups.
+Json files are much faster to query than the input ETL files without slow symbol server lookups.
 It is based on years of field experience with ETW file analysis to keep the extracted Json file size as small as possible while maximizing the insights you can get of the extracted files.
 An ETW Json file is typically a few MB while the input .etl file including PDBs is hundreds of MB. 
 
@@ -60,7 +60,7 @@ The first query would be to check on which machine with how much memory, CPU and
 
 ![alt text](ETWAnalyzer/Documentation/Images/DumpStatsCommand.png "Dump Stats")
 
-If you have a directory of files you can limit the output to specific properties with e.g. -Properties MemorySizeMB,OSName,NumberOfProcessors,CPUSpeedMHz,CPUVendor,CPUName to
+If you have a directory of files you can limit the output to specific properties with e.g. *-Properties MemorySizeMB,OSName,NumberOfProcessors,CPUSpeedMHz,CPUVendor,CPUName* to
 get a quick overview of the machine specs of a bunch of extracted ETL files. 
 
 Now we want to get an overview what the CPU consumption was of the top 9 CPU consumers of that file
@@ -78,7 +78,7 @@ for CPU and Wait summed accross all threads. CPU timing is extracted from CPU sa
 method was moved off a CPU due to a blocking OS call. That is the reason why Main or other entry point methods for a thread have the highest CPU
 consumption but are not the performance bottleneck. The actual issue is in one of the methods which consume CPU which is not directly visible
 in the extracted data.
-To get an overview for a new issues one turns over to WPA to see time dependencies which can only visually be analyzed.
+To get an overview for a new issue one turns over to WPA to see time dependencies which can only visually be analyzed.
 
 Once the issue is understood you can create [WPA stacktags](https://docs.microsoft.com/en-us/windows-hardware/test/wpt/stack-tags) of past issues to see if the same issue 
 in the other file also appears without the need to drill deep into the call stacks. In this case it is obvious that we have again a Firewall problem where each network packet 
