@@ -6,6 +6,7 @@ using ETWAnalyzer.Commands;
 using ETWAnalyzer.Extract;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 
@@ -139,6 +140,7 @@ abstract class ArgParser : ICommand
         myInputArguments = new Queue<string>(args);
     }
 
+
     /// <summary>
     /// Get next command line argument or null if no more are there but the queue state remains.
     /// </summary>
@@ -149,7 +151,7 @@ abstract class ArgParser : ICommand
         result = myInputArguments.Count > 0 ? myInputArguments.Peek() : null;
 
         // negative numbers are not treated as command line switches
-        if (result == null || (result.StartsWith("-", StringComparison.InvariantCulture) && result.Length > 1 && !result.Skip(1).All(Char.IsDigit) ) )
+        if (result == null || (result.StartsWith("-", StringComparison.InvariantCulture) && result.Length > 1 && !result.Skip(1).All(IsNumberChar) ) )
         {
             return true;
         }
@@ -285,5 +287,15 @@ abstract class ArgParser : ICommand
     {
         TEnum[] values = ((TEnum[])Enum.GetValues(typeof(TEnum))).Where(x => !(ignored ?? Array.Empty<TEnum>()).Contains(x)).Distinct().ToArray();
         return String.Join(" ", values);
+    }
+
+    /// <summary>
+    /// Return true if char is number or current culture decimal separator or number group separator
+    /// </summary>
+    /// <param name="digit"></param>
+    /// <returns></returns>
+    static bool IsNumberChar(char digit)
+    {
+        return Char.IsDigit(digit) || CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator.Contains(digit) || CultureInfo.CurrentCulture.NumberFormat.NumberGroupSeparator.Contains(digit);
     }
 }
