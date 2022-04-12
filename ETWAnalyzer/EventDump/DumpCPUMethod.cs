@@ -162,6 +162,21 @@ namespace ETWAnalyzer.EventDump
         /// </summary>
         uint myMaxCPUSortData;
 
+        /// <summary>
+        /// Flag to display total CPU header once
+        /// </summary>
+        bool myCPUTotalHeaderShown = false;
+
+        /// <summary>
+        /// Total CPU Header CPU column width
+        /// </summary>
+        const int CPUTotal_CPUColumnWidth = 9; 
+
+        /// <summary>
+        /// Total CPU Header Process Name column width
+        /// </summary>
+        const int CPUTotal_ProcessNameWidth = -20;
+
 
         public class MatchData
         {
@@ -425,6 +440,8 @@ namespace ETWAnalyzer.EventDump
 
             List< KeyValuePair<ProcessKey, uint>> filtered = file.Extract.CPU.PerProcessCPUConsumptionInMs.Where(ProcessFilter).SortAscendingGetTopNLast(x => x.Value, null, TopN).ToList();
 
+            PrintTotalCPUHeaderOnce();
+
             if (!Merge)
             {
                 string CpuString = "";
@@ -465,17 +482,34 @@ namespace ETWAnalyzer.EventDump
             }
         }
 
+        void PrintTotalCPUHeaderOnce()
+        {
+            if (!IsCSVEnabled)
+            {
+                string cpuHeaderName = "CPU";
+                string processHeaderName = "Process Name";
+
+                if (myCPUTotalHeaderShown == false)
+                {
+                    ColorConsole.WriteEmbeddedColorLine($"\t[Green]{cpuHeaderName.WithWidth(CPUTotal_CPUColumnWidth)} ms[/Green] [yellow]{processHeaderName.WithWidth(CPUTotal_ProcessNameWidth)}[/yellow]");
+                    myCPUTotalHeaderShown = true;
+                }
+            }
+        }
+
         void PrintCPUTotal(long cpu, ETWProcess process, string  sourceFile, DateTimeOffset sessionStart)
         {
             string fileName = this.Merge ? $" {sourceFile}" : "";
 
+            string cpuStr = cpu.ToString("N0");
+
             if (NoCmdLine)
             {
-                ColorConsole.WriteEmbeddedColorLine($"\t[Green]{cpu,-7} ms[/Green] [yellow]{process.GetProcessWithId(UsePrettyProcessName),-20}{GetProcessTags(process, sessionStart)}[/yellow]{fileName}");
+                ColorConsole.WriteEmbeddedColorLine($"\t[Green]{cpuStr,CPUTotal_CPUColumnWidth} ms[/Green] [yellow]{process.GetProcessWithId(UsePrettyProcessName),CPUTotal_ProcessNameWidth}{GetProcessTags(process, sessionStart)}[/yellow]{fileName}");
             }
             else
             {
-                ColorConsole.WriteEmbeddedColorLine($"\t[Green]{cpu,-7} ms[/Green] [yellow]{process.GetProcessWithId(UsePrettyProcessName),-20}{GetProcessTags(process, sessionStart)}[/yellow] {process.CommandLineNoExe}", ConsoleColor.DarkCyan, true);
+                ColorConsole.WriteEmbeddedColorLine($"\t[Green]{cpuStr,CPUTotal_CPUColumnWidth} ms[/Green] [yellow]{process.GetProcessWithId(UsePrettyProcessName),CPUTotal_ProcessNameWidth}{GetProcessTags(process, sessionStart)}[/yellow] {process.CommandLineNoExe}", ConsoleColor.DarkCyan, true);
                 Console.WriteLine($" {fileName}");
             }
         }
@@ -727,6 +761,7 @@ namespace ETWAnalyzer.EventDump
             }
             else
             {
+                PrintTotalCPUHeaderOnce();
                 PrintProcessTotalMatches(matches);
             }
         }
@@ -848,7 +883,7 @@ namespace ETWAnalyzer.EventDump
         }
 
         /// <summary>
-        /// 
+        ///  
         /// </summary>
         /// <param name="cache"></param>
         /// <param name="filter"></param>
