@@ -53,12 +53,13 @@ are normally not relevant for performance regression issues to keep the file siz
 There is extracted example data located at [Test Data](https://github.com/Siemens-Healthineers/ETWAnalyzer/blob/main/ETWAnalyzer_uTest/TestData/CallupAdhocWarmReadingCT_3117msFO9DE01T0162PC.20200717-124447.json) which you can query at your own. Can find the performance bug?
 Download the data to a directory and try
 - *cd DownloadDir*
-- *ETWAnalyzer -dump Stats -Properties SessionDurations*
 - *ETWAnalyzer -dump CPU -topN 5*
 - *ETWAnalyzer -dump CPU -topN 1 -methods* *
 - *ETWAnalyzer -dump CPU -topN 1 -methods* * *-sortby stackdepth -MinMaxCPUMs 1000*
 - *ETWAnalyzer -dump CPU -topN 1 -methods* * *-sortby stackdepth -MinMaxCPUMs 1000 -includedll*
 - *ETWAnalyzer -dump CPU -topN 1 -methods* * *-sortby stackdepth -MinMaxCPUMs 1000 -includedll -threadcount*
+- *ETWAnalyzer -dump CPU -topN 1 -methods* * *-sortby stackdepth -MinMaxCPUMs 1000 -FirstLastDuration s s*
+- *ETWAnalyzer -dump Stats -Properties SessionDurations*
 
 This shows a Microsoft Bug at work while some serialization performance test was executed.
 
