@@ -58,6 +58,7 @@ Download the data to a directory and try
 - *ETWAnalyzer -dump CPU -topN 1 -methods* *
 - *ETWAnalyzer -dump CPU -topN 1 -methods* * *-sortby stackdepth -MinMaxCPUMs 1000*
 - *ETWAnalyzer -dump CPU -topN 1 -methods* * *-sortby stackdepth -MinMaxCPUMs 1000 -includedll*
+- *ETWAnalyzer -dump CPU -topN 1 -methods* * *-sortby stackdepth -MinMaxCPUMs 1000 -includedll -threadcount*
 
 This shows a Microsoft Bug at work while some serialization performance test was executed.
 
