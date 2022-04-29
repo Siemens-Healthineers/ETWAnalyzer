@@ -135,7 +135,7 @@ namespace ETWAnalyzer.Extractors
             }
             Logger.Info(msg);
 
-            ExecResult res = cmd.Execute();
+            ExecResult res = cmd.Execute(ProcessPriorityClass.BelowNormal);
 
             msg = $"Command output: {res.AllOutput}";
             if( Program.DebugOutput )

@@ -518,7 +518,7 @@ namespace ETWAnalyzer.Commands
             var command = new ProcessCommand(ConfigFiles.ETWAnalyzerExe, subCommand);
             try
             {
-                ExecResult res = command.Execute();
+                ExecResult res = command.Execute(ProcessPriorityClass.BelowNormal);
                 Console.WriteLine(res.AllOutput.TrimEnd(Environment.NewLine.ToCharArray()));
                 // Exception is already caught in command.Execute Method, so it is necessary to check if file really exists - Program reaches this point
                 fileToAnalyze.JsonExtractFileWhenPresent = null; // force to reevaluate search 

@@ -165,7 +165,7 @@ namespace ETWAnalyzer
             
             var command = new ProcessCommand(SevenZipExe, $"x \"{zipFile}\" -o\"{outputFolder}\" -y -x!{SharedLogFile}");
                         
-            ExecResult res = command.Execute();
+            ExecResult res = command.Execute(ProcessPriorityClass.BelowNormal);
 
             ZipReturnCode code = (ZipReturnCode) res.ReturnCode;
 

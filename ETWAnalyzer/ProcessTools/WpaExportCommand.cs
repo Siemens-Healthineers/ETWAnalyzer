@@ -129,7 +129,7 @@ namespace ETWAnalyzer
                 }
 
                 var command = new ProcessCommand(WpaExporterExe, $" -profile {WpaProfile} -outputfolder {OutputFolder} -i {InputETLFile} {prefixArg} {symbolsArg}");
-                ExecResult res = command.Execute();
+                ExecResult res = command.Execute(ProcessPriorityClass.BelowNormal);
                 if (res.ReturnCode != 0 ||                                         // return code == 0 means no error from the exporter point of view
                     res.AllOutput.Contains("No data to export was specified") ||   // something was missing 
                     res.AllOutput.Contains("-INPUT FILE OPTIONS-")                 // when help is printed something did not work

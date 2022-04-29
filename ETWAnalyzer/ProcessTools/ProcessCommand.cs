@@ -49,6 +49,17 @@ namespace ETWAnalyzer.Helper
         /// <returns>ExecResult which contains the stdout,stderr, return code and the process instance</returns>
         /// <exception cref="InvalidOperationException">When process could not be started.</exception>
         public ExecResult Execute()
+        {
+            return Execute(ProcessPriorityClass.Normal);
+        }
+
+        /// <summary>
+        /// Start process with given arguments
+        /// </summary>
+        /// <param name="priority">Process Priority</param>
+        /// <returns>ExecResult which contains the stdout,stderr, return code and the process instance</returns>
+        /// <exception cref="InvalidOperationException">When process could not be started.</exception>
+        public ExecResult Execute(ProcessPriorityClass priority)
         { 
             var startInfo = new ProcessStartInfo(myExecutable, myArgs)
             {
@@ -61,6 +72,7 @@ namespace ETWAnalyzer.Helper
             {
                 CtrlCHandler.Instance.Register(CtlrCPressed);
                 myProcess = Process.Start(startInfo);
+                myProcess.PriorityClass = priority;
                 Logger.Info($"Start Process: {startInfo.FileName} {startInfo.Arguments}");
                 // Read stderror from another thread because otherwise we would run into deadlock situations
                 // where the writing process blocks because we do not read the data. The internal buffer
