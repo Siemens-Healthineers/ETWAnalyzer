@@ -25,10 +25,10 @@ namespace TAU.Toolkit.Diagnostics.Profiling.Simplified
         /// </summary>
         public string FileName { private set; get; }
 
-        
+
         /// <summary/>
         public string TestCaseName { private set; get; }
-        
+
         /// <summary/>
         public int TestDurationinMS { private set; get; }
 
@@ -36,10 +36,10 @@ namespace TAU.Toolkit.Diagnostics.Profiling.Simplified
         public string MachineWhereResultsAreGeneratedOn { private set; get; }
         /// <summary/>
         public GeneratedAt GeneratedAt { private set; get; }
-        
+
         /// <summary/>
         public TestStatus TestStatus { private set; get; }
-        
+
         /// <summary/>
         public DateTime ProfilingStoppedTime { private set; get; }
 
@@ -74,55 +74,100 @@ namespace TAU.Toolkit.Diagnostics.Profiling.Simplified
             try
             {
                 var noext = Path.GetFileNameWithoutExtension(filename);
-                var fragments = noext.Split(new string[] { "_" }, 6, StringSplitOptions.RemoveEmptyEntries);
-                if (fragments.Length != 6)
+                Queue<string> fragments = new Queue<string>(noext.Split(new string[] { "_" }, StringSplitOptions.RemoveEmptyEntries));
+                if (fragments.Count > 0)
                 {
-                    success = false;
-                    goto exit;
+                    outputFileName.TestCaseName = fragments.Dequeue();
                 }
-                outputFileName.TestCaseName = fragments[0];
 
-                success = int.TryParse(fragments[1].Replace("ms", ""), out int ms);
-                if( !success )
+                if (fragments.Count > 0)
                 {
-                    goto exit;
+                    string timeStr = fragments.Dequeue().Replace("ms", "");
+                    success = int.TryParse(timeStr.Replace("ms", ""), out int ms);
+                    if (!success)
+                    {
+                        goto exit;
+                    }
+                    outputFileName.TestDurationinMS = ms;
                 }
-                outputFileName.TestDurationinMS = ms;
-
-                outputFileName.MachineWhereResultsAreGeneratedOn = fragments[2];
-                
-                success = Enum.TryParse<GeneratedAt>(fragments[3], out GeneratedAt genAt);
-                if (!success)
+                else
                 {
                     goto exit;
                 }
 
-                outputFileName.GeneratedAt = genAt;
-                
-                success = Enum.TryParse<TestStatus>(fragments[4].Replace("TestStatus-", ""), out TestStatus testStatus);
-                if (!success)
+
+                if (fragments.Count > 0)
+                {
+                    while (Enum.TryParse<GeneratedAt>(fragments.Peek(), out GeneratedAt _) == false)
+                    {
+                        outputFileName.MachineWhereResultsAreGeneratedOn += outputFileName.MachineWhereResultsAreGeneratedOn == null ? fragments.Dequeue() : "_" + fragments.Dequeue();
+                    }
+                }
+                else
                 {
                     goto exit;
                 }
 
-                outputFileName.TestStatus = testStatus;
 
-                success = DateTime.TryParseExact(fragments[5], @"yyyyMMdd-HHmmss", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime stopTime);
-                if (!success)
+                if (fragments.Count > 0)
+                {
+                    success = Enum.TryParse<GeneratedAt>(fragments.Dequeue(), out GeneratedAt genAt);
+                    if (!success)
+                    {
+                        goto exit;
+                    }
+                    outputFileName.GeneratedAt = genAt;
+                }
+                else
                 {
                     goto exit;
                 }
 
-                outputFileName.ProfilingStoppedTime = stopTime;
+
+                if (fragments.Count > 0)
+                {
+                    success = Enum.TryParse<TestStatus>(fragments.Dequeue().Replace("TestStatus-", ""), out TestStatus testStatus);
+                    if (!success)
+                    {
+                        goto exit;
+                    }
+
+                    outputFileName.TestStatus = testStatus;
+                }
+                else
+                {
+                    goto exit;
+                }
+
+                if (fragments.Count > 0)
+                {
+                    success = DateTime.TryParseExact(fragments.Dequeue(), @"yyyyMMdd-HHmmss", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime stopTime);
+                    if (!success)
+                    {
+                        goto exit;
+                    }
+                    outputFileName.ProfilingStoppedTime = stopTime;
+                }
+                else
+                {
+                    goto exit;
+                }
+
+
+                if (fragments.Count > 0) // We should not have any leftovers
+                {
+                    goto exit;
+                }
+
                 return outputFileName;
             }
-            catch(Exception)
+            catch (Exception)
             {
                 //   Console.WriteLine($"could not parse the filename due to the following exception {e}");
                 success = false;
             }
 
-exit:
+        exit:
             return success ? outputFileName : null;
         }
 
