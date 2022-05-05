@@ -62,7 +62,7 @@ namespace ETWAnalyzer.Commands
         bool myDebugOutputToConsole;
 
         /// <summary>
-        /// If true all threads separately printed to json. Otherwise all threds are merged
+        /// If true all threads separately printed to json. Otherwise all threads are merged
         /// </summary>
         bool myPerThreadFlag;
 
@@ -188,7 +188,7 @@ namespace ETWAnalyzer.Commands
             string processName = myPid == AllProcessesPid ? "_AllProcesses" : $"_{ process?.Name}_{ myPid}";
             string outFile = Path.Combine(Path.GetDirectoryName(myEtlFileName), Path.GetFileNameWithoutExtension(myEtlFileName) + $"{processName}.speedscope");
 
-            SpeedScopeWriter.WriteStackViewAsJson(stackSource, outFile, myPerThreadFlag);
+            SpeedScopeWriter.WriteStackViewAsJson(stackSource, outFile, !myPerThreadFlag);
             ColorConsole.WriteEmbeddedColorLine($"Converted File: [green]{Path.GetFullPath(outFile)}[/green]");
         }
 
