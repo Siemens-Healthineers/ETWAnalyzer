@@ -92,6 +92,7 @@ namespace TAU.Toolkit.Diagnostics.Profiling.Simplified
                 }
                 else
                 {
+                    success = false;
                     goto exit;
                 }
 
@@ -105,6 +106,7 @@ namespace TAU.Toolkit.Diagnostics.Profiling.Simplified
                 }
                 else
                 {
+                    success = false;
                     goto exit;
                 }
 
@@ -120,6 +122,7 @@ namespace TAU.Toolkit.Diagnostics.Profiling.Simplified
                 }
                 else
                 {
+                    success = false;
                     goto exit;
                 }
 
@@ -136,6 +139,7 @@ namespace TAU.Toolkit.Diagnostics.Profiling.Simplified
                 }
                 else
                 {
+                    success = false;
                     goto exit;
                 }
 
@@ -150,12 +154,14 @@ namespace TAU.Toolkit.Diagnostics.Profiling.Simplified
                 }
                 else
                 {
+                    success = false;
                     goto exit;
                 }
 
 
                 if (fragments.Count > 0) // We should not have any leftovers
                 {
+                    success = false;
                     goto exit;
                 }
 
