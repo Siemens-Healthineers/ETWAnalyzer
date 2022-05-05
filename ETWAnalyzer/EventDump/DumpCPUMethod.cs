@@ -86,7 +86,7 @@ namespace ETWAnalyzer.EventDump
         public DumpCommand.SortOrders SortOrder { get; internal set; }
 
         /// <summary>
-        /// Merge CPU consumption of all processes whith the same pid accross multiple ETL files which can e.g. 
+        /// Merge CPU consumption of all processes with the same pid accross multiple ETL files which can e.g. 
         /// originate from a long term tracing run.
         /// </summary>
         public bool Merge { get; internal set; }
@@ -807,9 +807,9 @@ namespace ETWAnalyzer.EventDump
             {
                 SortOrders.Wait => data.WaitMs,
                 SortOrders.CPU => data.CPUMs,
-                // We normalize CPU consumption with the stack depth. The depth starts from 0 where the the actual method which consumes CPU in the sample
-                // By reduced the CPU the further it is upwards in the stack we get an approximate ordering of the methods which consume most CPU
-                // This can also be viewed as a special kind of distance metric in the 2D-space of Time vs StackDepth
+                // We normalize CPU consumption with the stack depth. The depth starts from 0 which is the method which consumes CPU.
+                // Upwards in the stack we must reduce the weight of CPU to get an approximate ordering of the methods which consume most CPU.
+                // This can be viewed as a special kind of distance metric in the 2D-space of Time vs StackDepth
                 SortOrders.StackDepth => data.CPUMs > myMaxCPUSortData ? data.CPUMs / Math.Exp(data.StackDepth) : data.CPUMs / Math.Exp(data.StackDepth+10), 
                 SortOrders.First => data.FirstCallTime.Ticks,
                 SortOrders.Last => data.LastCallTime.Ticks,
