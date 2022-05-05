@@ -69,6 +69,7 @@ namespace TAU.Toolkit.Diagnostics.Profiling.Simplified
             {
                 FileName = filename
             };
+
             bool success = true;
 
             try
@@ -86,14 +87,13 @@ namespace TAU.Toolkit.Diagnostics.Profiling.Simplified
                     success = int.TryParse(timeStr.Replace("ms", ""), out int ms);
                     if (!success)
                     {
-                        goto exit;
+                        goto failure;
                     }
                     outputFileName.TestDurationinMS = ms;
                 }
                 else
                 {
-                    success = false;
-                    goto exit;
+                    goto failure;
                 }
 
 
@@ -106,8 +106,7 @@ namespace TAU.Toolkit.Diagnostics.Profiling.Simplified
                 }
                 else
                 {
-                    success = false;
-                    goto exit;
+                    goto failure;
                 }
 
 
@@ -116,14 +115,13 @@ namespace TAU.Toolkit.Diagnostics.Profiling.Simplified
                     success = Enum.TryParse<GeneratedAt>(fragments.Dequeue(), out GeneratedAt genAt);
                     if (!success)
                     {
-                        goto exit;
+                        goto failure;
                     }
                     outputFileName.GeneratedAt = genAt;
                 }
                 else
                 {
-                    success = false;
-                    goto exit;
+                    goto failure;
                 }
 
 
@@ -132,15 +130,14 @@ namespace TAU.Toolkit.Diagnostics.Profiling.Simplified
                     success = Enum.TryParse<TestStatus>(fragments.Dequeue().Replace("TestStatus-", ""), out TestStatus testStatus);
                     if (!success)
                     {
-                        goto exit;
+                        goto failure;
                     }
 
                     outputFileName.TestStatus = testStatus;
                 }
                 else
                 {
-                    success = false;
-                    goto exit;
+                    goto failure;
                 }
 
                 if (fragments.Count > 0)
@@ -148,21 +145,19 @@ namespace TAU.Toolkit.Diagnostics.Profiling.Simplified
                     success = DateTime.TryParseExact(fragments.Dequeue(), @"yyyyMMdd-HHmmss", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime stopTime);
                     if (!success)
                     {
-                        goto exit;
+                        goto failure;
                     }
                     outputFileName.ProfilingStoppedTime = stopTime;
                 }
                 else
                 {
-                    success = false;
-                    goto exit;
+                    goto failure;
                 }
 
 
                 if (fragments.Count > 0) // We should not have any leftovers
                 {
-                    success = false;
-                    goto exit;
+                    goto failure;
                 }
 
                 return outputFileName;
@@ -170,11 +165,10 @@ namespace TAU.Toolkit.Diagnostics.Profiling.Simplified
             catch (Exception)
             {
                 //   Console.WriteLine($"could not parse the filename due to the following exception {e}");
-                success = false;
             }
 
-        exit:
-            return success ? outputFileName : null;
+        failure:
+            return null;
         }
 
 
