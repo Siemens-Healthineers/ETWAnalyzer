@@ -21,8 +21,8 @@ namespace ETWAnalyzer.EventDump
         {
             List<T> lret = new();
 
-            string ext = Path.GetExtension(FileOrDirectory);
-            string etlFile = FileOrDirectory;
+            string ext = Path.GetExtension(FileOrDirectoryQueries.FirstOrDefault() ?? "");
+            string etlFile = FileOrDirectoryQueries.FirstOrDefault();
             if (ext == TestRun.SevenZExtension)
             {
                 etlFile = ExtractEtlInplace(etlFile);

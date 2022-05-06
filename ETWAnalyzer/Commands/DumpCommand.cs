@@ -90,6 +90,8 @@ namespace ETWAnalyzer.Commands
         "                         Print for a directory which contains automated profiling data test execution counts. You can also download data to a local directory once you know which" + Environment.NewLine +
         "                         data you need by selecting a testrun by index (-TestRunIndex) and count (-TestRunCount default is all until end), .. -TestCase ..." + Environment.NewLine +
         "                         -recursive                 Search below all subdirectories for test runs" + Environment.NewLine +
+       @"                         -filedir/fd xxx            Can occur multiple times. xxx is an extracted json file name, directory, or a file query like C:\temp\*test*.json;!*success* which matches all files with test in C:\temp excluding success files" + Environment.NewLine + 
+       @"                                                    You can query multiple directories. E.g. -fd c:\temp\1 -fd c:\temp\2"+Environment.NewLine + 
         "                         The following filters are only applicable to profiling data which has a fixed file naming convention" + Environment.NewLine +
         "                            -TestRunIndex dd           Select only data from a specific test run by index. To get the index value use -dump TestRun -filedir xxxx " + Environment.NewLine +
         "                            -TestRunCount dd           Select from a given TestRunIndex the next dd TestRuns. " + Environment.NewLine +
@@ -462,7 +464,7 @@ namespace ETWAnalyzer.Commands
 
         public Func<string,bool> ProcessNameFilter { get; private set; } = _ => true;
         public Func<string, bool> CmdLineFilter { get; private set; } = _ => true;
-        public string FileOrDirectory { get; private set; } = "."; // Default is current directory
+        public List<string> FileOrDirectoryQueries { get; private set; } = new List<string>();
         public string CSVFile { get; private set; }
         public bool NoCSVSeparator { get; internal set; }
         public Func<string,bool> TestCaseFilter { get; private set; } = _ => true;
@@ -634,12 +636,9 @@ namespace ETWAnalyzer.Commands
                     case RecursiveArg:
                         mySearchOption = SearchOption.AllDirectories;
                         break;
-                    case "-dir":
-                        FileOrDirectory = GetNextNonArg("-dir");
-                        break;
                     case "-filedir":
                     case "-fd":
-                        FileOrDirectory = GetNextNonArg("-filedir");
+                        FileOrDirectoryQueries.Add(GetNextNonArg("-filedir")); // we support multiple occurrences 
                         break;
                     case "-etl":
                         myEtlFileOrZip = GetNextNonArg("-etl");
@@ -1056,6 +1055,11 @@ namespace ETWAnalyzer.Commands
                 }
             }
 
+            if( FileOrDirectoryQueries.Count == 0 )
+            {
+                FileOrDirectoryQueries.Add("."); // If nothing is specified use current directory
+            }
+
             DumpBase dumper = null;
 
             try
@@ -1066,7 +1070,7 @@ namespace ETWAnalyzer.Commands
                         dumper = new DumpStats()
                         {
                             ETLFile = decompressedETL,
-                            FileOrDirectory = FileOrDirectory,
+                            FileOrDirectoryQueries = FileOrDirectoryQueries,
                             Recursive = mySearchOption,
                             TestsPerRun = TestsPerRun,
                             SkipNTests = SkipNTests,
@@ -1084,10 +1088,10 @@ namespace ETWAnalyzer.Commands
                         };
                         break;
                     case DumpCommands.Versions:
-                        ThrowIfFileOrDirectoryIsInvalid(FileOrDirectory);
+                        ThrowIfFileOrDirectoryIsInvalid(FileOrDirectoryQueries);
                         dumper = new DumpModuleVersions()
                         {
-                            FileOrDirectory = FileOrDirectory,
+                            FileOrDirectoryQueries = FileOrDirectoryQueries,
                             Recursive = mySearchOption,
                             TestsPerRun = TestsPerRun,
                             SkipNTests = SkipNTests,
@@ -1108,11 +1112,11 @@ namespace ETWAnalyzer.Commands
                         };
                         break;
                     case DumpCommands.Process:
-                        ThrowIfFileOrDirectoryIsInvalid(FileOrDirectory);
+                        ThrowIfFileOrDirectoryIsInvalid(FileOrDirectoryQueries);
 
                         dumper = new DumpProcesses
                         {
-                            FileOrDirectory = FileOrDirectory,
+                            FileOrDirectoryQueries = FileOrDirectoryQueries,
                             Recursive = mySearchOption,
                             TestsPerRun = TestsPerRun,
                             SkipNTests = SkipNTests,
@@ -1142,10 +1146,10 @@ namespace ETWAnalyzer.Commands
                         };
                         break;
                     case DumpCommands.CPU:
-                        ThrowIfFileOrDirectoryIsInvalid(FileOrDirectory);
+                        ThrowIfFileOrDirectoryIsInvalid(FileOrDirectoryQueries);
                         dumper = new DumpCPUMethod
                         {
-                            FileOrDirectory = FileOrDirectory,
+                            FileOrDirectoryQueries = FileOrDirectoryQueries,
                             Recursive = mySearchOption,
                             TestsPerRun = TestsPerRun,
                             SkipNTests = SkipNTests,
@@ -1190,10 +1194,10 @@ namespace ETWAnalyzer.Commands
                         };
                         break;
                     case DumpCommands.Disk:
-                        ThrowIfFileOrDirectoryIsInvalid(FileOrDirectory);
+                        ThrowIfFileOrDirectoryIsInvalid(FileOrDirectoryQueries);
                         dumper = new DumpDisk
                         {
-                            FileOrDirectory = FileOrDirectory,
+                            FileOrDirectoryQueries = FileOrDirectoryQueries,
                             Recursive = mySearchOption,
                             TestsPerRun = TestsPerRun,
                             SkipNTests = SkipNTests,
@@ -1221,10 +1225,10 @@ namespace ETWAnalyzer.Commands
                         };
                         break;
                     case DumpCommands.File:
-                        ThrowIfFileOrDirectoryIsInvalid(FileOrDirectory);
+                        ThrowIfFileOrDirectoryIsInvalid(FileOrDirectoryQueries);
                         dumper = new DumpFile
                         {
-                            FileOrDirectory = FileOrDirectory,
+                            FileOrDirectoryQueries = FileOrDirectoryQueries,
                             Recursive = mySearchOption,
                             TestsPerRun = TestsPerRun,
                             SkipNTests = SkipNTests,
@@ -1257,10 +1261,10 @@ namespace ETWAnalyzer.Commands
                         };
                         break;
                     case DumpCommands.Exceptions:
-                        ThrowIfFileOrDirectoryIsInvalid(FileOrDirectory);
+                        ThrowIfFileOrDirectoryIsInvalid(FileOrDirectoryQueries);
                         dumper = new DumpExceptions
                         {
-                            FileOrDirectory = FileOrDirectory,
+                            FileOrDirectoryQueries = FileOrDirectoryQueries,
                             Recursive = mySearchOption,
                             TestsPerRun = TestsPerRun,
                             SkipNTests = SkipNTests,
@@ -1293,10 +1297,10 @@ namespace ETWAnalyzer.Commands
                         };
                         break;
                     case DumpCommands.Memory:
-                        ThrowIfFileOrDirectoryIsInvalid(FileOrDirectory);
+                        ThrowIfFileOrDirectoryIsInvalid(FileOrDirectoryQueries);
                         dumper = new DumpMemory
                         {
-                            FileOrDirectory = FileOrDirectory,
+                            FileOrDirectoryQueries = FileOrDirectoryQueries,
                             Recursive = mySearchOption,
                             TestsPerRun = TestsPerRun,
                             SkipNTests = SkipNTests,
@@ -1322,10 +1326,10 @@ namespace ETWAnalyzer.Commands
                         };
                         break;
                     case DumpCommands.ThreadPool:
-                        ThrowIfFileOrDirectoryIsInvalid(FileOrDirectory);
+                        ThrowIfFileOrDirectoryIsInvalid(FileOrDirectoryQueries);
                         dumper = new DumpThreadPool
                         {
-                            FileOrDirectory = FileOrDirectory,
+                            FileOrDirectoryQueries = FileOrDirectoryQueries,
                             Recursive = mySearchOption,
                             TestsPerRun = TestsPerRun,
                             SkipNTests = SkipNTests,
@@ -1346,10 +1350,10 @@ namespace ETWAnalyzer.Commands
                         };
                         break;
                     case DumpCommands.Mark:
-                        ThrowIfFileOrDirectoryIsInvalid(FileOrDirectory);
+                        ThrowIfFileOrDirectoryIsInvalid(FileOrDirectoryQueries);
                         dumper = new DumpMarks
                         {
-                            FileOrDirectory = FileOrDirectory,
+                            FileOrDirectoryQueries = FileOrDirectoryQueries,
                             Recursive = mySearchOption,
                             TestsPerRun = TestsPerRun,
                             SkipNTests = SkipNTests,
@@ -1372,11 +1376,11 @@ namespace ETWAnalyzer.Commands
                         break;
 
                     case DumpCommands.TestRuns:
-                        ThrowIfFileOrDirectoryIsInvalid(FileOrDirectory);
+                        ThrowIfFileOrDirectoryIsInvalid(FileOrDirectoryQueries);
                         dumper = new TestRunDumper
                         {
                             Recursive = mySearchOption,
-                            Directory = FileOrDirectory,
+                            Directories = FileOrDirectoryQueries,
                             TestsPerRun = TestsPerRun,
                             SkipNTests = SkipNTests,
                             TestCaseFilter = TestCaseFilter,
@@ -1411,16 +1415,21 @@ namespace ETWAnalyzer.Commands
 
         }
 
-        void ThrowIfFileOrDirectoryIsInvalid(string fileOrDirectory)
+        void ThrowIfFileOrDirectoryIsInvalid(List<string> fileOrDirectoryQueries)
         {
-            if (String.IsNullOrEmpty(fileOrDirectory) )
+            if(fileOrDirectoryQueries.Count == 0)
             {
                 throw new MissingInputException($"You need to specify an existing directory or file with the -filedir option.");
             }
-
-            if( !Directory.Exists(fileOrDirectory) && !File.Exists(fileOrDirectory) && !File.Exists(fileOrDirectory + TestRun.ExtractExtension) )
+            foreach(var query in fileOrDirectoryQueries)
             {
-                throw new ArgumentException($"\"{fileOrDirectory}\" was not found. You need to specify an existing directory.");
+                if (!query.Contains("?") && !query.Contains("*"))
+                {
+                    if (!Directory.Exists(query) && !File.Exists(query) && !File.Exists(query + TestRun.ExtractExtension))
+                    {
+                        throw new ArgumentException($"\"{query}\" was not found. You need to specify an existing directory.");
+                    }
+                }
             }
         }
     }

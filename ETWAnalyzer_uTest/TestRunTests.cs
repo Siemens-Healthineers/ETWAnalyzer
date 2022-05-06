@@ -17,7 +17,7 @@ using ETWAnalyzer.Configuration;
 
 namespace ETWAnalyzer_uTest
 {
-    
+
     public class TestRunTests
     {
         static readonly string[] TestCaseNames = new string[]
@@ -42,10 +42,10 @@ namespace ETWAnalyzer_uTest
         public void Can_Create_TestRun_List_From_Directory()
         {
             TestRun[] runs = TestRun.CreateFromDirectory(TestData.TestRunDirectory, SearchOption.TopDirectoryOnly, null);
-            
+
             Assert.NotNull(runs);
 
-            foreach(var testName in TestCaseNames)
+            foreach (var testName in TestCaseNames)
             {
                 Assert.True(runs.Any(x => x.Tests.ContainsKey(testName)), $"Test case {testName} not found in TestRun array!");
             }
@@ -56,6 +56,49 @@ namespace ETWAnalyzer_uTest
 
             Assert.True(runs[0].Tests["CallupAdhocColdReadingCR"].Length > 0);
 
+        }
+
+        [Fact]
+        public void GetDirPatternMatcher_Adds_Dot_ToPlainFile()
+        {
+            TestRun.GetDirPatternMatcher("a.json", out string dir,　out Func<string, bool> matcher);
+            Assert.Equal(@".\a.json", dir);
+            Assert.True(matcher(null));
+            Assert.True(matcher(""));
+            Assert.True(matcher("abc"));
+        }
+
+        [Fact]
+        public void GetDirPatternMatcher_MatchAnything()
+        {
+            TestRun.GetDirPatternMatcher(@"C:\temp\a.json", out string dir, out Func<string, bool> matcher);
+            Assert.Equal(@"C:\temp\a.json", dir);
+            Assert.True(matcher(null));
+            Assert.True(matcher(""));
+            Assert.True(matcher("abc"));
+        }
+
+        [Fact]
+        public void GetDirPatternMatcher_MatchWith_WildCards()
+        {
+            TestRun.GetDirPatternMatcher(@"C:\temp\*a*.json", out string dir, out Func<string, bool> matcher);
+            Assert.Equal(@"C:\temp", dir);
+            Assert.False(matcher(null));
+            Assert.False(matcher(""));
+            Assert.False(matcher("abc"));
+            Assert.True(matcher(@"C:\temp\A.json"));
+            Assert.False(matcher(@"C:\temp\B.json"));
+        }
+
+        [Fact]
+        public void GetDirPatternMatcher_MatchWith_WildCards_SecondaryExclusionFilter()
+        {
+            TestRun.GetDirPatternMatcher(@"C:\temp\*a*.json;!*abc*.json", out string dir, out Func<string, bool> matcher);
+            Assert.Equal(@"C:\temp", dir);
+            Assert.True(matcher("a.json"));
+            Assert.False(matcher("abc.json"));
+            Assert.False(matcher("abcd.json"));
+            Assert.True(matcher("azbc.json"));
         }
 
         [Fact]

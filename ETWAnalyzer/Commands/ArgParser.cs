@@ -216,12 +216,6 @@ abstract class ArgParser : ICommand
             }
 
             myInputArguments.Dequeue(); // remove parsed argument from input queue
-
-            // expand . as current directory
-            if (next.StartsWith(".", StringComparison.CurrentCulture))
-            {
-                next = Path.GetFullPath(next);
-            }
         }
 
         return next;

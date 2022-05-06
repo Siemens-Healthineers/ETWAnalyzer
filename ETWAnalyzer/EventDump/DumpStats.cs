@@ -173,9 +173,9 @@ namespace ETWAnalyzer
             }
 
 
-            if( ETLFile != null || Path.GetExtension(FileOrDirectory ?? "").ToLowerInvariant() == ".etl"  )
+            if( ETLFile != null || Path.GetExtension(FileOrDirectoryQueries.FirstOrDefault() ?? "").ToLowerInvariant() == ".etl"  )
             {
-                return PrintEventStatistics(ETLFile ?? FileOrDirectory);
+                return PrintEventStatistics(ETLFile ?? FileOrDirectoryQueries.First());
             }
             else
             {

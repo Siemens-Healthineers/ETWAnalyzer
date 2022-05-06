@@ -78,7 +78,7 @@ namespace ETWAnalyzer.Extract
         /// the corresponding TestRunData structure.
         /// A single file is also possible to specify.
         /// </summary>
-        /// <param name="inputFileOrDirectory">Directory which contains compressend and or extracted data</param>
+        /// <param name="inputFileOrDirectory">Directory which contains compressed and or extracted data</param>
         public TestRunData(string inputFileOrDirectory):this(inputFileOrDirectory, SearchOption.TopDirectoryOnly, inputFileOrDirectory)
         {
         }
@@ -94,7 +94,6 @@ namespace ETWAnalyzer.Extract
         {
         }
 
-
         /// <summary>
         /// Create from a directory which contains compressed or extracted profiling data or from a directory with extracted Json data
         /// the corresponding TestRunData structure.
@@ -103,16 +102,33 @@ namespace ETWAnalyzer.Extract
         /// <param name="inputFileOrDirectory">A directory which contains ETL/Zip/Json files or an ETL/Zip/Json filename</param>
         /// <param name="searchOption">If AllDirectories is specified we search recursively for test runs</param>
         /// <param name="outputDirectory">Output directory where extracted Json files and ETL files from previous runs can already exist</param>
-        public TestRunData(string inputFileOrDirectory, SearchOption searchOption, string outputDirectory)
+        public TestRunData(string inputFileOrDirectory, SearchOption searchOption, string outputDirectory):this(new List<string> { inputFileOrDirectory }, searchOption, outputDirectory)
         {
-            if (String.IsNullOrEmpty(inputFileOrDirectory))
-            {
-                throw new ArgumentException($"{nameof(inputFileOrDirectory)} was null or empty");
-            }
-
-            Runs = TestRun.CreateFromDirectory(inputFileOrDirectory, searchOption, this);
-            OutputDirectory.OutputDirectory = outputDirectory;
         }
 
+        /// <summary>
+        /// Create from a list of directory queries which contains compressed or extracted profiling data or from a directory with extracted Json data
+        /// the corresponding TestRunData structure.
+        /// </summary>
+        /// <param name="inputFileOrDirectories">A list of directory/file queries which contain ETL/Zip/Json files or an ETL/Zip/Json filename</param>
+        /// <param name="searchOption">If AllDirectories is specified we search recursively for test runs</param>
+        /// <param name="outputDirectory">Output directory where extracted Json files and ETL files from previous runs can already exist</param>
+        public TestRunData(List<string> inputFileOrDirectories, SearchOption searchOption, string outputDirectory)
+        {
+            if(inputFileOrDirectories == null || inputFileOrDirectories.Count == 0)
+            {
+                throw new ArgumentException($"{nameof(inputFileOrDirectories)} was null or empty");
+            }
+
+            List<TestRun> runs = new List<TestRun>();
+            foreach (var query in inputFileOrDirectories)
+            {
+                TestRun[] singleRun = TestRun.CreateFromDirectory(query, searchOption, this);
+                runs.AddRange(singleRun);
+            }
+
+            Runs = runs.ToArray();
+            OutputDirectory.OutputDirectory = outputDirectory;
+        }
     }
 }

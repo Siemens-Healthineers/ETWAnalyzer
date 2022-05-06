@@ -18,27 +18,11 @@ namespace ETWAnalyzer.EventDump
     /// </summary>
     class TestRunDumper : DumpBase<string>
     {
-        public string Directory
-        {
-            get; set;
-        }
+        public List<string> Directories { get; set; }
+        public SearchOption Recursive   { get; set;  } = SearchOption.TopDirectoryOnly;
+        public bool PrintFiles { get; set; }
 
-        public SearchOption Recursive
-        {
-            get; set;
-        } = SearchOption.TopDirectoryOnly;
-
-
-        public bool PrintFiles
-        {
-            get; set;
-        }
-
-        public bool IsVerbose
-        {
-            get;
-            set;
-        }
+        public bool IsVerbose { get; set; }
         public int TestRunIndex { get; internal set; }
         public int TestRunCount { get; internal set; }
         public bool ValidTestsOnly { get; internal set; }
@@ -77,7 +61,7 @@ namespace ETWAnalyzer.EventDump
             // for future unit testing
             List<string> lret = new();
 
-            TestRunData testRun = new(Directory, Recursive, Directory);
+            TestRunData testRun = new(Directories, Recursive, Directories.First());
             Task<int> extractCount = Task.Run(() => testRun.AllFiles.Where(x => x.JsonExtractFileWhenPresent != null).Count());
 
             Counter<string> machineCounter = new();

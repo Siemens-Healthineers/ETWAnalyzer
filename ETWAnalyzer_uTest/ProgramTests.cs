@@ -22,7 +22,7 @@ namespace ETWAnalyzer_uTest
         {
             const string notExistingFile = "NotExistingFile";
 
-            ExceptionAssert.Throws<FileNotFoundException>(() =>
+            ExceptionAssert.Throws<DirectoryNotFoundException>(() =>
               Program.MainCore(new string[] {"-extract", "Disk", "-filedir", notExistingFile,  "-outdir", "C:\\Temp" })
             , notExistingFile);
         }

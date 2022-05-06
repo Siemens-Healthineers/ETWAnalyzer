@@ -53,7 +53,8 @@ namespace ETWAnalyzer.Commands
          " -NoOverwrite         By default existing Json files are overwritten during a new extraction run. If you want to extract from a large directory only the missing extraction files you can use this option" + Environment.NewLine +
          "                      This way you can have the same extract command line in a script after a profiling run to extract only the newly added profiling data." + Environment.NewLine +
         "  -recursive           Test data is searched recursively below -filedir" + Environment.NewLine +
-         " -filedir/-fd  xxx    If a directory is entered all compressed and contained ETL files are extracted. You can also specify a single etl/zip file." + Environment.NewLine +
+         " -filedir/-fd  xxx    Can occur multiple times. If a directory is entered all compressed and contained ETL files are extracted. You can also specify a single etl/zip file." + Environment.NewLine +
+        @"                      File queries and exclusions are also supported. E.g. -fd C:\Temp\*error*.etl;!*disk* will extract all etl files in c:\temp containing the name error but exclude the ones which contain disk in the file name" + Environment.NewLine + 
          " -pthreads dd         Percentage of threads to use during extract. Default is 75% of all cores  with a cap at 5 parallel extractions. " + Environment.NewLine + 
          "                      This can already utilize 100% of all cores because some operations are multithreaded like symbol transcoding." + Environment.NewLine +
          " -nthreads dd         Absolute number of threads/processes used during extract." + Environment.NewLine +
@@ -193,7 +194,7 @@ namespace ETWAnalyzer.Commands
         /// <summary>
         /// -fd/-filedir
         /// </summary>
-        public string InputFileOrDirectory { get; private set; }
+        public List<string> InputFileOrDirectories { get; private set; } = new List<string>();
 
         /// <summary>
         /// By default exceptions are filtered during extraction already if in the file Configuration/ExceptionFilters.xml rules are defined.
@@ -254,7 +255,7 @@ namespace ETWAnalyzer.Commands
                     case FileOrDirectoryArg:
                     case FileOrDirectoryAlias:
                         string path = GetNextNonArg("-filedir");
-                        InputFileOrDirectory = ArgParser.CheckIfFileOrDirectoryExistsAndExtension(path, EtlExtension, ZipExtension, SevenZipExtension);
+                        InputFileOrDirectories.Add(path); // we support multiple occurrences 
                         break;
                     // All optional Arguments
                     case OutDirArg:
@@ -324,11 +325,12 @@ namespace ETWAnalyzer.Commands
                 }
             }
 
-            // If Output directory is not set, set it to Input folder. The extract file fill then go into InputFolder/Extract
+            
+            // If Output directory is not set, set it to Input folder. The extract file will then go into InputFolder/Extract
             // If explicitly set we will not append Extract to the folder
-            if (OutDir.OutputDirectory == null && InputFileOrDirectory != null)
+            if (OutDir.OutputDirectory == null && InputFileOrDirectories.Count == 1)
             {
-                OutDir.SetDefault( File.Exists(InputFileOrDirectory) ? Path.GetDirectoryName(Path.GetFullPath(InputFileOrDirectory)) : InputFileOrDirectory );
+                OutDir.SetDefault( File.Exists(InputFileOrDirectories[0]) ? Path.GetDirectoryName(Path.GetFullPath(InputFileOrDirectories[0])) : InputFileOrDirectories[0]);
             }
 
             ConfigureExtractors(Extractors, myProcessingActionList);
@@ -422,7 +424,7 @@ namespace ETWAnalyzer.Commands
 
         public override void Run()
         {
-            TestRunData runData = new(InputFileOrDirectory, mySearchOption, OutDir.OutputDirectory);
+            TestRunData runData = new(InputFileOrDirectories, mySearchOption, OutDir.OutputDirectory);
 
             IReadOnlyList<TestDataFile> filesToAnalyze = runData.AllFiles;
             TestDataFile[] nonEmptyFiles = filesToAnalyze.Where(file => file.SizeInMB != 0).ToArray();
@@ -595,15 +597,31 @@ namespace ETWAnalyzer.Commands
         internal string GetCommandLineForSingleExtractFile(string fileToExtract)
         {
             StringBuilder sb = new();
+            bool fileDirSeen = false;
             for (int i = 0; i < myOriginalInputArguments.Length; i++)
             {
-                sb.Append(myOriginalInputArguments[i]);
-                sb.Append(' ');
                 if (myOriginalInputArguments[i].ToLower(CultureInfo.InvariantCulture) == FileOrDirectoryArg || (myOriginalInputArguments[i].ToLower(CultureInfo.InvariantCulture) == FileOrDirectoryAlias) )
                 {
-                    i++;
-                    sb.Append($"\"{fileToExtract}\" ");
+                    if (!fileDirSeen)
+                    {
+                        sb.Append(myOriginalInputArguments[i]);
+                        sb.Append(' ');
+
+                        i++;
+                        sb.Append($"\"{fileToExtract}\" ");
+                        fileDirSeen = true;
+                    }
+                    else
+                    {
+                        i++; // ignore secondary -fd/fildir file argument
+                    }
                 }
+                else
+                {
+                    sb.Append(myOriginalInputArguments[i]);
+                    sb.Append(' ');
+                }
+
                 if( myOriginalInputArguments[i].ToLowerInvariant() == UnzipOperationArg)
                 {
                     i++;

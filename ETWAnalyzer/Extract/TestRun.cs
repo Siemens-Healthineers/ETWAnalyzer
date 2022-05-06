@@ -3,6 +3,7 @@
 
 
 using ETWAnalyzer.Extractors;
+using ETWAnalyzer.Infrastructure;
 using Newtonsoft.Json;
 using System;
 using System.Collections;
@@ -399,17 +400,41 @@ namespace ETWAnalyzer.Extract
 
 
         /// <summary>
-        /// Get from a directory all files with zip/etl/7z/.json extension which are all valid TestDataFile candidates
+        /// Get from a directory or a directory query e.g. c:\temp\abc*.json all files with zip/etl/7z/.json extension which are all valid TestDataFile candidates
         /// </summary>
-        /// <param name="directory">Directory from which the files are retrieved</param>
+        /// <param name="directoryfileQuery">Directory from which the files are retrieved</param>
         /// <param name="recursive">Search recursively in all subdirectories</param>
         /// <returns>HashSet of all files which did match the allowed extensions</returns>
-        static HashSet<string> GetFilesWithExtension(string directory, SearchOption recursive)
+        internal static HashSet<string> GetFilesWithExtension(string directoryfileQuery, SearchOption recursive)
         {
-            return new HashSet<string>(
-                                        Directory.GetFiles(directory, "*.*", recursive)
-                                                 .Where(IsValidExtension)
-                                      );
+            GetDirPatternMatcher(directoryfileQuery, out string dir, out Func<string, bool> matcher);
+
+            string[] files = Directory.GetFiles(Path.GetFullPath(dir), "*.*", recursive)
+                                      .Where(IsValidExtension).ToArray();
+
+            string[] filteredFiles = files.Where(matcher).ToArray();
+            return new HashSet<string>(filteredFiles);
+        }
+
+        static internal void  GetDirPatternMatcher(string directoryFileQuery, out string dir, out Func<string,bool> matcher)
+        {
+            dir = Path.GetDirectoryName(directoryFileQuery);
+            if (String.IsNullOrEmpty(dir))
+            {
+                dir = ".";
+            }
+
+            string patternFileName = Path.GetFileName(directoryFileQuery);
+
+            if (directoryFileQuery.Contains("*") || directoryFileQuery.Contains("?"))
+            {
+                matcher = Matcher.CreateMatcher(patternFileName);
+            }
+            else
+            {
+                dir = Path.Combine(dir, patternFileName);
+                matcher = Matcher.CreateMatcher(null);
+            }
         }
 
         static bool IsValidExtension(string fileName)

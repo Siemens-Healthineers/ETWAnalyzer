@@ -30,7 +30,7 @@ namespace ETWAnalyzer.EventDump
         public Func<string, bool> ZeroTimeProcessNameFilter { get; set; } = (x) => true;
 
         public SearchOption Recursive { get; internal set; }
-        public string FileOrDirectory { get; internal set; }
+        public List<string> FileOrDirectoryQueries { get; internal set; } = new List<string>();
         public int LastNDays { get; internal set; }
         public int TestRunIndex { get; internal set; } = -1;
         public int TestRunCount { get; internal set; }
@@ -424,7 +424,7 @@ namespace ETWAnalyzer.EventDump
                 return myPreloadedTests;
             }
 
-            TestRunData runs = new(FileOrDirectory, Recursive);
+            TestRunData runs = new(FileOrDirectoryQueries, Recursive, FileOrDirectoryQueries.First());
             SingleTest[] tests = GetTestRunsFromTestRunData(skipNonJsonTests, runs).Where(testFilter).ToArray();
 
             Queue<SingleTest> pendingWork = new(tests);  // tests are prefetched in order because normally we read things from oldest to youngest
