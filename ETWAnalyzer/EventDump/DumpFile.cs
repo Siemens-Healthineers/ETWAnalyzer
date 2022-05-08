@@ -5,6 +5,7 @@ using ETWAnalyzer.Analyzers.Infrastructure;
 using ETWAnalyzer.Commands;
 using ETWAnalyzer.Extract;
 using ETWAnalyzer.Extract.FileIO;
+using ETWAnalyzer.Infrastructure;
 using ETWAnalyzer.ProcessTools;
 using System;
 using System.Collections.Generic;
@@ -64,6 +65,16 @@ namespace ETWAnalyzer.EventDump
         {
             get => ShowTotal == TotalModes.File;
         }
+
+        /// <summary>
+        /// Take topn files based on current sort order
+        /// </summary>
+        public SkipTakeRange TopN { get; internal set; }
+
+        /// <summary>
+        /// Take topn processes based on current sort order when per process mode is enabled where file IO is printed for each process
+        /// </summary>
+        public SkipTakeRange TopNProcesses { get; internal set; }
 
         /// <summary>
         /// Some file name events are not recorded. These files are normally from start/end of trace and usually of no interest and of low volume
@@ -173,7 +184,7 @@ namespace ETWAnalyzer.EventDump
             int totalFileCount = 0;
 
             // sort ascending by r+w Size by default or supplied filter and order
-            foreach (var group in aggregatedByDirectory.GroupBy(grouping).OrderBy(ordering))
+            foreach (var group in aggregatedByDirectory.GroupBy(grouping).SortAscendingGetTopNLast(ordering, null, TopNProcesses))
             {
                 bool bPrintOnce = true;
 
@@ -195,7 +206,7 @@ namespace ETWAnalyzer.EventDump
                 long totalPerProcessFileCount = 0;
 
                 // then sort inside the grouping again
-                foreach (var fileEvent in group.Where( x => IsInRange(GetSortValue(x))).OrderBy(GetSortValue) )
+                foreach (var fileEvent in group.Where( x => IsInRange(GetSortValue(x))).SortAscendingGetTopNLast(GetSortValue, null, TopN))
                 {
                     totalPerProcessFileReadTimeInus += fileEvent.FileReadTimeInus;
                     totalPerProcessFileReadSizeInBytes += fileEvent.FileReadSizeInBytes;
@@ -534,6 +545,24 @@ namespace ETWAnalyzer.EventDump
                         FileOperation.Rename => data.FileRenameCount,
                         _ => throw new NotSupportedException($"File Operation sort not yet implemented for value: {FileOperationValue}"),
                     };
+                    break;
+                case SortOrders.ReadSize:
+                    lret = data.FileReadSizeInBytes;
+                    break;
+                case SortOrders.WriteSize:
+                    lret = data.FileWriteSizeInBytes;
+                    break;
+                case SortOrders.TotalSize:
+                    lret = data.FileWriteSizeInBytes + data.FileReadSizeInBytes;
+                    break;
+                case SortOrders.TotalTime:
+                    lret = data.FileReadTimeInus + data.FileWriteTimeInus;
+                    break;
+                case SortOrders.ReadTime:
+                    lret = data.FileReadTimeInus;
+                    break;
+                case SortOrders.WriteTime:
+                    lret = data.FileWriteTimeInus;
                     break;
                 case SortOrders.Time:
                     lret = FileOperationValue switch

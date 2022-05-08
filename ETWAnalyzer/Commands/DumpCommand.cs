@@ -189,17 +189,20 @@ namespace ETWAnalyzer.Commands
         "                         refer to help of TestRun and Process. Run \'EtwAnalyzer -help dump\' to get more infos." + Environment.NewLine;
 
         static readonly string DiskHelpString =
-        "  Disk -filedir/fd Extract\\ or xxx.json [-DirLevel dd] [-PerProcess] [-filename *C:*] [-MinMax xx-yy] [-FileOperation op] [-ReverseFileName/rfn] [-Merge] [-recursive] [-csv xxx.csv] [-NoCSVSeparator]" + Environment.NewLine +
-        "                         [-TimeFmt s,Local,LocalTime,UTC,UTCTime,Here,HereTime] [-Clip] [-TestsPerRun dd - SkipNTests dd] [-TestRunIndex dd - TestRunCount dd] [-TestCase xx] [-Machine xxxx] [-ProcessName/pn xxx.exe(pid)]" + Environment.NewLine +
-        "                           [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-CmdLine substring]" + Environment.NewLine +
+        "  Disk -filedir/fd Extract\\ or xxx.json [-DirLevel dd] [-PerProcess] [-filename *C:*] [-MinMax xx-yy] [-TopN dd nn] [-SortBy order] [-FileOperation op] [-ReverseFileName/rfn] [-Merge] [-recursive] [-csv xxx.csv] [-NoCSVSeparator]" + Environment.NewLine +
+        "                         [-TopNProcesses dd nn] [-TimeFmt s,Local,LocalTime,UTC,UTCTime,Here,HereTime] [-Clip] [-TestsPerRun dd - SkipNTests dd] [-TestRunIndex dd - TestRunCount dd] [-TestCase xx] [-Machine xxxx] [-ProcessName/pn xxx.exe(pid)]" + Environment.NewLine +
+        "                         [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-CmdLine substring]" + Environment.NewLine +
         "                         Print disk IO metrics to console or to a CSV file if -csv is used. To get output -extract Disk, All or Default must have been used during extraction." + Environment.NewLine +
         "                         The extracted data is an exact summary per file and all involved processes. If multiple processes access one file you get only the list of processes but not which process did attribute how much." + Environment.NewLine +
         "                         -DirLevel dd               Print Disk IO per directory up to n levels. Default is 0 which shows aggregates per drive. -Dirlevel 100 shows a per file summary." + Environment.NewLine +
         "                         -PerProcess                Print Disk IO for processes where IOTime > 1s. If you use -processname as filter you can restrict io to all files where the process was involved. " + Environment.NewLine +
         "                                                    Note: This might overestimate IO because commonly used files by many processes like pagefiles are then attributed multiple times to all involved processes." + Environment.NewLine +
+        "                         -TopNProcesses dd nn       Select top dd (skip nn) processes when -PerProcess is enabled." + Environment.NewLine +
         "                         -FileName *C:*             Filter IO for specific files only. Multiple filters are separated by ;" + Environment.NewLine +
         "                         -FileOperation op          Filter for rows where only specific file operations are present. Possible values are Read and Write" + Environment.NewLine +
         "                                                    Warning: Other columns than the filtered one can be misleading. E.g. if you filter for read then in the write column only files will show up from which data was also read!" + Environment.NewLine +
+        "                         -SortBy order              Console Output Only. Valid values are: ReadSize,WriteSize,ReadTime,WriteTime,FlushTime,TotalSize and TotalTime" + Environment.NewLine +
+        "                         -TopN dd nn                Select top dd (skip nn) files based on current sort order." + Environment.NewLine +
         "                         -MinMax xx-yy              Console Output Only. Filter for rows which have > xx and < yy us of total disk IO time." + Environment.NewLine +
         "                                                    Filter for read duration  > 1ms : -MinMax 1000 -FileOperation Read" + Environment.NewLine +
         "                                                    Filter for write duration > 1ms : -MinMax 1000 -FileOperation Write" + Environment.NewLine +
@@ -209,19 +212,21 @@ namespace ETWAnalyzer.Commands
         "                         refer to help of TestRun and Process. Run \'EtwAnalyzer -help dump\' to get more infos." + Environment.NewLine;
 
         static readonly string FileHelpString =
-        "  File -filedir/fd Extract\\ or xxx.json [-DirLevel dd] [-PerProcess] [-filename *C:*] [-ShowTotal [Total/Process/File]] [-MinMax xx-yy] [-FileOperation op] [-SortBy order] [-ReverseFileName/rfn] [-Merge] [-Details] [-recursive] " + Environment.NewLine +
-        "                         [-csv xxx.csv] [-NoCSVSeparator] [-TimeFmt s,Local,LocalTime,UTC,UTCTime,Here,HereTime] [-Clip] [-TestsPerRun dd -SkipNTests dd] " + Environment.NewLine +
+        "  File -filedir/fd Extract\\ or xxx.json [-DirLevel dd] [-PerProcess] [-filename *C:*] [-ShowTotal [Total/Process/File]] [-MinMax xx-yy] [-TopN dd nn] [-SortBy order] [-FileOperation op] [-ReverseFileName/rfn] [-Merge] [-Details] [-recursive] " + Environment.NewLine +
+        "                         [-TopNProcesses dd nn] [-csv xxx.csv] [-NoCSVSeparator] [-TimeFmt s,Local,LocalTime,UTC,UTCTime,Here,HereTime] [-Clip] [-TestsPerRun dd -SkipNTests dd] " + Environment.NewLine +
         "                         [-TestRunIndex dd -TestRunCount dd] [-TestCase xx] [-Machine xxxx] [-ProcessName/pn xxx.exe(pid)] [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-CmdLine substring]" + Environment.NewLine +
         "                         Print File IO metrics to console or to a CSV file if -csv is used. To get output -extract File, All or Default must have been used during extraction." + Environment.NewLine +
         "                         The extracted data is an exact summary per file and process. Unlike Disk IO, File IO tracing captures all file accesses regardless if the data was e.g. read from disk or file system cache." + Environment.NewLine +
         "                         -DirLevel dd               Print File IO per directory up to n levels. Default is 0 which shows summary per drive. -Dirlevel 100 will give a per file summary." + Environment.NewLine +
         "                         -PerProcess                Print File IO per process. If you use -processname as filter you can restrict IO to all files where the process was involved. " + Environment.NewLine +
+        "                         -TopNProcesses dd nn       Select top dd (skip nn) processes when -PerProcess is enabled." + Environment.NewLine + 
         "                         -FileName *C:*             Filter IO for specific files only. Multiple filters are separated by ;" + Environment.NewLine +
         "                         -FileOperation op          Filter for rows where only specific file operations are present. " + Environment.NewLine + 
         "                                                    Possible values are " + String.Join(",", Enum.GetNames(typeof(Extract.FileIO.FileIOStatistics.FileOperation)).Where(x => x != "Invalid")) + Environment.NewLine +
         "                                                    Warning: Other columns than the filtered one can be misleading. " +Environment.NewLine +  
-        "                                                    E.g. if you filter for open, only the files which were opened are showing up in read/write metrics. IO for already opened files is suppressed!" + Environment.NewLine + 
-        "                         -SortBy order              Console Output Only. Order output based on Size, Length, Count or Time. Default sort order is combined read write size." + Environment.NewLine +
+        "                                                    E.g. if you filter for open, only the files which were opened are showing up in read/write metrics. IO for already opened files is suppressed!" + Environment.NewLine +
+        "                         -SortBy order              Console Output Only. Valid values are: ReadSize,WriteSize,ReadTime,WriteTime,TotalSize and TotalTime" + Environment.NewLine +
+        "                         -TopN dd nn                Select top dd files based on current sort order." + Environment.NewLine +
         "                         -MinMax xx-yy              Console Output Only. Filter for rows which have > xx and < yy. The -FileOperation, -SortBy values define on which values it filters." + Environment.NewLine + 
         "                                                    You can define filters for time,size,length,count of open/close/read/write/setsecurity operations." + Environment.NewLine +
         "                                                    Filter for read operation Count > 500: -MinMax 500 -FileOperation Read -SortBy Count" + Environment.NewLine +
@@ -412,6 +417,13 @@ namespace ETWAnalyzer.Commands
             Diff,
             First,
             Last,
+            ReadSize,
+            ReadTime,
+            WriteSize,
+            WriteTime,
+            FlushTime,
+            TotalSize,
+            TotalTime,
         }
 
         /// <summary>
@@ -565,6 +577,8 @@ namespace ETWAnalyzer.Commands
         // Dump File/Disk common flags
         public bool Merge { get; private set; }
         public bool ReverseFileName { get; private set; }
+        public SortOrders SortOrder { get; private set; }
+		public SkipTakeRange TopNProcesses { get; private set; } = new SkipTakeRange();
 		
         // Dump File specific flags
         public bool ShowAllFiles { get; private set; }
@@ -572,7 +586,7 @@ namespace ETWAnalyzer.Commands
         public int Max { get; private set; }
         public bool ShowDetails { get; private set; }
         public Extract.FileIO.FileIOStatistics.FileOperation FileOperation { get; private set; }
-        public SortOrders SortOrder { get; private set; }
+        
 
         // Dump ThreadPool specific Flags
         public bool NoCmdLine { get; private set; }
@@ -710,6 +724,12 @@ namespace ETWAnalyzer.Commands
                         string skip = GetNextNonArg("-topn", false); // skip string is optional
                         Tuple<int,int> topNAndSkip = topN.GetRange(skip);
                         TopN = new SkipTakeRange(topNAndSkip.Item1, topNAndSkip.Item2);
+                        break;
+                    case "-topnprocesses":
+                        string topnProcessses = GetNextNonArg("-topnprocesses");
+                        string skiptopnProcessses = GetNextNonArg("-topnprocesses", false);
+                        Tuple<int, int> topNProcessesAndSkip = topnProcessses.GetRange(skiptopnProcessses);
+                        TopNProcesses = new SkipTakeRange(topNProcessesAndSkip.Item1, topNProcessesAndSkip.Item2);
                         break;
                     case "-topnmethods":
                         string topnMethods = GetNextNonArg("-topnmethods");
@@ -1220,6 +1240,9 @@ namespace ETWAnalyzer.Commands
                             FileNameFilter = FileNameFilter,
                             Min = Min,
                             Max = Max,
+                            TopN = TopN,
+                            TopNProcesses = TopNProcesses,
+                            SortOrder = SortOrder,
                             FileOperationValue = FileOperation,
                             ReverseFileName = ReverseFileName,
                         };
@@ -1253,6 +1276,8 @@ namespace ETWAnalyzer.Commands
                             FileNameFilter = FileNameFilter,
                             Min = Min,
                             Max = Max,
+                            TopN = TopN,
+                            TopNProcesses = TopNProcesses,
                             FileOperationValue = FileOperation,
                             SortOrder = SortOrder,
                             ShowAllFiles = ShowAllFiles,

@@ -1,32 +1,75 @@
 ﻿//// SPDX - FileCopyrightText:  © 2022 Siemens Healthcare GmbH
 //// SPDX-License-Identifier:   MIT
 
-using ETWAnalyzer.Analyzers.Infrastructure;
+using ETWAnalyzer.Commands;
 using ETWAnalyzer.Extract;
-using ETWAnalyzer.Extract.Disk;
 using ETWAnalyzer.Extract.FileIO;
+using ETWAnalyzer.Infrastructure;
 using ETWAnalyzer.ProcessTools;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
+using static ETWAnalyzer.Commands.DumpCommand;
 
 namespace ETWAnalyzer.EventDump
 {
     class DumpDisk : DumpFileDirBase<DumpDisk.MatchData>
     {
+        /// <summary>
+        /// File name filter
+        /// </summary>
         public Func<string, bool> FileNameFilter { get; internal set; }
 
+        /// <summary>
+        /// Show aggregated data up to n directories. Files are omitted, unless DirectoryLevel is >= 100
+        /// </summary>
         public int DirectoryLevel { get; internal set; }
+
+        /// <summary>
+        /// Show IO per process
+        /// </summary>
         public bool IsPerProcess { get; internal set; }
+
+        /// <summary>
+        /// Merge multiple files together
+        /// </summary>
         public bool Merge { get; internal set; }
+
+        /// <summary>
+        /// Generic Min value which is used by filters. Can be size, time
+        /// </summary>
         public int Min { get; internal set; }
+
+        /// <summary>
+        /// Generic Max value which is used by filter. Can be size, time
+        /// </summary>
         public int Max { get; internal set; }
+
+        /// <summary>
+        /// Filter for data for specific file operations
+        /// </summary>
         public FileIOStatistics.FileOperation FileOperationValue { get; internal set; }
+
+        /// <summary>
+        /// Show file name parts in reverse order
+        /// </summary>
         public bool ReverseFileName { get; internal set; }
+
+        /// <summary>
+        /// Take topN files based on current sort order
+        /// </summary>
+        public SkipTakeRange TopN { get; internal set; }
+
+        /// <summary>
+        /// Sort files/directories on specific criteria
+        /// </summary>
+        public DumpCommand.SortOrders SortOrder { get; internal set; }
+
+        /// <summary>
+        /// Take top n processes based on current sort order when per process mode is enabled.
+        /// </summary>
+        public SkipTakeRange TopNProcesses { get; internal set; }
 
         internal List<MatchData> myUTestData;
 
@@ -68,7 +111,7 @@ namespace ETWAnalyzer.EventDump
                 }
 
                 ColorConsole.WriteEmbeddedColorLine("[green]Read                                [/green][yellow]Write                               [/yellow][cyan]Flush       [/cyan] Directory or File if -dirLevel 100 is used");
-                foreach (var group in aggregatedByDirectory.OrderBy(x => x.DiskTotalTimeInus).Where(MinMaxFilter))
+                foreach (var group in aggregatedByDirectory.Where(MinMaxFilter).SortAscendingGetTopNLast(SortByValue, null, TopN))
                 {
                     string diskReadTime = $"{group.DiskReadTimeInus / Million:F5}";
                     string diskReadMB = $"{group.DiskReadSizeInBytes / MB:F0}";
@@ -93,7 +136,7 @@ namespace ETWAnalyzer.EventDump
                     ColorConsole.WriteEmbeddedColorLine("[green]Read                            [/green][yellow]Write                           [/yellow][cyan]Flush         [/cyan]Involved Processes");
 
                     List<MatchData> aggregatedByProcess = AggregateByProcess(byFileOrNoGroup.ToList(), UsePrettyProcessName);
-                    foreach (var group in aggregatedByProcess.OrderBy(x => x.DiskTotalTimeInus).Where(MinMaxFilter))
+                    foreach (var group in aggregatedByProcess.Where(MinMaxFilter).SortAscendingGetTopNLast(SortByValue, null, TopNProcesses))
                     {
                         string procs;
                         // On some files many processes are participating like page file, volume bitmap, ... 
@@ -124,6 +167,27 @@ namespace ETWAnalyzer.EventDump
             }
 
             return data;
+        }
+
+        /// <summary>
+        /// Define sort order by SortOrders enum common for all commands
+        /// </summary>
+        /// <param name="x">disk IO data to sort</param>
+        /// <returns>value to sorty by</returns>
+        private decimal SortByValue(MatchData x)
+        {
+            return SortOrder switch
+            {
+                SortOrders.ReadTime =>   x.DiskReadTimeInus,
+                SortOrders.WriteTime =>  x.DiskWriteTimeInus,
+                SortOrders.ReadSize =>   x.DiskReadSizeInBytes,
+                SortOrders.WriteSize =>  x.DiskWriteSizeInBytes,
+                SortOrders.Size =>       (x.DiskWriteSizeInBytes + x.DiskReadSizeInBytes),
+                SortOrders.TotalSize =>  (x.DiskWriteSizeInBytes + x.DiskReadSizeInBytes),
+                SortOrders.TotalTime =>  x.DiskTotalTimeInus,
+                SortOrders.FlushTime =>  x.DiskFlushTimeInus,
+                _ =>                     x.DiskTotalTimeInus,
+            };
         }
 
         bool MinMaxFilter(MatchData data)
