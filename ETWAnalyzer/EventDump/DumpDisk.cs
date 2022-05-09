@@ -340,6 +340,9 @@ namespace ETWAnalyzer.EventDump
             public int ReadMBPerSeconds => DiskReadTimeInus > 0 ? (int)(DiskReadSizeInBytes / MB / (DiskReadTimeInus / Million)) : 0;
             public int WriteMBPerSeconds => DiskWriteTimeInus > 0 ? (int)(DiskWriteSizeInBytes / MB / (DiskWriteTimeInus / Million)) : 0;
 
+            /// <summary>
+            /// Sum of read+write+flush time
+            /// </summary>
             public decimal DiskTotalTimeInus { get => DiskReadTimeInus + DiskWriteTimeInus + DiskFlushTimeInus; }
 
 

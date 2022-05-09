@@ -556,7 +556,7 @@ namespace ETWAnalyzer.EventDump
                     lret = data.FileWriteSizeInBytes + data.FileReadSizeInBytes;
                     break;
                 case SortOrders.TotalTime:
-                    lret = data.FileReadTimeInus + data.FileWriteTimeInus;
+                    lret = data.TotalFileTime;
                     break;
                 case SortOrders.ReadTime:
                     lret = data.FileReadTimeInus;
@@ -578,7 +578,7 @@ namespace ETWAnalyzer.EventDump
                         _ => throw new NotSupportedException($"File Operation sort not yet implemented for value: {FileOperationValue}"),
                     };
                     break;
-                case SortOrders.Size:
+                case SortOrders.Size: // this is also  SortOrders.Default
                     switch (FileOperationValue)
                     {
                         case FileOperation.Read:
@@ -589,7 +589,6 @@ namespace ETWAnalyzer.EventDump
                             break;
                         case FileOperation.SetSecurity:
                             break;
-                        case FileOperation.Invalid:
                         case FileOperation.Close:
                         case FileOperation.Open:
                             lret = data.FileWriteSizeInBytes + data.FileReadSizeInBytes;
@@ -599,6 +598,9 @@ namespace ETWAnalyzer.EventDump
                             break;
                         case FileOperation.Rename:
                             lret = data.FileRenameCount;
+                            break;
+                        case FileOperation.Invalid:  // by default we sort by total time to stay consistent with -Dump disk.
+                            lret = data.TotalFileTime;
                             break;
                         default:
                             throw new NotSupportedException($"File Operation sort not yet implemented for value: {FileOperationValue}");
@@ -615,7 +617,7 @@ namespace ETWAnalyzer.EventDump
                     };
                     break;
                 default:
-                    break;
+                    throw new InvalidOperationException($"There should be a sort order. By default SortOrders.Size == SortOrders.Default = 0 so we should never get here.");
             }
 
             return lret;
@@ -694,6 +696,10 @@ namespace ETWAnalyzer.EventDump
             public decimal FileReadSizeInBytes { get; internal set; }
             public decimal FileWriteSizeInBytes { get; internal set; }
             public long FileWriteMaxFilePos { get; internal set; }
+
+            /// <summary>
+            /// Sum of open+close+read+write time
+            /// </summary>
             public decimal TotalFileTime { get => FileOpenTimeInus + FileCloseTimeInus + FileReadTimeInus + FileWriteTimeInus; }
 
             /// <summary>
