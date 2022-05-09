@@ -24,21 +24,17 @@ namespace ETWAnalyzer.Commands
     class ConvertCommand : ArgParser
     {
         static internal string HelpString =
-            "ETWAnalyzer -convert -filedir xx.etl [-pid ddd or -1] [-perthread] [-symServer MS, syngo or NtSymbolPath] [-debug]" + Environment.NewLine +
+            "ETWAnalyzer -convert -filedir/-fd xx.etl [-pid ddd or -1] [-perthread] [-symServer NtSymbolPath, MS, Google or syngo] [-debug]" + Environment.NewLine +
             "Convert CPU Sample Profiling data from an  ETL file to a Json file which can be read by SpeedScope." + Environment.NewLine + 
             "See https://www.speedscope.app/ and https://adamsitnik.com/speedscope/ for more information." + Environment.NewLine +
-            "  -filedir xxx.etl    Input ETL file." + Environment.NewLine +
-            "  -pid dd             Optional. If -1 then all processes are combined into the converted file. Otherwise you need to specify an existing process id." + Environment.NewLine +
-            "  -perthread          By default all threads are merged. If used then the profiling data per thread is extracted." + Environment.NewLine + 
-            "  -debug              Print exception on console if a command has an error." +Environment.NewLine +
-            "  -nocolor            Do not colorize output on shells with different color schemes. Writing console output is also much faster if it is not colorized." + Environment.NewLine +
-            "  -symServer [MS, syngo or NtSymbolPath]   Load pdbs from remote symbol server which is stored in the ETWAnalyzer.exe.config file. Known ones are MS and syngo" + Environment.NewLine +
-            "                      When NtSymbolPath is used the first remote symbol server from _NT_SYMBOL_PATH environment variable is used" + Environment.NewLine +
-           $"                      The config file {ConfigFiles.RequiredPDBs} declares which pdbs, if present in the trace, must have loaded symbols." + Environment.NewLine +
-            "                         Symbol loading works in two steps." + Environment.NewLine +
-            "                          1. Symbols are loaded from SymCache and local cached pdb files. If an essential configured pdb is missing and -symserver was used we go to step 2 or we are finished." + Environment.NewLine +
-            "                          2. Now the remote configured symbol server is added and we try to load pdbs a second time. If that still fails we continue with what we have" 
-            ;
+            "  -filedir/-fd xxx.etl Input ETL file." + Environment.NewLine +
+            "  -pid dd              Optional. If -1 then all processes are combined into the converted file. Otherwise you need to specify an existing process id." + Environment.NewLine +
+            "  -perthread           By default all threads are merged. If used then the profiling data per thread is extracted." + Environment.NewLine + 
+            "  -debug               Print exception on console if a command has an error." +Environment.NewLine +
+            "  -nocolor             Do not colorize output on shells with different color schemes. Writing console output is also much faster if it is not colorized." + Environment.NewLine +
+            "  -symServer [NtSymbolPath, MS, Google or syngo]  Load pdbs from remote symbol server which is stored in the ETWAnalyzer.dll/exe.config file." + Environment.NewLine + 
+            "                       With NtSymbolPath the contents of the environment variable _NT_SYMBOL_PATH are used."
+           ;
 
         /// <summary>
         /// Input ETL file name
@@ -85,7 +81,8 @@ namespace ETWAnalyzer.Commands
                     case CommandFactory.ConvertArg:
                         break;
                     case FileOrDirectoryArg:
-                        string path = GetNextNonArg("-filedir");
+                    case FileOrDirectoryAlias:
+                        string path = GetNextNonArg(FileOrDirectoryArg);
                         myEtlFileName = ArgParser.CheckIfFileOrDirectoryExistsAndExtension(path, EtlExtension, ZipExtension, SevenZipExtension);
                         break;
                     case PidArg:
