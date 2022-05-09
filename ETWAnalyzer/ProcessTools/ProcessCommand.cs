@@ -72,7 +72,18 @@ namespace ETWAnalyzer.Helper
             {
                 CtrlCHandler.Instance.Register(CtlrCPressed);
                 myProcess = Process.Start(startInfo);
-                myProcess.PriorityClass = priority;
+                try
+                {
+                    if (priority != ProcessPriorityClass.Normal) // only set when not default to prevent race condition
+                    {
+                        myProcess.PriorityClass = priority;
+                    }
+                }
+                catch (InvalidOperationException)
+                { 
+                    // process can exit before we are able to set priority
+                }
+
                 Logger.Info($"Start Process: {startInfo.FileName} {startInfo.Arguments}");
                 // Read stderror from another thread because otherwise we would run into deadlock situations
                 // where the writing process blocks because we do not read the data. The internal buffer
