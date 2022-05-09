@@ -18,8 +18,8 @@ rd /q /s !BinFolderNet48!
 rd /q /s !BinFolderNet6!
 rd /q /s !ObjFolder!
 
-dotnet publish /p:PublishProfile=!ScriptLocation!\ETWAnalyzer\Properties\PublishProfiles\Net60_SelfContained.pubxml /p:TargetFramework=net6.0-windows /p:PublishDir=!BinFolderNet6!
-dotnet publish /p:PublishProfile=!ScriptLocation!\ETWAnalyzer\Properties\PublishProfiles\Net48.pubxml /p:TargetFramework=net48 /p:PublishDir=!BinFolderNet48!
+dotnet publish /p:PublishProfile=!ScriptLocation!\ETWAnalyzer\Properties\PublishProfiles\Net60_SelfContained.pubxml /p:Configuration=Release /p:TargetFramework=net6.0-windows /p:PublishDir=!BinFolderNet6!
+dotnet publish /p:PublishProfile=!ScriptLocation!\ETWAnalyzer\Properties\PublishProfiles\Net48.pubxml /p:Configuration=Release /p:TargetFramework=net48 /p:PublishDir=!BinFolderNet48!
 
 call :DelFile "!BinFolderNet48!"
 call :DelFile "!BinFolderNet6!"
