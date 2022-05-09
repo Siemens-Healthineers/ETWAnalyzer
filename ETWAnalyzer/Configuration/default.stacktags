@@ -1,1071 +1,1136 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <Tag Name="">
-	<Tag Name="Windows">
-		<Tag Name="Read Ahead into File System Cache">
-			<Entrypoint Module="ntoskrnl.exe" Method="CcPerformReadAhead*"/>
-		</Tag>
-		<Tag Name="Memory Mapped Files Page Writer">
-			<Entrypoint Module="ntoskrnl.exe" Method="MiMappedPageWriter*"/>
-		</Tag>
-		<Tag Name="Security">
-			<Tag Name="Privilege Change">
-				<Entrypoint Module="advapi32.dll" Method="LsaAddAccountRights"/>
-			</Tag>
-			<Tag Name="Privilege Removal">
-				<Entrypoint Module="advapi32.dll" Method="LsaRemoveAccountRights"/>
-			</Tag>
-			<Tag Name="Write File Security Data">
-				<Entrypoint Module="ntmarta.dll" Method="SetNamedSecurityInfoW" />
-			</Tag>
-			<Tag Name="Read File Security Data">
-				<Entrypoint Module="ntmarta.dll" Method="GetNamedSecurityInfoW" />
-			</Tag>
-		</Tag>
-		<Tag Name="NTFS Close File">
-			<Entrypoint Module="ntfs.sys" Method="NtfsFspClose*"/>
-		</Tag>
-		<Tag Name="Windows Overlay FileSystem\Decompress WIM file (mostly during boot). See https://devblogs.microsoft.com/oldnewthing/20190618-00/?p=102597" >
-			<Entrypoint Module="Wof.sys" Method="*"/>
-		</Tag>
-		<Tag Name="Code Integrity (Device Guard) Overhead\This slows down dll loads and is an issue if it is high" Priority="1000">
-			<Entrypoint Module="CI.dll" Method="*"/>
-		</Tag>
-		<Tag Name="Windows Firewall" Priority="1000">
-			<Entrypoint Module="NETIO.SYS" Method="Wfp*"/>
-			<Entrypoint Module="NETIO.SYS" Method="Kfd*"/>
-		</Tag>
-		<Tag Name="Service Main Entry Point">
-			<Entrypoint Module="sysmain.dll" Method="SysMtServiceMain*"/>
-		</Tag>
+    <Tag Name="Windows">
+        <Tag Name="Read Ahead into File System Cache">
+            <Entrypoint Module="ntoskrnl.exe" Method="CcPerformReadAhead*"/>
+        </Tag>
+        <Tag Name="Memory Mapped Files Page Writer">
+            <Entrypoint Module="ntoskrnl.exe" Method="MiMappedPageWriter*"/>
+        </Tag>
+        <Tag Name="Security">
+            <Tag Name="Privilege Change">
+                <Entrypoint Module="advapi32.dll" Method="LsaAddAccountRights"/>
+            </Tag>
+            <Tag Name="Privilege Removal">
+                <Entrypoint Module="advapi32.dll" Method="LsaRemoveAccountRights"/>
+            </Tag>
+            <Tag Name="Write File Security Data">
+                <Entrypoint Module="ntmarta.dll" Method="SetNamedSecurityInfoW" />
+            </Tag>
+            <Tag Name="Read File Security Data">
+                <Entrypoint Module="ntmarta.dll" Method="GetNamedSecurityInfoW" />
+            </Tag>
+        </Tag>
+        <Tag Name="NTFS Close File">
+            <Entrypoint Module="ntfs.sys" Method="NtfsFspClose*"/>
+        </Tag>
+        <Tag Name="Windows Overlay FileSystem\Decompress WIM file (mostly during boot). See https://devblogs.microsoft.com/oldnewthing/20190618-00/?p=102597" >
+            <Entrypoint Module="Wof.sys" Method="*"/>
+        </Tag>
+        <Tag Name="Code Integrity (Device Guard) Overhead\This slows down dll loads and is an issue if it is high" Priority="1000">
+            <Entrypoint Module="CI.dll" Method="*"/>
+        </Tag>
+        <Tag Name="Windows Firewall" Priority="1000">
+            <Entrypoint Module="NETIO.SYS" Method="Wfp*"/>
+            <Entrypoint Module="NETIO.SYS" Method="Kfd*"/>
+        </Tag>
+        <Tag Name="Service Main Entry Point">
+            <Entrypoint Module="sysmain.dll" Method="SysMtServiceMain*"/>
+        </Tag>
 
-		<Tag Name="Set Thread Language">
-			<Entrypoint Module="ntdll.dll" Method="LdrpSetThreadPreferredLangList*"/>
-		</Tag>
+        <Tag Name="Set Thread Language">
+            <Entrypoint Module="ntdll.dll" Method="LdrpSetThreadPreferredLangList*"/>
+        </Tag>
 
-		<Tag Name="x86/x64 Thunk Translation\Whenver a x86 process calls into a system call into x64 the arguments are converted in this method">
-			<Entrypoint Module="wow64cpu.dll" Method="Thunk2ArgNSpNSpReloadState*"/>
-		</Tag>
-		<Tag Name="x86 Process Calls x64 Windows API" Priority="-1">
-			<Entrypoint Module="wow64cpu.dll" Method="ServiceNoTurbo*"/>
-		</Tag>
-		<Tag Name="BITS Init">
-			<Entrypoint Module="qmgr.dll" Method="InitQmgr*"/>
-		</Tag>
-		<Tag Name="MountVolume">
-			<Entrypoint Module="Ntfs.sys" Method="NtfsMountVolume*"/>
-		</Tag>
-		<Tag Name="Write Modified Data To Disk">
-			<Entrypoint Module="ntoskrnl.exe" Method="CcWriteBehind*"/>
-		</Tag>
-		<Tag Name="TLS Encryption">
-			<Entrypoint Module="ksecdd.sys" Method="EncryptMessage*"/>
-		</Tag>
-		<Tag Name="TLS Decryption">
-			<Entrypoint Module="ksecdd.sys" Method="DecryptMessage*"/>
-		</Tag>
-		<Tag Name="Disk Encryption">
-			<Tag Name="ReadDecrypt">
-				<Entrypoint Module="fvevol.sys" Method="ReadDecrypt*"/>
-			</Tag>
-			<Tag Name="WriteEncrypt">
-				<Entrypoint Module="fvevol.sys" Method="WriteEncrypt*"/>
-			</Tag>
-		</Tag>
-		<Tag Name="MSI">
-			<Tag Name="BeginTransaction">
-				<Entrypoint Module="msi.dll" Method="CMsiEngine::BeginTransaction"/>
-			</Tag>
-			<Tag Name="ProcessAssembliesInfo">
-				<Entrypoint Module="msi.dll" Method="ProcessAssembliesInfo"/>
-			</Tag>
-			<Tag Name="InstallFinalize">
-				<Entrypoint Module="msi.dll" Method="InstallFinalize"/>
-			</Tag>
-			<Tag Name="InstallValidate">
-				<Entrypoint Module="msi.dll" Method="InstallValidate"/>
-			</Tag>
-			<Tag Name="InstallFiles">
-				<Entrypoint Module="msi.dll" Method="InstallFiles"/>
-			</Tag>
-			<Tag Name="CostFinalize">
-				<Entrypoint Module="msi.dll" Method="CostFinalize"/>
-			</Tag>
-		</Tag>
-		<Tag Name="MS AppStore Update">
-			<Entrypoint Module="AppXDeploymentServer.dll" Method="*"/>
-		</Tag>
-		<Tag Name="WMI">
-			<Tag Name="Polling Query!\This causes CPU consumption in wmipsrv.exe. If the polling interval is short this causes significant background load. Identify polling initiator by checking the query via a memory dump.">
-				<Entrypoint Module="wbemess.dll" Method="*CBasePollingInstruction*"/>
-			</Tag>
-			<Tag Name="Printer Query">
-				<Entrypoint Module="cimwin32.dll" Method="*CWin32Printer::ExecQueryc*"/>
-			</Tag>
-			<Tag Name="GetObject">
-				<Entrypoint Module="wbemcore.dll" Method="CWbemNamespace::GetObject*"/>
-			</Tag>
-			<Tag Name="NTLMLogin">
-				<Entrypoint Module="wbemcore.dll" Method="CWbemLevel1Login::NTLMLogin*"/>
-			</Tag>
-			<Tag Name="Performance Counter">
-				<Entrypoint Module="WmiPerfClass.dll" Method="*"/>
-			</Tag>
-			<Tag Name="PNPDriver Signed Driver Query\Can take a long time to verify the cryptograpis signatures of all installed device drivers">
-				<Entrypoint Module="signdrv.dll" Method="CWhqlObj::CreateInstanceEnumAsync"/>
-			</Tag>
-			<Tag Name="Other Activity" Priority="-1">
-				<Entrypoint Module="WmiPerfClass.dll" Method="*"/>
-				<Entrypoint Module="wbemcore.dll" Method="*"/>
-				<Entrypoint Module="cimwin32.dll" Method="*"/>
-			</Tag>
-		</Tag>
-		<Tag Name="Event Log Query">
-			<Entrypoint Module="wevtapi.dll" Method="*"/>
-			<Entrypoint Module="wevtsvc.dll" Method="*EvtRpc*"/>
-			<Entrypoint Module="ntevt.dll" Method="*CImpNTEvtProv*"/>
-		</Tag>
-		<Tag Name="WorkingSetTrim">
-			<Entrypoint Module="ntoskrnl.exe" Method="MiTrimOrAgeWorkingSet"/>
-		</Tag>
-		<Tag Name="PDF-XChange Explorer Plugin.\Rename C:/Program Files/Tracker Software/Shell Extensions/XCShInfo.dll to get rid of it">
-			<Entrypoint Module="XCShInfo.dll" Method="*"/>
-		</Tag>
-		<Tag Name="RunFullMemoryDiagnostic Scheduled Task Running - Slows down Machine a lot!">
-			<Entrypoint Module="ntoskrnl.exe" Method="RtlpGenericRandomPatternWorker"/>
-			<Entrypoint Module="ntoskrnl.exe" Method="MiScrubMemoryWorker"/>
-		</Tag>
-		<Tag Name="System Management File System Scan">
-			<Entrypoint Module="AssetAdvisor.dll" Method="*"/>
-		</Tag>
-		<Tag Name="Remote Desktop">
-			<Entrypoint Module="rdpcorets.dll" Method="*"/>
-			<Entrypoint Module="rdpbase.dll" Method="*"/>
-		</Tag>
-		<Tag Name="Zero Page Thread">
-			<Entrypoint Module="ntoskrnl.exe" Method="MmZeroPageThread"/>
-			<Entrypoint Module="ntoskrnl.exe" Method="MiZeroLargePageThread"/>
-		</Tag>
-		<Tag Name="MiRebalanceZeroFreeLists">
-			<Entrypoint Module="ntoskrnl.exe" Method="MiRebalanceZeroFreeLists*"/>
-		</Tag>
-		<Tag Name="NTFS Checkpoint Volume">
-			<Entrypoint Module="Ntfs.sys" Method="NtfsCheckpointVolume*"/>
-		</Tag>
-		<Tag Name="Zero Page Thread">
-			<Entrypoint Module="ntoskrnl.exe" Method="MiZeroPageThread*"/>
-		</Tag>
-		<Tag Name="RebuildLargePages">
-			<Entrypoint Module="ntoskrnl.exe" Method="MiRebuildLargePages*"/>
-		</Tag>
-		<Tag Name="Transport Security">
-			<Tag Name="sspicli EncryptMesssage">
-				<Entrypoint Module="sspicli.dll" Method="EncryptMessage*"/>
-			</Tag>
-			<Tag Name="sspicli DecryptMesssage">
-				<Entrypoint Module="sspicli.dll" Method="DecryptMessage*"/>
-			</Tag>
-		</Tag>
-		<Tag Name="DllUnload">
-			<Entrypoint Module="ntdll.dll" Method="LdrUnloadDll*"/>
-		</Tag>
-	</Tag>
-	<Tag Name="Antivirus - AppLocker" Priority="1">
-		<Entrypoint Module="appidsvc.dll" Method="*AppIDRpcVerifyFile*" />
-		<Entrypoint Module="appid.sys" Method="*AiProcessNotifyRoutine*" />
-	</Tag>
-	<Tag Name="Antivirus - Windows Defender" Priority="1">
-		<Entrypoint Module="mpengine.dll" Method="*"/>
-		<Entrypoint Module="WdFilter.sys" Method="*"/>
-		<Entrypoint Module="mssecflt.sys" Method="*"/>
-	</Tag>
-	<Tag Name="Antivirus - Trend Micro" Priority="1">
-		<Entrypoint Module="VSApiNt.sys" Method="*"/>
-		<Entrypoint Module="tmcomeng.dll" Method="*"/>
-		<Entrypoint Module="NTRTScan.exe" Method="*"/>
-	</Tag>
-	<Tag Name="Antivirus - Trend Micro">
-		<Entrypoint Module="tmmon64.dll" Method="*"/>
-		<Entrypoint Module="tmUmEvt64.dll" Method="*"/>
-	</Tag>
-	<Tag Name="Antivirus - Symantec" Priority="1" >
-		<Tag Name ="Real Time Storage Protection">
-			<Entrypoint Module="srtsp64.sys" Method="*"/>
-		</Tag>
-	</Tag>
-	<Tag Name="Antivirus - Palo Alto Endpoint Protection\Intercepts CreateProcess/LoadLibrary which can induce large delays duringprocess start" Priority="1">
-		<Entrypoint Module="cyverak.sys" Method="*"/>
-		<Tag Name="File System Filter Driver" Priority="1">
-			<Entrypoint Module="cyvrfsfd.sys" Method="*"/>
-		</Tag>
-		<Tag Name="Network Driver" Priority="1">
-			<Entrypoint Module="cyvrlpc.sys" Method="*"/>
-			<Entrypoint Module="cyvrmtgn.sys" Method="*"/>
-		</Tag>
-	</Tag>
-	<Tag Name="Antivirus - Palo Alto Networks - FSFilter Activity Monitor" Priority="1">
-		<Entrypoint Module="cyvrlpc.sys" Method="*"/>
-	</Tag>
-	<Tag Name="Antivirus - ESET NOD32">
-		<Tag Name="FSFilter">
-			<Entrypoint Module="ehdrv.sys" Method="*"/>
-		</Tag>
-	</Tag>
-	<Tag Name="Antivirus - Mc Afee" Priority="1" >
-		<Entrypoint Module="MfeAVSvc.exe" Method="*"/>
-		<Entrypoint Module="mfecore.dll" Method="*"/>
-		<Entrypoint Module="mfefires.dll" Method="*"/>
-		<Tag Name="cfwids.sys">
-			<Entrypoint Module="cfwids.sys" Method="*"/>
-		</Tag>
-		<Tag Name="McPvDrv.sys">
-			<Entrypoint Module="McPvDrv.sys" Method="*"/>
-		</Tag>
-		<Tag Name="mfeaack.sys">
-			<Entrypoint Module="mfeaack.sys" Method="*"/>
-		</Tag>
-		<Tag Name="File Open/Close/... Interceptor - mfeavfk.sys">
-			<Entrypoint Module="mfeavfk.sys" Method="*"/>
-		</Tag>
-		<Tag Name="Network/IOCompletionPort - mfefirek.sys">
-			<Entrypoint Module="mfefirek.sys" Method="*"/>
-		</Tag>
-		<Tag Name="File Filter Driver - mfehidk.sys">
-			<Entrypoint Module="mfehidk.sys" Method="*"/>
-		</Tag>
-		<Tag Name="Anti-Malware Core - mfencbdc.sys">
-			<Entrypoint Module="mfencbdc.sys" Method="*"/>
-		</Tag>
-		<Tag Name="mfeplk.sys">
-			<Entrypoint Module="mfeplk.sys" Method="*"/>
-		</Tag>
-		<Tag Name="mfewfpk.sys">
-			<Entrypoint Module="mfewfpk.sys" Method="*"/>
-		</Tag>
-	</Tag>
-	<Tag Name="Antivirus - CrowdStrike Security" Priority="1">
-		<Tag Name="CrowdStrike User Mode Overhead">
-			<Entrypoint Module="umppc*.dll" Method="*"/>
-		</Tag>
-		<Tag Name="CrowdStrike Device Driver Overhead">
-			<Entrypoint Module="csagent.sys" Method="*"/>
-		</Tag>
-	</Tag>
-	<Tag Name="SQL Server">
-		<Tag Name="Query Optimizer\This indicates non optimial SQL Query times because SQL Server has not yet opimized this query.\This will happen usually over the next days. So far no documentation exists when exactly that will happen.">
-			<Entrypoint Module="sqllang.dll" Method="COptContext::PcxteOptimizeQuery*"/>
-		</Tag>
-		<Tag Name="Compile Query\Should not happen all the time. SQL Server should cache it later.">
-			<Entrypoint Module="sqllang.dll" Method="CSQLSource::FCompile*"/>
-		</Tag>
-		<Tag Name="Query Execution">
-			<Entrypoint Module="sqllang.dll" Method="CSQLSource::Execute*"/>
-		</Tag>
-		<Tag Name="Reset Connection And Login">
-			<Entrypoint Module="sqllang.dll" Method="ResetConnAndRedoLogin*"/>
-		</Tag>
-	</Tag>
-	<Tag Name="Chrome">
-		<Tag Name="BeginMainFrame">
-			<Entrypoint Module="chrome.dll" Method="cc::ProxyMain::BeginMainFrame*"/>
-		</Tag>
-		<Tag Name="DevTools FlushProtocolNotifications">
-			<Entrypoint Module="chrome.dll" Method="blink::DevToolsAgent::FlushProtocolNotifications*"/>
-		</Tag>
-		<Tag Name="JavaScriptMethodExecuteRequest">
-			<Entrypoint Module="chrome.dll" Method="blink::LocalFrameMojoHandler::JavaScriptMethodExecuteRequest*"/>
-		</Tag>
-		<Tag Name="Waits">
-			<Tag Name="WorkerThread WaitForWork">
-				<Entrypoint Module="chrome.dll" Method="base::internal::WorkerThread::Delegate::WaitForWork*"/>
-			</Tag>
-			<Tag Name="WaitableEvent TimedWait" Priority="-1">
-				<Entrypoint Module="chrome.dll" Method="base::WaitableEvent::TimedWait*"/>
-			</Tag>
-			<Tag Name="WaitForVSync">
-				<Entrypoint Module="chrome.dll" Method="gl::VSyncThreadWin::WaitForVSync*"/>
-			</Tag>
-		</Tag>
-		<Tag Name="GC">
-			<Tag Name="Mark">
-				<Entrypoint Module="chrome.dll" Method="v8::internal::ConcurrentMarking::Run*"/>
-				<Entrypoint Module="chrome.dll" Method="v8::internal::IncrementalMarking::AdvanceWithDeadline*"/>
-				<Entrypoint Module="chrome.dll" Method="v8::internal::Heap::FinalizeIncrementalMarkingIfComplete*"/>
-				<Entrypoint Module="chrome.dll" Method="blink::ThreadState::PerformConcurrentMark*"/>
-				<Entrypoint Module="chrome.dll" Method="blink::ThreadState::IncrementalMarkingScheduler::Dispatch*"/>
-			</Tag>
-			<Tag Name="Sweep">
-				<Entrypoint Module="chrome.dll" Method="v8::internal::Sweeper::ParallelSweepPage*"/>
-				<Entrypoint Module="chrome.dll" Method="blink::ThreadState::PerformConcurrentSweep*"/>
-			</Tag>
-		</Tag>
-		<Tag Name="Pump IO Completion">
-			<Entrypoint Module="chrome.dll" Method="base::MessagePumpForIO::WaitForIOCompletion*"/>
-		</Tag>
-		<Tag Name ="WebSocket">
-			<Tag Name="WebSocket Consume Pending Data Frames">
-				<Entrypoint Module="chrome.dll" Method="blink::WebSocketChannelImpl::ConsumePendingDataFrames*"/>
-			</Tag>
-			<Tag Name="WebSocket SendDataFrame">
-				<Entrypoint Module="chrome.dll" Method="network::WebSocket::SendDataFrame*"/>
-			</Tag>
-			<Tag Name="WebSocket ReadFrame">
-				<Entrypoint Module="chrome.dll" Method="net::WebSocketChannel::ReadFrames*"/>
-			</Tag>
-		</Tag>
-		<Tag Name="Encryption">
-			<Tag Name="Encrypt">
-				<Entrypoint Module="chrome.dll" Method="vpaes_ctr32_encrypt_blocks*"/>
-			</Tag>
-			<Tag Name="Decrypt">
-				<Entrypoint Module="chrome.dll" Method="aesni_gcm_decrypt*"/>
-			</Tag>
-		</Tag>
-		<Tag Name="MainThread IdleTask">
-			<Entrypoint Module="chrome.dll" Method="blink::scheduler::MainThreadSchedulerImpl::RunIdleTask*"/>
-		</Tag>
-		<Tag Name="GPU Process">
-			<Tag Name="GPU CommmandBuffer Flush">
-				<Entrypoint Module="chrome.dll" Method="gpu::CommandBufferService::Flush*"/>
-			</Tag>
-			<Tag Name="SwapBuffers">
-				<Entrypoint Module="chrome.dll" Method="viz::SkiaOutputSurfaceImplOnGpu::SwapBuffers*"/>
-			</Tag>
-			<Tag Name="GpuChannel HandleMessage">
-				<Entrypoint Module="chrome.dll" Method="gpu::GpuChannel::HandleMessage*"/>
-			</Tag>
-		</Tag>
-		<Tag Name="SSL Read">
-			<Entrypoint Module="chrome.dll" Method="SSL_read*"/>
-		</Tag>
-		<Tag Name="SSL Write">
-			<Entrypoint Module="chrome.dll" Method="SSL_write*"/>
-		</Tag>
-		<Tag Name="OnHandleReply">
-			<Entrypoint Module="chrome.dll" Method="mojo::SimpleWatcher::OnHandleReady*"/>
-		</Tag>
-	</Tag>
-	<Tag Name="Chromium Embedded\https://bitbucket.org/chromiumembedded/cef/wiki/GeneralUsage.md#markdown-header-introduction">
-		<Entrypoint Module="libcef.dll" Method="**"/>
-	</Tag>
+        <Tag Name="x86/x64 Thunk Translation\Whenver a x86 process calls into a system call into x64 the arguments are converted in this method">
+            <Entrypoint Module="wow64cpu.dll" Method="Thunk2ArgNSpNSpReloadState*"/>
+        </Tag>
+        <Tag Name="x86 Process Calls x64 Windows API" Priority="-1">
+            <Entrypoint Module="wow64cpu.dll" Method="ServiceNoTurbo*"/>
+        </Tag>
+        <Tag Name="BITS Init">
+            <Entrypoint Module="qmgr.dll" Method="InitQmgr*"/>
+        </Tag>
+        <Tag Name="MountVolume">
+            <Entrypoint Module="Ntfs.sys" Method="NtfsMountVolume*"/>
+        </Tag>
+        <Tag Name="Write Modified Data To Disk">
+            <Entrypoint Module="ntoskrnl.exe" Method="CcWriteBehind*"/>
+        </Tag>
+        <Tag Name="Network Driver NDIS DispatchWorkItem" >
+            <Entrypoint Module="ndis.sys" Method="ndisDispatchIoWorkItem*"/>
+        </Tag>
 
-	<Tag Name="UI Automation Overhead">
-		<Entrypoint Module="ole32.dll" Method="ThreadWndProc*"/>
-		<Entrypoint Module="oleacc.dll" Method="LresultFromObject*"/>
-		<Entrypoint Module="win32k.sys" Method="NtUserPeekMessage*"/>
-		<Entrypoint Module="UIAutomationCore.dll" Method="OverlappedIOManager::StaticIoThreadProc*"/>
-	</Tag>
-	<Tag Name="UI Thread Callbacks">
-		<Entrypoint Module="System.Windows.Forms.dll" Method="*Control::InvokeMarshaledCallbackHelper*"/>
-		<Entrypoint Module="System.Windows.Forms.ni.dll" Method="*Control.InvokeMarshaledCallbackHelper*"/>
-		<Tag Name="Timer Callbacks">
-			<Entrypoint Module="System.Windows.Forms.ni.dll" Method="System.Windows.Forms.Timer.OnTick*"/>
-			<Entrypoint Module="System.Windows.Forms.dll" Method="System.Windows.Forms.Timer::OnTick*"/>
-		</Tag>
-	</Tag>
-	<Tag Name="OpenGL">
-		<Entrypoint Module="opengl32.dll" />
-	</Tag>
-	<Tag Name="Exception Dispatch" Priority="1000" >
-		<Entrypoint Module="KernelBase.dll" Method="RaiseException*" />
-	</Tag>
-	<Tag Name="WMI">
-		<Tag Name="Execute WMI Query">
-			<Entrypoint Module="wbemcore.dll" Method="CCoreQueue::Execute*"/>
-		</Tag>
+        <Tag Name="KiUpdateSpeculationControl" >
+            <Entrypoint Module="ntoskrnl.exe" Method="KiUpdateSpeculationControl*"/>
+        </Tag>
 
-		<Tag Name="Query Process Memory">
-			<Entrypoint Module="ntdll.dll" Method="NtQueryVirtualMemory*"/>
-			<Entrypoint Module="perfproc.dll" Method="GetSystemVaData*"/>
-		</Tag>
-		<Tag Name="Query Process Information">
-			<Entrypoint Module="perfproc.dll" Method="CollectSysProcessObjectData*"/>
-		</Tag>
-	</Tag>
-	<Tag Name="zlib de/compression" Priority="1">
-		<Entrypoint Module="zlib.dll" />
-	</Tag>
-	<Tag Name="Libjpeg" Priority="1">
-		<Entrypoint Module="libjpeg.dll" />
-	</Tag>
-	<Tag Name="OpenMP">
-		<Tag Name="Intel OpenMP CPU Spinning" >
-			<Entrypoint Module="libiomp5md.dll"  Method="__kmp_pop_sync"/>
-		</Tag>
-		<Tag Name="Intel OpenMP Overhead" Priority="-1">
-			<Entrypoint Module="libiomp5md.dll" />
-		</Tag>
-		<Tag Name="Microsoft OpenMP Block With Spinning" Priority="-1">
-			<Entrypoint Module="vcomp120.dll" Method="_vcomp::PartialBarrierN::Block*"/>
-			<Entrypoint Module="vcomp120.dll" Method="_vcomp::PartialBarrier1::Block*"/>
-		</Tag>
-		<Tag Name="Microsoft OpenMP Handler" Priority="-1">
-			<Entrypoint Module="vcomp120.dll" Method="_vcomp::ParallelRegion::HandlerThreadFunc*"/>
-		</Tag>
-	</Tag>
-	<Tag Name="Write MiniDump">
-		<Entrypoint Module="dbghelp.dll" Method="MiniDumpWriteDump*"/>
-	</Tag>
-	<Tag Name="WCF">
-		<Tag Name="ServiceHost Ctor">
-			<Entrypoint Module="System.ServiceModel.ni.dll" Method="System.ServiceModel.ServiceHost..ctor*"/>
-			<Entrypoint Module="System.ServiceModel.dll" Method="System.ServiceModel.ServiceHost.::ctor*"/>
-		</Tag>
-		<Tag Name="WCF Remote Call" Priority="500">
-			<Entrypoint Module="System.ServiceModel.dll" Method="dynamicClass::SyncInvoke*"/>
-		</Tag>
+        <Tag Name="Search Indexer" >
+            <Entrypoint Module="mssrch.dll" Method="*"/>
+        </Tag>
 
-		<Tag Name="Read" Priority="-1">
-			<Entrypoint Module="System.ServiceModel.dll" Method="*System.ServiceModel.Channels.PipeConnection.OnAsyncReadComplete*"/>
-			<Entrypoint Module="System.ServiceModel.ni.dll" Method="*System.ServiceModel.Channels.PipeConnection::OnAsyncReadComplete*"/>
-			<Entrypoint Module="System.ServiceModel.ni.dll" Method="System.ServiceModel.Channels.SessionConnectionReader.Receive*"/>
-			<Entrypoint Module="System.ServiceModel.dll" Method="System.ServiceModel.Channels.SessionConnectionReader::Receive*"/>
-		</Tag>
-		<Tag Name="SocketListener.StartAccept Async (IO Completion Threads)">
-			<Entrypoint Module="System.ServiceModel.ni.dll" Method="System.ServiceModel.Channels.SocketConnectionListener+AcceptAsyncResult.StartAccept*"/>
-			<Entrypoint Module="System.ServiceModel.dll" Method="System.ServiceModel.Channels.SocketConnectionListener+AcceptAsyncResult::StartAccept*"/>
-		</Tag>
-		<Tag Name="Initialize Endpoint">
-			<Entrypoint Module="System.ServiceModel.dll" Method="System.ServiceModel.ChannelFactory::InitializeEndpoint*"/>
-			<Entrypoint Module="System.ServiceModel.ni.dll" Method="System.ServiceModel.ChannelFactory.InitializeEndpoint*"/>
-		</Tag>
-		<Tag Name="CommunicationObject Open">
-			<Entrypoint Module="System.ServiceModel.dll" Method="System.ServiceModel.Channels.CommunicationObject::Open*"/>
-		</Tag>
-	</Tag>
+        <Tag Name="Crypto Algos" Priority="-1">
+            <Entrypoint Module="bcryptprimitives.dll" Method="*"/>
+        </Tag>
+        <Tag Name="TLS Encryption">
+            <Entrypoint Module="ksecdd.sys" Method="EncryptMessage*"/>
+        </Tag>
+        <Tag Name="TLS Decryption">
+            <Entrypoint Module="ksecdd.sys" Method="DecryptMessage*"/>
+        </Tag>
+        <Tag Name="Disk Encryption">
+            <Tag Name="ReadDecrypt">
+                <Entrypoint Module="fvevol.sys" Method="ReadDecrypt*"/>
+            </Tag>
+            <Tag Name="WriteEncrypt">
+                <Entrypoint Module="fvevol.sys" Method="WriteEncrypt*"/>
+            </Tag>
+        </Tag>
+        <Tag Name="MSI">
+            <Tag Name="BeginTransaction">
+                <Entrypoint Module="msi.dll" Method="CMsiEngine::BeginTransaction"/>
+            </Tag>
+            <Tag Name="ProcessAssembliesInfo">
+                <Entrypoint Module="msi.dll" Method="ProcessAssembliesInfo"/>
+            </Tag>
+            <Tag Name="InstallFinalize">
+                <Entrypoint Module="msi.dll" Method="InstallFinalize"/>
+            </Tag>
+            <Tag Name="InstallValidate">
+                <Entrypoint Module="msi.dll" Method="InstallValidate"/>
+            </Tag>
+            <Tag Name="InstallFiles">
+                <Entrypoint Module="msi.dll" Method="InstallFiles"/>
+            </Tag>
+            <Tag Name="CostFinalize">
+                <Entrypoint Module="msi.dll" Method="CostFinalize"/>
+            </Tag>
+        </Tag>
+        <Tag Name="MS AppStore Update">
+            <Entrypoint Module="AppXDeploymentServer.dll" Method="*"/>
+        </Tag>
+        <Tag Name="WMI">
+            <Tag Name="Polling Query!\This causes CPU consumption in wmipsrv.exe. If the polling interval is short this causes significant background load. Identify polling initiator by checking the query via a memory dump.">
+                <Entrypoint Module="wbemess.dll" Method="*CBasePollingInstruction*"/>
+            </Tag>
+            <Tag Name="Printer Query">
+                <Entrypoint Module="cimwin32.dll" Method="*CWin32Printer::ExecQueryc*"/>
+            </Tag>
+            <Tag Name="GetObject">
+                <Entrypoint Module="wbemcore.dll" Method="CWbemNamespace::GetObject*"/>
+            </Tag>
+            <Tag Name="NTLMLogin">
+                <Entrypoint Module="wbemcore.dll" Method="CWbemLevel1Login::NTLMLogin*"/>
+            </Tag>
+            <Tag Name="Performance Counter">
+                <Entrypoint Module="WmiPerfClass.dll" Method="*"/>
+            </Tag>
+            <Tag Name="PNPDriver Signed Driver Query\Can take a long time to verify the cryptograpis signatures of all installed device drivers">
+                <Entrypoint Module="signdrv.dll" Method="CWhqlObj::CreateInstanceEnumAsync"/>
+            </Tag>
+            <Tag Name="Other Activity" Priority="-1">
+                <Entrypoint Module="WmiPerfClass.dll" Method="*"/>
+                <Entrypoint Module="wbemcore.dll" Method="*"/>
+                <Entrypoint Module="cimwin32.dll" Method="*"/>
+            </Tag>
+        </Tag>
+        <Tag Name="Event Log Query">
+            <Entrypoint Module="wevtapi.dll" Method="*"/>
+            <Entrypoint Module="wevtsvc.dll" Method="*EvtRpc*"/>
+            <Entrypoint Module="ntevt.dll" Method="*CImpNTEvtProv*"/>
+        </Tag>
+        <Tag Name="WorkingSetTrim">
+            <Entrypoint Module="ntoskrnl.exe" Method="MiTrimOrAgeWorkingSet"/>
+        </Tag>
+        <Tag Name="PDF-XChange Explorer Plugin.\Rename C:/Program Files/Tracker Software/Shell Extensions/XCShInfo.dll to get rid of it">
+            <Entrypoint Module="XCShInfo.dll" Method="*"/>
+        </Tag>
+        <Tag Name="RunFullMemoryDiagnostic Scheduled Task Running - Slows down Machine a lot!">
+            <Entrypoint Module="ntoskrnl.exe" Method="RtlpGenericRandomPatternWorker"/>
+            <Entrypoint Module="ntoskrnl.exe" Method="MiScrubMemoryWorker"/>
+        </Tag>
+     <Tag Name="System Management (SMS)">
+         <Tag Name="System Management File System Scan">
+             <Entrypoint Module="AssetAdvisor.dll" Method="*"/>
+         </Tag>
+         <Tag Name="Start SMS Sensors">
+                <Entrypoint Module="Microsoft.ConfigurationManager.SensorManagedProvider.dll"    Method="Microsoft.ConfigurationManager.SensorManagedProvider.SMS_SensorManagedProvider::StartUpLiveSensors*"/>
+                <Entrypoint Module="Microsoft.ConfigurationManager.SensorManagedProvider.ni.dll" Method="Microsoft.ConfigurationManager.SensorManagedProvider.SMS_SensorManagedProvider.StartUpLiveSensors*"/>
+         </Tag>
+    </Tag>
+      <Tag Name="Remote Desktop">
+      <Entrypoint Module="rdpcorets.dll" Method="*"/>
+      <Entrypoint Module="rdpbase.dll" Method="*"/>
+    </Tag>
+    <Tag Name="Zero Page Thread">
+      <Entrypoint Module="ntoskrnl.exe" Method="MmZeroPageThread"/>
+      <Entrypoint Module="ntoskrnl.exe" Method="MiZeroLargePageThread"/>
+    </Tag>
+    <Tag Name="MiRebalanceZeroFreeLists">
+      <Entrypoint Module="ntoskrnl.exe" Method="MiRebalanceZeroFreeLists*"/>
+    </Tag>
+    <Tag Name="NTFS Checkpoint Volume">
+      <Entrypoint Module="Ntfs.sys" Method="NtfsCheckpointVolume*"/>
+    </Tag>
+    <Tag Name="Zero Page Thread">
+      <Entrypoint Module="ntoskrnl.exe" Method="MiZeroPageThread*"/>
+    </Tag>
+    <Tag Name="RebuildLargePages">
+      <Entrypoint Module="ntoskrnl.exe" Method="MiRebuildLargePages*"/>
+    </Tag>
+    <Tag Name="Transport Security">
+      <Tag Name="sspicli EncryptMesssage">
+        <Entrypoint Module="sspicli.dll" Method="EncryptMessage*"/>
+      </Tag>
+      <Tag Name="sspicli DecryptMesssage">
+        <Entrypoint Module="sspicli.dll" Method="DecryptMessage*"/>
+      </Tag>
+    </Tag>
+    <Tag Name="DllUnload">
+      <Entrypoint Module="ntdll.dll" Method="LdrUnloadDll*"/>
+    </Tag>
+  </Tag>
+  <Tag Name="Nexthink Driver Overhead">
+    <Entrypoint Module="nxtrdrv.sys" Method="*" />
+  </Tag>
+  <Tag Name="Antivirus - AppLocker" Priority="1">
+    <Entrypoint Module="appidsvc.dll" Method="*AppIDRpcVerifyFile*" />
+    <Entrypoint Module="appid.sys" Method="*AiProcessNotifyRoutine*" />
+  </Tag>
+  <Tag Name="Antivirus - Windows Defender" Priority="1">
+    <Entrypoint Module="mpengine.dll" Method="*"/>
+    <Entrypoint Module="WdFilter.sys" Method="*"/>
+    <Entrypoint Module="mssecflt.sys" Method="*"/>
+    <Entrypoint Module="MsSense.exe" Method="*"/>
+  </Tag>
+  <Tag Name="Antivirus - Trend Micro" Priority="1">
+    <Entrypoint Module="VSApiNt.sys" Method="*"/>
+    <Entrypoint Module="tmcomeng.dll" Method="*"/>
+    <Entrypoint Module="NTRTScan.exe" Method="*"/>
+  </Tag>
+  <Tag Name="Antivirus - Trend Micro">
+    <Entrypoint Module="tmmon64.dll" Method="*"/>
+    <Entrypoint Module="tmUmEvt64.dll" Method="*"/>
+  </Tag>
+  <Tag Name="Antivirus - Symantec" Priority="1" >
+    <Tag Name ="Real Time Storage Protection">
+      <Entrypoint Module="srtsp64.sys" Method="*"/>
+    </Tag>
+  </Tag>
+  <Tag Name="Antivirus - Palo Alto Endpoint Protection\Intercepts CreateProcess/LoadLibrary which can induce large delays duringprocess start" Priority="1">
+    <Entrypoint Module="cyverak.sys" Method="*"/>
+    <Tag Name="File System Filter Driver" Priority="1">
+      <Entrypoint Module="cyvrfsfd.sys" Method="*"/>
+    </Tag>
+    <Tag Name="Network Driver" Priority="1">
+      <Entrypoint Module="cyvrlpc.sys" Method="*"/>
+      <Entrypoint Module="cyvrmtgn.sys" Method="*"/>
+    </Tag>
+  </Tag>
+  <Tag Name="Antivirus - Palo Alto Networks - FSFilter Activity Monitor" Priority="1">
+    <Entrypoint Module="cyvrlpc.sys" Method="*"/>
+  </Tag>
+  <Tag Name="Antivirus - ESET NOD32">
+    <Tag Name="FSFilter">
+      <Entrypoint Module="ehdrv.sys" Method="*"/>
+    </Tag>
+  </Tag>
+  <Tag Name="Antivirus - Mc Afee" Priority="1" >
+    <Entrypoint Module="MfeAVSvc.exe" Method="*"/>
+    <Entrypoint Module="mfecore.dll" Method="*"/>
+    <Entrypoint Module="mfefires.dll" Method="*"/>
+    <Tag Name="cfwids.sys">
+      <Entrypoint Module="cfwids.sys" Method="*"/>
+    </Tag>
+    <Tag Name="McPvDrv.sys">
+      <Entrypoint Module="McPvDrv.sys" Method="*"/>
+    </Tag>
+    <Tag Name="mfeaack.sys">
+      <Entrypoint Module="mfeaack.sys" Method="*"/>
+    </Tag>
+    <Tag Name="File Open/Close/... Interceptor - mfeavfk.sys">
+      <Entrypoint Module="mfeavfk.sys" Method="*"/>
+    </Tag>
+    <Tag Name="Network/IOCompletionPort - mfefirek.sys">
+      <Entrypoint Module="mfefirek.sys" Method="*"/>
+    </Tag>
+    <Tag Name="File Filter Driver - mfehidk.sys">
+      <Entrypoint Module="mfehidk.sys" Method="*"/>
+    </Tag>
+    <Tag Name="Anti-Malware Core - mfencbdc.sys">
+      <Entrypoint Module="mfencbdc.sys" Method="*"/>
+    </Tag>
+    <Tag Name="mfeplk.sys">
+      <Entrypoint Module="mfeplk.sys" Method="*"/>
+    </Tag>
+    <Tag Name="mfewfpk.sys">
+      <Entrypoint Module="mfewfpk.sys" Method="*"/>
+    </Tag>
+  </Tag>
+  <Tag Name="Antivirus - CrowdStrike Security" Priority="1">
+    <Tag Name="CrowdStrike User Mode Overhead">
+      <Entrypoint Module="umppc*.dll" Method="*" />
+    </Tag>
+    <Tag Name="CrowdStrike Device Driver Overhead">
+      <Entrypoint Module="csagent.sys" Method="*" />
+    </Tag>
+  </Tag>
+  <Tag Name="DWM Render">
+        <Entrypoint Module="dwmcore.dll" Method="CPartitionVerticalBlankScheduler::ProcessFrame*"/>
+  </Tag>
+  <Tag Name="MS Teams">
+        <Entrypoint Module="Teams.exe"   Method="*" />
+        <Entrypoint Module="skypert.dll" Method="*" />
+  </Tag>
+  <Tag Name="OneDrive Sync">
+       <Entrypoint Module="SyncEngine.dll"     Method="*" />
+       <Entrypoint Module="FileSyncClient.dll" Method="*" />
+  </Tag>
+  <Tag Name="SQL Server">
+    <Tag Name="Query Optimizer\This indicates non optimial SQL Query times because SQL Server has not yet opimized this query.\This will happen usually over the next days. So far no documentation exists when exactly that will happen.">
+      <Entrypoint Module="sqllang.dll" Method="COptContext::PcxteOptimizeQuery*"/>
+    </Tag>
+    <Tag Name="Compile Query\Should not happen all the time. SQL Server should cache it later.">
+      <Entrypoint Module="sqllang.dll" Method="CSQLSource::FCompile*"/>
+    </Tag>
+    <Tag Name="Query Execution">
+      <Entrypoint Module="sqllang.dll" Method="CSQLSource::Execute*"/>
+    </Tag>
+    <Tag Name="Reset Connection And Login">
+      <Entrypoint Module="sqllang.dll" Method="ResetConnAndRedoLogin*"/>
+    </Tag>
+  </Tag>
+  <Tag Name="Chrome">
+    <Tag Name="BeginMainFrame">
+      <Entrypoint Module="chrome.dll" Method="cc::ProxyMain::BeginMainFrame*"/>
+    </Tag>
+    <Tag Name="DevTools FlushProtocolNotifications">
+      <Entrypoint Module="chrome.dll" Method="blink::DevToolsAgent::FlushProtocolNotifications*"/>
+    </Tag>
+    <Tag Name="JavaScriptMethodExecuteRequest">
+      <Entrypoint Module="chrome.dll" Method="blink::LocalFrameMojoHandler::JavaScriptMethodExecuteRequest*"/>
+    </Tag>
+    <Tag Name="Waits">
+      <Tag Name="WorkerThread WaitForWork">
+        <Entrypoint Module="chrome.dll" Method="base::internal::WorkerThread::Delegate::WaitForWork*"/>
+      </Tag>
+      <Tag Name="WaitableEvent TimedWait" Priority="-1">
+        <Entrypoint Module="chrome.dll" Method="base::WaitableEvent::TimedWait*"/>
+      </Tag>
+      <Tag Name="WaitForVSync">
+        <Entrypoint Module="chrome.dll" Method="gl::VSyncThreadWin::WaitForVSync*"/>
+      </Tag>
+    </Tag>
+    <Tag Name="GC">
+      <Tag Name="Mark">
+        <Entrypoint Module="chrome.dll" Method="v8::internal::ConcurrentMarking::Run*"/>
+        <Entrypoint Module="chrome.dll" Method="v8::internal::IncrementalMarking::AdvanceWithDeadline*"/>
+        <Entrypoint Module="chrome.dll" Method="v8::internal::Heap::FinalizeIncrementalMarkingIfComplete*"/>
+        <Entrypoint Module="chrome.dll" Method="blink::ThreadState::PerformConcurrentMark*"/>
+        <Entrypoint Module="chrome.dll" Method="blink::ThreadState::IncrementalMarkingScheduler::Dispatch*"/>
+      </Tag>
+      <Tag Name="Sweep">
+        <Entrypoint Module="chrome.dll" Method="v8::internal::Sweeper::ParallelSweepPage*"/>
+        <Entrypoint Module="chrome.dll" Method="blink::ThreadState::PerformConcurrentSweep*"/>
+      </Tag>
+    </Tag>
+    <Tag Name="Pump IO Completion">
+      <Entrypoint Module="chrome.dll" Method="base::MessagePumpForIO::WaitForIOCompletion*"/>
+    </Tag>
+    <Tag Name ="WebSocket">
+      <Tag Name="WebSocket Consume Pending Data Frames">
+        <Entrypoint Module="chrome.dll" Method="blink::WebSocketChannelImpl::ConsumePendingDataFrames*"/>
+      </Tag>
+      <Tag Name="WebSocket SendDataFrame">
+        <Entrypoint Module="chrome.dll" Method="network::WebSocket::SendDataFrame*"/>
+      </Tag>
+      <Tag Name="WebSocket ReadFrame">
+        <Entrypoint Module="chrome.dll" Method="net::WebSocketChannel::ReadFrames*"/>
+      </Tag>
+    </Tag>
+    <Tag Name="Encryption">
+      <Tag Name="Encrypt">
+        <Entrypoint Module="chrome.dll" Method="vpaes_ctr32_encrypt_blocks*"/>
+      </Tag>
+      <Tag Name="Decrypt">
+        <Entrypoint Module="chrome.dll" Method="aesni_gcm_decrypt*"/>
+      </Tag>
+    </Tag>
+    <Tag Name="MainThread IdleTask">
+      <Entrypoint Module="chrome.dll" Method="blink::scheduler::MainThreadSchedulerImpl::RunIdleTask*"/>
+    </Tag>
+    <Tag Name="GPU Process">
+      <Tag Name="GPU CommmandBuffer Flush">
+        <Entrypoint Module="chrome.dll" Method="gpu::CommandBufferService::Flush*"/>
+      </Tag>
+      <Tag Name="SwapBuffers">
+        <Entrypoint Module="chrome.dll" Method="viz::SkiaOutputSurfaceImplOnGpu::SwapBuffers*"/>
+      </Tag>
+      <Tag Name="GpuChannel HandleMessage">
+        <Entrypoint Module="chrome.dll" Method="gpu::GpuChannel::HandleMessage*"/>
+      </Tag>
+    </Tag>
+    <Tag Name="SSL Read">
+      <Entrypoint Module="chrome.dll" Method="SSL_read*"/>
+    </Tag>
+    <Tag Name="SSL Write">
+      <Entrypoint Module="chrome.dll" Method="SSL_write*"/>
+    </Tag>
+    <Tag Name="OnHandleReply">
+      <Entrypoint Module="chrome.dll" Method="mojo::SimpleWatcher::OnHandleReady*"/>
+    </Tag>
+  </Tag>
+  <Tag Name="Chromium Embedded\https://bitbucket.org/chromiumembedded/cef/wiki/GeneralUsage.md#markdown-header-introduction">
+    <Entrypoint Module="libcef.dll" Method="**"/>
+  </Tag>
 
+  <Tag Name="UI Automation Overhead">
+    <Entrypoint Module="ole32.dll" Method="ThreadWndProc*"/>
+    <Entrypoint Module="oleacc.dll" Method="LresultFromObject*"/>
+    <Entrypoint Module="win32k.sys" Method="NtUserPeekMessage*"/>
+    <Entrypoint Module="UIAutomationCore.dll" Method="OverlappedIOManager::StaticIoThreadProc*"/>
+  </Tag>
+  <Tag Name="UI Thread Callbacks">
+    <Entrypoint Module="System.Windows.Forms.dll" Method="*Control::InvokeMarshaledCallbackHelper*"/>
+    <Entrypoint Module="System.Windows.Forms.ni.dll" Method="*Control.InvokeMarshaledCallbackHelper*"/>
+    <Tag Name="Timer Callbacks">
+      <Entrypoint Module="System.Windows.Forms.ni.dll" Method="System.Windows.Forms.Timer.OnTick*"/>
+      <Entrypoint Module="System.Windows.Forms.dll" Method="System.Windows.Forms.Timer::OnTick*"/>
+    </Tag>
+  </Tag>
+  <Tag Name="OpenGL">
+    <Entrypoint Module="opengl32.dll" />
+  </Tag>
+  <Tag Name="Exception Dispatch" Priority="1000" >
+    <Entrypoint Module="KernelBase.dll" Method="RaiseException*" />
+  </Tag>
+  <Tag Name="WMI">
+    <Tag Name="Execute WMI Query">
+      <Entrypoint Module="wbemcore.dll" Method="CCoreQueue::Execute*"/>
+    </Tag>
 
-	<Tag Name="WPF">
-		<Tag Name="ThreadMessageFilter - GetActiveWindowList">
-			<Entrypoint Module="WindowsFormsIntegration.ni.dll" Method="System.Windows.Forms.Integration.WindowsFormsHostList*ActiveWindowList*"/>
-			<Entrypoint Module="WindowsFormsIntegration.dll" Method="System.Windows.Forms.Integration.WindowsFormsHostList*ActiveWindowList*"/>
-		</Tag>
+    <Tag Name="Query Process Memory">
+      <Entrypoint Module="ntdll.dll" Method="NtQueryVirtualMemory*"/>
+      <Entrypoint Module="perfproc.dll" Method="GetSystemVaData*"/>
+    </Tag>
+    <Tag Name="Query Process Information">
+      <Entrypoint Module="perfproc.dll" Method="CollectSysProcessObjectData*"/>
+    </Tag>
+  </Tag>
+  <Tag Name="zlib de/compression" Priority="1">
+    <Entrypoint Module="zlib.dll" />
+  </Tag>
+  <Tag Name="Libjpeg" Priority="1">
+    <Entrypoint Module="libjpeg.dll" />
+  </Tag>
+  <Tag Name="OpenMP">
+    <Tag Name="Intel OpenMP CPU Spinning" >
+      <Entrypoint Module="libiomp5md.dll"  Method="__kmp_pop_sync"/>
+    </Tag>
+    <Tag Name="Intel OpenMP Overhead" Priority="-1">
+      <Entrypoint Module="libiomp5md.dll" />
+    </Tag>
+    <Tag Name="Microsoft OpenMP Block With Spinning" Priority="-1">
+      <Entrypoint Module="vcomp120.dll" Method="_vcomp::PartialBarrierN::Block*"/>
+      <Entrypoint Module="vcomp120.dll" Method="_vcomp::PartialBarrier1::Block*"/>
+    </Tag>
+    <Tag Name="Microsoft OpenMP Handler" Priority="-1">
+      <Entrypoint Module="vcomp120.dll" Method="_vcomp::ParallelRegion::HandlerThreadFunc*"/>
+    </Tag>
+  </Tag>
+  <Tag Name="Write MiniDump">
+    <Entrypoint Module="dbghelp.dll" Method="MiniDumpWriteDump*"/>
+  </Tag>
+  <Tag Name="WCF">
+    <Tag Name="ServiceHost Ctor">
+      <Entrypoint Module="System.ServiceModel.ni.dll" Method="System.ServiceModel.ServiceHost..ctor*"/>
+      <Entrypoint Module="System.ServiceModel.dll" Method="System.ServiceModel.ServiceHost.::ctor*"/>
+    </Tag>
+    <Tag Name="WCF Remote Call" Priority="500">
+      <Entrypoint Module="System.ServiceModel.dll" Method="dynamicClass::SyncInvoke*"/>
+    </Tag>
 
-		<Tag Name="Culture Get or Set On Thread">
-			<Entrypoint Module="WindowsBase.ni.dll" Method="MS.Internal.CulturePreservingExecutionContext+CultureAndContextManager.WriteCultureInfosToCurrentThread*" />
-			<Entrypoint Module="WindowsBase.dll" Method="MS.Internal.CulturePreservingExecutionContext+CultureAndContextManager::WriteCultureInfosToCurrentThread*" />
-			<Entrypoint Module="WindowsBase.ni.dll" Method="MS.Internal.CulturePreservingExecutionContext+CultureAndContextManager.ReadCultureInfosFromCurrentThread*" />
-			<Entrypoint Module="WindowsBase.dll" Method="MS.Internal.CulturePreservingExecutionContext+CultureAndContextManager::ReadCultureInfosFromCurrentThread*" />
-		</Tag>
-		<Tag Name="UI Automation" Priority="1">
-			<Entrypoint Module="PresentationCore.ni.dll" Method="MS.Internal.Automation.ElementUtil+*" />
-			<Entrypoint Module="PresentationCore.dll" Method="MS.Internal.Automation.ElementUtil+*" />
-		</Tag>
-		<Tag Name="VirtualizingStackPanel InitializeViewPort">
-			<Entrypoint Module="PresentationFramework.ni.dll" Method="System.Windows.Controls.VirtualizingStackPanel*InitializeViewport*"/>
-			<Entrypoint Module="PresentationFramework.dll" Method="System.Windows.Controls.VirtualizingStackPanel*InitializeViewport*"/>
-		</Tag>
-
-		<Tag Name="VirtualizingStackPanel Cleanup" Priority="1" >
-			<Entrypoint Module="PresentationFramework.ni.dll" Method="System.Windows.Controls.VirtualizingStackPanel.OnCleanUp*"/>
-			<Entrypoint Module="PresentationFramework.dll" Method="System.Windows.Controls.VirtualizingStackPanel::OnCleanUp*"/>
-		</Tag>
-
-		<Tag Name="MediaContext RenderMessageHandlerCore">
-			<Entrypoint Module="PresentationCore.ni.dll" Method="System.Windows.Media.MediaContext.RenderMessageHandlerCore*"/>
-			<Entrypoint Module="PresentationCore.dll" Method="System.Windows.Media.MediaContext::RenderMessageHandlerCore*"/>
-		</Tag>
-
-		<Tag Name="Visual HitTestPoint">
-			<Entrypoint Module="PresentationCore.ni.dll" Method="System.Windows.Media.Visual.HitTestPoint*"/>
-			<Entrypoint Module="PresentationCore.dll" Method="System.Windows.Media.Visual::HitTestPoint*"/>
-		</Tag>
-		<Tag Name="ContextLayoutManager FireAutomationEvents">
-			<Entrypoint Module="PresentationCore.ni.dll" Method="System.Windows.ContextLayoutManager.fireAutomationEvents*"/>
-			<Entrypoint Module="PresentationCore.dll" Method="System.Windows.ContextLayoutManager::fireAutomationEvents*"/>
-		</Tag>
-		<Tag Name="Measure">
-			<Entrypoint Module="PresentationCore.ni.dll" Method="*System.Windows.UIElement.Measure*"/>
-			<Entrypoint Module="PresentationCore.dll" Method="*System.Windows.UIElement::Measure*"/>
-		</Tag>
-		<Tag Name="XamlServices Transform">
-			<Entrypoint Module="System.Xaml.dll" Method="System.Xaml.XamlServices::Transform*"/>
-			<Entrypoint Module="System.Xaml.ni.dll" Method="System.Xaml.XamlServices.Transform*"/>
-		</Tag>
-		<Tag Name="RenderThread">
-			<Entrypoint Module="wpfgfx_v0400.dll" Method="CPartitionThread::RenderPartition*"/>
-		</Tag>
-		<Tag Name="RenderThread DesktopRender">
-			<Entrypoint Module="wpfgfx_v0400.dll" Method="CDesktopRenderTarget::Present*"/>
-		</Tag>
-		<Tag Name="Animation Timer Tick">
-			<Entrypoint Module="PresentationCore.ni.dll" Method="System.Windows.Media.Animation.TimeManager.Tick*"/>
-			<Entrypoint Module="PresentationCore.dll" Method="System.Windows.Media.Animation.TimeManager::Tick*"/>
-		</Tag>
-
-	</Tag>
-
-	<Tag Name="GDI">
-		<Tag Name="GetDeviceContext" Priority="7">
-			<Entrypoint Module="win32u.dll" Method="ZwUserGetDC*"/>
-		</Tag>
-
-		<Tag Name="OpenGL Callback from GDI">
-			<Entrypoint Module="win32k.sys" Method="NtGdiDdDDIEscape*"/>
-		</Tag>
-		<Entrypoint Module="GdiPlus.dll" Method="*GpGraphics*"/>
-		<Tag Name="Allocate Bitmap">
-			<Entrypoint Module="GdiPlus.dll" Method="GpMemoryBitmap::AllocBitmapData*"/>
-		</Tag>
-		<Tag Name="Free Bitmap">
-			<Entrypoint Module="GdiPlus.dll" Method="GpBitmap::Dispose*"/>
-		</Tag>
-		<Tag Name="SaveImageToFile">
-			<Entrypoint Module="GdiPlus.dll" Method="GdipSaveImageToFile*"/>
-		</Tag>
-		<Tag Name="BitBlt">
-			<Entrypoint Module="gdi32full.dll" Method="BitBlt*"/>
-		</Tag>
-		<Tag Name="RelaseDC">
-			<Entrypoint Module="GdiPlus.dll" Method="GdipReleaseDC*"/>
-		</Tag>
-		<Tag Name="AllocateDC">
-			<Entrypoint Module="GdiPlus.dll" Method="GpGraphics::GetHdc*"/>
-		</Tag>
-	</Tag>
-	<Tag Name="COM">
-		<Tag Name="Marshalled COM Call">
-			<Entrypoint Module="combase.dll" Method="AppInvoke*"/>
-			<Entrypoint Module="combase.dll" Method="ObjectStubless*"/>
-			<Entrypoint Module="*clr.dll" Method="UnmarshalObjectFromInterface*"/>
-		</Tag>
-		<Tag Name="RPC ProcessIO">
-			<Entrypoint Module="rpcrt4.dll" Method="LRPC_ADDRESS::ProcessIO*"/>
-		</Tag>
-
-	</Tag>
-	<Tag Name="Win32 Heap">
-		<Tag Name="Allocate" Priority="-1">
-			<Entrypoint Module="ntdll.dll" Method="RtlpAllocateHeap*"/>
-		</Tag>
-		<Tag Name="Reallocate" Priority="-1">
-			<Entrypoint Module="ntdll.dll" Method="RtlReAllocateHeap*"/>
-		</Tag>
-		<Tag Name="FreeHeap" Priority="-1">
-			<Entrypoint Module="ntdll.dll" Method="RtlFreeHeap*"/>
-		</Tag>
-	</Tag>
-	<Tag Name="CreateThread">
-		<Entrypoint Module="ntdll.dll" Method="ZwCreateThread*"/>
-	</Tag>
-	<Tag Name="Network">
-		<Tag Name="Socket Send">
-			<Entrypoint Module="ws2_32.dll" Method="send*"/>
-		</Tag>
-		<Tag Name="Socket Receive">
-			<Entrypoint Module="ws2_32.dll" Method="recv*"/>
-		</Tag>
-	</Tag>
-	<Tag Name=".NET">
-		<Tag Name="XAML Load" Priority="1" >
-			<Entrypoint Module="PresentationFramework.ni.dll" Method="System.Windows.Markup.XamlReader.Load*"/>
-			<Entrypoint Module="PresentationFramework.dll" Method="System.Windows.Markup.XamlReader::Load*"/>
-		</Tag>
-
-		<Tag Name="Type Cast">
-			<Entrypoint Module="*clr.dll" Method="JIT_ChkCast*"/>
-		</Tag>
-
-		<Tag Name="Delegate Creation">
-			<Entrypoint Module="*clr.dll" Method="COMDelegate::DelegateConstruct*"/>
-		</Tag>
-
-		<Tag Name="StackTrace">
-			<Entrypoint Module="mscorlib.ni.dll" Method="System.Diagnostics.StackTrace.ToString*"/>
-			<Entrypoint Module="mscorlib.dll" Method="System.Diagnostics.StackTrace::ToString*"/>
-			<Entrypoint Module="*clr.dll" Method="DebugStackTrace::GetStackFramesInternal*"/>
-		</Tag>
-
-		<Tag Name="CLR memset" Priority="-1">
-			<Entrypoint Module="msvcr120_clr0400.dll" Method="memset*"/>
-		</Tag>
-
-		<Tag Name="Socket BeginAccept Lock Contention" Priority="151">
-			<Entrypoint Module="System.ServiceModel.ni.dll" Method="System.ServiceModel.Channels.SocketConnectionListener.InternalBeginAccept*"/>
-			<Entrypoint Module="System.ServiceModel.dll" Method="System.ServiceModel.Channels.SocketConnectionListener::InternalBeginAccept*"/>
-		</Tag>
+    <Tag Name="Read" Priority="-1">
+      <Entrypoint Module="System.ServiceModel.dll" Method="*System.ServiceModel.Channels.PipeConnection.OnAsyncReadComplete*"/>
+      <Entrypoint Module="System.ServiceModel.ni.dll" Method="*System.ServiceModel.Channels.PipeConnection::OnAsyncReadComplete*"/>
+      <Entrypoint Module="System.ServiceModel.ni.dll" Method="System.ServiceModel.Channels.SessionConnectionReader.Receive*"/>
+      <Entrypoint Module="System.ServiceModel.dll" Method="System.ServiceModel.Channels.SessionConnectionReader::Receive*"/>
+    </Tag>
+    <Tag Name="SocketListener.StartAccept Async (IO Completion Threads)">
+      <Entrypoint Module="System.ServiceModel.ni.dll" Method="System.ServiceModel.Channels.SocketConnectionListener+AcceptAsyncResult.StartAccept*"/>
+      <Entrypoint Module="System.ServiceModel.dll" Method="System.ServiceModel.Channels.SocketConnectionListener+AcceptAsyncResult::StartAccept*"/>
+    </Tag>
+    <Tag Name="Initialize Endpoint">
+      <Entrypoint Module="System.ServiceModel.dll" Method="System.ServiceModel.ChannelFactory::InitializeEndpoint*"/>
+      <Entrypoint Module="System.ServiceModel.ni.dll" Method="System.ServiceModel.ChannelFactory.InitializeEndpoint*"/>
+    </Tag>
+    <Tag Name="CommunicationObject Open">
+      <Entrypoint Module="System.ServiceModel.dll" Method="System.ServiceModel.Channels.CommunicationObject::Open*"/>
+    </Tag>
+  </Tag>
 
 
-		<Tag Name="Task SpinWait">
-			<Entrypoint Module="mscorlib.ni.dll" Method="System.Threading.Tasks.Task.SpinWait*"/>
-			<Entrypoint Module="mscorlib.dll" Method="System.Threading.Tasks.Task::SpinWait*"/>
-			<Entrypoint Module="System.Private.CoreLib.dll" Method="System.Threading.Tasks.Task.SpinWait*"/>
-		</Tag>
+  <Tag Name="WPF">
+    <Tag Name="ThreadMessageFilter - GetActiveWindowList">
+      <Entrypoint Module="WindowsFormsIntegration.ni.dll" Method="System.Windows.Forms.Integration.WindowsFormsHostList*ActiveWindowList*"/>
+      <Entrypoint Module="WindowsFormsIntegration.dll" Method="System.Windows.Forms.Integration.WindowsFormsHostList*ActiveWindowList*"/>
+    </Tag>
 
-		<Tag Name="Dynamic/Expression Compilation" Priority="1700">
-			<Entrypoint Module="System.Core.ni.dll" Method="System.Linq.Expressions.Expression`1[System.__Canon].Compile*"/>
-			<Entrypoint Module="System.Core.dll" Method="System.Linq.Expressions.Expression`1[System.__Canon]::Compile*"/>
-		</Tag>
+    <Tag Name="Culture Get or Set On Thread">
+      <Entrypoint Module="WindowsBase.ni.dll" Method="MS.Internal.CulturePreservingExecutionContext+CultureAndContextManager.WriteCultureInfosToCurrentThread*" />
+      <Entrypoint Module="WindowsBase.dll" Method="MS.Internal.CulturePreservingExecutionContext+CultureAndContextManager::WriteCultureInfosToCurrentThread*" />
+      <Entrypoint Module="WindowsBase.ni.dll" Method="MS.Internal.CulturePreservingExecutionContext+CultureAndContextManager.ReadCultureInfosFromCurrentThread*" />
+      <Entrypoint Module="WindowsBase.dll" Method="MS.Internal.CulturePreservingExecutionContext+CultureAndContextManager::ReadCultureInfosFromCurrentThread*" />
+    </Tag>
+    <Tag Name="UI Automation" Priority="1">
+      <Entrypoint Module="PresentationCore.ni.dll" Method="MS.Internal.Automation.ElementUtil+*" />
+      <Entrypoint Module="PresentationCore.dll" Method="MS.Internal.Automation.ElementUtil+*" />
+    </Tag>
+    <Tag Name="VirtualizingStackPanel InitializeViewPort">
+      <Entrypoint Module="PresentationFramework.ni.dll" Method="System.Windows.Controls.VirtualizingStackPanel*InitializeViewport*"/>
+      <Entrypoint Module="PresentationFramework.dll" Method="System.Windows.Controls.VirtualizingStackPanel*InitializeViewport*"/>
+    </Tag>
 
-		<Tag Name="!!! OldCompat JIT Compiler is Used" Priority="1600" >
-			<Entrypoint Module="compatjit.dll" Method="*"/>
-		</Tag>
-		<Tag Name="System.Drawing GDI HandleCollector">
-			<Entrypoint Module="System.Drawing.ni.dll" Method="System.Internal.HandleCollector*"/>
-			<Entrypoint Module="System.Drawing.dll" Method="System.Internal.HandleCollector*"/>
-		</Tag>
-		<Tag Name="Induced GC" Priority="1000">
-			<Entrypoint Module="mscorlib.ni.dll" Method="System.GC.Collect(*"/>
-			<Entrypoint Module="mscorlib.dll" Method="System.GC::Collect*"/>
-			<Entrypoint Module="System.Private.CoreLib.dll" Method="System.GC.Collect*"/>
-			<Entrypoint Module="*clr.dll" Method="*GCHeap::GarbageCollect"/>
-		</Tag>
-		<Tag Name="Task FinishContinuations">
-			<Entrypoint Module="mscorlib.ni.dll" Method="System.Threading.Tasks.Task.FinishContinuations*"/>
-			<Entrypoint Module="mscorlib.dll" Method="System.Threading.Tasks.Task::FinishContinuations*"/>
-			<Entrypoint Module="System.Private.CoreLib.dll" Method="System.Threading.Tasks.Task.FinishContinuations*"/>
-		</Tag>
-		<Tag Name="Finalization">
-			<Entrypoint Module="*clr.dll" Method="WKS::FinalizeAllObjects*"/>
-		</Tag>
-		<Tag Name="ConcurrentDictionary Enumeration">
-			<Entrypoint Module="mscorlib.ni.dll" Method="System.Collections.Concurrent.ConcurrentDictionary`2+?GetEnumerator*.MoveNext*"/>
-			<Entrypoint Module="mscorlib.dll" Method="System.Collections.Concurrent.ConcurrentDictionary`2+?GetEnumerator*::MoveNext*"/>
-			<Entrypoint Module="System.Private.CoreLib.dll" Method="System.Collections.Concurrent.ConcurrentDictionary`2+?GetEnumerator*.MoveNext*"/>
-		</Tag>
-		<Tag Name="Get Process Infos" Priority="100">
-			<Entrypoint Module="System.ni.dll" Method="System.Diagnostics.NtProcessInfoHelper.GetProcessInfos*"/>
-			<Entrypoint Module="System.dll" Method="System.Diagnostics.NtProcessInfoHelper::GetProcessInfos*"/>
-			<Entrypoint Module="System.ni.dll" Method="System.Diagnostics.Process.*"/>
-			<Entrypoint Module="System.dll" Method="System.Diagnostics.Process::*"/>
-		</Tag>
-		<Tag Name="Xml Processing">
-			<Entrypoint Module="System.Xml.ni.dll" Method="*"/>
-			<Entrypoint Module="System.Xml.dll" Method="*"/>
-		</Tag>
-		<Tag Name="Reflection Overhead">
-			<Entrypoint Module="mscorlib.ni.dll" Method="System.Reflection.RuntimeAssembly.Get*"/>
-			<Entrypoint Module="mscorlib.ni.dll" Method="System.RuntimeType.get*"/>
-			<Entrypoint Module="mscorlib.ni.dll" Method="System.RuntimeType.Get*"/>
-			<Entrypoint Module="mscorlib.dll" Method="System.RuntimeType::get*"/>
-			<Entrypoint Module="System.Private.CoreLib.dll" Method="System.RuntimeType.get*"/>
-			<Entrypoint Module="mscorlib.dll" Method="System.RuntimeType::Get*"/>
-			<Entrypoint Module="System.Private.CoreLib.dll" Method="System.RuntimeType.Get*"/>
-			<Entrypoint Module="mscorlib.ni.dll" Method="System.Reflection.CustomAttribute.GetCustomAttributes*"/>
-			<Entrypoint Module="mscorlib.dll" Method="System.Reflection.CustomAttribute::GetCustomAttributes*"/>
-			<Entrypoint Module="System.Private.CoreLib.dll" Method="System.Reflection.CustomAttribute.GetCustomAttributes*"/>
-			<Entrypoint Module="*clr.dll" Method="SigPointer::GetTypeHandleThrowing*"/>
-		</Tag>
-		<Tag Name="Reflection Code Gen" Priority="100">
-			<Entrypoint Module="mscorlib.ni.dll" Method="System.Reflection.Emit*"/>
-			<Entrypoint Module="mscorlib.dll" Method="System.Reflection.Emit*"/>
-			<Entrypoint Module="System.Private.CoreLib.dll" Method="System.Reflection.Emit*"/>
-		</Tag>
-		<Tag Name="Read App.Config">
-			<Entrypoint Module="System.Configuration.dll" Method="System.Configuration.ConfigurationSectionCollection::Get*"/>
-		</Tag>
-		<Tag Name="Assembly Load">
-			<Entrypoint Module="*clr.dll" Method="AssemblyNative::Load*"/>
-			<Entrypoint Module="*clr.dll" Method="DomainFile::DoIncrementalLoad*"/>
-		</Tag>
-		<Tag Name="Satellite Assembly Lookup">
-			<Entrypoint Module="mscorlib.ni.dll" Method="System.Resources.ManifestBasedResourceGroveler.GetSatelliteAssembly*"/>
-			<Entrypoint Module="mscorlib.dll" Method="System.Resources.ManifestBasedResourceGroveler::GetSatelliteAssembly*"/>
-			<Entrypoint Module="System.Private.CoreLib.dll" Method="System.Resources.ManifestBasedResourceGroveler.GetSatelliteAssembly*"/>
-		</Tag>
-		<Tag Name="CLR VirtualAlloc" Priority="-1">
-			<Entrypoint Module="*clr.dll" Method="CExecutionEngine::ClrVirtualAlloc*"/>
-		</Tag>
-		<Tag Name="Static Initializer Synchronization">
-			<Entrypoint Module="*clr.dll" Method="MethodTable::DoRunClassInitThrowing*"/>
-		</Tag>
-		<Tag Name="Dictionary FindEntry">
-			<Entrypoint Module="mscorlib.ni.dll" Method="System.Collections.Generic.Dictionary*.FindEntry*"/>
-			<Entrypoint Module="mscorlib.dll" Method="System.Collections.Generic.Dictionary*::FindEntry*"/>
-			<Entrypoint Module="System.Private.CoreLib.dll" Method="System.Collections.Generic.Dictionary*.FindEntry*"/>
-		</Tag>
-		<Tag Name="GetEnumerator">
-			<Entrypoint Module="mscorlib.ni.dll" Method="*.GetEnumerator*"/>
-			<Entrypoint Module="mscorlib.dll" Method="*::GetEnumerator*"/>
-			<Entrypoint Module="System.Private.CoreLib.dll" Method="*::GetEnumerator*"/>
-		</Tag>
-		<Tag Name="LINQ ToList">
-			<Entrypoint Module="System.Core.ni.dll" Method="System.Linq.Enumerable.ToList[System.__Canon]*"/>
-			<Entrypoint Module="System.Core.dll" Method="System.Linq.Enumerable.ToList[System::__Canon]*"/>
-		</Tag>
-		<Tag Name="Object Comparisons and GetHashCode">
-			<Entrypoint Module="*.ni.dll" Method=".Equals(*"/>
-			<Entrypoint Module="*.dll" Method="::Equals*"/>
-			<Entrypoint Module="mscorlib.ni.dll" Method="System.Globalization.CompareInfo.Compare*"/>
-			<Entrypoint Module="mscorlib.ni.dll" Method="System.Collections.Generic.ObjectEqualityComparer`1[System.__Canon].Equals*"/>
-			<Entrypoint Module="mscorlib.dll" Method="System.Collections.Generic.ObjectEqualityComparer`1[System.__Canon]::Equals*"/>
-			<Entrypoint Module="System.Private.CoreLib.dll" Method="System.Collections.Generic.ObjectEqualityComparer`1[System.__Canon].Equals*"/>
-			<Entrypoint Module="mscorlib.ni.dll" Method="System.Collections.Generic.GenericEqualityComparer`1[System.__Canon].Equals*"/>
-			<Entrypoint Module="mscorlib.dll" Method="System.Collections.Generic.GenericEqualityComparer`1[System.__Canon]::Equals*"/>
-			<Entrypoint Module="System.Private.CoreLib.dll" Method="System.Collections.Generic.GenericEqualityComparer`1[System.__Canon].Equals*"/>
-			<Entrypoint Module="mscorlib.ni.dll" Method="System.Collections.Generic.List`1[System.__Canon].Contains*"/>
-			<Entrypoint Module="mscorlib.dll" Method="System.Collections.Generic.List`1[System.__Canon]::Contains*"/>
-			<Entrypoint Module="System.Private.CoreLib.dll" Method="System.Collections.Generic.List`1[System.__Canon]::Contains*"/>
-			<Entrypoint Module="mscorlib.ni.dll" Method="System.Collections.Generic.ObjectEqualityComparer`1[System.__Canon].GetHashCode*"/>
-			<Entrypoint Module="mscorlib.dll" Method="System.Collections.Generic.ObjectEqualityComparer`1[System.__Canon]::GetHashCode*"/>
-			<Entrypoint Module="System.Private.CoreLib.dll" Method="System.Collections.Generic.ObjectEqualityComparer`1[System.__Canon].GetHashCode*"/>
-		</Tag>
-		<Tag Name="String Operations">
-			<Entrypoint Module="mscorlib.ni.dll" Method="System.String.*"/>
-		</Tag>
-		<Tag Name="Convert.FromBase64String">
-			<Entrypoint Module="mscorlib.ni.dll" Method="System.Convert.FromBase64String*"/>
-			<Entrypoint Module="mscorlib.dll" Method="System.Convert::FromBase64String*"/>
-			<Entrypoint Module="System.Private.CoreLib.dll" Method="System.Convert.FromBase64String*"/>
-		</Tag>
-		<Tag Name="Guid.TryParse">
-			<Entrypoint Module="mscorlib.ni.dll" Method="System.Guid.TryParse*"/>
-			<Entrypoint Module="mscorlib.dll" Method="System.Guid::TryParse*"/>
-			<Entrypoint Module="System.Private.CoreLib.dll" Method="System.Guid.TryParse*"/>
-		</Tag>
-		<Tag Name="Regular Expression">
-			<Entrypoint Module="System.ni.dll" Method="*System.Text.RegularExpressions.Regex*"/>
-		</Tag>
-		<Tag Name="Event Leaks?">
-			<Tag Name="Delegate.Remove">
-				<Entrypoint Module="mscorlib.ni.dll" Method="System.MulticastDelegate.RemoveImpl(System.Delegate)"/>
-			</Tag>
-			<Tag Name="Delegate.Combine">
-				<Entrypoint Module="mscorlib.ni.dll" Method="System.MulticastDelegate.CombineImpl(System.Delegate)"/>
-			</Tag>
-		</Tag>
-		<Tag Name="Lock Contention" Priority="150">
-			<Entrypoint Module="*clr.dll" Method="*JITutil_Mon*Contention*"/>
-			<Entrypoint Module="*clr.dll" Method="JIT_MonEnterWorker_InlineGetThread_GetThread_PatchLabel*"/>
-			<Entrypoint Module="*clr.dll" Method="JIT_MonExitWorker_InlineGetThread_GetThread_PatchLabel*"/>
-			<Entrypoint Module="*clr.dll" Method="JIT_MonExitWorker_InlineGetThread_GetThread_PatchLabel*"/>
-			<Entrypoint Module="*clr.dll" Method="JIT_MonTryEnter_GetThread_PatchLabel*"/>
-			<Entrypoint Module="*clr.dll" Method="CrstBase::SpinEnter*"/>
-		</Tag>
-		<Tag Name="Background GC">
-			<Entrypoint Module="*clr.dll" Method="*WKS::gc_heap::bgc_thread_function*"/>
-		</Tag>
-		<Tag Name="Visual Basic Compiler" Priority="110">
-			<Entrypoint Module="System.Activities.dll" Method="*Microsoft.VisualBasic.Activities.VisualBasicHelper::Compile*" />
-			<Entrypoint Module="System.Activities.ni.dll" Method="*Microsoft.VisualBasic.Activities.VisualBasicHelper.Compile*" />
-		</Tag>
-		<Tag Name="WF Tracking">
-			<Entrypoint Module="System.Activities.ni.dll" Method="System.Activities.Tracking.TrackingProvider*"/>
-			<Entrypoint Module="System.Activities.dll" Method="System.Activities.Tracking.TrackingProvider*"/>
-		</Tag>
-		<Tag Name="Entity Framework (SQL Wrapper)" >
-			<Tag Name="ViewGeneration" Priority="110">
-				<Entrypoint Module="System.Data.Entity.dll" Method="*System.Data.Mapping.ViewGeneration*" />
-				<Entrypoint Module="System.Data.Entity.ni.dll" Method="*System.Data.Mapping.ViewGeneration*" />
-			</Tag>
-			<Tag Name="Entity Framework Query Compile" Priority="110">
-				<Entrypoint Module="System.Data.Entity.dll" Method="*System.Data.Objects.EntitySqlQueryState::GetExecutionPlan*" />
-				<Entrypoint Module="System.Data.Entity.ni.dll" Method="*System.Data.Objects.EntitySqlQueryStateGetExecutionPlan*" />
-			</Tag>
-			<Entrypoint Module="System.Data.Entity.dll" />
-			<Entrypoint Module="EntityFramework.ni.dll" />
-			<Entrypoint Module="EntityFramework.dll" />
-		</Tag>
-		<Tag Name="Automapper (Dependency Injection)" Priority="110">
-			<Entrypoint Module="AutoMapper.dll" />
-		</Tag>
-		<Tag Name="Encryption">
-			<Tag Name=".NET SslStream Write" Priority="1">
-				<Entrypoint Module="System.ni.dll" Method="System.Net.Security.SslStream.Write*"/>
-				<Entrypoint Module="System.dll" Method="System.Net.Security.SslStream::Write*"/>
-			</Tag>
-			<Tag Name=".NET SslStream Read" Priority="1">
-				<Entrypoint Module="System.ni.dll" Method="System.Net.Security.SslStream.Read*"/>
-				<Entrypoint Module="System.dll" Method="System.Net.Security.SslStream::Read*"/>
-			</Tag>
-		</Tag>
-		<!-- Serializers keep their GC and JIT overhead by having nodes with a higher priority than the GC and JIT nodes -->
-		<Tag Name="Serialize">
-			<HintTag Name="DataContractSerializer" Priority="111" HintOperator="Callee" OnlyShowModule="false">
-				<Entrypoint Module="System.Runtime.Serialization.ni.dll" Method="System.Runtime.Serialization.ClassDataContract.WriteXmlValue*" />
-				<Entrypoint Module="System.Runtime.Serialization.dll" Method="System.Runtime.Serialization.ClassDataContract::WriteXmlValue*" />
-			</HintTag>
-			<Tag Name="DataContractSerializer" Priority="110">
-				<Entrypoint Module="System.Runtime.Serialization.ni.dll" Method="*System.Runtime.Serialization.DataContractSerializer.WriteObject*" />
-				<Entrypoint Module="System.Runtime.Serialization.dll" Method="*System.Runtime.Serialization.DataContractSerializer::WriteObject*" />
-				<Entrypoint Module="System.Runtime.Serialization.ni.dll" Method="*System.Runtime.Serialization.XmlObjectSerializer.WriteObject*" />
-				<Entrypoint Module="System.Runtime.Serialization.dll" Method="*System.Runtime.Serialization.XmlObjectSerializer.WriteObject*" />
-			</Tag>
-			<Tag Name="XmlSerializer" Priority="105">
-				<Entrypoint Module="System.Xml.ni.dll" Method="*System.Xml.Serialization.XmlSerializer.Serialize*" />
-				<Entrypoint Module="System.Xml.dll" Method="*System.Xml.Serialization.XmlSerializer.Serialize*" />
-			</Tag>
-			<Tag Name="BinaryFormatter" Priority="101">
-				<Entrypoint Module="mscorlib.ni.dll" Method="*System.Runtime.Serialization.Formatters.Binary.BinaryFormatter.Serialize*" />
-				<Entrypoint Module="mscorlib.dll" Method="*System.Runtime.Serialization.Formatters.Binary.BinaryFormatter::Serialize*" />
-				<Entrypoint Module="System.Private.CoreLib.dll" Method="*System.Runtime.Serialization.Formatters.Binary.BinaryFormatter.Serialize*"/>
+    <Tag Name="VirtualizingStackPanel Cleanup" Priority="1" >
+      <Entrypoint Module="PresentationFramework.ni.dll" Method="System.Windows.Controls.VirtualizingStackPanel.OnCleanUp*"/>
+      <Entrypoint Module="PresentationFramework.dll" Method="System.Windows.Controls.VirtualizingStackPanel::OnCleanUp*"/>
+    </Tag>
 
-				<Entrypoint Module="mscorlib.ni.dll" Method="*System.Runtime.Serialization.Formatters.Binary.ObjectWriter.Serialize*" />
-				<Entrypoint Module="mscorlib.dll" Method="*System.Runtime.Serialization.Formatters.Binary.ObjectWriter::Serialize*" />
-				<Entrypoint Module="System.Private.CoreLib.dll" Method="*System.Runtime.Serialization.Formatters.Binary.ObjectWriter.Serialize*"/>
-			</Tag>
-			<Tag Name="Service Model SerializeRequest">
-				<Entrypoint Module="System.ServiceModel.dll" Method="System.ServiceModel.Dispatcher.PrimitiveOperationFormatter::SerializeRequest*"/>
-			</Tag>
-			<Tag Name="Protobuf" Priority="111" HintOperator="Callee" OnlyShowModule="false">
-				<Entrypoint Module="protobuf-net.ni.dll" Method="ProtoBuf.Meta.TypeModel.Serialize*"/>
-				<Entrypoint Module="protobuf-net.dll" Method="ProtoBuf.Meta.TypeModel::Serialize*"/>
-			</Tag>
-		</Tag>
-		<Tag Name="Deserialize">
-			<Tag Name="BinaryFormatter Too Many Objects - Use Different Serializer\See https://aloiskraus.wordpress.com/2017/04/23/the-definitive-serialization-performance-guide/" Priority="102">
-				<Entrypoint Module="mscorlib.ni.dll" Method="*System.Runtime.Serialization.ObjectManager.FindObjectHolder*"/>
-				<Entrypoint Module="mscorlib.dll" Method="*System.Runtime.Serialization.ObjectManager::FindObjectHolder*"/>
-				<Entrypoint Module="System.Private.CoreLib.dll" Method="*System.Runtime.Serialization.ObjectManager.FindObjectHolder*"/>
-			</Tag>
-			<HintTag Name="DataContractSerializer" Priority="111" HintOperator="Callee" OnlyShowModule="false">
-				<Entrypoint Module="System.Runtime.Serialization.ni.dll" Method="System.Runtime.Serialization.ClassDataContract.ReadXmlValue*" />
-				<Entrypoint Module="System.Runtime.Serialization.dll" Method="System.Runtime.Serialization.ClassDataContract::ReadXmlValue*" />
-			</HintTag>
-			<Tag Name="DataContractSerializer" Priority="110">
-				<Entrypoint Module="System.Runtime.Serialization.ni.dll" Method="*System.Runtime.Serialization.DataContractSerializer.ReadObject*" />
-				<Entrypoint Module="System.Runtime.Serialization.dll" Method="*System.Runtime.Serialization.DataContractSerializer::ReadObject*" />
-				<Entrypoint Module="System.Runtime.Serialization.ni.dll" Method="*System.Runtime.Serialization.XmlObjectSerializer.ReadObject*" />
-				<Entrypoint Module="System.Runtime.Serialization.dll" Method="*System.Runtime.Serialization.XmlObjectSerializer::ReadObject*" />
-			</Tag>
-			<Tag Name="BinaryFormatter" Priority="101">
-				<Entrypoint Module="mscorlib.ni.dll" Method="*System.Runtime.Serialization.Formatters.Binary.BinaryFormatter.Deserialize*" />
-				<Entrypoint Module="mscorlib.dll" Method="*System.Runtime.Serialization.Formatters.Binary.BinaryFormatter::Deserialize*" />
-				<Entrypoint Module="System.Private.CoreLib.dll" Method="*System.Runtime.Serialization.Formatters.Binary.BinaryFormatter.Deserialize*"/>
+    <Tag Name="MediaContext RenderMessageHandlerCore">
+      <Entrypoint Module="PresentationCore.ni.dll" Method="System.Windows.Media.MediaContext.RenderMessageHandlerCore*"/>
+      <Entrypoint Module="PresentationCore.dll" Method="System.Windows.Media.MediaContext::RenderMessageHandlerCore*"/>
+    </Tag>
 
-				<Entrypoint Module="mscorlib.ni.dll" Method="*System.Runtime.Serialization.Formatters.Binary.ObjectReader.Deserialize*" />
-				<Entrypoint Module="mscorlib.dll" Method="*System.Runtime.Serialization.Formatters.Binary.ObjectReader::Deserialize*" />
-				<Entrypoint Module="System.Private.CoreLib.dll" Method="*System.Runtime.Serialization.Formatters.Binary.ObjectReader.Deserialize*"/>
-			</Tag>
-			<Tag Name="XmlSerializer" Priority="105">
-				<Entrypoint Module="System.Xml.ni.dll" Method="*System.Xml.Serialization.XmlSerializer.Deserialize*" />
-				<Entrypoint Module="System.Xml.dll" Method="*System.Xml.Serialization.XmlSerializer::Deserialize*" />
-			</Tag>
-			<Tag Name="Protobuf" Priority="111" HintOperator="Callee" OnlyShowModule="false">
-				<Entrypoint Module="protobuf-net.ni.dll" Method="ProtoBuf.Meta.TypeModel.Deserialize*"/>
-				<Entrypoint Module="protobuf-net.dll" Method="ProtoBuf.Meta.TypeModel::Deserialize*"/>
-			</Tag>
+    <Tag Name="Visual HitTestPoint">
+      <Entrypoint Module="PresentationCore.ni.dll" Method="System.Windows.Media.Visual.HitTestPoint*"/>
+      <Entrypoint Module="PresentationCore.dll" Method="System.Windows.Media.Visual::HitTestPoint*"/>
+    </Tag>
+    <Tag Name="ContextLayoutManager FireAutomationEvents">
+      <Entrypoint Module="PresentationCore.ni.dll" Method="System.Windows.ContextLayoutManager.fireAutomationEvents*"/>
+      <Entrypoint Module="PresentationCore.dll" Method="System.Windows.ContextLayoutManager::fireAutomationEvents*"/>
+    </Tag>
+    <Tag Name="Measure">
+      <Entrypoint Module="PresentationCore.ni.dll" Method="*System.Windows.UIElement.Measure*"/>
+      <Entrypoint Module="PresentationCore.dll" Method="*System.Windows.UIElement::Measure*"/>
+    </Tag>
+    <Tag Name="XamlServices Transform">
+      <Entrypoint Module="System.Xaml.dll" Method="System.Xaml.XamlServices::Transform*"/>
+      <Entrypoint Module="System.Xaml.ni.dll" Method="System.Xaml.XamlServices.Transform*"/>
+    </Tag>
+    <Tag Name="RenderThread">
+      <Entrypoint Module="wpfgfx_v0400.dll" Method="CPartitionThread::RenderPartition*"/>
+    </Tag>
+    <Tag Name="RenderThread DesktopRender">
+      <Entrypoint Module="wpfgfx_v0400.dll" Method="CDesktopRenderTarget::Present*"/>
+    </Tag>
+    <Tag Name="Animation Timer Tick">
+      <Entrypoint Module="PresentationCore.ni.dll" Method="System.Windows.Media.Animation.TimeManager.Tick*"/>
+      <Entrypoint Module="PresentationCore.dll" Method="System.Windows.Media.Animation.TimeManager::Tick*"/>
+    </Tag>
 
-			<Tag Name="Service Model DeserializeRequest">
-				<Entrypoint Module="System.ServiceModel.dll" Method="System.ServiceModel.Dispatcher.PrimitiveOperationFormatter::DeserializeRequest*"/>
-			</Tag>
-		</Tag>
-	</Tag>
-	<Tag Name="Waits">
-		<Tag Name="UNC Share Access\If wait time is high the UNC share is either slow or not accessible.\This can often be the case of Explorer hangs due to shortcuts or file associations" Priority="1000">
-			<Entrypoint Module="mup.sys" Method="MupCreate*"/>
-		</Tag>
+  </Tag>
 
-		<Tag Name="TLS Certificate Verification Delays\If it is a multiple of 15s then the machine had no internet connection which prevents root certificate download. The download times out after 15s which explains e.g. HTTPS or WCF Request delays running via TLS. See https://support.solarwinds.com/SuccessCenter/s/article/Turn-off-automatic-root-certificates-update?language=en_US" Priority="1000">
-			<Entrypoint Module="crypt32.dll" Method="CertGetCertificateChain*"/>
-		</Tag>
+  <Tag Name="GDI">
+    <Tag Name="GetDeviceContext" Priority="7">
+      <Entrypoint Module="win32u.dll" Method="ZwUserGetDC*"/>
+    </Tag>
 
-		<Tag Name="Group Policy Handling">
-			<Entrypoint Module="MPSSVC.dll" Method="*"/>
-		</Tag>
+    <Tag Name="OpenGL Callback from GDI">
+      <Entrypoint Module="win32k.sys" Method="NtGdiDdDDIEscape*"/>
+    </Tag>
+    <Entrypoint Module="GdiPlus.dll" Method="*GpGraphics*"/>
+    <Tag Name="Allocate Bitmap">
+      <Entrypoint Module="GdiPlus.dll" Method="GpMemoryBitmap::AllocBitmapData*"/>
+    </Tag>
+    <Tag Name="Free Bitmap">
+      <Entrypoint Module="GdiPlus.dll" Method="GpBitmap::Dispose*"/>
+    </Tag>
+    <Tag Name="SaveImageToFile">
+      <Entrypoint Module="GdiPlus.dll" Method="GdipSaveImageToFile*"/>
+    </Tag>
+    <Tag Name="BitBlt">
+      <Entrypoint Module="gdi32full.dll" Method="BitBlt*"/>
+    </Tag>
+    <Tag Name="RelaseDC">
+      <Entrypoint Module="GdiPlus.dll" Method="GdipReleaseDC*"/>
+    </Tag>
+    <Tag Name="AllocateDC">
+      <Entrypoint Module="GdiPlus.dll" Method="GpGraphics::GetHdc*"/>
+    </Tag>
+  </Tag>
+  <Tag Name="COM">
+    <Tag Name="Marshalled COM Call">
+      <Entrypoint Module="combase.dll" Method="AppInvoke*"/>
+      <Entrypoint Module="combase.dll" Method="ObjectStubless*"/>
+      <Entrypoint Module="*clr.dll" Method="UnmarshalObjectFromInterface*"/>
+    </Tag>
+    <Tag Name="RPC ProcessIO/IOComplete">
+      <Entrypoint Module="rpcrt4.dll" Method="LRPC_ADDRESS::ProcessIO*"/>
+      <Entrypoint Module="rpcrt4.dll" Method="LrpcIoComplete*"/>
+    </Tag>
+  </Tag>
+  <Tag Name="Win32 Heap">
+    <Tag Name="Allocate" Priority="-1">
+      <Entrypoint Module="ntdll.dll" Method="RtlpAllocateHeap*"/>
+    </Tag>
+    <Tag Name="Reallocate" Priority="-1">
+      <Entrypoint Module="ntdll.dll" Method="RtlReAllocateHeap*"/>
+    </Tag>
+    <Tag Name="FreeHeap" Priority="-1">
+      <Entrypoint Module="ntdll.dll" Method="RtlFreeHeap*"/>
+    </Tag>
+  </Tag>
+  <Tag Name="CreateThread">
+    <Entrypoint Module="ntdll.dll" Method="ZwCreateThread*"/>
+  </Tag>
+  <Tag Name="Network">
+    <Tag Name="Socket Send">
+      <Entrypoint Module="ws2_32.dll" Method="send*"/>
+    </Tag>
+    <Tag Name="Socket Receive">
+      <Entrypoint Module="ws2_32.dll" Method="recv*"/>
+    </Tag>
+  </Tag>
+  <Tag Name=".NET">
+    <Tag Name="XAML Load" Priority="1" >
+      <Entrypoint Module="PresentationFramework.ni.dll" Method="System.Windows.Markup.XamlReader.Load*"/>
+      <Entrypoint Module="PresentationFramework.dll" Method="System.Windows.Markup.XamlReader::Load*"/>
+    </Tag>
 
-		<Tag Name="LoadLibrary">
-			<Entrypoint Module="KernelBase.dll" Method="LoadLibraryExW*"/>
-		</Tag>
+    <Tag Name="Type Cast">
+      <Entrypoint Module="*clr.dll" Method="JIT_ChkCast*"/>
+    </Tag>
 
-		<Tag Name="Win32K Critical Section Wait" Priority="1">
-			<Entrypoint Module="win32kbase.sys" Method="EnterCrit*"/>
-		</Tag>
+    <Tag Name="Delegate Creation">
+      <Entrypoint Module="*clr.dll" Method="COMDelegate::DelegateConstruct*"/>
+    </Tag>
 
-		<Tag Name="Mouse Activate\This calls SendMessage to send queued mouse input" Priority="1000">
-			<Entrypoint Module="win32kfull.sys" Method="xxxMouseActivate*"/>
-		</Tag>
+    <Tag Name="StackTrace">
+      <Entrypoint Module="mscorlib.ni.dll" Method="System.Diagnostics.StackTrace.ToString*"/>
+      <Entrypoint Module="mscorlib.dll" Method="System.Diagnostics.StackTrace::ToString*"/>
+      <Entrypoint Module="*clr.dll" Method="DebugStackTrace::GetStackFramesInternal*"/>
+    </Tag>
 
-		<Tag Name=".NET Fusion Logging Enabled!\Call fuslogvw on a command shell and disable logging\Can cause very slow application starts in conjunction with some Virus Scanners like TrendMicro" Priority="1">
-			<Entrypoint Module="clr.dll" Method="CDebugLog::DumpDebugLog*"/>
-		</Tag>
-		<Tag Name="MEF Object Composition Lock" Priority="151">
-			<Entrypoint Module="System.ComponentModel.Composition.ni.dll" Method="System.ComponentModel.Composition.Hosting.CompositionLock.LockComposition*"/>
-			<Entrypoint Module="System.ComponentModel.Composition.dll" Method="System.ComponentModel.Composition.Hosting.CompositionLock::LockComposition*"/>
-		</Tag>
+    <Tag Name="CLR memset" Priority="-1">
+      <Entrypoint Module="msvcr120_clr0400.dll" Method="memset*"/>
+    </Tag>
 
-		<Tag Name="GetSystemTimes Blocked!" >
-			<Entrypoint Module="KernelBase.dll" Method="GetSystemTimes"/>
-		</Tag>
-		<Tag Name="Performance Counter Read" >
-			<Entrypoint Module="advapi32.dll" Method="PerfRegQueryValue*"/>
-		</Tag>
-		<Tag Name="Driver Verifier Enabled!" Priority="1001">
-			<Entrypoint Module="ntoskrnl.exe" Method="VerifierExEnterCriticalRegionAndAcquireResourceExclusive*"/>
-		</Tag>
+    <Tag Name="Socket BeginAccept Lock Contention" Priority="151">
+      <Entrypoint Module="System.ServiceModel.ni.dll" Method="System.ServiceModel.Channels.SocketConnectionListener.InternalBeginAccept*"/>
+      <Entrypoint Module="System.ServiceModel.dll" Method="System.ServiceModel.Channels.SocketConnectionListener::InternalBeginAccept*"/>
+    </Tag>
 
-		<Tag Name="File System Callback - possible Virus Scanner">
-			<Entrypoint Module="fltMgr.sys" Method="FltpPerformPreCallbacks*"/>
-		</Tag>
-		<Tag Name="SqlData">
-			<Tag Name="ReadSniSyncOverAsync">
-				<Entrypoint Module="System.Data.ni.dll" Method="System.Data.SqlClient.TdsParserStateObject.ReadSniSyncOverAsync*"/>
-				<Entrypoint Module="System.Data.dll" Method="System.Data.SqlClient.TdsParserStateObject::ReadSniSyncOverAsync*"/>
-			</Tag>
-		</Tag>
-		<Tag Name="SqlLite">
-			<Tag Name="Execute Query" Priority="1001">
-				<Entrypoint Module="System.Data.SQLite.ni.dll" Method="System.Data.SQLite.SQLiteCommand.ExecuteReader*"/>
-				<Entrypoint Module="System.Data.SQLite.dll" Method="System.Data.SQLite.SQLiteCommand::ExecuteReader*"/>
-			</Tag>
-			<Tag Name="Open" Priority="1001">
-				<Entrypoint Module="System.Data.SQLite.ni.dll" Method="System.Data.SQLite.SQLiteConnection.Open*"/>
-				<Entrypoint Module="System.Data.SQLite.dll" Method="System.Data.SQLite.SQLiteConnection::Open*"/>
-			</Tag>
-			<Tag Name="BeginTransaction" Priority="1002">
-				<Entrypoint Module="System.Data.SQLite.ni.dll" Method="System.Data.SQLite.SQLiteConnection.BeginDbTransaction*"/>
-				<Entrypoint Module="System.Data.SQLite.dll" Method="System.Data.SQLite.SQLiteConnection::BeginDbTransaction*"/>
-			</Tag>
-			<Tag Name="DataReader GetValues">
-				<Entrypoint Module="System.Data.SQLite.ni.dll" Method="System.Data.SQLite.SQLiteDataReader.GetValues*"/>
-				<Entrypoint Module="System.Data.SQLite.dll" Method="System.Data.SQLite.SQLiteDataReader::GetValues*"/>
-			</Tag>
-		</Tag>
-		<Tag Name="NetBios Lookup">
-			<Entrypoint Module="logoncli.dll" Method="NlBrowserSendDatagram*"/>
-		</Tag>
-		<Tag Name="DllLoad">
-			<Entrypoint Module="ntdll.dll" Method="LdrpFindOrMapDll"/>
-		</Tag>
-		<Tag Name="Sleep/Wake ConditionVariable">
-			<Entrypoint Module="ntdll.dll" Method="*ConditionVariable*"/>
-		</Tag>
-		<Tag Name="Thread Sleep">
-			<Entrypoint Module="ntdll.dll" Method="NtDelayExecution*"/>
-		</Tag>
-		<Tag Name="CLR Wait" Priority="-3">
-			<Entrypoint Module="*clr.dll" Method="Thread::DoAppropriateWait*"/>
-		</Tag>
-		<Tag Name=".NET Thread Join">
-			<Entrypoint Module="*clr.dll" Method="Thread::JoinEx*"/>
-		</Tag>
-		<Tag Name="Socket">
-			<Tag Name="HttpSendResponseEntityBody">
-				<Entrypoint Module="httpapi.dll" Method="HttpSendResponseEntityBody*"/>
-			</Tag>
-			<Tag Name="Socket Receive Wait" Priority="1">
-				<Entrypoint Module="mswsock.dll" Method="WSPRecv*"/>
-			</Tag>
-			<Tag Name="Socket Send Wait" Priority="1">
-				<Entrypoint Module="mswsock.dll" Method="WSPSend*"/>
-			</Tag>
-			<Tag Name="Socket Select" Priority="1">
-				<Entrypoint Module="mswsock.dll" Method="WSPSelect"/>
-			</Tag>
-		</Tag>
-		<Tag Name="UI">
-			<Tag Name="MsgWaitForMultipleObjects" Priority="-9">
-				<Entrypoint Module="user32.dll" Method="MsgWaitForMultipleObjectsEx*"/>
-			</Tag>
-		</Tag>
 
-		<Tag Name="Garbage Collector Wait">
-			<Entrypoint Module="*clr.dll" Method="WKS::GCHeap::WaitUntilGCComplete*"/>
-			<Entrypoint Module="*clr.dll" Method="WKS::gc_heap::background_gc_wait*"/>
-		</Tag>
-		<Tag Name="WaitForSingleObject" Priority="-11">
-			<Entrypoint Module="ntdll.dll" Method="ZwWaitForSingleObject*"/>
-		</Tag>
-		<Tag Name="WaitForMultipleObjects" Priority="-11">
-			<Entrypoint Module="ntdll.dll" Method="ZwWaitForMultipleObjects*"/>
-		</Tag>
-		<Tag Name="LRPC Wait">
-			<Entrypoint Module="rpcrt4.dll" Method="LRPC_BASE_CCALL::DoSendReceive*"/>
-		</Tag>
-		<Tag Name="Task Wait" Priority="-8">
-			<Entrypoint Module="mscorlib.ni.dll" Method="System.Threading.Tasks.Task.Wait*"/>
-			<Entrypoint Module="mscorlib.dll" Method="System.Threading.Tasks.Task::Wait*"/>
-			<Entrypoint Module="System.Private.CoreLib.dll" Method="System.Threading.Tasks.Task.Wait*"/>
-		</Tag>
-		<Tag Name="SemaphoreSlim Wait" Priority="-9">
-			<Entrypoint Module="mscorlib.ni.dll" Method="System.Threading.SemaphoreSlim.Wait*"/>
-			<Entrypoint Module="mscorlib.dll" Method="System.Threading.SemaphoreSlim::Wait*"/>
-			<Entrypoint Module="System.Private.CoreLib.dll" Method="System.Threading.SemaphoreSlim.Wait*"/>
-		</Tag>
-		<Tag Name="Normal Waits">
-			<Tag Name="SendMessage">
-				<Entrypoint Module="user32.dll" Method="SendMessageWorker*"/>
-			</Tag>
-			<Tag Name="GatherMappedPages-Timer">
-				<Entrypoint Module="ntoskrnl.exe" Method="MiGatherMappedPages*"/>
-			</Tag>
-			<Tag Name="Modified Page Writer">
-				<Entrypoint Module="ntoskrnl.exe" Method="MiModifiedPageWriter"/>
-			</Tag>
-			<Tag Name="OS Wait" Priority="-1">
-				<Entrypoint Module="ntoskrnl.exe" Method="KiSystemServiceCopyEnd*"/>
-			</Tag>
+    <Tag Name="Task SpinWait">
+      <Entrypoint Module="mscorlib.ni.dll" Method="System.Threading.Tasks.Task.SpinWait*"/>
+      <Entrypoint Module="mscorlib.dll" Method="System.Threading.Tasks.Task::SpinWait*"/>
+      <Entrypoint Module="System.Private.CoreLib.dll" Method="System.Threading.Tasks.Task.SpinWait*"/>
+    </Tag>
 
-			<Tag Name="WCF Timed Wait Callback" Priority="1">
-				<Entrypoint Module="System.ServiceModel.Internals.ni.dll" Method="System.Runtime.IOThreadTimer+TimerManager.OnWaitCallback*"/>
-				<Entrypoint Module="System.ServiceModel.Internals.dll" Method="System.Runtime.IOThreadTimer+TimerManager::OnWaitCallback*"/>
-			</Tag>
+    <Tag Name="Dynamic/Expression Compilation" Priority="1700">
+      <Entrypoint Module="System.Core.ni.dll" Method="System.Linq.Expressions.Expression`1[System.__Canon].Compile*"/>
+      <Entrypoint Module="System.Core.dll" Method="System.Linq.Expressions.Expression`1[System.__Canon]::Compile*"/>
+    </Tag>
 
-			<Tag Name="Msdtc Connection KeepAlive Timer" Priority="1">
-				<Entrypoint Module="msdtcprx.dll" Method="CConnectionManager::TimerProcForNonGuardedUser*"/>
-				<Entrypoint Module="msdtcprx.dll" Method="CSessionObject::MaintainItInUpState*"/>
-			</Tag>
+    <Tag Name="!!! OldCompat JIT Compiler is Used" Priority="1600" >
+      <Entrypoint Module="compatjit.dll" Method="*"/>
+    </Tag>
+    <Tag Name="System.Drawing GDI HandleCollector">
+      <Entrypoint Module="System.Drawing.ni.dll" Method="System.Internal.HandleCollector*"/>
+      <Entrypoint Module="System.Drawing.dll" Method="System.Internal.HandleCollector*"/>
+    </Tag>
+    <Tag Name="Induced GC" Priority="1000">
+      <Entrypoint Module="mscorlib.ni.dll" Method="System.GC.Collect(*"/>
+      <Entrypoint Module="mscorlib.dll" Method="System.GC::Collect*"/>
+      <Entrypoint Module="System.Private.CoreLib.dll" Method="System.GC.Collect*"/>
+      <Entrypoint Module="*clr.dll" Method="*GCHeap::GarbageCollect"/>
+    </Tag>
+    <Tag Name="Task FinishContinuations">
+      <Entrypoint Module="mscorlib.ni.dll" Method="System.Threading.Tasks.Task.FinishContinuations*"/>
+      <Entrypoint Module="mscorlib.dll" Method="System.Threading.Tasks.Task::FinishContinuations*"/>
+      <Entrypoint Module="System.Private.CoreLib.dll" Method="System.Threading.Tasks.Task.FinishContinuations*"/>
+    </Tag>
+    <Tag Name="Finalization">
+      <Entrypoint Module="*clr.dll" Method="WKS::FinalizeAllObjects*"/>
+    </Tag>
+    <Tag Name="ConcurrentDictionary Enumeration">
+      <Entrypoint Module="mscorlib.ni.dll" Method="System.Collections.Concurrent.ConcurrentDictionary`2+?GetEnumerator*.MoveNext*"/>
+      <Entrypoint Module="mscorlib.dll" Method="System.Collections.Concurrent.ConcurrentDictionary`2+?GetEnumerator*::MoveNext*"/>
+      <Entrypoint Module="System.Private.CoreLib.dll" Method="System.Collections.Concurrent.ConcurrentDictionary`2+?GetEnumerator*.MoveNext*"/>
+    </Tag>
+    <Tag Name="Get Process Infos" Priority="100">
+      <Entrypoint Module="System.ni.dll" Method="System.Diagnostics.NtProcessInfoHelper.GetProcessInfos*"/>
+      <Entrypoint Module="System.dll" Method="System.Diagnostics.NtProcessInfoHelper::GetProcessInfos*"/>
+      <Entrypoint Module="System.ni.dll" Method="System.Diagnostics.Process.*"/>
+      <Entrypoint Module="System.dll" Method="System.Diagnostics.Process::*"/>
+    </Tag>
+    <Tag Name="Xml Processing">
+      <Entrypoint Module="System.Xml.ni.dll" Method="*"/>
+      <Entrypoint Module="System.Xml.dll" Method="*"/>
+    </Tag>
+    <Tag Name="Reflection Overhead">
+      <Entrypoint Module="mscorlib.ni.dll" Method="System.Reflection.RuntimeAssembly.Get*"/>
+      <Entrypoint Module="mscorlib.ni.dll" Method="System.RuntimeType.get*"/>
+      <Entrypoint Module="mscorlib.ni.dll" Method="System.RuntimeType.Get*"/>
+      <Entrypoint Module="mscorlib.dll" Method="System.RuntimeType::get*"/>
+      <Entrypoint Module="System.Private.CoreLib.dll" Method="System.RuntimeType.get*"/>
+      <Entrypoint Module="mscorlib.dll" Method="System.RuntimeType::Get*"/>
+      <Entrypoint Module="System.Private.CoreLib.dll" Method="System.RuntimeType.Get*"/>
+      <Entrypoint Module="mscorlib.ni.dll" Method="System.Reflection.CustomAttribute.GetCustomAttributes*"/>
+      <Entrypoint Module="mscorlib.dll" Method="System.Reflection.CustomAttribute::GetCustomAttributes*"/>
+      <Entrypoint Module="System.Private.CoreLib.dll" Method="System.Reflection.CustomAttribute.GetCustomAttributes*"/>
+      <Entrypoint Module="*clr.dll" Method="SigPointer::GetTypeHandleThrowing*"/>
+    </Tag>
+    <Tag Name="Reflection Code Gen" Priority="100">
+      <Entrypoint Module="mscorlib.ni.dll" Method="System.Reflection.Emit*"/>
+      <Entrypoint Module="mscorlib.dll" Method="System.Reflection.Emit*"/>
+      <Entrypoint Module="System.Private.CoreLib.dll" Method="System.Reflection.Emit*"/>
+    </Tag>
+    <Tag Name="Read App.Config">
+      <Entrypoint Module="System.Configuration.dll" Method="System.Configuration.ConfigurationSectionCollection::Get*"/>
+    </Tag>
+    <Tag Name="Assembly Load">
+      <Entrypoint Module="*clr.dll" Method="AssemblyNative::Load*"/>
+      <Entrypoint Module="*clr.dll" Method="DomainFile::DoIncrementalLoad*"/>
+    </Tag>
+    <Tag Name="Satellite Assembly Lookup">
+      <Entrypoint Module="mscorlib.ni.dll" Method="System.Resources.ManifestBasedResourceGroveler.GetSatelliteAssembly*"/>
+      <Entrypoint Module="mscorlib.dll" Method="System.Resources.ManifestBasedResourceGroveler::GetSatelliteAssembly*"/>
+      <Entrypoint Module="System.Private.CoreLib.dll" Method="System.Resources.ManifestBasedResourceGroveler.GetSatelliteAssembly*"/>
+    </Tag>
+    <Tag Name="CLR VirtualAlloc" Priority="-1">
+      <Entrypoint Module="*clr.dll" Method="CExecutionEngine::ClrVirtualAlloc*"/>
+    </Tag>
+    <Tag Name="Static Initializer Synchronization">
+      <Entrypoint Module="*clr.dll" Method="MethodTable::DoRunClassInitThrowing*"/>
+    </Tag>
+    <Tag Name="Dictionary FindEntry">
+      <Entrypoint Module="mscorlib.ni.dll" Method="System.Collections.Generic.Dictionary*.FindEntry*"/>
+      <Entrypoint Module="mscorlib.dll" Method="System.Collections.Generic.Dictionary*::FindEntry*"/>
+      <Entrypoint Module="System.Private.CoreLib.dll" Method="System.Collections.Generic.Dictionary*.FindEntry*"/>
+    </Tag>
+    <Tag Name="GetEnumerator">
+      <Entrypoint Module="mscorlib.ni.dll" Method="*.GetEnumerator*"/>
+      <Entrypoint Module="mscorlib.dll" Method="*::GetEnumerator*"/>
+      <Entrypoint Module="System.Private.CoreLib.dll" Method="*::GetEnumerator*"/>
+    </Tag>
+    <Tag Name="LINQ ToList">
+      <Entrypoint Module="System.Core.ni.dll" Method="System.Linq.Enumerable.ToList[System.__Canon]*"/>
+      <Entrypoint Module="System.Core.dll" Method="System.Linq.Enumerable.ToList[System::__Canon]*"/>
+    </Tag>
+    <Tag Name="Object Comparisons and GetHashCode">
+      <Entrypoint Module="*.ni.dll" Method=".Equals(*"/>
+      <Entrypoint Module="*.dll" Method="::Equals*"/>
+      <Entrypoint Module="mscorlib.ni.dll" Method="System.Globalization.CompareInfo.Compare*"/>
+      <Entrypoint Module="mscorlib.ni.dll" Method="System.Collections.Generic.ObjectEqualityComparer`1[System.__Canon].Equals*"/>
+      <Entrypoint Module="mscorlib.dll" Method="System.Collections.Generic.ObjectEqualityComparer`1[System.__Canon]::Equals*"/>
+      <Entrypoint Module="System.Private.CoreLib.dll" Method="System.Collections.Generic.ObjectEqualityComparer`1[System.__Canon].Equals*"/>
+      <Entrypoint Module="mscorlib.ni.dll" Method="System.Collections.Generic.GenericEqualityComparer`1[System.__Canon].Equals*"/>
+      <Entrypoint Module="mscorlib.dll" Method="System.Collections.Generic.GenericEqualityComparer`1[System.__Canon]::Equals*"/>
+      <Entrypoint Module="System.Private.CoreLib.dll" Method="System.Collections.Generic.GenericEqualityComparer`1[System.__Canon].Equals*"/>
+      <Entrypoint Module="mscorlib.ni.dll" Method="System.Collections.Generic.List`1[System.__Canon].Contains*"/>
+      <Entrypoint Module="mscorlib.dll" Method="System.Collections.Generic.List`1[System.__Canon]::Contains*"/>
+      <Entrypoint Module="System.Private.CoreLib.dll" Method="System.Collections.Generic.List`1[System.__Canon]::Contains*"/>
+      <Entrypoint Module="mscorlib.ni.dll" Method="System.Collections.Generic.ObjectEqualityComparer`1[System.__Canon].GetHashCode*"/>
+      <Entrypoint Module="mscorlib.dll" Method="System.Collections.Generic.ObjectEqualityComparer`1[System.__Canon]::GetHashCode*"/>
+      <Entrypoint Module="System.Private.CoreLib.dll" Method="System.Collections.Generic.ObjectEqualityComparer`1[System.__Canon].GetHashCode*"/>
+    </Tag>
+    <Tag Name="String Operations">
+      <Entrypoint Module="mscorlib.ni.dll" Method="System.String.*"/>
+    </Tag>
+    <Tag Name="Convert.FromBase64String">
+      <Entrypoint Module="mscorlib.ni.dll" Method="System.Convert.FromBase64String*"/>
+      <Entrypoint Module="mscorlib.dll" Method="System.Convert::FromBase64String*"/>
+      <Entrypoint Module="System.Private.CoreLib.dll" Method="System.Convert.FromBase64String*"/>
+    </Tag>
+    <Tag Name="Guid.TryParse">
+      <Entrypoint Module="mscorlib.ni.dll" Method="System.Guid.TryParse*"/>
+      <Entrypoint Module="mscorlib.dll" Method="System.Guid::TryParse*"/>
+      <Entrypoint Module="System.Private.CoreLib.dll" Method="System.Guid.TryParse*"/>
+    </Tag>
+    <Tag Name="Regular Expression">
+      <Entrypoint Module="System.ni.dll" Method="*System.Text.RegularExpressions.Regex*"/>
+    </Tag>
+    <Tag Name="Event Leaks?">
+      <Tag Name="Delegate.Remove">
+        <Entrypoint Module="mscorlib.ni.dll" Method="System.MulticastDelegate.RemoveImpl(System.Delegate)"/>
+      </Tag>
+      <Tag Name="Delegate.Combine">
+        <Entrypoint Module="mscorlib.ni.dll" Method="System.MulticastDelegate.CombineImpl(System.Delegate)"/>
+      </Tag>
+    </Tag>
+    <Tag Name="Lock Contention" Priority="150">
+      <Entrypoint Module="*clr.dll" Method="*JITutil_Mon*Contention*"/>
+      <Entrypoint Module="*clr.dll" Method="JIT_MonEnterWorker_InlineGetThread_GetThread_PatchLabel*"/>
+      <Entrypoint Module="*clr.dll" Method="JIT_MonExitWorker_InlineGetThread_GetThread_PatchLabel*"/>
+      <Entrypoint Module="*clr.dll" Method="JIT_MonExitWorker_InlineGetThread_GetThread_PatchLabel*"/>
+      <Entrypoint Module="*clr.dll" Method="JIT_MonTryEnter_GetThread_PatchLabel*"/>
+      <Entrypoint Module="*clr.dll" Method="CrstBase::SpinEnter*"/>
+    </Tag>
+    <Tag Name="Background GC">
+      <Entrypoint Module="*clr.dll" Method="*WKS::gc_heap::bgc_thread_function*"/>
+    </Tag>
+    <Tag Name="Visual Basic Compiler" Priority="110">
+      <Entrypoint Module="System.Activities.dll" Method="*Microsoft.VisualBasic.Activities.VisualBasicHelper::Compile*" />
+      <Entrypoint Module="System.Activities.ni.dll" Method="*Microsoft.VisualBasic.Activities.VisualBasicHelper.Compile*" />
+    </Tag>
+    <Tag Name="WF Tracking">
+      <Entrypoint Module="System.Activities.ni.dll" Method="System.Activities.Tracking.TrackingProvider*"/>
+      <Entrypoint Module="System.Activities.dll" Method="System.Activities.Tracking.TrackingProvider*"/>
+    </Tag>
+    <Tag Name="Entity Framework (SQL Wrapper)" >
+      <Tag Name="ViewGeneration" Priority="110">
+        <Entrypoint Module="System.Data.Entity.dll" Method="*System.Data.Mapping.ViewGeneration*" />
+        <Entrypoint Module="System.Data.Entity.ni.dll" Method="*System.Data.Mapping.ViewGeneration*" />
+      </Tag>
+      <Tag Name="Entity Framework Query Compile" Priority="110">
+        <Entrypoint Module="System.Data.Entity.dll" Method="*System.Data.Objects.EntitySqlQueryState::GetExecutionPlan*" />
+        <Entrypoint Module="System.Data.Entity.ni.dll" Method="*System.Data.Objects.EntitySqlQueryStateGetExecutionPlan*" />
+      </Tag>
+      <Entrypoint Module="System.Data.Entity.dll" />
+      <Entrypoint Module="EntityFramework.ni.dll" />
+      <Entrypoint Module="EntityFramework.dll" />
+    </Tag>
+    <Tag Name="Automapper (Dependency Injection)" Priority="110">
+      <Entrypoint Module="AutoMapper.dll" />
+    </Tag>
+    <Tag Name="Encryption">
+      <Tag Name=".NET SslStream Write" Priority="1">
+        <Entrypoint Module="System.ni.dll" Method="System.Net.Security.SslStream.Write*"/>
+        <Entrypoint Module="System.dll" Method="System.Net.Security.SslStream::Write*"/>
+      </Tag>
+      <Tag Name=".NET SslStream Read" Priority="1">
+        <Entrypoint Module="System.ni.dll" Method="System.Net.Security.SslStream.Read*"/>
+        <Entrypoint Module="System.dll" Method="System.Net.Security.SslStream::Read*"/>
+      </Tag>
+    </Tag>
+    <!-- Serializers keep their GC and JIT overhead by having nodes with a higher priority than the GC and JIT nodes -->
+    <Tag Name="Serialize">
+      <HintTag Name="DataContractSerializer" Priority="111" HintOperator="Callee" OnlyShowModule="false">
+        <Entrypoint Module="System.Runtime.Serialization.ni.dll" Method="System.Runtime.Serialization.ClassDataContract.WriteXmlValue*" />
+        <Entrypoint Module="System.Runtime.Serialization.dll" Method="System.Runtime.Serialization.ClassDataContract::WriteXmlValue*" />
+      </HintTag>
+      <Tag Name="DataContractSerializer" Priority="110">
+        <Entrypoint Module="System.Runtime.Serialization.ni.dll" Method="*System.Runtime.Serialization.DataContractSerializer.WriteObject*" />
+        <Entrypoint Module="System.Runtime.Serialization.dll" Method="*System.Runtime.Serialization.DataContractSerializer::WriteObject*" />
+        <Entrypoint Module="System.Runtime.Serialization.ni.dll" Method="*System.Runtime.Serialization.XmlObjectSerializer.WriteObject*" />
+        <Entrypoint Module="System.Runtime.Serialization.dll" Method="*System.Runtime.Serialization.XmlObjectSerializer.WriteObject*" />
+      </Tag>
+      <Tag Name="XmlSerializer" Priority="105">
+        <Entrypoint Module="System.Xml.ni.dll" Method="*System.Xml.Serialization.XmlSerializer.Serialize*" />
+        <Entrypoint Module="System.Xml.dll" Method="*System.Xml.Serialization.XmlSerializer.Serialize*" />
+      </Tag>
+      <Tag Name="BinaryFormatter" Priority="101">
+        <Entrypoint Module="mscorlib.ni.dll" Method="*System.Runtime.Serialization.Formatters.Binary.BinaryFormatter.Serialize*" />
+        <Entrypoint Module="mscorlib.dll" Method="*System.Runtime.Serialization.Formatters.Binary.BinaryFormatter::Serialize*" />
+        <Entrypoint Module="System.Private.CoreLib.dll" Method="*System.Runtime.Serialization.Formatters.Binary.BinaryFormatter.Serialize*"/>
 
-			<Tag Name="ASP.NET Performance Counter Thread" Priority="1">
-				<Entrypoint Module="Aspnet_perf.dll" Method="CPerfCounterClient::GatherPerfData*"/>
-			</Tag>
-			<Tag Name="CLR Semaphore">
-				<Entrypoint Module="*clr.dll" Method="CLRSemaphore::Wait*"/>
-			</Tag>
-			<Tag Name="Win32.SystemEvent Loop" Priority="1">
-				<Entrypoint Module="System.ni.dll" Method="Microsoft.Win32.SystemEvents.WindowThreadProc*"/>
-				<Entrypoint Module="System.dll" Method="Microsoft.Win32.SystemEvents::WindowThreadProc*"/>
-			</Tag>
-			<Tag Name="IO Completion Port Wait">
-				<Entrypoint Module="ntdll.dll" Method="NtRemoveIoCompletion*"/>
-			</Tag>
-			<Tag Name="NVidia Driver" Priority="-10">
-				<Entrypoint Module="nvoglv64.dll" Method="*"/>
-			</Tag>
-			<Tag Name="NT Worker Thread">
-				<Entrypoint Module="ntdll.dll" Method="NtWaitForWorkViaWorkerFactory*"/>
-			</Tag>
-			<Tag Name="Finalizer Wait for Work">
-				<Entrypoint Module="*clr.dll" Method="WKS::WaitForFinalizerEvent*"/>
-				<Entrypoint Module="*clr.dll" Method="FinalizerThread::WaitForFinalizerEvent*"/>
-			</Tag>
-			<Tag Name="Threadpool Wait for Work" Priority="1">
-				<Entrypoint Module="*clr.dll" Method="ThreadpoolMgr::GateThreadStart*"/>
-				<Entrypoint Module="*clr.dll" Method="ThreadpoolMgr::SafeWait*"/>
-				<Entrypoint Module="*clr.dll" Method="*ThreadpoolMgr::UnfairSemaphore::Wait*"/>
-			</Tag>
-			<Tag Name="Threadpool Task Sleep" Priority="1">
-				<Entrypoint Module="*clr.dll" Method="ThreadpoolMgr::WaitThreadStart*"/>
-			</Tag>
-			<Tag Name=".NET Timer Sleep" Priority="1">
-				<Entrypoint Module="*clr.dll" Method="ThreadpoolMgr::TimerThreadFire*"/>
-			</Tag>
-			<Tag Name="Message Loop Wait">
-				<Entrypoint Module="win32kfull.sys" Method="NtUserWaitMessage*"/>
-			</Tag>
-			<Tag Name="Message Loop GetMessage">
-				<Entrypoint Module="user32.dll" Method="GetMessageW*"/>
-				<Entrypoint Module="user32.dll" Method="NtUserWaitMessage*"/>
-			</Tag>
-			<Tag Name="WPF Wait for Work" Priority="-9">
-				<Entrypoint Module="wpfgfx_v0400.dll" Method="CPartitionManager::GetWork*"/>
-			</Tag>
-			<Tag Name="Socket Select Wait">
-				<Entrypoint Module="ws2_32.dll" Method="select*"/>
-			</Tag>
-		</Tag>
-		<Tag Name="WCF IO Completion Wait" Priority="-9">
-			<Entrypoint Module="System.ServiceModel.Internals.ni.dll" Method="System.Runtime.IOThreadScheduler+ScheduledOverlapped.IOCallback*"/>
-			<Entrypoint Module="System.ServiceModel.Internals.dll" Method="System.Runtime.IOThreadScheduler+ScheduledOverlapped::IOCallback*"/>
-		</Tag>
-		<Tag Name="ReadFile" Priority="-9">
-			<Entrypoint Module="KernelBase.dll" Method="ReadFile*"/>
-		</Tag>
-		<Tag Name="WriteFile" Priority="-9">
-			<Entrypoint Module="KernelBase.dll" Method="WriteFile*"/>
-		</Tag>
+        <Entrypoint Module="mscorlib.ni.dll" Method="*System.Runtime.Serialization.Formatters.Binary.ObjectWriter.Serialize*" />
+        <Entrypoint Module="mscorlib.dll" Method="*System.Runtime.Serialization.Formatters.Binary.ObjectWriter::Serialize*" />
+        <Entrypoint Module="System.Private.CoreLib.dll" Method="*System.Runtime.Serialization.Formatters.Binary.ObjectWriter.Serialize*"/>
+      </Tag>
+      <Tag Name="Service Model SerializeRequest">
+        <Entrypoint Module="System.ServiceModel.dll" Method="System.ServiceModel.Dispatcher.PrimitiveOperationFormatter::SerializeRequest*"/>
+      </Tag>
+      <Tag Name="Protobuf" Priority="111" HintOperator="Callee" OnlyShowModule="false">
+        <Entrypoint Module="protobuf-net.ni.dll" Method="ProtoBuf.Meta.TypeModel.Serialize*"/>
+        <Entrypoint Module="protobuf-net.dll" Method="ProtoBuf.Meta.TypeModel::Serialize*"/>
+      </Tag>
+    </Tag>
+    <Tag Name="Deserialize">
+      <Tag Name="BinaryFormatter Too Many Objects - Use Different Serializer\See https://aloiskraus.wordpress.com/2017/04/23/the-definitive-serialization-performance-guide/" Priority="102">
+        <Entrypoint Module="mscorlib.ni.dll" Method="*System.Runtime.Serialization.ObjectManager.FindObjectHolder*"/>
+        <Entrypoint Module="mscorlib.dll" Method="*System.Runtime.Serialization.ObjectManager::FindObjectHolder*"/>
+        <Entrypoint Module="System.Private.CoreLib.dll" Method="*System.Runtime.Serialization.ObjectManager.FindObjectHolder*"/>
+      </Tag>
+      <HintTag Name="DataContractSerializer" Priority="111" HintOperator="Callee" OnlyShowModule="false">
+        <Entrypoint Module="System.Runtime.Serialization.ni.dll" Method="System.Runtime.Serialization.ClassDataContract.ReadXmlValue*" />
+        <Entrypoint Module="System.Runtime.Serialization.dll" Method="System.Runtime.Serialization.ClassDataContract::ReadXmlValue*" />
+      </HintTag>
+      <Tag Name="DataContractSerializer" Priority="110">
+        <Entrypoint Module="System.Runtime.Serialization.ni.dll" Method="*System.Runtime.Serialization.DataContractSerializer.ReadObject*" />
+        <Entrypoint Module="System.Runtime.Serialization.dll" Method="*System.Runtime.Serialization.DataContractSerializer::ReadObject*" />
+        <Entrypoint Module="System.Runtime.Serialization.ni.dll" Method="*System.Runtime.Serialization.XmlObjectSerializer.ReadObject*" />
+        <Entrypoint Module="System.Runtime.Serialization.dll" Method="*System.Runtime.Serialization.XmlObjectSerializer::ReadObject*" />
+      </Tag>
+      <Tag Name="BinaryFormatter" Priority="101">
+        <Entrypoint Module="mscorlib.ni.dll" Method="*System.Runtime.Serialization.Formatters.Binary.BinaryFormatter.Deserialize*" />
+        <Entrypoint Module="mscorlib.dll" Method="*System.Runtime.Serialization.Formatters.Binary.BinaryFormatter::Deserialize*" />
+        <Entrypoint Module="System.Private.CoreLib.dll" Method="*System.Runtime.Serialization.Formatters.Binary.BinaryFormatter.Deserialize*"/>
 
-		<Tag Name="COM Cross Apartment Call Wait" Priority="-9">
-			<Entrypoint Module="combase.dll" Method="MTAThreadDispatchCrossApartmentCall*"/>
-		</Tag>
-	</Tag>
-	<Tag Name="Tracing Overhead">
-		<Tag Name="ETW Stackwalks">
-			<Entrypoint Module="ntoskrnl.exe" Method="EtwpTraceStackWalk*"/>
-			<Entrypoint Module="ntkrnlpa.exe" Method="EtwpTraceStackWalk*"/>
-			<Entrypoint Module="ntoskrnl.exe" Method="EtwpStackTraceDispatcher*"/>
-			<Entrypoint Module="ntkrnlpa.exe" Method="EtwpStackTraceDispatcher*"/>
-			<Entrypoint Module="*clr.dll" Method="EtwCallout*"/>
-		</Tag>
-	</Tag>
+        <Entrypoint Module="mscorlib.ni.dll" Method="*System.Runtime.Serialization.Formatters.Binary.ObjectReader.Deserialize*" />
+        <Entrypoint Module="mscorlib.dll" Method="*System.Runtime.Serialization.Formatters.Binary.ObjectReader::Deserialize*" />
+        <Entrypoint Module="System.Private.CoreLib.dll" Method="*System.Runtime.Serialization.Formatters.Binary.ObjectReader.Deserialize*"/>
+      </Tag>
+      <Tag Name="XmlSerializer" Priority="105">
+        <Entrypoint Module="System.Xml.ni.dll" Method="*System.Xml.Serialization.XmlSerializer.Deserialize*" />
+        <Entrypoint Module="System.Xml.dll" Method="*System.Xml.Serialization.XmlSerializer::Deserialize*" />
+      </Tag>
+      <Tag Name="Protobuf" Priority="111" HintOperator="Callee" OnlyShowModule="false">
+        <Entrypoint Module="protobuf-net.ni.dll" Method="ProtoBuf.Meta.TypeModel.Deserialize*"/>
+        <Entrypoint Module="protobuf-net.dll" Method="ProtoBuf.Meta.TypeModel::Deserialize*"/>
+      </Tag>
+
+      <Tag Name="Service Model DeserializeRequest">
+        <Entrypoint Module="System.ServiceModel.dll" Method="System.ServiceModel.Dispatcher.PrimitiveOperationFormatter::DeserializeRequest*"/>
+      </Tag>
+    </Tag>
+  </Tag>
+  <Tag Name="Waits">
+    <Tag Name="UNC Share Access\If wait time is high the UNC share is either slow or not accessible.\This can often be the case of Explorer hangs due to shortcuts or file associations" Priority="1000">
+      <Entrypoint Module="mup.sys" Method="MupCreate*"/>
+    </Tag>
+
+    <Tag Name="TLS Certificate Verification Delays\If it is a multiple of 15s then the machine had no internet connection which prevents root certificate download. The download times out after 15s which explains e.g. HTTPS or WCF Request delays running via TLS. See https://support.solarwinds.com/SuccessCenter/s/article/Turn-off-automatic-root-certificates-update?language=en_US" Priority="1000">
+      <Entrypoint Module="crypt32.dll" Method="CertGetCertificateChain*"/>
+    </Tag>
+
+    <Tag Name="Group Policy Handling">
+      <Entrypoint Module="MPSSVC.dll" Method="*"/>
+    </Tag>
+
+    <Tag Name="LoadLibrary">
+      <Entrypoint Module="KernelBase.dll" Method="LoadLibraryExW*"/>
+    </Tag>
+
+    <Tag Name="Win32K Critical Section Wait" Priority="1">
+      <Entrypoint Module="win32kbase.sys" Method="EnterCrit*"/>
+    </Tag>
+
+    <Tag Name="Mouse Activate\This calls SendMessage to send queued mouse input" Priority="1000">
+      <Entrypoint Module="win32kfull.sys" Method="xxxMouseActivate*"/>
+    </Tag>
+
+    <Tag Name=".NET Fusion Logging Enabled!\Call fuslogvw on a command shell and disable logging\Can cause very slow application starts in conjunction with some Virus Scanners like TrendMicro" Priority="1">
+      <Entrypoint Module="clr.dll" Method="CDebugLog::DumpDebugLog*"/>
+    </Tag>
+    <Tag Name="MEF Object Composition Lock" Priority="151">
+      <Entrypoint Module="System.ComponentModel.Composition.ni.dll" Method="System.ComponentModel.Composition.Hosting.CompositionLock.LockComposition*"/>
+      <Entrypoint Module="System.ComponentModel.Composition.dll" Method="System.ComponentModel.Composition.Hosting.CompositionLock::LockComposition*"/>
+    </Tag>
+
+    <Tag Name="GetSystemTimes Blocked!" >
+      <Entrypoint Module="KernelBase.dll" Method="GetSystemTimes"/>
+    </Tag>
+    <Tag Name="Performance Counter Read" >
+      <Entrypoint Module="advapi32.dll" Method="PerfRegQueryValue*"/>
+    </Tag>
+    <Tag Name="Driver Verifier Enabled!" Priority="1001">
+      <Entrypoint Module="ntoskrnl.exe" Method="VerifierExEnterCriticalRegionAndAcquireResourceExclusive*"/>
+    </Tag>
+
+    <Tag Name="File System Callback - possible Virus Scanner">
+      <Entrypoint Module="fltMgr.sys" Method="FltpPerformPreCallbacks*"/>
+    </Tag>
+    <Tag Name="SqlData">
+      <Tag Name="ReadSniSyncOverAsync">
+        <Entrypoint Module="System.Data.ni.dll" Method="System.Data.SqlClient.TdsParserStateObject.ReadSniSyncOverAsync*"/>
+        <Entrypoint Module="System.Data.dll" Method="System.Data.SqlClient.TdsParserStateObject::ReadSniSyncOverAsync*"/>
+      </Tag>
+    </Tag>
+    <Tag Name="SqlLite">
+      <Tag Name="Execute Query" Priority="1001">
+        <Entrypoint Module="System.Data.SQLite.ni.dll" Method="System.Data.SQLite.SQLiteCommand.ExecuteReader*"/>
+        <Entrypoint Module="System.Data.SQLite.dll" Method="System.Data.SQLite.SQLiteCommand::ExecuteReader*"/>
+      </Tag>
+      <Tag Name="Open" Priority="1001">
+        <Entrypoint Module="System.Data.SQLite.ni.dll" Method="System.Data.SQLite.SQLiteConnection.Open*"/>
+        <Entrypoint Module="System.Data.SQLite.dll" Method="System.Data.SQLite.SQLiteConnection::Open*"/>
+      </Tag>
+      <Tag Name="BeginTransaction" Priority="1002">
+        <Entrypoint Module="System.Data.SQLite.ni.dll" Method="System.Data.SQLite.SQLiteConnection.BeginDbTransaction*"/>
+        <Entrypoint Module="System.Data.SQLite.dll" Method="System.Data.SQLite.SQLiteConnection::BeginDbTransaction*"/>
+      </Tag>
+      <Tag Name="DataReader GetValues">
+        <Entrypoint Module="System.Data.SQLite.ni.dll" Method="System.Data.SQLite.SQLiteDataReader.GetValues*"/>
+        <Entrypoint Module="System.Data.SQLite.dll" Method="System.Data.SQLite.SQLiteDataReader::GetValues*"/>
+      </Tag>
+    </Tag>
+    <Tag Name="NetBios Lookup">
+      <Entrypoint Module="logoncli.dll" Method="NlBrowserSendDatagram*"/>
+    </Tag>
+    <Tag Name="DllLoad">
+      <Entrypoint Module="ntdll.dll" Method="LdrpFindOrMapDll"/>
+    </Tag>
+    <Tag Name="Sleep/Wake ConditionVariable">
+      <Entrypoint Module="ntdll.dll" Method="*ConditionVariable*"/>
+    </Tag>
+    <Tag Name="Thread Sleep">
+      <Entrypoint Module="ntdll.dll" Method="NtDelayExecution*"/>
+    </Tag>
+    <Tag Name="CLR Wait" Priority="-3">
+      <Entrypoint Module="*clr.dll" Method="Thread::DoAppropriateWait*"/>
+    </Tag>
+    <Tag Name=".NET Thread Join">
+      <Entrypoint Module="*clr.dll" Method="Thread::JoinEx*"/>
+    </Tag>
+    <Tag Name="Socket">
+      <Tag Name="HttpSendResponseEntityBody">
+        <Entrypoint Module="httpapi.dll" Method="HttpSendResponseEntityBody*"/>
+      </Tag>
+      <Tag Name="Socket Receive Wait" Priority="1">
+        <Entrypoint Module="mswsock.dll" Method="WSPRecv*"/>
+      </Tag>
+      <Tag Name="Socket Send Wait" Priority="1">
+        <Entrypoint Module="mswsock.dll" Method="WSPSend*"/>
+      </Tag>
+      <Tag Name="Socket Select" Priority="1">
+        <Entrypoint Module="mswsock.dll" Method="WSPSelect"/>
+      </Tag>
+    </Tag>
+    <Tag Name="UI">
+      <Tag Name="MsgWaitForMultipleObjects" Priority="-9">
+        <Entrypoint Module="user32.dll" Method="MsgWaitForMultipleObjectsEx*"/>
+      </Tag>
+    </Tag>
+
+    <Tag Name="Garbage Collector Wait">
+      <Entrypoint Module="*clr.dll" Method="WKS::GCHeap::WaitUntilGCComplete*"/>
+      <Entrypoint Module="*clr.dll" Method="WKS::gc_heap::background_gc_wait*"/>
+    </Tag>
+    <Tag Name="WaitForSingleObject" Priority="-11">
+      <Entrypoint Module="ntdll.dll" Method="ZwWaitForSingleObject*"/>
+    </Tag>
+    <Tag Name="WaitForMultipleObjects" Priority="-11">
+      <Entrypoint Module="ntdll.dll" Method="ZwWaitForMultipleObjects*"/>
+    </Tag>
+    <Tag Name="LRPC Wait" Priority="-1">
+      <Entrypoint Module="rpcrt4.dll" Method="LRPC_BASE_CCALL::DoSendReceive*"/>
+    </Tag>
+    <Tag Name="Task Wait" Priority="-8">
+      <Entrypoint Module="mscorlib.ni.dll" Method="System.Threading.Tasks.Task.Wait*"/>
+      <Entrypoint Module="mscorlib.dll" Method="System.Threading.Tasks.Task::Wait*"/>
+      <Entrypoint Module="System.Private.CoreLib.dll" Method="System.Threading.Tasks.Task.Wait*"/>
+    </Tag>
+    <Tag Name="SemaphoreSlim Wait" Priority="-9">
+      <Entrypoint Module="mscorlib.ni.dll" Method="System.Threading.SemaphoreSlim.Wait*"/>
+      <Entrypoint Module="mscorlib.dll" Method="System.Threading.SemaphoreSlim::Wait*"/>
+      <Entrypoint Module="System.Private.CoreLib.dll" Method="System.Threading.SemaphoreSlim.Wait*"/>
+    </Tag>
+    <Tag Name="Normal Waits">
+      <Tag Name="SendMessage">
+        <Entrypoint Module="user32.dll" Method="SendMessageWorker*"/>
+      </Tag>
+      <Tag Name="GatherMappedPages-Timer">
+        <Entrypoint Module="ntoskrnl.exe" Method="MiGatherMappedPages*"/>
+      </Tag>
+      <Tag Name="Modified Page Writer">
+        <Entrypoint Module="ntoskrnl.exe" Method="MiModifiedPageWriter"/>
+      </Tag>
+      <Tag Name="OS Wait" Priority="-1">
+        <Entrypoint Module="ntoskrnl.exe" Method="KiSystemServiceCopyEnd*"/>
+      </Tag>
+
+      <Tag Name="WCF Timed Wait Callback" Priority="1">
+        <Entrypoint Module="System.ServiceModel.Internals.ni.dll" Method="System.Runtime.IOThreadTimer+TimerManager.OnWaitCallback*"/>
+        <Entrypoint Module="System.ServiceModel.Internals.dll" Method="System.Runtime.IOThreadTimer+TimerManager::OnWaitCallback*"/>
+      </Tag>
+
+      <Tag Name="Msdtc Connection KeepAlive Timer" Priority="1">
+        <Entrypoint Module="msdtcprx.dll" Method="CConnectionManager::TimerProcForNonGuardedUser*"/>
+        <Entrypoint Module="msdtcprx.dll" Method="CSessionObject::MaintainItInUpState*"/>
+      </Tag>
+
+      <Tag Name="ASP.NET Performance Counter Thread" Priority="1">
+        <Entrypoint Module="Aspnet_perf.dll" Method="CPerfCounterClient::GatherPerfData*"/>
+      </Tag>
+      <Tag Name="CLR Semaphore">
+        <Entrypoint Module="*clr.dll" Method="CLRSemaphore::Wait*"/>
+      </Tag>
+      <Tag Name="Win32.SystemEvent Loop" Priority="1">
+        <Entrypoint Module="System.ni.dll" Method="Microsoft.Win32.SystemEvents.WindowThreadProc*"/>
+        <Entrypoint Module="System.dll" Method="Microsoft.Win32.SystemEvents::WindowThreadProc*"/>
+      </Tag>
+      <Tag Name="IO Completion Port Wait">
+        <Entrypoint Module="ntdll.dll" Method="NtRemoveIoCompletion*"/>
+      </Tag>
+      <Tag Name="NVidia Driver" Priority="-10">
+        <Entrypoint Module="nvoglv64.dll" Method="*"/>
+      </Tag>
+      <Tag Name="NT Worker Thread">
+        <Entrypoint Module="ntdll.dll" Method="NtWaitForWorkViaWorkerFactory*"/>
+      </Tag>
+      <Tag Name="Finalizer Wait for Work">
+        <Entrypoint Module="*clr.dll" Method="WKS::WaitForFinalizerEvent*"/>
+        <Entrypoint Module="*clr.dll" Method="FinalizerThread::WaitForFinalizerEvent*"/>
+      </Tag>
+      <Tag Name="Threadpool Wait for Work" Priority="1">
+        <Entrypoint Module="*clr.dll" Method="ThreadpoolMgr::GateThreadStart*"/>
+        <Entrypoint Module="*clr.dll" Method="ThreadpoolMgr::SafeWait*"/>
+        <Entrypoint Module="*clr.dll" Method="*ThreadpoolMgr::UnfairSemaphore::Wait*"/>
+      </Tag>
+      <Tag Name="Threadpool Task Sleep" Priority="1">
+        <Entrypoint Module="*clr.dll" Method="ThreadpoolMgr::WaitThreadStart*"/>
+      </Tag>
+      <Tag Name=".NET Timer Sleep" Priority="1">
+        <Entrypoint Module="*clr.dll" Method="ThreadpoolMgr::TimerThreadFire*"/>
+      </Tag>
+      <Tag Name="Message Loop Wait">
+        <Entrypoint Module="win32kfull.sys" Method="NtUserWaitMessage*"/>
+      </Tag>
+      <Tag Name="Message Loop GetMessage">
+        <Entrypoint Module="user32.dll" Method="GetMessageW*"/>
+        <Entrypoint Module="user32.dll" Method="NtUserWaitMessage*"/>
+      </Tag>
+      <Tag Name="WPF Wait for Work" Priority="-9">
+        <Entrypoint Module="wpfgfx_v0400.dll" Method="CPartitionManager::GetWork*"/>
+      </Tag>
+      <Tag Name="Socket Select Wait">
+        <Entrypoint Module="ws2_32.dll" Method="select*"/>
+      </Tag>
+    </Tag>
+    <Tag Name="WCF IO Completion Wait" Priority="-9">
+      <Entrypoint Module="System.ServiceModel.Internals.ni.dll" Method="System.Runtime.IOThreadScheduler+ScheduledOverlapped.IOCallback*"/>
+      <Entrypoint Module="System.ServiceModel.Internals.dll" Method="System.Runtime.IOThreadScheduler+ScheduledOverlapped::IOCallback*"/>
+    </Tag>
+    <Tag Name="ReadFile" Priority="-9">
+      <Entrypoint Module="KernelBase.dll" Method="ReadFile*"/>
+    </Tag>
+    <Tag Name="WriteFile" Priority="-9">
+      <Entrypoint Module="KernelBase.dll" Method="WriteFile*"/>
+    </Tag>
+
+    <Tag Name="COM Cross Apartment Call Wait" Priority="-9">
+      <Entrypoint Module="combase.dll" Method="MTAThreadDispatchCrossApartmentCall*"/>
+    </Tag>
+
+
+
+
+
+
+
+  </Tag>
+  <Tag Name="Tracing Overhead">
+    <Tag Name="ETW Stackwalks">
+      <Entrypoint Module="ntoskrnl.exe" Method="EtwpTraceStackWalk*"/>
+      <Entrypoint Module="ntkrnlpa.exe" Method="EtwpTraceStackWalk*"/>
+      <Entrypoint Module="ntoskrnl.exe" Method="EtwpStackTraceDispatcher*"/>
+      <Entrypoint Module="ntkrnlpa.exe" Method="EtwpStackTraceDispatcher*"/>
+      <Entrypoint Module="*clr.dll" Method="EtwCallout*"/>
+    </Tag>
+      </Tag>
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 </Tag>
