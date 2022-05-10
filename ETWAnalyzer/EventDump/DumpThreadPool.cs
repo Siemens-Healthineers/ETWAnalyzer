@@ -1,4 +1,4 @@
-﻿//// SPDX - FileCopyrightText:  © 2022 Siemens Healthcare GmbH
+﻿//// SPDX-FileCopyrightText:  © 2022 Siemens Healthcare GmbH
 //// SPDX-License-Identifier:   MIT
 
 using ETWAnalyzer.Analyzers.Infrastructure;

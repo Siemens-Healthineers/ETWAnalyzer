@@ -1,4 +1,4 @@
-﻿//// SPDX - FileCopyrightText:  © 2022 Siemens Healthcare GmbH
+﻿//// SPDX-FileCopyrightText:  © 2022 Siemens Healthcare GmbH
 //// SPDX-License-Identifier:   MIT
 
 namespace TAU.Toolkit.Diagnostics.Profiling.Simplified
