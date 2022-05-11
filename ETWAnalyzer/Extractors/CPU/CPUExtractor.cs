@@ -15,7 +15,7 @@ namespace ETWAnalyzer.Extractors
     class CPUExtractor : ExtractorBase
     {
         /// <summary>
-        /// Only include methods in list which have a CPU sample duration > 10 ms
+        /// Only include methods in list which have a CPU sample duration > 10 ms or a Wait Duration > 10 ms
         /// </summary>
         const int CutOffMs = 10;
 

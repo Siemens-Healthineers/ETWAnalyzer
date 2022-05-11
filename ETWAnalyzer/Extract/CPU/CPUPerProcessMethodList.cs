@@ -82,13 +82,15 @@ namespace ETWAnalyzer.Extract
         /// <param name="process"></param>
         /// <param name="method"></param>
         /// <param name="cpuData"></param>
-        /// <param name="cutOffMs">Do not add method if duration is &lt;= cutOffMs</param>
+        /// <param name="cutOffMs">Do not add method if duration (Wait or CPU) is &lt;= cutOffMs</param>
         internal void AddMethod(ProcessKey process, string method, CpuData cpuData, int cutOffMs)
         {
             uint cpuDurationMs = (uint)Math.Round(cpuData.CpuInMs.TotalMilliseconds);
             uint waitDurationMs = (uint)cpuData.WaitMs.TotalMilliseconds;
 
-            if (cpuDurationMs <= cutOffMs && cutOffMs != 0)
+            if (cpuDurationMs  <= cutOffMs && 
+                waitDurationMs <= cutOffMs && 
+                cutOffMs != 0)
             {
                 return;
             }
