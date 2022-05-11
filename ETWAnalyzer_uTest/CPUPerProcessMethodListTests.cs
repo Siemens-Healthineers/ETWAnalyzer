@@ -18,18 +18,23 @@ namespace ETWAnalyzer_uTest
         public void Can_Add_Methods_AndCutTooSmallMethods()
         {
             CPUPerProcessMethodList list = GetTestData();
-            Assert.Equal(4, list.MethodNames.Count); // One method was cut off due to 10ms 
+            Assert.Equal(5, list.MethodNames.Count); // One method was cut off due to 10ms 
 
             Assert.Equal("Z", list.MethodNames[0]);
 
             list.SortMethodsByNameAndCPU();
 
-            Assert.Equal("B", list.MethodNames[0]);
-            Assert.Equal("X", list.MethodNames[1]);
-            Assert.Equal("Y", list.MethodNames[2]);
-            Assert.Equal("Z", list.MethodNames[3]);
+            Assert.Equal("A", list.MethodNames[0]);
+            Assert.Equal("B", list.MethodNames[1]);
+            Assert.Equal("X", list.MethodNames[2]);
+            Assert.Equal("Y", list.MethodNames[3]);
+            Assert.Equal("Z", list.MethodNames[4]);
 
             MethodsByProcess methods = list.MethodStatsPerProcess.First();
+
+            Assert.Equal(9u, methods.Costs[4].CPUMs);
+            Assert.Equal(11u, methods.Costs[4].WaitMs);
+            Assert.Equal("A", methods.Costs[4].Method);
 
             Assert.Equal(20u,  methods.Costs[3].CPUMs);
             Assert.Equal("B", methods.Costs[3].Method);
@@ -53,7 +58,8 @@ namespace ETWAnalyzer_uTest
             list.AddMethod(proc, "Y", new CpuData( new Duration(90_000_000), new Duration(91_000_000),  4m, 5m, 20, 4), cutOffMs:10);
             list.AddMethod(proc, "X", new CpuData( new Duration(80_000_000), new Duration(81_000_000),  3m, 5m, 30, 3), cutOffMs:10);
             list.AddMethod(proc, "B", new CpuData( new Duration(20_000_000), new Duration(21_000_000),  2m, 5m, 40, 2), cutOffMs:10);
-            list.AddMethod(proc, "A", new CpuData( new Duration(10_000_000), new Duration(11_000_000),  1m, 5m, 50, 1), cutOffMs:10);
+            list.AddMethod(proc, "A", new CpuData( new Duration(9_000_000), new Duration(11_000_000),  1m, 5m, 50, 1), cutOffMs:10);  // added due to wait
+            list.AddMethod(proc, "A0", new CpuData(new Duration(5_000_000), new Duration(5_000_000), 1m, 5m, 50, 1), cutOffMs: 10);   // skipped
 
             return list;
         }
@@ -72,7 +78,7 @@ namespace ETWAnalyzer_uTest
 
             CPUPerProcessMethodList cpu = deserialized.CPU.PerProcessMethodCostsInclusive;
 
-            Assert.Equal(4, cpu.MethodNames.Count);
+            Assert.Equal(5, cpu.MethodNames.Count);
             Assert.Single(cpu.MethodStatsPerProcess);
             Dictionary<string, MethodCost> stats =  cpu.MethodStatsPerProcess[0].Costs.ToDictionary(x => x.Method);
             Assert.Equal(100u, stats["Z"].CPUMs);
