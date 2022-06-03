@@ -124,7 +124,7 @@ namespace ETWAnalyzer.EventDump
         /// <summary>
         /// Only show methods where the ready time in ms matches the time range. Default is everything.
         /// </summary>
-        public MinMaxRange<int> MinMaxReadyMs { get; internal set; }
+        public MinMaxRange<int> MinMaxReadyMs { get; internal set; } = new MinMaxRange<int>();
 
         /// <summary>
         /// Only show methods/stacktags where the first occurrence in seconds  matches the range. Default is everything.
