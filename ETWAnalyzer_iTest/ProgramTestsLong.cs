@@ -198,6 +198,7 @@ namespace ETWAnalyzer_iTest
             // Checked with WPA from CPU Sampling and Context Switch Data
             MethodCost cost = methods.Costs.Where(x => x.Method == "SerializerTests.dll!SerializerTests.Program.Combined").First();
             Assert.Equal(2899u, cost.CPUMs);
+            Assert.Equal(5u, cost.ReadyMs);
             Assert.Equal(1227u, cost.WaitMs);
             Assert.Equal(1, cost.Threads);
             Assert.Equal(3.7385f, cost.FirstOccurenceInSecond);
@@ -209,7 +210,8 @@ namespace ETWAnalyzer_iTest
                 Assert.Equal("kernel32.dll!BaseThreadInitThunk", firstMethod.Method);
                 Assert.Equal(42, firstMethod.DepthFromBottom);
                 Assert.Equal(3285u, firstMethod.CPUMs);
-                Assert.Equal(16513u, firstMethod.WaitMs);
+                Assert.Equal(4514u, firstMethod.WaitMs);
+                Assert.Equal(8u, firstMethod.ReadyMs);
                 Assert.Equal(3.4746f, firstMethod.FirstOccurenceInSecond);
                 Assert.Equal(8.0306f, firstMethod.LastOccurenceInSecond);
                 Assert.Equal(11, firstMethod.Threads);

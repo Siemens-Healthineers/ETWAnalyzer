@@ -107,12 +107,14 @@ namespace ETWAnalyzer.Commands
         "                         -PrintFiles                Print input Json files paths into output" + Environment.NewLine;
         static readonly string CPUHelpString =
         "   CPU      -filedir/fd Extract\\ or xxx.json [-recursive] [-csv xxx.csv] [-NoCSVSeparator] [-ProcessFmt xx] [-Methods method1;method2...] [-FirstLastDuration/fld [firsttimefmt] [lasttimefmt]]" + Environment.NewLine + 
-        "            [-ThreadCount] [-SortBy [CPU/Wait/StackDepth/First/Last] [-StackTags tag1;tag2] [-CutMethod xx-yy] [-ShowOnMethod] [-ShowModuleInfo [Driver]] [-NoCmdLine] [-Clip]" + Environment.NewLine +
+        "            [-ThreadCount] [-SortBy [CPU/Wait/Ready/StackDepth/First/Last] [-StackTags tag1;tag2] [-CutMethod xx-yy] [-ShowOnMethod] [-ShowModuleInfo [Driver]] [-NoCmdLine] [-Clip]" + Environment.NewLine +
         "            [-ShowTotal Total, Process, Method] [-topn dd nn] [-topNMethods dd nn] [-ZeroTime/zt Marker/First/Last/ProcessStart filter] [-ZeroProcessName/zpn filter] " + Environment.NewLine + 
         "            [-includeDll] [-includeArgs] [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd] [-TestCase xx] [-Machine xxxx] [-ProcessName/pn xxx.exe(pid)] [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-CmdLine substring]" + Environment.NewLine +
-        "                         Print CPU and Wait duration of selected methods of one extracted Json or a directory of Json files. To get output -extract CPU, All or Default must have been used during extraction." + Environment.NewLine +
-        "                         The numbers for a method are method inclusive times (based on CPU Sampling (CPU) and Context Switch (Wait) data) summed across all threads per process." + Environment.NewLine +
-        "                         Summed Wait times of multiple threads lead to unreasonably large values." + Environment.NewLine +
+        "                         Print CPU, Wait and Ready duration of selected methods of one extracted Json or a directory of Json files. To get output -extract CPU, All or Default must have been used during extraction." + Environment.NewLine +
+        "                         The numbers for a method are method inclusive times (based on CPU Sampling (CPU) and Context Switch (Wait) data)." + Environment.NewLine +
+        "                         CPU   is the method inclusive time summed across all threads. E.g. Main is always the most expensive method but CPU is consumed by the called methods." + Environment.NewLine +
+        "                         Wait  is the method inclusive time a method was waiting for a blocking OS call e.g. ReadFile, OpenFile, ... to return. It is the sum of all threads, but overlapping times of multiple threads are counted only once." + Environment.NewLine +
+        "                         Ready is the method inclusive time the thread was waiting for a CPU to become free due to CPU over subscription. It is the sum of all threads, but overlapping times of multiple threads are counted only once." + Environment.NewLine +
         "                         -ShowTotal xxx             Print totals of all selected methods/stacktags. xxx can be Process, Method or Total. " + Environment.NewLine +
         "                                                    Total:   Print only file name and totals." + Environment.NewLine +  
         "                                                    Process: Print file and process totals." + Environment.NewLine + 
@@ -120,7 +122,7 @@ namespace ETWAnalyzer.Commands
         "                                                    Warning: The input values are method are method inclusive times summed across all threads in a process."+ Environment.NewLine +
         "                                                             You should filter for specific independent methods/stacktags which are not already included to get meaningful results." + Environment.NewLine +
         "                         -ShowOnMethod              Display process name besides method name without the command line. This allows to see trends in CPU changes over time for a specific method in console output better." + Environment.NewLine +
-        "                         -ShowModuleInfo [Driver]   Show dll version of each matching method until another dll is show in the printed list. When Driver is specified only module infos of well" + Environment.NewLine +
+        "                         -ShowModuleInfo/smi [Driver] Show dll version of each matching method until another dll is show in the printed list. When Driver is specified only module infos of well" + Environment.NewLine +
         "                                                    known AV and Filter drivers are printed (or written to CSV output). This helps to identify which AV solution is running on that machine." + Environment.NewLine +
         "                         -MinMaxFirst minS [maxS]   Include methods/stacktags which match the first occurrence in [min, max] in seconds. You can shift time with -ZeroTime. " + Environment.NewLine +
         "                                                    E.g. \"-MinMaxFirst 0 -ZeroTime First Click\" will show all methods after Click." + Environment.NewLine + 
@@ -135,8 +137,8 @@ namespace ETWAnalyzer.Commands
         "                             ProcessStart/ProcessEnd [CmdLine] Select process start/stop event as zero point which matches the optional CmdLine filter string and the -ZeroProcessName filter." + Environment.NewLine + 
         "                         -ZeroProcessName/zpn x.exe Select the process from which the zero time point will be used for ProcessStart/First/Last Method zero point definition." + Environment.NewLine +
         "                         -CutMethod xx-yy           Shorten method/stacktag name to make output more readable. Skip xx chars and take yy chars. If -yy is present the last yy characters are taken." + Environment.NewLine +
-        "                         -includeDll                Include the declaring dll name in the full method name like xxx.dll!MethodName" + Environment.NewLine +
-        "                         -includeArgs               Include the full method prototype when present like MethodName(string arg1, string arg2, ...)" + Environment.NewLine +
+        "                         -includeDll/id             Include the declaring dll name in the full method name like xxx.dll!MethodName" + Environment.NewLine +
+        "                         -includeArgs/ia            Include the full method prototype when present like MethodName(string arg1, string arg2, ...)" + Environment.NewLine +
         "                         -Methods *Func1*;xxx.dll!FullMethodName   Dump one or more methods from all or selected processes. When omitted only CPU totals of the process and command line are printed to give an overview." + Environment.NewLine +
         "                         -StackTags *tag1;Tag2*     Use * to dump all. Dump one or more stacktags from all or selected processes." + Environment.NewLine +
         "                         -topN dd nn                Include only first dd processes with most CPU in trace. Optional nn skips the first nn lines. To see e.g. Lines 20-30 use -topn 10 20" + Environment.NewLine +
@@ -144,7 +146,8 @@ namespace ETWAnalyzer.Commands
         "                         -ThreadCount               Show # of unique threads that did execute that method." + Environment.NewLine +
         "                         -ProcessFmt timefmt        Format besides process name the start stop time. See -TimeFmt for available options." + Environment.NewLine +
         "                         -SortBy [CPU/Wait/StackDepth/First/Last] Default method sort order is CPU consumption. Wait sorts by wait time, First/Last sorts by first/last occurrence of method/stacktags." + Environment.NewLine +
-        "                                                    StackDepth shows hottest methods which consume most CPU but are deepest in the call stack." + Environment.NewLine + 
+        "                                                    StackDepth shows hottest methods which consume most CPU but are deepest in the call stack." + Environment.NewLine +
+        "                         -MinMaxReadyMs xx-yy or xx Only include methods (stacktags have no recorded ready times) with a minimum ready time of [xx, yy] ms." + Environment.NewLine +
         "                         -MinMaxCpuMs xx-yy or xx   Only include methods/stacktags with a minimum CPU consumption of [xx,yy] ms." + Environment.NewLine +
         "                         -MinMaxWaitMs xx-yy or xx  Only include methods/stacktags with a minimum wait time of [xx,yy] ms." + Environment.NewLine +
         "                         For other options [-recursive] [-csv] [-NoCSVSeparator] [-TimeFmt] [-TestsPerRun] [-SkipNTests] [-TestRunIndex] [-TestRunCount] [-TestCase] [-Machine] [-ProcessName/pn] [-NewProcess] [-CmdLine]" + Environment.NewLine +
@@ -410,6 +413,7 @@ namespace ETWAnalyzer.Commands
             Time,
             CPU,
             Wait,
+            Ready,
             StackDepth,
             Commit,
             WorkingSet,
@@ -544,6 +548,8 @@ namespace ETWAnalyzer.Commands
 
         public MinMaxRange<int> MinMaxCPUMs { get; private set; } = new MinMaxRange<int>();
         public MinMaxRange<int> MinMaxWaitMs { get; private set; } = new MinMaxRange<int>();
+        public MinMaxRange<int> MinMaxReadyMs { get; private set; } = new MinMaxRange<int>();
+        
         public MinMaxRange<double> MinMaxFirstS { get; private set; } = new MinMaxRange<double>();
         public MinMaxRange<double> MinMaxLastS { get; private set; } = new MinMaxRange<double>();
         public MinMaxRange<double> MinMaxDurationS { get; private set; } = new MinMaxRange<double>();
@@ -828,6 +834,11 @@ namespace ETWAnalyzer.Commands
                         string minMaxWaitms = GetNextNonArg("-minmaxwaitms");
                         KeyValuePair<int, int> minMaxWait = minMaxWaitms.GetMinMax();
                         MinMaxWaitMs = new MinMaxRange<int>(minMaxWait.Key, minMaxWait.Value);
+                        break;
+                    case "-minmaxreadyms":
+                        string minmaxreadyms = GetNextNonArg("-minmaxreadyms");
+                        KeyValuePair<int, int> minMaxReady = minmaxreadyms.GetMinMax();
+                        MinMaxReadyMs = new MinMaxRange<int>(minMaxReady.Key, minMaxReady.Value);
                         break;
                     case "-minmax":
                         string minmaxStr = GetNextNonArg("-minmax");
@@ -1195,6 +1206,7 @@ namespace ETWAnalyzer.Commands
                             TopNMethods = TopNMethods,
                             MinMaxCPUMs = MinMaxCPUMs,
                             MinMaxWaitMs = MinMaxWaitMs,
+                            MinMaxReadyMs = MinMaxReadyMs,
                             MinMaxFirstS = MinMaxFirstS,
                             MinMaxLastS = MinMaxLastS,
                             MinMaxDurationS = MinMaxDurationS,

@@ -1,6 +1,7 @@
 ﻿//// SPDX-FileCopyrightText:  © 2022 Siemens Healthcare GmbH
 //// SPDX-License-Identifier:   MIT
 
+using ETWAnalyzer.TraceProcessorHelpers;
 using Microsoft.Windows.EventTracing;
 using System;
 using System.Collections.Generic;
@@ -12,6 +13,9 @@ namespace ETWAnalyzer.Extractors
 {
     internal class CpuData
     {
+        /// <summary>
+        /// Contains CPU data summed across all threads
+        /// </summary>
         public Duration CpuInMs
         {
             get;
@@ -23,11 +27,10 @@ namespace ETWAnalyzer.Extractors
         /// </summary>
         public int CpuInMsCount;
 
-        public Duration WaitMs
-        {
-            get;
-            set;
-        }
+        /// <summary>
+        /// Contains all wait times from all threads. It is used to calculate from all threads the non overlapping wait time.
+        /// </summary>
+        public TimeRangeCalculator WaitTimeRange {  get;  set; } = new TimeRangeCalculator();
 
         /// <summary>
         /// Relative time in seconds since Trace Start
@@ -64,6 +67,12 @@ namespace ETWAnalyzer.Extractors
         } = new List<ushort>();
 
         /// <summary>
+        /// Contains a merged view of overlapping time range.
+        /// We use this to calculate the overall Ready time across all threads, where overlapping times are counted only once
+        /// </summary>
+        public TimeRangeCalculator ReadyTimeRange { get; internal set; } = new TimeRangeCalculator();
+
+        /// <summary>
         /// Number of used Context Switch Events. Mainly used for debugging purposes
         /// </summary>
         public int WaitMsCount;
@@ -85,7 +94,7 @@ namespace ETWAnalyzer.Extractors
         internal CpuData(Duration cpuMs, Duration waitMs, decimal firstOccurrence, decimal lastOccurrence, int threadCount, ushort depthFromBottom)
         {
             CpuInMs = cpuMs;
-            WaitMs = waitMs;
+            WaitTimeRange.Add(Timestamp.Zero, waitMs);
             FirstOccurrenceSeconds = firstOccurrence;
             LastOccurrenceSeconds = lastOccurrence;
             for (int i = 1; i <= threadCount; i++)

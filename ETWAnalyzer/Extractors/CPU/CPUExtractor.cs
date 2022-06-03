@@ -164,9 +164,19 @@ namespace ETWAnalyzer.Extractors
                 
                 if (slice.WaitingDuration.HasValue)
                 {
-                    stats.WaitMs += slice.WaitingDuration.Value.Duration;
+                    // we do not use the CSwitch timestamp because the wait times will not match with the sum in 
+                    // a single threaded case which is wrong. Instead we subtract the wait time from the switch in event which solves the issue
+                    TraceTimestamp waitStart = slice.SwitchIn.ContextSwitch.Timestamp - slice.WaitingDuration.Value;
+                    stats.WaitTimeRange.Add(waitStart, slice.WaitingDuration.Value);
                     stats.WaitMsCount++;
                 }
+
+                if( slice.ReadyDuration.HasValue && slice?.SwitchIn?.ContextSwitch != null)
+                {
+                    TraceTimestamp readyStart = slice.SwitchIn.ContextSwitch.Timestamp - slice.ReadyDuration.Value;
+                    stats.ReadyTimeRange.Add(readyStart, slice.ReadyDuration.Value);
+                }
+                    
 
                 // if we have no CPU sampling data we use the context switch CPU time as rough estimate. This will always attribute to waiting methods all CPU
                 // but that is the way how Context Switch data works

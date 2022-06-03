@@ -14,8 +14,8 @@ namespace ETWAnalyzer_uTest
 {
     public class MethodCostsTests
     {
-        readonly MethodCost myZero = new MethodCost((MethodIndex)0, 0, 0, 0.0m, 0.0m, 0, 0);
-        readonly MethodCost myHuge = new MethodCost((MethodIndex)1_000_000, 1_123_456_789, 2_123_456_789, 0.12345m, 9999.12345m, 12345, 33);
+        readonly MethodCost myZero = new MethodCost((MethodIndex)0, 0, 0, 0.0m, 0.0m, 0, 0, 0);
+        readonly MethodCost myHuge = new MethodCost((MethodIndex)1_000_000, 1_123_456_789, 2_123_456_789, 0.12345m, 9999.12345m, 12345, 33, 100);
 
         [Fact]
         public void CanRead_ZeroValue()
@@ -41,7 +41,7 @@ namespace ETWAnalyzer_uTest
             const string serialized = "1000000 1123456789 2123456789 0.1235 9999.1230 12345";
             var cost = MethodCost.FromString(serialized);
 
-            var oldHuge = new MethodCost((MethodIndex)1_000_000, 1_123_456_789, 2_123_456_789, 0.12345m, 9999.12345m, 12345, 0);
+            var oldHuge = new MethodCost((MethodIndex)1_000_000, 1_123_456_789, 2_123_456_789, 0.12345m, 9999.12345m, 12345, 0, 0);
             Compare(oldHuge, cost);
         }
 
@@ -54,6 +54,7 @@ namespace ETWAnalyzer_uTest
             Assert.Equal(expected.Threads, test.Threads);
             Assert.Equal(expected.WaitMs, test.WaitMs);
             Assert.Equal(expected.DepthFromBottom, test.DepthFromBottom);
+            Assert.Equal(expected.ReadyMs, test.ReadyMs);
         }
 
         [Fact(

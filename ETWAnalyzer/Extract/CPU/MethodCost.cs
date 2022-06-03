@@ -124,10 +124,19 @@ namespace ETWAnalyzer.Extract
 
         /// <summary>
         /// Averaged value how many stack frames are below for given method. This allows to define a distance
-        /// metric to show methods with the lowest Depths but highest CPU diff wich are most probably responsible
+        /// metric to show methods with the lowest Depths but highest CPU diff which are most probably responsible
         /// for a degradation
         /// </summary>
         public int DepthFromBottom
+        {
+            get; private set;
+        }
+
+        /// <summary>
+        /// Aggregated Ready time in milliseconds across all threads. Overlapping ready times are counted only once.
+        /// If e.g. two threads wait from 1 - 2 and 1.5 - 2.5 we return 1.5 as the total ready time. Overlapping waits are counted only once.
+        /// </summary>
+        public uint ReadyMs
         {
             get; private set;
         }
@@ -142,7 +151,8 @@ namespace ETWAnalyzer.Extract
         /// <param name="lastOccurrence"></param>
         /// <param name="threadCount"></param>
         /// <param name="depthFromBottom"></param>
-        public MethodCost(MethodIndex methodIdx, uint cpuMs, uint waitMs, decimal firstOccurrence, decimal lastOccurrence, int threadCount, int depthFromBottom)
+        /// <param name="readyMs"></param>
+        public MethodCost(MethodIndex methodIdx, uint cpuMs, uint waitMs, decimal firstOccurrence, decimal lastOccurrence, int threadCount, int depthFromBottom, uint readyMs)
         {
             MethodIdx = methodIdx;
             CPUMs = cpuMs;
@@ -151,6 +161,7 @@ namespace ETWAnalyzer.Extract
             LastOccurenceInSecond = (float)lastOccurrence;
             Threads = threadCount;
             DepthFromBottom = depthFromBottom;
+            ReadyMs = readyMs;
         }
 
         /// <summary>
@@ -220,6 +231,9 @@ namespace ETWAnalyzer.Extract
                 case Parts.DepthFromBottom:
                     deser.DepthFromBottom = ParseInt(cost, startIdx, len);
                     break;
+                case Parts.ReadyMs:
+                    deser.ReadyMs = ParseUInt(cost, startIdx, len);
+                    break;
                 default:
                     throw new InvalidOperationException("Invalid Part of MethodCost reached");
             }
@@ -236,6 +250,7 @@ namespace ETWAnalyzer.Extract
             LastOccurence,
             ThreadCount,
             DepthFromBottom,
+            ReadyMs,
         }
 
         /// <summary>
@@ -293,7 +308,7 @@ namespace ETWAnalyzer.Extract
             string first = FirstOccurenceInSecond.ToString("F4", CultureInfo.InvariantCulture);
             string last = LastOccurenceInSecond.ToString("F4", CultureInfo.InvariantCulture);
 
-            return $"{MethodIdx} {CPUMs.ToString(CultureInfo.InvariantCulture)} {WaitMs.ToString(CultureInfo.InvariantCulture)} {first} {last} {Threads} {DepthFromBottom}";
+            return $"{MethodIdx} {CPUMs.ToString(CultureInfo.InvariantCulture)} {WaitMs.ToString(CultureInfo.InvariantCulture)} {first} {last} {Threads} {DepthFromBottom} {ReadyMs}";
         }
 
         /// <summary>
@@ -302,7 +317,7 @@ namespace ETWAnalyzer.Extract
         /// <returns></returns>
         public override string ToString()
         {
-            return $"{Method} CPU: {CPUMs:N0}ms Wait: {WaitMs:N0}ms First: {FirstOccurenceInSecond}s Last: {LastOccurenceInSecond}s Threads: {Threads} Depth: {DepthFromBottom}";
+            return $"{Method} CPU: {CPUMs:N0}ms Wait: {WaitMs:N0}ms Ready: {ReadyMs}ms  First: {FirstOccurenceInSecond}s Last: {LastOccurenceInSecond}s Threads: {Threads} Depth: {DepthFromBottom}";
         }
     }
 }

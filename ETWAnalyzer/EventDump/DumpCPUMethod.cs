@@ -122,6 +122,11 @@ namespace ETWAnalyzer.EventDump
         public MinMaxRange<int> MinMaxWaitMs { get; internal set; } = new MinMaxRange<int>();
 
         /// <summary>
+        /// Only show methods where the ready time in ms matches the time range. Default is everything.
+        /// </summary>
+        public MinMaxRange<int> MinMaxReadyMs { get; internal set; }
+
+        /// <summary>
         /// Only show methods/stacktags where the first occurrence in seconds  matches the range. Default is everything.
         /// </summary>
         public MinMaxRange<double> MinMaxFirstS { get; internal set; } = new MinMaxRange<double>();
@@ -139,6 +144,7 @@ namespace ETWAnalyzer.EventDump
         /// </summary>
         public MinMaxRange<double> MinMaxDurationS { get; internal set; } = new MinMaxRange<double>();
 
+        
         /// <summary>
         /// State flag for CSV output
         /// </summary>
@@ -203,11 +209,11 @@ namespace ETWAnalyzer.EventDump
             public DateTimeOffset SessionStart { get; internal set; }
 
             public double ZeroTimeS { get; internal set; }
-            
+            public uint ReadyMs { get; internal set; }
 
             public override string ToString()
             {
-                return $"{TestName} {ProcessAndPid} {CPUMs}ms {WaitMs}ms {Method} {FirstCallTime} {LastCallTime} {SourceFile}";
+                return $"{TestName} {ProcessAndPid} {CPUMs}ms {WaitMs}ms {ReadyMs}ms {Method} {FirstCallTime} {LastCallTime} {SourceFile}";
             }
         }
 
@@ -307,6 +313,7 @@ namespace ETWAnalyzer.EventDump
                             Method = stacktag.Stacktag.CutMinMax(MethodFormatter.MethodCutStart, MethodFormatter.MethodCutLength),
                             CPUMs = (uint)stacktag.CPUInMs,
                             WaitMs = (uint)stacktag.WaitDurationInMs,
+                            ReadyMs = 0, // Stacktags have no recorded ready time. If there is demand we still can add it later
                             BaseLine = file.Extract.MainModuleVersion != null ? file.Extract.MainModuleVersion.ToString() : "",
                             ProcessAndPid = process.GetProcessWithId(UsePrettyProcessName),
                             SourceFile = file.JsonExtractFileWhenPresent,
@@ -378,6 +385,7 @@ namespace ETWAnalyzer.EventDump
                             ModuleName = methodCost.Module,
                             CPUMs = methodCost.CPUMs,
                             WaitMs = methodCost.WaitMs,
+                            ReadyMs = methodCost.ReadyMs,
                             Threads = methodCost.Threads,
                             BaseLine = file.Extract.MainModuleVersion != null ? file.Extract.MainModuleVersion.ToString() : "",
                             ProcessAndPid = process.GetProcessWithId(UsePrettyProcessName),
@@ -547,7 +555,7 @@ namespace ETWAnalyzer.EventDump
             // Show header only when we do not print totals or no per method totals
             if (!IsCSVEnabled && (ShowTotal == TotalModes.None || ShowTotal == TotalModes.Method))
             {
-                ColorConsole.WriteEmbeddedColorLine($"      [green]CPU ms[/green]     [yellow]Wait ms[/yellow] {threadCountHeader}{firstlastDurationHeader}Method");
+                ColorConsole.WriteEmbeddedColorLine($"      [green]CPU ms[/green]     [yellow]Wait ms[/yellow]    Ready ms {threadCountHeader}{firstlastDurationHeader}Method");
             }
 
             long overallCPUTotal = 0;
@@ -636,7 +644,7 @@ namespace ETWAnalyzer.EventDump
                                 process = " " + match.ProcessAndPid;
                             }
 
-                            ColorConsole.WriteEmbeddedColorLine($"  [Green]{match.CPUMs,7} ms[/Green] [yellow]{match.WaitMs,8} ms[/yellow] {threadCount}{firstLastFormatter(match)}{match.Method}[darkyellow]{process}[/darkyellow] ", null, true);
+                            ColorConsole.WriteEmbeddedColorLine($"  [Green]{match.CPUMs,7} ms[/Green] [yellow]{match.WaitMs,8} ms[/yellow] {match.ReadyMs,8} ms {threadCount}{firstLastFormatter(match)}{match.Method}[darkyellow]{process}[/darkyellow] ", null, true);
 
                             if (ShowModuleInfo)
                             {
@@ -743,12 +751,12 @@ namespace ETWAnalyzer.EventDump
 
             if (!myCSVHeaderPrinted)
             {
-                OpenCSVWithHeader("CSVOptions", "Test Case", "Date", "Test Time in ms", "Module", "Method", "CPU ms", "Wait ms", "# Threads", "Baseline", "Process", "Process Name", "StackDepth",
+                OpenCSVWithHeader("CSVOptions", "Test Case", "Date", "Test Time in ms", "Module", "Method", "CPU ms", "Wait ms", "Ready ms", "# Threads", "Baseline", "Process", "Process Name", "StackDepth",
                                   "FirstLastCall Duration in s", $"First Call time in {GetAbbreviatedName(firstFormat)}", $"Last Call time in {GetAbbreviatedName(lastFormat)}", "Command Line", "SourceFile", "IsNewProcess", "Module and Driver Info");
                 myCSVHeaderPrinted = true;
             }
 
-            WriteCSVLine(CSVOptions, match.TestName, match.PerformedAt, match.DurationInMs, match.ModuleName, match.Method, match.CPUMs, match.WaitMs, match.Threads, match.BaseLine, match.ProcessAndPid, match.Process.GetProcessName(UsePrettyProcessName), match.CPUMs / Math.Exp(match.StackDepth),
+            WriteCSVLine(CSVOptions, match.TestName, match.PerformedAt, match.DurationInMs, match.ModuleName, match.Method, match.CPUMs, match.WaitMs, match.ReadyMs, match.Threads, match.BaseLine, match.ProcessAndPid, match.Process.GetProcessName(UsePrettyProcessName), match.CPUMs / Math.Exp(match.StackDepth),
                          firstLastDurationS, GetDateTimeString(match.FirstCallTime, match.SessionStart, firstFormat), GetDateTimeString(match.LastCallTime, match.SessionStart, lastFormat), NoCmdLine ? "" : match.Process.CmdLine, match.SourceFile, (match.Process.IsNew ? 1 : 0), moduleDriverInfo);
         }
 
@@ -807,6 +815,7 @@ namespace ETWAnalyzer.EventDump
             {
                 SortOrders.Wait => data.WaitMs,
                 SortOrders.CPU => data.CPUMs,
+                SortOrders.Ready => data.ReadyMs,
                 // We normalize CPU consumption with the stack depth. The depth starts from 0 which is the method which consumes CPU.
                 // Upwards in the stack we must reduce the weight of CPU to get an approximate ordering of the methods which consume most CPU.
                 // This can be viewed as a special kind of distance metric in the 2D-space of Time vs StackDepth
@@ -824,6 +833,11 @@ namespace ETWAnalyzer.EventDump
             if( lret )
             {
                 lret = MinMaxWaitMs.IsWithin( (int) cost.WaitMs );
+            }
+
+            if( lret )
+            {
+                lret = MinMaxReadyMs.IsWithin((int)cost.ReadyMs);
             }
 
             if( lret )

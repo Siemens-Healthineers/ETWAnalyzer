@@ -160,7 +160,7 @@ namespace ETWAnalyzer_uTest.EventDump
                     {
                         Costs =
                         {
-                            new MethodCost((MethodIndex) 0, 100,500, 5.0m, 10.0m, 1, 0) { MethodList = MethodListForString },
+                            new MethodCost((MethodIndex) 0, 100,500, 5.0m, 10.0m, 1, 0, 0) { MethodList = MethodListForString },
                         }
                     }
                 }
