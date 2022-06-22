@@ -210,6 +210,8 @@ namespace ETWAnalyzer.EventDump
 
             public double ZeroTimeS { get; internal set; }
             public uint ReadyMs { get; internal set; }
+            public bool? HasCPUSamplingData { get; internal set; }
+            public bool? HasCSwitchData { get; internal set; }
 
             public override string ToString()
             {
@@ -387,6 +389,8 @@ namespace ETWAnalyzer.EventDump
                             WaitMs = methodCost.WaitMs,
                             ReadyMs = methodCost.ReadyMs,
                             Threads = methodCost.Threads,
+                            HasCPUSamplingData = file.Extract.CPU.PerProcessMethodCostsInclusive.HasCPUSamplingData,
+                            HasCSwitchData = file.Extract.CPU.PerProcessMethodCostsInclusive.HasCSwitchData,
                             BaseLine = file.Extract.MainModuleVersion != null ? file.Extract.MainModuleVersion.ToString() : "",
                             ProcessAndPid = process.GetProcessWithId(UsePrettyProcessName),
                             SourceFile = file.JsonExtractFileWhenPresent,
@@ -548,14 +552,20 @@ namespace ETWAnalyzer.EventDump
             }
 
             string firstlastDurationHeader = null;
+            string cpuHeader = null;
+            string waitHeader = null;
+            string readyHeader = null;
+            Func<MatchData, string> waitFormatter = _ => "";
+            Func<MatchData, string> readyFormatter = _ => "";
             Func<MatchData, string> firstLastFormatter = (data) => "";
+            Func<MatchData, string> cpuFormatter = _ => "";
 
-            GetHeaderFormatter(ref firstlastDurationHeader, ref firstLastFormatter);
+            GetHeaderFormatter(matches, ref cpuHeader, ref cpuFormatter, ref firstlastDurationHeader, ref firstLastFormatter, ref waitHeader, ref waitFormatter, ref readyHeader, ref readyFormatter);
 
             // Show header only when we do not print totals or no per method totals
             if (!IsCSVEnabled && (ShowTotal == TotalModes.None || ShowTotal == TotalModes.Method))
             {
-                ColorConsole.WriteEmbeddedColorLine($"      [green]CPU ms[/green]     [yellow]Wait ms[/yellow]    Ready ms {threadCountHeader}{firstlastDurationHeader}Method");
+                ColorConsole.WriteEmbeddedColorLine($"[green]{cpuHeader}[/green][yellow]{waitHeader}[/yellow]{readyHeader}{threadCountHeader}{firstlastDurationHeader}Method");
             }
 
             long overallCPUTotal = 0;
@@ -644,7 +654,7 @@ namespace ETWAnalyzer.EventDump
                                 process = " " + match.ProcessAndPid;
                             }
 
-                            ColorConsole.WriteEmbeddedColorLine($"  [Green]{match.CPUMs,7} ms[/Green] [yellow]{match.WaitMs,8} ms[/yellow] {match.ReadyMs,8} ms {threadCount}{firstLastFormatter(match)}{match.Method}[darkyellow]{process}[/darkyellow] ", null, true);
+                            ColorConsole.WriteEmbeddedColorLine($"  [Green]{cpuFormatter(match)}[/Green] [yellow]{waitFormatter(match)}[/yellow]{readyFormatter(match)}{threadCount}{firstLastFormatter(match)}{match.Method}[darkyellow]{process}[/darkyellow] ", null, true);
 
                             if (ShowModuleInfo)
                             {
@@ -679,7 +689,7 @@ namespace ETWAnalyzer.EventDump
             }
         }
 
-        private void GetHeaderFormatter(ref string firstlastDurationHeader, ref Func<MatchData, string> firstLastFormatter)
+        private void GetHeaderFormatter(List<MatchData> matches, ref string cpuHeader, ref Func<MatchData, string> cpuFormatter, ref string firstlastDurationHeader, ref Func<MatchData, string> firstLastFormatter, ref string waitHeader, ref Func<MatchData, string> waitFormatter, ref string readyHeader, ref Func<MatchData, string> readyFormatter)
         {
             if (FirstLastDuration)
             {
@@ -722,6 +732,18 @@ namespace ETWAnalyzer.EventDump
                     default:
                         throw new InvalidOperationException($"FirstTimeFormat {FirstTimeFormat} is not yet supported.");
                 }
+            }
+
+            cpuHeader = "         CPU ms ";
+            cpuFormatter = (data) => "N0".WidthFormat(data.CPUMs, 10) +" ms";
+
+            if ( matches.TrueForAll(x => x.WaitMs != 0 || x.HasCSwitchData.GetValueOrDefault() ) )
+            {
+                waitHeader  = "      Wait ms";
+                readyHeader = "  Ready ms ";
+
+                waitFormatter = (data) =>  " " + "N0".WidthFormat(data.WaitMs, 9) + " ms ";
+                readyFormatter = (data) => "N0".WidthFormat(data.ReadyMs, 6) + " ms ";
             }
         }
 

@@ -101,7 +101,9 @@ namespace ETWAnalyzer.Extractors
 
             CPUPerProcessMethodList inclusiveSamplesPerMethod = new CPUPerProcessMethodList
             {
-                ContainsAllCPUData = ExtractAllCPUData
+                ContainsAllCPUData = ExtractAllCPUData,
+                HasCPUSamplingData = hasCpuSamples,
+                HasCSwitchData = myCpuSchedlingData.HasResult,
             };
 
             foreach(var process2Method in methodSamplesPerProcess)

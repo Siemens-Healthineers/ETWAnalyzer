@@ -16,6 +16,16 @@ namespace ETWAnalyzer.Extract
         bool ContainsAllCPUData { get; }
 
         /// <summary>
+        /// Input ETL file has recorded Context Switch Data
+        /// </summary>
+        public bool? HasCSwitchData { get; }
+
+        /// <summary>
+        /// Input ETL file has recorded CPU sampling data
+        /// </summary>
+        public bool? HasCPUSamplingData { get; }
+
+        /// <summary>
         /// List of all methods found in ETL file
         /// </summary>
         IReadOnlyList<string> MethodNames { get; }

@@ -40,6 +40,24 @@ namespace ETWAnalyzer.Extract
         }
 
         /// <summary>
+        /// Input ETL file has recorded Context Switch Data
+        /// </summary>
+        public bool? HasCSwitchData
+        {
+            get;
+            set;
+        }
+
+        /// <summary>
+        /// Input ETL file has recorded CPU sampling data
+        /// </summary>
+        public bool? HasCPUSamplingData
+        {
+            get;
+            set;
+        }
+
+        /// <summary>
         /// Store per process per method the CPU in ms
         /// Index based structure to support compact serialization
         /// </summary>
