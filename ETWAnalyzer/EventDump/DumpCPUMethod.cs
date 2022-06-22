@@ -316,6 +316,8 @@ namespace ETWAnalyzer.EventDump
                             CPUMs = (uint)stacktag.CPUInMs,
                             WaitMs = (uint)stacktag.WaitDurationInMs,
                             ReadyMs = 0, // Stacktags have no recorded ready time. If there is demand we still can add it later
+                            HasCPUSamplingData = file.Extract.CPU.PerProcessMethodCostsInclusive.HasCPUSamplingData,
+                            HasCSwitchData = file.Extract.CPU.PerProcessMethodCostsInclusive.HasCSwitchData,
                             BaseLine = file.Extract.MainModuleVersion != null ? file.Extract.MainModuleVersion.ToString() : "",
                             ProcessAndPid = process.GetProcessWithId(UsePrettyProcessName),
                             SourceFile = file.JsonExtractFileWhenPresent,
@@ -737,12 +739,16 @@ namespace ETWAnalyzer.EventDump
             cpuHeader = "         CPU ms ";
             cpuFormatter = (data) => "N0".WidthFormat(data.CPUMs, 10) +" ms";
 
-            if ( matches.TrueForAll(x => x.WaitMs != 0 || x.HasCSwitchData.GetValueOrDefault() ) )
+            if ( matches.Any(x => (x.HasCSwitchData.HasValue && x.HasCSwitchData.Value)  || x.WaitMs != 0 ) )
             {
                 waitHeader  = "      Wait ms";
-                readyHeader = "  Ready ms ";
-
                 waitFormatter = (data) =>  " " + "N0".WidthFormat(data.WaitMs, 9) + " ms ";
+            }
+
+            // only data in enhanced format can contain ready data
+            if( matches.Any( x => x.HasCSwitchData.GetValueOrDefault() ) )
+            {
+                readyHeader = "  Ready ms ";
                 readyFormatter = (data) => "N0".WidthFormat(data.ReadyMs, 6) + " ms ";
             }
         }
