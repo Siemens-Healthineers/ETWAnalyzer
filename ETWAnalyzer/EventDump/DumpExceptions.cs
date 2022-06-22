@@ -3,6 +3,7 @@
 
 using ETWAnalyzer.Analyzers;
 using ETWAnalyzer.Analyzers.Infrastructure;
+using ETWAnalyzer.Commands;
 using ETWAnalyzer.Extract;
 using ETWAnalyzer.Extract.Exceptions;
 using ETWAnalyzer.Extractors;
@@ -26,11 +27,11 @@ namespace ETWAnalyzer.EventDump
         public bool FilterExceptions { get; internal set; }
         public bool ShowStack { get; internal set; }
 
-        public bool ShowFullMessage { get; internal set; }
         public int CutStackMin { get; internal set; }
         public int CutStackMax { get; internal set; }
         public bool NoCmdLine { get; internal set; }
         public MinMaxRange<double> MinMaxExTimeS { get; internal set; }
+        public int MaxMessage { get; internal set; } = DumpCommand.MaxMessageLength;
 
         public class MatchData
         {
@@ -175,7 +176,15 @@ namespace ETWAnalyzer.EventDump
                                 {
                                     if (TypeFilter.Key != null || MessageFilter.Key != null || StackFilter.Key != null)
                                     {
-                                        ColorConsole.WriteLine($"\t\t\t{GetDateTimeString(data.TimeStamp, data.SessionStart, TimeFormatOption)}");
+                                        if (TimeFormatOption == TimeFormats.s || TimeFormatOption == TimeFormats.second)
+                                        {
+                                            ColorConsole.WriteLine($"\t\t\t{GetDateTimeString(data.TimeStamp, data.SessionStart, TimeFormatOption)}");
+                                        }
+                                        else
+                                        {
+                                            ColorConsole.WriteLine($"\t\t\t{GetDateTimeString(data.TimeStamp, data.SessionStart, TimeFormatOption)} {GetDateTimeString(data.TimeStamp, data.SessionStart, TimeFormats.s)}");
+                                        }
+
                                     }
                                 }
                             }
@@ -192,7 +201,14 @@ namespace ETWAnalyzer.EventDump
             string[] lret = (stack ?? "").Split(Environment.NewLine.ToCharArray(), StringSplitOptions.RemoveEmptyEntries);
             if((CutStackMin > 0 || CutStackMax > 0) && lret != null)
             {
-                lret = lret.Skip(CutStackMin).Take(CutStackMax).ToArray();
+                int missingFrames = lret.Length - CutStackMax - CutStackMin;
+                var tmp = lret.Skip(CutStackMin).Take(CutStackMax);
+                if( missingFrames > 0 )
+                {
+                    tmp = tmp.Append($"Skipped {missingFrames} Frames ... {CutStackMin} from start and {CutStackMax} from end");
+                }
+
+                lret = tmp.ToArray();
             }
 
             return lret;
@@ -205,9 +221,9 @@ namespace ETWAnalyzer.EventDump
         /// <returns></returns>
         string TruncateMessage(string message)
         {
-            if (!ShowFullMessage && message.Length > ExceptionMaxMessageLength)
+            if (MaxMessage > 0 && message.Length > MaxMessage)
             {
-                return $"{message.Substring(0, ExceptionMaxMessageLength)} ... Use -FullMessage to see full message Text";
+                return $"{message.Substring(0, MaxMessage)} ... Use -MaxMessage 0 to see full message Text";
             }
             return message;
         }

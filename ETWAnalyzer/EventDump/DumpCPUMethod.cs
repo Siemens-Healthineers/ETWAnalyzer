@@ -26,7 +26,7 @@ namespace ETWAnalyzer.EventDump
         public SkipTakeRange TopN { get; internal set; } = new SkipTakeRange();
 
         /// <summary>
-        /// When not in process total mode select with -topnmethods the number of methods to priint
+        /// When not in process total mode select with -topnmethods the number of methods to print
         /// </summary>
         public SkipTakeRange TopNMethods { get; internal set; } = new SkipTakeRange();
 
@@ -86,7 +86,7 @@ namespace ETWAnalyzer.EventDump
         public DumpCommand.SortOrders SortOrder { get; internal set; }
 
         /// <summary>
-        /// Merge CPU consumption of all processes with the same pid accross multiple ETL files which can e.g. 
+        /// Merge CPU consumption of all processes with the same pid across multiple ETL files which can e.g. 
         /// originate from a long term tracing run.
         /// </summary>
         public bool Merge { get; internal set; }
@@ -163,8 +163,8 @@ namespace ETWAnalyzer.EventDump
         /// <summary>
         /// Needed for StackDepth sorting of methods where we determine the highest CPU consuming method with stack depth 0.
         /// Then we use for all methods > myMaxCPUSortData the metric CPU/exp(StackDepth), for the rest CPU/exp(StackDepth+10) to ensure
-        /// that the sort to some extent the methods consuming most CPU in by value order while other methods with less CPU but have a
-        /// shallow stack are not coming first. 
+        /// that the deepest methods consuming most CPU are coming first while other methods with less CPU but have a
+        /// shallow stack are coming later. 
         /// </summary>
         uint myMaxCPUSortData;
 

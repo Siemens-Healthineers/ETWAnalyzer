@@ -168,7 +168,7 @@ namespace ETWAnalyzer.Commands
         "                         For other options [-recursive] [-csv] [-NoCSVSeparator] [-TimeFmt] [-TestsPerRun] [-SkipNTests] [-TestRunIndex] [-TestRunCount] [-TestCase] [-Machine] [-ProcessName/pn] [-NewProcess] [-CmdLine]" + Environment.NewLine +
         "                         refer to help of TestRun and Process. Run \'EtwAnalyzer -help dump\' to get more infos." + Environment.NewLine;
         static readonly string ExceptionHelpString =
-        "  Exception -filedir/fd Extract\\ or xxx.json [-FilterExceptions] [-Type xxx] [-Message xxx] [-FullMessage] [-Showstack] [-CutStack dd-yy] [-Stackfilter xxx] [-recursive] [-csv xxx.csv] [-NoCSVSeparator] " + Environment.NewLine +
+        "  Exception -filedir/fd Extract\\ or xxx.json [-FilterExceptions] [-Type xxx] [-Message xxx] [-Showstack] [-MaxMessage dd] [-CutStack dd-yy] [-Stackfilter xxx] [-recursive] [-csv xxx.csv] [-NoCSVSeparator] " + Environment.NewLine +
         "                           [-TimeFmt s,Local,LocalTime,UTC,UTCTime,Here,HereTime] [-NoCmdLine] [-Clip] [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd] [-TestCase xx] [-Machine xxxx]" + Environment.NewLine +
         "                           [-MinMaxExTime minS [maxS]] [-ZeroTime/zt Marker/First/Last/ProcessStart filter] [-ZeroProcessName/zpn filter]" + Environment.NewLine +
         "                           [-ProcessName/pn xxx.exe(pid)] [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-CmdLine substring]" + Environment.NewLine +
@@ -183,11 +183,11 @@ namespace ETWAnalyzer.Commands
         "                         -ShowStack                 Show Stacktrace for every exception. By default the first 50 frames are displayed. " + Environment.NewLine + 
         "                                                    To change use -CutStack. You should filter first as much as possible before using this on the console." + Environment.NewLine + 
         "                                                    Only when -type, -message or -stackfilter are active the stack is printed to console." + Environment.NewLine +
+       $"                         -MaxMessage dd             Limit exception message to first dd characters. By default the first {MaxMessageLength} characters are printed. Use -MaxMessage 0 to show full text." + Environment.NewLine + 
         "                         -CutStack dd-yy            Remove the first dd lines of the stack. To display all stack frames use \"-CutStack 0-\". Print yy lines or all if -yy is omitted." + Environment.NewLine + 
         "                                                    E.g. -CutStack -50 will display the first 50 lines of a stack trace." + Environment.NewLine +
         "                         -FilterExceptions          Filter exceptions away which are normally harmless. The filter file is located in Configuration\\ExceptionFilters.xml." + Environment.NewLine +
         "                                                    You need this only when you have used during -extract Exception -allExceptions where the same filter will be applied during extraction already." + Environment.NewLine +
-        "                         -FullMessage               By default only the first 500 characters of the exception are printed on the console. Use this to see the full message text." + Environment.NewLine +
         "                         For other options [-ZeroTime ..] [-recursive] [-csv] [-NoCSVSeparator] [-TimeFmt] [-TestsPerRun] [-SkipNTests] [-TestRunIndex] [-TestRunCount] [-TestCase] [-Machine] [-ProcessName/pn] [-NewProcess] [-CmdLine]" + Environment.NewLine +
         "                         refer to help of TestRun and Process. Run \'EtwAnalyzer -help dump\' to get more infos." + Environment.NewLine;
 
@@ -528,9 +528,11 @@ namespace ETWAnalyzer.Commands
         public KeyValuePair<string, Func<string, bool>> TypeFilter { get; private set; } = new KeyValuePair<string, Func<string, bool>>(null, _ => true);
         public KeyValuePair<string, Func<string, bool>> MessageFilter { get; private set; } = new KeyValuePair<string, Func<string, bool>>(null, _ => true);
         public KeyValuePair<string, Func<string, bool>> StackFilter { get; private set; } = new KeyValuePair<string, Func<string, bool>>(null, _ => true);
-        public bool ShowFullMessage { get; private set; }
         public int CutStackMin { get; private set; }
         public int CutStackMax { get; private set; }
+
+        public const int MaxMessageLength = 500;
+        public int MaxMessage { get; private set;  }  = MaxMessageLength;
         public MinMaxRange<double> MinMaxExTimeS { get; private set; } = new MinMaxRange<double>();
 
         // Dump Process specific Flags
@@ -876,6 +878,10 @@ namespace ETWAnalyzer.Commands
                         CutStackMin = cutStackMinMax.Key;
                         CutStackMax = cutStackMinMax.Value;
                         break;
+                    case "-maxmessage":
+                        string maxMessageStr = GetNextNonArg("-maxmessage");
+                        MaxMessage = int.Parse(maxMessageStr, CultureInfo.InvariantCulture);
+                        break;
                     case "-fileoperation":
                         string fileOp = GetNextNonArg("-fileoperation");
                         ParseEnum<Extract.FileIO.FileIOStatistics.FileOperation>("FileOperation values", fileOp,
@@ -934,10 +940,6 @@ namespace ETWAnalyzer.Commands
                     case "-showstack":
                     case "-ss":
                         ShowStack = true;
-                        break;
-                    case "-fullmessage":
-                    case "-fm":
-                        ShowFullMessage = true;
                         break;
                     case "-totalmemory":
                     case "-tm":
@@ -1322,10 +1324,10 @@ namespace ETWAnalyzer.Commands
                             TypeFilter = TypeFilter,
                             MessageFilter = MessageFilter,
                             StackFilter = StackFilter,
-                            ShowFullMessage = ShowFullMessage,
                             ShowStack = ShowStack,
                             CutStackMin = CutStackMin,
                             CutStackMax = CutStackMax,
+                            MaxMessage = MaxMessage,
                             NoCmdLine = NoCmdLine,
                             MinMaxExTimeS = MinMaxExTimeS,
                             ZeroTimeMode = ZeroTimeMode,
