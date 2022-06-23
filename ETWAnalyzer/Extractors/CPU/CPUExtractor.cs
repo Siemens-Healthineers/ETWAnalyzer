@@ -103,7 +103,7 @@ namespace ETWAnalyzer.Extractors
             {
                 ContainsAllCPUData = ExtractAllCPUData,
                 HasCPUSamplingData = hasCpuSamples,
-                HasCSwitchData = myCpuSchedlingData.HasResult,
+                HasCSwitchData = myCpuSchedlingData.HasResult && myCpuSchedlingData.Result?.ContextSwitches?.Count > 0,
             };
 
             foreach(var process2Method in methodSamplesPerProcess)
