@@ -223,7 +223,7 @@ namespace ETWAnalyzer.EventDump
         {
             if (MaxMessage > 0 && message.Length > MaxMessage)
             {
-                return $"{message.Substring(0, MaxMessage)} ... Use -MaxMessage 0 to see full message Text";
+                return $"{message.Substring(0, MaxMessage)} ... -MaxMessage 0 for full text";
             }
             return message;
         }
