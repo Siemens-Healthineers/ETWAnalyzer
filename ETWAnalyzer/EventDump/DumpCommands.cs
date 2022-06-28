@@ -79,5 +79,10 @@ namespace ETWAnalyzer.EventDump
         /// Dump ETW Marker events
         /// </summary>
         Mark,
+        
+        /// <summary>
+        /// Dump PMC events
+        /// </summary>
+        PMC,
     }
 }

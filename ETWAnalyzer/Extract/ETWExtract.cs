@@ -5,6 +5,7 @@ using ETWAnalyzer.Extract.Disk;
 using ETWAnalyzer.Extract.Exceptions;
 using ETWAnalyzer.Extract.FileIO;
 using ETWAnalyzer.Extract.Modules;
+using ETWAnalyzer.Extract.PMC;
 using ETWAnalyzer.Extract.ThreadPool;
 using ETWAnalyzer.Extractors;
 using ETWAnalyzer.Infrastructure;
@@ -297,6 +298,17 @@ namespace ETWAnalyzer.Extract
         IFileIOData IETWExtract.FileIO { get => myFileIODeserializer.Value; }
 
         /// <summary>
+        /// PMC (Performance Monitoring Counter) CPU Data
+        /// </summary>
+        public PMCData PMC
+        {
+            get; set;
+        } = new PMCData();
+
+        IPMCData IETWExtract.PMC => PMC;
+
+
+        /// <summary>
         /// When File  IO data is accessed via IETWExtract 
         /// </summary>
         readonly Lazy<FileIOData> myFileIODeserializer;
@@ -346,7 +358,6 @@ namespace ETWAnalyzer.Extract
 
             return lret;
         }
-
 
         /// <summary>
         /// When Extract is deserialized from a file we set here the input file name to be able to deserialize other parts later

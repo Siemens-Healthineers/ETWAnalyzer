@@ -37,7 +37,7 @@ namespace ETWAnalyzer.Extractors
         /// <summary>
         /// Per process CPU
         /// </summary>
-        Dictionary<ProcessKey, Duration> myPerProcessCPU = new Dictionary<ProcessKey, Duration>();
+        readonly Dictionary<ProcessKey, Duration> myPerProcessCPU = new();
 
         public CPUExtractor()
         {
@@ -54,8 +54,8 @@ namespace ETWAnalyzer.Extractors
         {
             // inspired by https://github.com/microsoft/eventtracing-processing-samples/blob/master/GetCpuSampleDuration/Program.cs
 
-            Dictionary<ProcessKey, Dictionary<string, CpuData>> methodSamplesPerProcess = new Dictionary<ProcessKey, Dictionary<string, CpuData>>();
-            StackPrinter printer = new StackPrinter(StackFormat.DllAndMethod);
+            Dictionary<ProcessKey, Dictionary<string, CpuData>> methodSamplesPerProcess = new();
+            StackPrinter printer = new(StackFormat.DllAndMethod);
             foreach (ICpuSample sample in mySamplingData.Result.Samples)
             {
                 if (sample?.Process?.ImageName == null)
@@ -93,13 +93,13 @@ namespace ETWAnalyzer.Extractors
             }
 
             // convert dictionary with kvp to format ProcessName(pid) and sample count in ms
-            Dictionary<ProcessKey, uint> perProcessSamplesInMs = new Dictionary<ProcessKey, uint>();
+            Dictionary<ProcessKey, uint> perProcessSamplesInMs = new();
             foreach (var kvp in myPerProcessCPU.OrderByDescending(x => x.Value))
             {
                 perProcessSamplesInMs.Add(kvp.Key, (uint)kvp.Value.TotalMilliseconds);
             }
 
-            CPUPerProcessMethodList inclusiveSamplesPerMethod = new CPUPerProcessMethodList
+            CPUPerProcessMethodList inclusiveSamplesPerMethod = new()
             {
                 ContainsAllCPUData = ExtractAllCPUData,
                 HasCPUSamplingData = hasCpuSamples,
@@ -137,7 +137,7 @@ namespace ETWAnalyzer.Extractors
                 return;
             }
 
-            HashSet<string> recursionCountGuard = new HashSet<string>();
+            HashSet<string> recursionCountGuard = new();
 
             for(int i=0;i<frames.Count;i++)
             {
@@ -202,7 +202,7 @@ namespace ETWAnalyzer.Extractors
             }
 
             IReadOnlyList<StackFrame> frames = stack.Frames;
-            HashSet<string> recursionCountGuard = new HashSet<string>();
+            HashSet<string> recursionCountGuard = new();
 
             for(int i=0;i<frames.Count;i++)
             {

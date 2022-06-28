@@ -257,6 +257,13 @@ namespace ETWAnalyzer.Commands
         "                         -MarkerFilter xxx         Filter for specific marker events. Multiple filters are separated by ; Exclusion filters start with ! Supported wildcards are * and ?" + Environment.NewLine + 
         "                         -ZeroTime marker filter   Print diff time relative to a specific marker. The first matching marker (defined by filter) defines the zero time." + Environment.NewLine;
 
+        static readonly string PMCHelpString =
+        "  PMC -filedir/fd Extract\\ or xxx.json [-NoCounters] [-recursive] [-csv xxx.csv] [-NoCSVSeparator] [-NoCmdLine] [-Clip] " + Environment.NewLine +
+        "       [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd] [-TestCase xx] [-Machine xxxx] [-ProcessName/pn xxx.exe(pid)] [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-CmdLine substring]" + Environment.NewLine +
+        "                         Print CPU PMC (Performance Monitoring Counters. To see data you need to record PMC data with ETW in counting mode together with Context Switch events. Sampling counters are not supported yet." + Environment.NewLine +
+        "                         -NoCounters                Do not display raw counter values. Just CPI and CacheMiss % are shown." + Environment.NewLine;
+
+
         static readonly string ExamplesHelpString =
         "[yellow]Examples[/yellow]" + Environment.NewLine;
 
@@ -375,6 +382,9 @@ namespace ETWAnalyzer.Commands
         "[green]Show marker events. Print marker diff time relative to the *_Start event. Exclude all marker messages which contain screenshot in the string.[/green]" + Environment.NewLine +
         " ETWAnalyzer -filedir xx.json -dump Marker -ZeroTime marker *_Start  -MarkerFilter !*Screenshot*" + Environment.NewLine;
 
+        static readonly string PMCExamples = ExamplesHelpString +
+        "[green]Dump PMC values from sorter.exe and the new fastsorter.exe to check if CPU efficiency has improved.[/green]" + Environment.NewLine +
+        " ETWAnalyzer -fd xx.json -dump PMC -pn fastsorter;sorter" + Environment.NewLine;
 
         /// <summary>
         /// Default Helpstring which prints all dump commands
@@ -391,7 +401,8 @@ namespace ETWAnalyzer.Commands
             DiskHelpString+
             FileHelpString+
             ThreadPoolHelpString + 
-            MarkHelpString;
+            MarkHelpString + 
+            PMCHelpString;
 
 
         DumpCommands myCommand = DumpCommands.None;
@@ -602,6 +613,8 @@ namespace ETWAnalyzer.Commands
         // Dump Marker specific Flags
         public Func<string, bool> MarkerFilter { get; private set; } = _ => true;
 
+        // Dump PMC specific flags
+        public bool NoCounters { get; private set; }
 
         /// <summary>
         /// Ctor
@@ -698,6 +711,9 @@ namespace ETWAnalyzer.Commands
                     case "-reversefilename":
                     case "-rfn":
                         ReverseFileName = true;
+                        break;
+                    case "-nocounters":
+                        NoCounters = true;
                         break;
                     case "-showmoduleinfo":
                     case "-smi":
@@ -1007,6 +1023,9 @@ namespace ETWAnalyzer.Commands
                     case "mark":
                         myCommand = DumpCommands.Mark;
                         break;
+                    case "pmc":
+                        myCommand = DumpCommands.PMC;
+                        break;
                     default:
                         // parse all command line arguments and throw exception for last found wrong argument to enable context sensitive help
                         delayedThrower = () =>
@@ -1065,6 +1084,9 @@ namespace ETWAnalyzer.Commands
                         break;
                     case DumpCommands.Mark:
                         lret = MarkerExamples + Environment.NewLine +  MarkHelpString;
+                        break;
+                    case DumpCommands.PMC:
+                        lret = PMCExamples + Environment.NewLine + PMCHelpString;
                         break;
                 }
                 return lret.TrimEnd(Environment.NewLine.ToCharArray());
@@ -1435,6 +1457,30 @@ namespace ETWAnalyzer.Commands
                             PrintFiles = myPrintFiles,
                             ValidTestsOnly = ValidTestsOnly,
 
+                        };
+                        break;
+                    case DumpCommands.PMC:
+                        ThrowIfFileOrDirectoryIsInvalid(FileOrDirectoryQueries);
+                        dumper = new DumpPMC
+                        {
+                            FileOrDirectoryQueries = FileOrDirectoryQueries,
+                            Recursive = mySearchOption,
+                            TestsPerRun = TestsPerRun,
+                            SkipNTests = SkipNTests,
+                            TestRunIndex = TestRunIndex,
+                            TestRunCount = TestRunCount,
+                            LastNDays = LastNDays,
+                            TestCaseFilter = TestCaseFilter,
+                            MachineFilter = MachineFilter,
+                            CSVFile = CSVFile,
+                            NoCSVSeparator = NoCSVSeparator,
+                            ProcessNameFilter = ProcessNameFilter,
+                            NoCmdLine = NoCmdLine,
+                            CommandLineFilter = CmdLineFilter,
+                            NewProcessFilter = NewProcess,
+                            UsePrettyProcessName = UsePrettyProcessName,
+
+                            NoCounters = NoCounters,
                         };
                         break;
                     case DumpCommands.None:

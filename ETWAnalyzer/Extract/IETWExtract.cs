@@ -5,6 +5,7 @@ using ETWAnalyzer.Extract.Disk;
 using ETWAnalyzer.Extract.Exceptions;
 using ETWAnalyzer.Extract.FileIO;
 using ETWAnalyzer.Extract.Modules;
+using ETWAnalyzer.Extract.PMC;
 using ETWAnalyzer.Extract.ThreadPool;
 using ETWAnalyzer.Infrastructure;
 using System;
@@ -43,6 +44,11 @@ namespace ETWAnalyzer.Extract
         /// Contains FileIO data of all processes. This contains unlike Disk all Read/Write operations regardless if the data was read from disk or from the file system cache.
         /// </summary>
         IFileIOData FileIO { get; }
+
+        /// <summary>
+        /// PMC (Performance Monitoring Counter) CPU Data
+        /// </summary>
+        IPMCData PMC { get; }
 
         /// <summary>
         /// Computer Displays. Displays outputs of the graphics card which are not attached have 0 resolution and refresh rate.
