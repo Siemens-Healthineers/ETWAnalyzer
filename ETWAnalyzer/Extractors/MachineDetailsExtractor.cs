@@ -44,16 +44,25 @@ namespace ETWAnalyzer.Extractors
             results.OSVersion = myTraceMetaData?.OSVersion ?? new Version();
             results.OSBuild = meta?.BuildInfo?.Branch ?? "";
             results.MemorySizeMB = (int)(meta?.UsableMemorySize.TotalMegabytes ?? 0);
-            results.NumberOfProcessors = meta?.ProcessorCount ?? 0 ;
+
+            results.NumberOfProcessors = meta?.ProcessorCount ?? 0;
             results.CPUSpeedMHz = (int) (meta?.ProcessorSpeed.TotalMegahertz ?? 0 );
-            IProcessor proc = meta?.Processors?.FirstOrDefault();
-            if( proc != null)
+
+            try
             {
-                results.CPUName = proc.Name;
-                results.CPUVendor = proc.Vendor;
-                results.CPUHyperThreadingEnabled = proc.IsSimultaneousMultithreadingEnabled;
+                IProcessor proc = meta?.Processors?.FirstOrDefault();
+                if (proc != null)
+                {
+                    results.CPUName = proc.Name;
+                    results.CPUVendor = proc.Vendor;
+                    results.CPUHyperThreadingEnabled = proc.IsSimultaneousMultithreadingEnabled;
+                }
             }
-            
+            catch (InvalidTraceDataException ex)
+            {
+                Logger.Warn($"Could not determine number of Processors. This most likely happens when in VMs less cores are enabled then the CPU model has. Exception was: {ex}");
+            }
+
             // Microsoft.Windows.EventTracing.Interop.Metadata.NativeTraceLogfileHeader exposes BootTime but the API of TraceProcessor does not expose this ...
             // Asked at https://stackoverflow.com/questions/61996791/expose-boottime-in-traceprocessor
             //results.BootTimeMachine = 
