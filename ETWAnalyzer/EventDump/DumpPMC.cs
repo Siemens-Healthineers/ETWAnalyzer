@@ -280,7 +280,7 @@ namespace ETWAnalyzer.EventDump
                 IEnumerable<MatchData> sorted = timeGroup;
                 if (sorter != null)
                 {
-                    sorted = data.OrderBy(sorter);
+                    sorted = timeGroup.OrderBy(sorter);
                 }
 
                 foreach(var header in formatters)
