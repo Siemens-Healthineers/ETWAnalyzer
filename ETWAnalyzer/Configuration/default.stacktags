@@ -276,6 +276,17 @@
       <Entrypoint Module="csagent.sys" Method="*" />
     </Tag>
   </Tag>
+  <Tag Name="Antivirus - CyberArk Security" Priority="1">
+    <Tag Name="CyberArk Device Driver Overhead">
+      <Entrypoint Module="vfdrv.sys" Method="*" />
+    </Tag>
+    <Tag Name="CyberArk EPM Network Driver Overhead">
+      <Entrypoint Module="vfnet.sys" Method="*" />
+    </Tag>
+    <Tag Name="CyberArk EPM Protection Driver Driver Overhead">
+      <Entrypoint Module="vfpd.sys" Method="*" />
+    </Tag>
+  </Tag>
   <Tag Name="DWM Render">
         <Entrypoint Module="dwmcore.dll" Method="CPartitionVerticalBlankScheduler::ProcessFrame*"/>
   </Tag>
