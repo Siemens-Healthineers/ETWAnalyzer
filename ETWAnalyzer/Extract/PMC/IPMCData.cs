@@ -11,5 +11,10 @@ namespace ETWAnalyzer.Extract.PMC
         /// Process Summary data
         /// </summary>
         IReadOnlyList<IPMCCounter> Counters { get; }
+
+        /// <summary>
+        /// Last Branch Record data which contains method call estimates based on the CPU LBR data.
+        /// </summary>
+        ILBRData LBRData { get; }
     }
 }

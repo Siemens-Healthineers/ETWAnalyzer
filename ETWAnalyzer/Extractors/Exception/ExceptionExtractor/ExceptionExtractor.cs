@@ -132,29 +132,19 @@ namespace ETWAnalyzer.Extractors
                             StringBuilder sb = new StringBuilder();
                             foreach (Address stackAdr in stackEv.Stack)
                             {
-                                var images = ev.Process?.Images;
-                                if (images != null)
+                                if (ev?.Process?.Images != null)
                                 {
-                                    foreach (var image in images)
+                                    IStackSymbol stackSymbol = ev.Process.GetSymbolForAddress(stackAdr);
+
+                                    if (markerFound)
                                     {
-                                        var range = image.AddressRange;
-                                        if (((range.BaseAddress < range.LimitAddress) && (stackAdr > range.BaseAddress && stackAdr < range.LimitAddress)) ||
-                                              ((range.BaseAddress > range.LimitAddress) && (stackAdr < range.BaseAddress && stackAdr > range.LimitAddress)))
-                                        {
-                                            IStackSymbol stackSymbol = image.GetSymbol(stackAdr);
+                                        string method = printer.GetPrettyMethod(stackSymbol?.FunctionName, stackSymbol?.Image);
+                                        sb.AppendLine(method);
+                                    }
 
-                                            if (markerFound)
-                                            {
-                                                string method = printer.GetPrettyMethod(stackSymbol?.FunctionName, image);
-                                                sb.AppendLine(method);
-                                            }
-
-                                            if (stackSymbol?.FunctionName == MarkerFrame)
-                                            {
-                                                markerFound = true;
-                                            }
-
-                                        }
+                                    if (stackSymbol?.FunctionName == MarkerFrame)
+                                    {
+                                        markerFound = true;
                                     }
                                 }
                                 else
@@ -227,7 +217,7 @@ namespace ETWAnalyzer.Extractors
                     };
 
                     ReadOnlySpan<byte> frameData = ev.Data.Slice(8);
-                    List<Address> addresses = new List<Address>();
+                    List<Address> addresses = new();
                     stackEv.Stack = addresses;
 
                     if (ev.Is32Bit)

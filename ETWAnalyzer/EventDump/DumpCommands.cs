@@ -84,5 +84,10 @@ namespace ETWAnalyzer.EventDump
         /// Dump PMC events
         /// </summary>
         PMC,
+
+        /// <summary>
+        /// Dump LBR data
+        /// </summary>
+        LBR,
     }
 }

@@ -98,41 +98,22 @@ namespace ETWAnalyzer.EventDump
             return data;
         }
 
-        class ColumnFormatter
-        {
-            public Func<MatchData, string> Formatter;
-            string myHeader;
-            public string Header
-            {
-                get => myHeader;
-                set => myHeader = value;
-            }
 
-            public ConsoleColor? Color;
-
-
-            public ColumnFormatter()
-            {
-                Header = "";
-                Formatter = x => "";
-                Color = null;
-            }
-        }
 
         /// <summary>
         /// Get column formatter and headline depending on currently configured display settings
         /// </summary>
         /// <param name="data">Sample data to check which columns can be enabled.</param>
         /// <returns>List of formatters</returns>
-        List<ColumnFormatter> GetFormatters(MatchData data)
+        List<ColumnFormatter<MatchData>> GetFormatters(MatchData data)
         {
             const int NumberWidth = 18;
 
-            List<ColumnFormatter> formatters = new();
+            List<ColumnFormatter<MatchData>> formatters = new();
 
             if( !NoCounters && data.Counters.ContainsKey(PMCNames.InstructionRetired) )
             {
-                formatters.Add( new ColumnFormatter()
+                formatters.Add( new ColumnFormatter<MatchData>()
                 {
                     Header = "Instructions".WithWidth(NumberWidth),
                     Formatter = x => "N0".WidthFormat(x.Instructions, NumberWidth)
@@ -140,7 +121,7 @@ namespace ETWAnalyzer.EventDump
             }
             if( data.Counters.ContainsKey(PMCNames.TotalCycles) )
             {
-                ColumnFormatter defaultFormatter = new ColumnFormatter
+                ColumnFormatter<MatchData> defaultFormatter = new()
                 {
                     Header = "Cycles".WithWidth(NumberWidth),
                     Formatter = x => "N0".WidthFormat(x.Cycles, NumberWidth)
@@ -154,7 +135,7 @@ namespace ETWAnalyzer.EventDump
                 // we can show CPI as well!
                 if ( data.Counters.ContainsKey(PMCNames.InstructionRetired) )
                 {
-                    ColumnFormatter extended = new ColumnFormatter
+                    ColumnFormatter<MatchData> extended = new()
                     {
                         Color = ConsoleColor.Yellow,
                         Header = "CPI".WithWidth(7),
@@ -167,7 +148,7 @@ namespace ETWAnalyzer.EventDump
 
             if (!NoCounters && data.Counters.ContainsKey(PMCNames.BranchInstructions))
             {
-                formatters.Add(new ColumnFormatter
+                formatters.Add(new ColumnFormatter<MatchData>
                 {
                     Header = "Branches".WithWidth(NumberWidth),
                     Formatter = x => "N0".WidthFormat(x.BranchInstructions, NumberWidth)
@@ -178,7 +159,7 @@ namespace ETWAnalyzer.EventDump
             {
                 if (!NoCounters)
                 {
-                    formatters.Add(new ColumnFormatter
+                    formatters.Add(new ColumnFormatter<MatchData>
                     {
                         Header = "BranchMispredicts".WithWidth(NumberWidth),
                         Formatter = x => "N0".WidthFormat(x.BranchMispredictions, NumberWidth)
@@ -188,7 +169,7 @@ namespace ETWAnalyzer.EventDump
                 // We can show Branch Mispredict %
                 if(data.Counters.ContainsKey(PMCNames.BranchInstructions) )
                 {
-                    formatters.Add(new ColumnFormatter
+                    formatters.Add(new ColumnFormatter<MatchData>
                     {
                         Color = ConsoleColor.Magenta,
                         Header = "BrMispredict %".WithWidth(15),
@@ -200,7 +181,7 @@ namespace ETWAnalyzer.EventDump
 
             if( !NoCounters &&  data.Counters.ContainsKey(PMCNames.CacheMisses))
             {
-                formatters.Add( new ColumnFormatter
+                formatters.Add( new ColumnFormatter<MatchData>
                 {
                     Header = "CacheMisses".WithWidth(NumberWidth),
                     Formatter = x => "N0".WidthFormat(x.LLCMisses, NumberWidth)
@@ -208,7 +189,7 @@ namespace ETWAnalyzer.EventDump
             }
             if( data.Counters.ContainsKey(PMCNames.LLCReference))
             {
-                ColumnFormatter defaultFormatter =  new ColumnFormatter
+                ColumnFormatter<MatchData> defaultFormatter =  new()
                 {
                     Header = "LLCReferences".WithWidth(NumberWidth),
                     Formatter = x => "N0".WidthFormat(x.LLCReference, NumberWidth)
@@ -222,7 +203,7 @@ namespace ETWAnalyzer.EventDump
                 // show cache miss rate
                 if ( data.Counters.ContainsKey(PMCNames.CacheMisses) )
                 {
-                    ColumnFormatter extended = new ColumnFormatter
+                    ColumnFormatter<MatchData> extended = new()
                     {
                         Color = ConsoleColor.Green,
                         Header = "CacheMiss %".WithWidth(12),
@@ -232,13 +213,13 @@ namespace ETWAnalyzer.EventDump
                 }
             }
 
-            formatters.Add( new ColumnFormatter
+            formatters.Add( new ColumnFormatter<MatchData>
             {
                 Header = " Process Name",
                 Formatter = x => " " + x.Process.GetProcessWithId(UsePrettyProcessName)
             });
 
-            formatters.Add(new ColumnFormatter
+            formatters.Add(new ColumnFormatter<MatchData>
             {
                 Color = ConsoleColor.DarkCyan,
                 Header = "",
@@ -252,7 +233,7 @@ namespace ETWAnalyzer.EventDump
         {
             foreach (IGrouping<string, MatchData> timeGroup in data.GroupBy(x => $"{x.PerformedAt} {Path.GetFileNameWithoutExtension(x.SourceFile)}"))
             {
-                List<ColumnFormatter> formatters = new();
+                List<ColumnFormatter<MatchData>> formatters = new();
                 Func<MatchData, ulong> sorter = null;
 
                 var firstMatch = timeGroup.FirstOrDefault();
@@ -292,7 +273,7 @@ namespace ETWAnalyzer.EventDump
 
                 foreach (MatchData match in sorted)
                 {
-                    foreach (ColumnFormatter formatter in formatters)
+                    foreach (ColumnFormatter<MatchData> formatter in formatters)
                     {
                         ColorConsole.Write(formatter.Formatter(match), formatter.Color);
                     }
@@ -323,7 +304,7 @@ namespace ETWAnalyzer.EventDump
                     }
 
 
-                    Dictionary<ETWProcessIndex, Dictionary<string, ulong>> counters = new Dictionary<ETWProcessIndex, Dictionary<string, ulong>>();
+                    Dictionary<ETWProcessIndex, Dictionary<string, ulong>> counters = new();
 
                     foreach (IPMCCounter counter in file.Extract.PMC.Counters)
                     {

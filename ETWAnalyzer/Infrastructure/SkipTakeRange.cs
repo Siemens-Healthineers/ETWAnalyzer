@@ -41,5 +41,10 @@ namespace ETWAnalyzer.Infrastructure
             SkipN = skipN ?? 0;
             TakeN = takeN ?? int.MaxValue;
         }
+
+        public bool IsEmpty
+        {
+            get => SkipN == 0 && TakeN == int.MaxValue;
+        }
     }
 }

@@ -12,7 +12,6 @@ namespace ETWAnalyzer.Extract.PMC
     /// </summary>
     public class PMCData : IPMCData
     {
-
         /// <summary>
         /// Process Summary data
         /// </summary>
@@ -25,6 +24,16 @@ namespace ETWAnalyzer.Extract.PMC
         /// Process Summary data
         /// </summary>
         IReadOnlyList<IPMCCounter> IPMCData.Counters => Counters;
+
+        /// <summary>
+        /// Method call estimates based on LBR sampling data
+        /// </summary>
+        public LBRData LBRData
+        {
+            get; set;
+        } = new LBRData();
+
+        ILBRData IPMCData.LBRData => LBRData;
     }
 
 }

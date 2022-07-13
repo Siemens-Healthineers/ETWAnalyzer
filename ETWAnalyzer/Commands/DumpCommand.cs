@@ -21,7 +21,7 @@ namespace ETWAnalyzer.Commands
     class DumpCommand : ArgParser
     {
         private static readonly string DumpHelpStringPrefix =
-        "ETWAnalyzer -Dump [Stats,Process,CPU,Memory,Disk,File,ThreadPool,Exception,Mark,TestRun,Version] [-nocolor]" + Environment.NewLine;
+        "ETWAnalyzer -Dump [Stats,Process,CPU,Memory,Disk,File,ThreadPool,Exception,Mark,TestRun,Version,PMC,LBR] [-nocolor]" + Environment.NewLine;
 
         static readonly string StatsHelpString =
         "   Stats    -filedir/fd x.etl/.json   [-Properties xxxx] [-recursive] [-csv xxx.csv] [-NoCSVSeparator] [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd] [-TestCase xx] [-Machine xxxx] [-Clip]" + Environment.NewLine + "" +
@@ -263,6 +263,19 @@ namespace ETWAnalyzer.Commands
         "                         Print CPU PMC (Performance Monitoring Counters. To see data you need to record PMC data with ETW in counting mode together with Context Switch events. Sampling counters are not supported yet." + Environment.NewLine +
         "                         -NoCounters                Do not display raw counter values. Just CPI and CacheMiss % are shown." + Environment.NewLine;
 
+        static readonly string LBRHelpString =
+        "  LBR -filedir/fd Extract\\ or xxx.json [-recursive] [-csv xxx.csv] [-NoCSVSeparator] [-NoCmdLine] [-Clip] " + Environment.NewLine +
+        "       [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd] [-TestCase xx] [-Machine xxxx] [-ProcessName/pn xxx.exe(pid)] [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-CmdLine substring]" + Environment.NewLine +
+        "                         Print CPU LBR (Last Branch Record CPU data). This gives you a sampled method call estimate. To see data you need to record LBR data with ETW." + Environment.NewLine +
+        "                         -ShowCaller                Show callee/caller of LBR Traces." + Environment.NewLine + 
+        "                         -ScalingFactor dd          Multiply recorded samples call counts with dd to get a better estimate of the true call counts. Based on experiments 1kHz CPU sampling the factor is in the region 1000-10000." + Environment.NewLine + 
+        "                         -MinMaxCount xx-yy         Only include lines which are in the count range. This filter also applies to caller methods." + Environment.NewLine +
+        "                         -CutMethod xx-yy           Shorten method/stacktag name to make output more readable. Skip xx chars and take yy chars. If -yy is present the last yy characters are taken." + Environment.NewLine +
+        "                         -includeDll/id             Include the declaring dll name in the full method name like xxx.dll!MethodName" + Environment.NewLine +
+        "                         -includeArgs/ia            Include the full method prototype when present like MethodName(string arg1, string arg2, ...)" + Environment.NewLine +
+        "                         -topN dd nn                Include only first dd processes with highest call count in trace. Optional nn skips the first nn lines. To see e.g. Lines 20-30 use -topn 10 20" + Environment.NewLine +
+        "                         -topNMethods dd nn         Include methods which were called most often in trace. Optional nn skips the first nn lines." + Environment.NewLine +
+        "                         -Methods *Func1*;xxx.dll!FullMethodName   Dump one or more methods from all or selected processes. When omitted only process total method call is printed to give an overview." + Environment.NewLine;
 
         static readonly string ExamplesHelpString =
         "[yellow]Examples[/yellow]" + Environment.NewLine;
@@ -386,6 +399,10 @@ namespace ETWAnalyzer.Commands
         "[green]Dump PMC values from sorter.exe and the new fastsorter.exe to check if CPU efficiency has improved.[/green]" + Environment.NewLine +
         " ETWAnalyzer -fd xx.json -dump PMC -pn fastsorter;sorter" + Environment.NewLine;
 
+        static readonly string LBRExamples = ExamplesHelpString +
+        "[green]Dump top 6 methods with highest call estimates from functioncaller.exe. Show also calling method.[/green]" + Environment.NewLine +
+        " ETWAnalyzer -fd xx.json -dump LBR -pn functioncaller -topnmethods 6 -showcaller" + Environment.NewLine;
+
         /// <summary>
         /// Default Helpstring which prints all dump commands
         /// </summary>
@@ -402,7 +419,8 @@ namespace ETWAnalyzer.Commands
             FileHelpString+
             ThreadPoolHelpString + 
             MarkHelpString + 
-            PMCHelpString;
+            PMCHelpString +
+            LBRHelpString;
 
 
         DumpCommands myCommand = DumpCommands.None;
@@ -616,6 +634,14 @@ namespace ETWAnalyzer.Commands
         // Dump PMC specific flags
         public bool NoCounters { get; private set; }
 
+        // Dump LBR specific flags
+        public bool ShowCaller { get; private set; }
+
+        public int ScalingFactor { get; private set; } = 1;
+        public MinMaxRange<int> MinMaxCount { get; private set; } = new MinMaxRange<int>();
+
+
+
         /// <summary>
         /// Ctor
         /// </summary>
@@ -743,6 +769,9 @@ namespace ETWAnalyzer.Commands
                     case "-showallfiles":
                         ShowAllFiles = true;
                         break;
+                    case "-showcaller":
+                        ShowCaller = true;
+                        break;
                     case "-topn":
                         string topN = GetNextNonArg("-topn");
                         string skip = GetNextNonArg("-topn", false); // skip string is optional
@@ -858,6 +887,11 @@ namespace ETWAnalyzer.Commands
                         KeyValuePair<int, int> minMaxReady = minmaxreadyms.GetMinMax();
                         MinMaxReadyMs = new MinMaxRange<int>(minMaxReady.Key, minMaxReady.Value);
                         break;
+                    case "-minmaxcount":
+                        string minmaxcount = GetNextNonArg("-minmaxcount");
+                        KeyValuePair<int, int> minMaxCount = minmaxcount.GetMinMax();
+                        MinMaxCount = new MinMaxRange<int>(minMaxCount.Key, minMaxCount.Value);
+                        break;
                     case "-minmax":
                         string minmaxStr = GetNextNonArg("-minmax");
                         KeyValuePair<int, int> minMaxV = minmaxStr.GetMinMax();
@@ -961,6 +995,10 @@ namespace ETWAnalyzer.Commands
                     case "-tm":
                         TotalMemory = true;
                         break;
+                    case "-scalingfactor":
+                        string scalingFactor = GetNextNonArg("-scalingfactor");
+                        ScalingFactor = int.Parse(scalingFactor, CultureInfo.InvariantCulture);
+                        break;
                     case "-mindiffmb":
                         string minDiffMB = GetNextNonArg("-mindiffmb");
                         MinDiffMB = int.Parse(minDiffMB, CultureInfo.InvariantCulture);
@@ -1026,6 +1064,9 @@ namespace ETWAnalyzer.Commands
                     case "pmc":
                         myCommand = DumpCommands.PMC;
                         break;
+                    case "lbr":
+                        myCommand = DumpCommands.LBR;
+                        break;
                     default:
                         // parse all command line arguments and throw exception for last found wrong argument to enable context sensitive help
                         delayedThrower = () =>
@@ -1087,6 +1128,9 @@ namespace ETWAnalyzer.Commands
                         break;
                     case DumpCommands.PMC:
                         lret = PMCExamples + Environment.NewLine + PMCHelpString;
+                        break;
+                    case DumpCommands.LBR:
+                        lret = LBRExamples + Environment.NewLine + LBRHelpString;
                         break;
                 }
                 return lret.TrimEnd(Environment.NewLine.ToCharArray());
@@ -1481,6 +1525,36 @@ namespace ETWAnalyzer.Commands
                             UsePrettyProcessName = UsePrettyProcessName,
 
                             NoCounters = NoCounters,
+                        };
+                        break;
+                    case DumpCommands.LBR:
+                        ThrowIfFileOrDirectoryIsInvalid(FileOrDirectoryQueries);
+                        dumper = new DumpLBR
+                        {
+                            FileOrDirectoryQueries = FileOrDirectoryQueries,
+                            Recursive = mySearchOption,
+                            TestsPerRun = TestsPerRun,
+                            SkipNTests = SkipNTests,
+                            TestRunIndex = TestRunIndex,
+                            TestRunCount = TestRunCount,
+                            LastNDays = LastNDays,
+                            TestCaseFilter = TestCaseFilter,
+                            MachineFilter = MachineFilter,
+                            CSVFile = CSVFile,
+                            NoCSVSeparator = NoCSVSeparator,
+                            ProcessNameFilter = ProcessNameFilter,
+                            CommandLineFilter = CmdLineFilter,
+                            NewProcessFilter = NewProcess,
+                            UsePrettyProcessName = UsePrettyProcessName,
+
+                            NoCmdLine = NoCmdLine,
+                            TopN = TopN,
+                            MethodFilter = MethodFilter,
+                            TopNMethods = TopNMethods,
+                            MethodFormatter = new MethodFormatter(NoDll, NoArgs, MethodCutStart, MethodCutLength),
+                            ShowCaller = ShowCaller,
+                            ScalingFactor = ScalingFactor,
+                            MinMaxCount = MinMaxCount,
                         };
                         break;
                     case DumpCommands.None:
