@@ -42,6 +42,7 @@ Normally you would want to use all builtin extractors which include
 | Module| Dump all loaded modules with file path and version. LOADER data must be present in trace. |
 | File| Open/Close/Read/Write summary of all accessed files per process. The ETL file must contain FILEIO data.|
 | Stacktag | Get from all processes the CPU call stack summary by the WPA stacktag names. To work properly you need symbols. See below -symServer section |
+| PMC      | Extract CPU cache misses, branch mispredictions. This reads low level CPU performance data. Additionally LBR (Last Branch Record) traces are processed to estimate call counts without the need to instrument any code. The ETL file must have enabled PMC tracing in counting mode or LBR (Last Branch Record) tracing. |
 
 ### Example
 
@@ -141,6 +142,8 @@ The currently supported dump commands are
 - [ThreadPool](ETWAnalyzer/Documentation/DumpThreadPoolCommand.md) 
 - [Mark](ETWAnalyzer/Documentation/DumpMarkCommand.md)
 - [TestRun](ETWAnalyzer/Documentation/DumpTestRunCommand.md)
+- [PMC](ETWAnalyzer/Documentation/DumpPMCCommand.md)
+- [LBR](ETWAnalyzer/Documentation/DumpLBRCommand.md)
 
 which all support -filedir and an extensive command line help what you can dump from the extracted data. 
 
