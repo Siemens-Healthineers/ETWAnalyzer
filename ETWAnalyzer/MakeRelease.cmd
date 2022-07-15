@@ -34,8 +34,6 @@ echo Binfolder is %1
 cd %1
 echo Delete superflous files
 del ETWAnalyzer_Trace.log 2> NUL
-del "WPTx86 (DesktopEditions)-x86_en-us.msi"
-del "WPTx86 (OnecoreUAP)-x86_en-us.msi"
 rd /q /s x86
 rd /q /s arm64
 exit /B 1

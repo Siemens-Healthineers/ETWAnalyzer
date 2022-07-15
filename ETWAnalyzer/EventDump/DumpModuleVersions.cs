@@ -80,7 +80,6 @@ namespace ETWAnalyzer.EventDump
             {
                 AllowLostEvents = true,
                 AllowTimeInversion = true,
-                ToolkitPath = ETWAnalyzer.TraceProcessorHelpers.Extensions.GetToolkitPath()
             });
 
             myCurrentFile = etlFile;

@@ -33,10 +33,6 @@ namespace ETWAnalyzer_uTest
 
         public MachineDetailsFixture()
         {
-            // since xUnit calls this in parallel use locks to guard against parallel execution which ruins 
-            // the tests randomly where e.g. TraceEvent is just installing its dlls once which is then also running concurrently ... 
-            Program.EnsureWPTIsInstalled();
-
             // parallel parsing of ETWs is not supported, or we will get sometimes
             // All tests which do TraceProcessor.Create/Process stuff will need this lock!
             //    System.InvalidOperationException : TraceAggregation has already been initalized.

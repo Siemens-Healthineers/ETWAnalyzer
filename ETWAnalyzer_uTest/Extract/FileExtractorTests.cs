@@ -37,7 +37,6 @@ namespace ETWAnalyzer_uTest
         {
             // since xUnit calls this in parallel use locks to guard against parallel execution which ruins 
             // the tests randomly where e.g. TraceEvent is just installing its dlls once which is then also running concurrently ... 
-            Program.EnsureWPTIsInstalled();
             lock (_Lock)
             {
                 if (myInteralExtract == null)

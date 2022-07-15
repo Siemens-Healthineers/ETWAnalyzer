@@ -164,7 +164,6 @@ namespace ETWAnalyzer.Extractors
                 {
                     AllowLostEvents = true,
                     AllowTimeInversion = true,
-                    ToolkitPath = ETWAnalyzer.TraceProcessorHelpers.Extensions.GetToolkitPath()
                 });
 
                 bool needSymbols = false;

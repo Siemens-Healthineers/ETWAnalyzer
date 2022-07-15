@@ -285,7 +285,6 @@ namespace ETWAnalyzer.EventDump
             using ITraceProcessor processor = TraceProcessor.Create(etlFile, new TraceProcessorSettings
             {
                 AllowLostEvents = true,
-                ToolkitPath = ETWAnalyzer.TraceProcessorHelpers.Extensions.GetToolkitPath(),
             });
 
             IPendingResult<IProcessDataSource> processes = processor.UseProcesses();
