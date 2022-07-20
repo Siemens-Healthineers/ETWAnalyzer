@@ -10,7 +10,8 @@ The picture below illustrates what data is stored per method for all processes o
 
 The extracted data contains for each method in a process
 - CPU usage from sampling data summed across all threads
-- Wait time from Context Switch data summed across all threads
+- Wait time from Context Switch data summed across all threads where overlapping wait times are counted only once
+- Ready time from Context Switch data summed accross all threads where overlapping ready times are counted only once
 - Number of threads this method was seen
 - First time this method was seen on any thread
 - Last time this method was seen on any thread
