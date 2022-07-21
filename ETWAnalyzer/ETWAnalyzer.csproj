@@ -24,6 +24,7 @@
     <PackageProjectUrl>https://github.com/Siemens-Healthineers/ETWAnalyzer</PackageProjectUrl>
     <PackageReadmeFile>ProgramaticAccess.md</PackageReadmeFile>
     <Version>2.3.2.0-Preview</Version>
+    <Platforms>x64</Platforms>
   </PropertyGroup>
   <PropertyGroup Condition="'$(TargetFramework)' == 'net6.0-windows'">
     <SuppressTrimAnalysisWarnings>false</SuppressTrimAnalysisWarnings>
@@ -33,7 +34,15 @@
     <OutputPath>..\bin\Release\</OutputPath>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <OutputPath>..\bin\Release\</OutputPath>
+  </PropertyGroup>
+
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <OutputPath>..\bin\Debug\</OutputPath>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutputPath>..\bin\Debug\</OutputPath>
   </PropertyGroup>
 
@@ -41,11 +50,23 @@
     <PlatformTarget>x64</PlatformTarget>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Platform)'=='x64'">
+    <PlatformTarget>x64</PlatformTarget>
+  </PropertyGroup>
+
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net4.7.2|AnyCPU'">
     <DocumentationFile>..\bin\Debug\ETWAnalyzer.xml</DocumentationFile>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net4.7.2|x64'">
+    <DocumentationFile>..\bin\Debug\ETWAnalyzer.xml</DocumentationFile>
+  </PropertyGroup>
+
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net4.7.2|AnyCPU'">
+    <DocumentationFile>..\bin\Release\ETWAnalyzer.xml</DocumentationFile>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net4.7.2|x64'">
     <DocumentationFile>..\bin\Release\ETWAnalyzer.xml</DocumentationFile>
   </PropertyGroup>
 
