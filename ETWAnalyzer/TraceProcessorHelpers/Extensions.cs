@@ -7,6 +7,7 @@ using Microsoft.Windows.EventTracing.Processes;
 using Microsoft.Windows.EventTracing.Symbols;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -20,6 +21,13 @@ namespace ETWAnalyzer.TraceProcessorHelpers
         static public DateTimeOffset ConvertToTime(this TraceTimestamp ?time)
         {
             return time == null ? DateTimeOffset.MinValue : time.Value.DateTimeOffset;
+        }
+
+        public static string GetToolkitPath()
+        {
+            string exeFolder = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName);
+            string toolkitPath = Path.Combine(exeFolder, "wpt");
+            return toolkitPath;
         }
 
         public static bool IsMatch(this IProcess process, ProcessStates? state)

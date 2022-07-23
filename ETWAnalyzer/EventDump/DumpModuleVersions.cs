@@ -11,6 +11,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using ETWAnalyzer.Extract.Modules;
+using System.Diagnostics;
 
 namespace ETWAnalyzer.EventDump
 {
@@ -80,6 +81,7 @@ namespace ETWAnalyzer.EventDump
             {
                 AllowLostEvents = true,
                 AllowTimeInversion = true,
+                ToolkitPath = ETWAnalyzer.TraceProcessorHelpers.Extensions.GetToolkitPath()
             });
 
             myCurrentFile = etlFile;
