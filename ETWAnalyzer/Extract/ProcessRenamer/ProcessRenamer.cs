@@ -17,6 +17,7 @@ namespace ETWAnalyzer.Extract
     {
         List<RenameRule> _ProcessRenamers = new List<RenameRule>();
         readonly Dictionary<Pair, string> _RenameCache = new Dictionary<Pair, string>();
+        readonly object _Lock = new();
         static readonly XmlSerializer mySerializer = new XmlSerializer(typeof(ProcessRenamer));
 
         /// <summary>
@@ -102,21 +103,24 @@ namespace ETWAnalyzer.Extract
             string renamed = exeName;
             var key = new Pair(exeName, cmdArgs);
 
-            if (_RenameCache.TryGetValue(key, out string cached))
+            lock (_Lock)
             {
-                renamed = cached;
-            }
-            else
-            {
-                foreach (var renameOp in this._ProcessRenamers)
+                if (_RenameCache.TryGetValue(key, out string cached))
                 {
-                    renamed = renameOp.Rename(exeName, cmdArgs);
-                    if (renamed != exeName)
-                    {
-                        break;
-                    }
+                    renamed = cached;
                 }
-                _RenameCache[key] = renamed;
+                else
+                {
+                    foreach (var renameOp in this._ProcessRenamers)
+                    {
+                        renamed = renameOp.Rename(exeName, cmdArgs);
+                        if (renamed != exeName)
+                        {
+                            break;
+                        }
+                    }
+                    _RenameCache[key] = renamed;
+                }
             }
             return renamed;
         }
