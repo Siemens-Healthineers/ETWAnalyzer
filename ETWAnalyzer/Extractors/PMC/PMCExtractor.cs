@@ -57,6 +57,11 @@ namespace ETWAnalyzer.Extractors.PMC
         readonly StackPrinter myPrinter = new(StackFormat.DllAndMethod);
 
         /// <summary>
+        /// Symbol location is expensive. Cache result of address lookup per process
+        /// </summary>
+        Dictionary<IProcess, Dictionary<Address, IStackSymbol>> myAddressCache = new();
+
+        /// <summary>
         /// ctor
         /// </summary>
         public PMCExtractor()
@@ -83,8 +88,15 @@ namespace ETWAnalyzer.Extractors.PMC
         /// <param name="results"></param>
         public override void Extract(ITraceProcessor processor, ETWExtract results)
         {
-            ExtractPMC(results);
-            ExtractLBR(results);
+            using (new PerfLogger("Extract PMC"))
+            {
+                ExtractPMC(results);
+            }
+
+            using (new PerfLogger("Extract LBR"))
+            {
+                ExtractLBR(results);
+            }
         }
 
         /// <summary>
@@ -113,8 +125,8 @@ namespace ETWAnalyzer.Extractors.PMC
 
                 foreach(ILastBranchRecordJump jump in shot.Jumps)
                 {
-                    sFrom = process.GetSymbolForAddress(jump.FromInstructionPointer);
-                    sTo =  process.GetSymbolForAddress(jump.ToInstructionPointer);
+                    sFrom = GetCachedSymbol(process, jump.FromInstructionPointer);
+                    sTo =   GetCachedSymbol(process, jump.ToInstructionPointer);
 
                     if( AreDifferentMethods(sFrom, sTo, out string mFrom, out string mTo) )
                     {
@@ -158,6 +170,23 @@ namespace ETWAnalyzer.Extractors.PMC
             method1 = myPrinter.GetPrettyMethod(s1?.FunctionName, s1?.Image);
             method2 = myPrinter.GetPrettyMethod(s2?.FunctionName, s2?.Image);
             return method1 != method2;
+        }
+
+        IStackSymbol GetCachedSymbol(IProcess process, Address address)
+        {
+            if (!myAddressCache.TryGetValue(process, out var symbolCache))
+            {
+                symbolCache = new();
+                myAddressCache[process] = symbolCache;
+            }
+
+            if (!symbolCache.TryGetValue(address, out var symbol))
+            {
+                symbol = process.GetSymbolForAddress(address);
+                symbolCache.Add(address, symbol);
+            }
+
+            return symbol;
         }
 
         private void ExtractPMC(ETWExtract results)
