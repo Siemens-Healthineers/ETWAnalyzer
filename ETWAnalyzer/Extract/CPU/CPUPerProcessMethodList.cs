@@ -2,6 +2,7 @@
 //// SPDX-License-Identifier:   MIT
 
 using ETWAnalyzer.Extractors;
+using ETWAnalyzer.Extractors.CPU;
 using Microsoft.Windows.EventTracing;
 using Newtonsoft.Json;
 using System;

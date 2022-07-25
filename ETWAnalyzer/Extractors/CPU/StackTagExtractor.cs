@@ -3,6 +3,7 @@
 
 using ETWAnalyzer.Configuration;
 using ETWAnalyzer.Extract;
+using ETWAnalyzer.Infrastructure;
 using ETWAnalyzer.TraceProcessorHelpers;
 using Microsoft.Windows.EventTracing;
 using Microsoft.Windows.EventTracing.Cpu;
@@ -15,7 +16,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ETWAnalyzer.Extractors
+namespace ETWAnalyzer.Extractors.CPU
 {
     /// <summary>
     /// Extract from an ETL file all CPU sampling and Context Switch ETW data call stacks mapped stack tag names.
@@ -98,20 +99,20 @@ namespace ETWAnalyzer.Extractors
             var totalStackTagsRaw = new Dictionary<ProcessKey, Dictionary<string, StackTagDuration>>();
             var specialStackTagsRaw = new Dictionary<ProcessKey, Dictionary<string, StackTagDuration>>();
 
-            Logger.Info($"Extracting Stacktags from default stacktag file: {DefaultStackTagFile}");
-            var sw = Stopwatch.StartNew();
-            ExtractStackTagsFromProfilingAndContextSwitchEvents(gcJitStackTagMapper, gcJitStackTags, addDefaultStackTag: false);
-            Logger.Info($"Finished extract in {sw.Elapsed.TotalSeconds:F1}s");
+            using (new PerfLogger($"Extract from default stacktag file: {DefaultStackTagFile}"))
+            {
+                ExtractStackTagsFromProfilingAndContextSwitchEvents(gcJitStackTagMapper, gcJitStackTags, addDefaultStackTag: false);
+            }
 
-            Logger.Info($"Extracting Stacktags from secondary stacktag file: {SecondaryStackTagFile}");
-            sw = Stopwatch.StartNew();
-            ExtractStackTagsFromProfilingAndContextSwitchEvents(defaultStackTagMapper, totalStackTagsRaw, addDefaultStackTag: true);
-            Logger.Info($"Finished extract in {sw.Elapsed.TotalSeconds:F1}s");
+            using (new PerfLogger($"Extracting from secondary stacktag file: {SecondaryStackTagFile}"))
+            {
+                ExtractStackTagsFromProfilingAndContextSwitchEvents(defaultStackTagMapper, totalStackTagsRaw, addDefaultStackTag: true);
+            }
 
-            Logger.Info($"Extracting Stacktags from special stacktag file: {SpecialStacktagFile}");
-            sw = Stopwatch.StartNew();
-            ExtractStackTagsFromProfilingAndContextSwitchEvents(specialStackTagMapper, specialStackTagsRaw, addDefaultStackTag: false);
-            Logger.Info($"Finished extract in {sw.Elapsed.TotalSeconds:F1}s");
+            using (new PerfLogger($"Extracting from special stacktag file: {SpecialStacktagFile}"))
+            {
+                ExtractStackTagsFromProfilingAndContextSwitchEvents(specialStackTagMapper, specialStackTagsRaw, addDefaultStackTag: false);
+            }
 
             ProcessStackTags totalStackTags = new()
             {

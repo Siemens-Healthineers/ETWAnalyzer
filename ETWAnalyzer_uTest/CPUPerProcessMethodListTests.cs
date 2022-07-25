@@ -3,6 +3,7 @@
 
 using ETWAnalyzer.Extract;
 using ETWAnalyzer.Extractors;
+using ETWAnalyzer.Extractors.CPU;
 using Microsoft.Windows.EventTracing;
 using System;
 using System.Collections.Generic;
@@ -69,7 +70,7 @@ namespace ETWAnalyzer_uTest
         {
             ETWExtract extract = new ETWExtract();
             CPUPerProcessMethodList list = GetTestData();
-            extract.CPU = new CPUStats(null, list);
+            extract.CPU = new CPUStats(null, list, null);
 
             MemoryStream stream = new MemoryStream();
             ExtractSerializer.Serialize(stream, extract);

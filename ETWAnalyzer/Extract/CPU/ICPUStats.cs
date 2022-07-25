@@ -1,6 +1,7 @@
 ﻿//// SPDX-FileCopyrightText:  © 2022 Siemens Healthcare GmbH
 //// SPDX-License-Identifier:   MIT
 
+using ETWAnalyzer.Extract.CPU;
 using System.Collections.Generic;
 
 namespace ETWAnalyzer.Extract
@@ -16,8 +17,14 @@ namespace ETWAnalyzer.Extract
         IReadOnlyDictionary<ProcessKey, uint> PerProcessCPUConsumptionInMs { get; }
 
         /// <summary>
-        /// Lists all methods which have > 10ms (default) 
+        /// Contains methods which have CPU/Wait > 10ms (default) 
         /// </summary>
         ICPUPerProcessMethodList PerProcessMethodCostsInclusive { get; }
+
+        /// <summary>
+        /// When -timeline was used during extraction we generate CPU timeline data which can be used to 
+        /// e.g. graph the data.
+        /// </summary>
+        ICPUTimeLine TimeLine { get; }
     }
 }

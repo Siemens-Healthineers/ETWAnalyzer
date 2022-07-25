@@ -37,6 +37,7 @@ abstract class ArgParser : ICommand
     internal const string NoOverWriteArg = "-nooverwrite";
     internal const string PThreadsArgs = "-pthreads";
     internal const string NThreadsArg = "-nthreads";
+    internal const string TimeLineArg = "-timeline";
     internal const string ChildArg = "-child";  // Marker argument to prevent by accident to spawn child of child processes. Child processes process a trace single threaded
     internal const string AllCPUArg = "-allcpu";
 

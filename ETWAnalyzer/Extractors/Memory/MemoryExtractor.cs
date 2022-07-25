@@ -2,6 +2,7 @@
 //// SPDX-License-Identifier:   MIT
 
 using ETWAnalyzer.Extract;
+using ETWAnalyzer.Infrastructure;
 using Microsoft.Diagnostics.Tracing.Etlx;
 using Microsoft.Windows.EventTracing;
 using Microsoft.Windows.EventTracing.Memory;
@@ -28,6 +29,8 @@ namespace ETWAnalyzer.Extractors
 
         public override void Extract(ITraceProcessor processor, ETWExtract results)
         {
+            using var logger = new PerfLogger("Extract Memory");
+
             AnalyzeMemoryUtilization(myMemoryUtilization.Result, results);
             AnalyzeWorkingSets(myWorkingSet.Result, results);
         }

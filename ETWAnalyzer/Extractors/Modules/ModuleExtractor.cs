@@ -3,6 +3,7 @@
 
 
 using ETWAnalyzer.Extract;
+using ETWAnalyzer.Infrastructure;
 using Microsoft.Windows.EventTracing;
 using Microsoft.Windows.EventTracing.Processes;
 using System;
@@ -39,6 +40,7 @@ namespace ETWAnalyzer.Extractors.Modules
 
         public override void Extract(ITraceProcessor processor, ETWExtract results)
         {
+            using var logger = new PerfLogger("Extract Module");
             results.Modules = new Extract.Modules.ModuleContainer();
 
             foreach (var process in myProcesses.Result.Processes)

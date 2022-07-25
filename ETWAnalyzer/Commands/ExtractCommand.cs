@@ -4,6 +4,7 @@
 using ETWAnalyzer.Configuration;
 using ETWAnalyzer.Extract;
 using ETWAnalyzer.Extractors;
+using ETWAnalyzer.Extractors.CPU;
 using ETWAnalyzer.Extractors.FileIO;
 using ETWAnalyzer.Extractors.Modules;
 using ETWAnalyzer.Extractors.PMC;
@@ -67,6 +68,7 @@ namespace ETWAnalyzer.Commands
          " -keepTemp            If you want to analyze the ETL files more than once from compressed files you can use this option to keep the uncompressed ETL files in the output folder. " + Environment.NewLine +
          " -allCPU              By default only methods with CPU or Wait > 10 ms are extracted. Used together with -extract CPU." + Environment.NewLine +
          " -allExceptions       By default exceptions are filtered away by the rules configured in Configuration\\ExceptionFilters.xml. To get all specify this flag." + Environment.NewLine +
+         " -timeLine dd         When CPU data is extracted additionally extract CPU timeline data with given sampling interval in seconds. This data is only accessible at API level at IETWExtract.CPU.TimeLine." + Environment.NewLine +
          " -symFolder xxx       Default is C:\\Symbols. Path to a short directory name in which links are created from the unzipped ETL files to prevent symbol loading issues due to MAX_PATH limitations." + Environment.NewLine +
          " -child               Force single threaded in-process extraction" + Environment.NewLine +
          " -recursive           Search below -filedir directory recursively for data to extract." + Environment.NewLine +
@@ -191,6 +193,11 @@ namespace ETWAnalyzer.Commands
         int? myNThreads;
 
         /// <summary>
+        /// Set via -timeLine dd
+        /// </summary>
+        float? TimelineDataExtractionIntervalS { get; set;  }
+
+        /// <summary>
         /// List to store extracting actions 
         /// </summary>
         List<ExtractorBase> Extractors { get; } = new List<ExtractorBase>() { new MachineDetailsExtractor() };
@@ -280,7 +287,7 @@ namespace ETWAnalyzer.Commands
                         pThreads = pThreads.TrimEnd('%');
                         if (!int.TryParse(pThreads, out int tmpPThreads))
                         {
-                            throw new InvalidDataException($"-pthreads {pThreads} is not a valid percentage. Valid values are 0-100");
+                            throw new InvalidDataException($"-pthreads {pThreads} is not a valid percentage. Valid values are 0-100.");
                         }
                         myPThreads = tmpPThreads;
                         break;
@@ -288,9 +295,17 @@ namespace ETWAnalyzer.Commands
                         string nThreadsStr = GetNextNonArg(NThreadsArg);
                         if( !int.TryParse(nThreadsStr, out int tmpNThreads))
                         {
-                            throw new InvalidDataException($"-nthreads {nThreadsStr} is not a valid number to define the thread count ETWAnalyzer should use during extraction.");
+                            throw new InvalidDataException($"{NThreadsArg} {nThreadsStr} is not a valid number for the thread count.");
                         }
                         myNThreads = tmpNThreads;
+                        break;
+                    case TimeLineArg:
+                        string timelineInterval = GetNextNonArg(TimeLineArg);
+                        if( !float.TryParse(timelineInterval, out float tmpTimeLine))
+                        {
+                            throw new InvalidDataException($"{TimeLineArg} {timelineInterval} is not a valid number for the timeline sampling interval.");
+                        }
+                        TimelineDataExtractionIntervalS = tmpTimeLine;
                         break;
                     case UnzipOperationArg:
                         AfterUnzipCommand =  GetNextNonArg(UnzipOperationArg);
@@ -338,7 +353,7 @@ namespace ETWAnalyzer.Commands
             }
 
             ConfigureExtractors(Extractors, myProcessingActionList);
-            SetExtractorFilters(Extractors, ExtractAllCPUData, DisableExceptionFilter);
+            SetExtractorFilters(Extractors, ExtractAllCPUData, DisableExceptionFilter, TimelineDataExtractionIntervalS);
 
         }
 
@@ -385,12 +400,13 @@ namespace ETWAnalyzer.Commands
             }
         }
 
-        static void SetExtractorFilters(List<ExtractorBase> extractors, bool extractAllCpuData, bool disableExceptionFilter)
+        static void SetExtractorFilters(List<ExtractorBase> extractors, bool extractAllCpuData, bool disableExceptionFilter, float? timelineExtractionInterval)
         {
             var cpu = extractors.OfType<CPUExtractor>().SingleOrDefault();
             if (cpu != null)
             {
                 cpu.ExtractAllCPUData = extractAllCpuData;
+                cpu.TimelineDataExtractionIntervalS = timelineExtractionInterval;
             }
 
             var exception = extractors.OfType<ExceptionExtractor>().SingleOrDefault();

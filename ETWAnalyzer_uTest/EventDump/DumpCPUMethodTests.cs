@@ -164,7 +164,7 @@ namespace ETWAnalyzer_uTest.EventDump
                         }
                     }
                 }
-            });
+            }, null);
 
             file.Extract = extract;
 

@@ -3,6 +3,7 @@
 
 using ETWAnalyzer.Extract;
 using ETWAnalyzer.Extract.Disk;
+using ETWAnalyzer.Infrastructure;
 using Microsoft.Diagnostics.Tracing.Etlx;
 using Microsoft.Windows.EventTracing;
 using Microsoft.Windows.EventTracing.Disk;
@@ -29,7 +30,8 @@ namespace ETWAnalyzer.Extractors
 
         public override void Extract(ITraceProcessor processor, ETWExtract results)
         {
-            if( !myDiskIO.HasResult )
+            using var logger = new PerfLogger("Extract Disk");
+            if ( !myDiskIO.HasResult )
             {
                 Console.WriteLine("Warning: No DiskIO activity was recorded");
                 return;

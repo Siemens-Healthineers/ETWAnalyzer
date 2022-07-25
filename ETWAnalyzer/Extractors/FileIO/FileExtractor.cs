@@ -4,6 +4,7 @@
 using ETWAnalyzer.Analyzers.Infrastructure;
 using ETWAnalyzer.Extract;
 using ETWAnalyzer.Extract.FileIO;
+using ETWAnalyzer.Infrastructure;
 using ETWAnalyzer.TraceProcessorHelpers;
 using Microsoft.Windows.EventTracing;
 using Microsoft.Windows.EventTracing.Disk;
@@ -42,6 +43,8 @@ namespace ETWAnalyzer.Extractors.FileIO
 
         public override void Extract(ITraceProcessor processor, ETWExtract results)
         {
+            using var logger = new PerfLogger("Extract File");
+
             if (!myFileIO.HasResult)
             {
                 string msg = "Warning: No FileIO activity was recorded. Skipping FileIO Activity extraction.";

@@ -2,6 +2,7 @@
 using ETWAnalyzer.Configuration;
 using ETWAnalyzer.Extract;
 using ETWAnalyzer.Extract.Exceptions;
+using ETWAnalyzer.Infrastructure;
 using ETWAnalyzer.TraceProcessorHelpers;
 using Microsoft.Windows.EventTracing;
 using Microsoft.Windows.EventTracing.Events;
@@ -93,6 +94,8 @@ namespace ETWAnalyzer.Extractors
 
         public override void Extract(ITraceProcessor processor, ETWExtract results)
         {
+            using var logger = new PerfLogger("Extract Exception");
+
             StackPrinter printer = new StackPrinter(StackFormat.MethodsOnly);
             ExceptionStats exStats = new ExceptionStats();
             ExceptionRowData prevRow = null;

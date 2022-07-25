@@ -9,8 +9,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using ETWAnalyzer.TraceProcessorHelpers;
+using ETWAnalyzer.Infrastructure;
 
-namespace ETWAnalyzer.Extractors
+namespace ETWAnalyzer.Extractors.CPU
 {
     class CPUExtractor : ExtractorBase
     {
@@ -23,6 +24,16 @@ namespace ETWAnalyzer.Extractors
         /// When on command line -allCPU is specified we extract all CPU methods without any threshold
         /// </summary>
         public bool ExtractAllCPUData { get; internal set; }
+
+        /// <summary>
+        /// When not null we extract timeline data with given frequency
+        /// </summary>
+        public float? TimelineDataExtractionIntervalS { get; internal set; }
+
+        /// <summary>
+        /// When TimelineDataExtractionIntervalS is not null we will extract also CPU timeline data.
+        /// </summary>
+        TimelineExtractor myTimelineExtractor = null;
 
         /// <summary>
         /// CPU Sample data
@@ -52,8 +63,14 @@ namespace ETWAnalyzer.Extractors
 
         public override void Extract(ITraceProcessor processor, ETWExtract results)
         {
-            // inspired by https://github.com/microsoft/eventtracing-processing-samples/blob/master/GetCpuSampleDuration/Program.cs
+            using var logger = new PerfLogger("Extract CPU");
 
+            if (TimelineDataExtractionIntervalS != null)
+            {
+                myTimelineExtractor = new TimelineExtractor(TimelineDataExtractionIntervalS.Value, results.SessionStart, results.SessionDuration);
+            }
+
+            // inspired by https://github.com/microsoft/eventtracing-processing-samples/blob/master/GetCpuSampleDuration/Program.cs
             Dictionary<ProcessKey, Dictionary<string, CpuData>> methodSamplesPerProcess = new();
             StackPrinter printer = new(StackFormat.DllAndMethod);
             foreach (ICpuSample sample in mySamplingData.Result.Samples)
@@ -67,6 +84,10 @@ namespace ETWAnalyzer.Extractors
 
                 AddTotalCPU(process, sample, myPerProcessCPU);
                 AddPerMethodAndProcessCPU(process, sample, methodSamplesPerProcess, printer);
+                if (myTimelineExtractor != null)
+                {
+                    myTimelineExtractor.AddSample(process, sample);
+                }
             }
 
             bool hasCpuSamples = mySamplingData.HasResult && mySamplingData.Result.Samples.Count > 0;
@@ -106,9 +127,9 @@ namespace ETWAnalyzer.Extractors
                 HasCSwitchData = myCpuSchedlingData.HasResult && myCpuSchedlingData.Result?.ContextSwitches?.Count > 0,
             };
 
-            foreach(var process2Method in methodSamplesPerProcess)
+            foreach (var process2Method in methodSamplesPerProcess)
             {
-                foreach(var methodToMs in process2Method.Value)
+                foreach (var methodToMs in process2Method.Value)
                 {
                     inclusiveSamplesPerMethod.AddMethod(process2Method.Key, methodToMs.Key, methodToMs.Value, ExtractAllCPUData ? 0 : CutOffMs);
                 }
@@ -116,8 +137,10 @@ namespace ETWAnalyzer.Extractors
 
             inclusiveSamplesPerMethod.SortMethodsByNameAndCPU();
 
-            results.CPU = new CPUStats(perProcessSamplesInMs, inclusiveSamplesPerMethod);
+            results.CPU = new CPUStats(perProcessSamplesInMs, inclusiveSamplesPerMethod, myTimelineExtractor?.Timeline);
         }
+
+
 
         private void AddPerMethodAndProcessWaits(ProcessKey process, ICpuThreadActivity slice, Dictionary<ProcessKey, Dictionary<string, CpuData>> methodSamplesPerProcess, StackPrinter printer, bool hasCpuSampleData)
         {
