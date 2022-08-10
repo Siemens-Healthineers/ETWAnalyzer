@@ -7,11 +7,11 @@ ETWAnalyzer main license is [MIT][ETWAnalyzerLicense].
 ETWAnalyzer uses Open Source and 3rd Party Software listed in [ReadMe.oss][ETWAnalyzerOSS].
 
 ## What is it? 
-ETWAnalyzer can extract summary information into Json files from ETL files which are produced by the builtin profiling infrastructure of Windows [Event Tracing for Windows (ETW)](https://docs.microsoft.com/en-us/windows/win32/etw/about-event-tracing). 
-The profiling data can be collected with e.g. [wpr](https://docs.microsoft.com/en-us/windows-hardware/test/wpt/windows-performance-recorder). The command line version of WPRUI is already installed on your machine if you are using Windows 10 or later. 
-These ETL files are usually large (multi GB) and load slow into analysis tools such as 
+ETWAnalyzer extracts from ETL files summary information into Json files. The ETL files are produced by the builtin profiling infrastructure of Windows [Event Tracing for Windows (ETW)](https://docs.microsoft.com/en-us/windows/win32/etw/about-event-tracing). 
+Profiling data can be collected with e.g. [wpr](https://docs.microsoft.com/en-us/windows-hardware/test/wpt/windows-performance-recorder), wprUI, xperf, PerfView, ... . Wpr is part of Windows 10 which enables you to record data on any Windows machine without additional software installation in the field. 
+These recorded ETL files are usually large (multi GB) and load slow into analysis tools such as 
 [Windows Performance Analyzer (WPA)](https://docs.microsoft.com/en-us/windows-hardware/test/wpt/windows-performance-analyzer#:~:text=Included%20in%20the%20Windows%20Assessment,run%20in%20the%20Assessment%20Platform.) 
-or [PerfView](https://github.com/microsoft/perfview). The design goal of ETWAnalyzer is to make the huge ETL files small by keeping just the data that is necessary to identify performance bottlenenecks or regression issues in 
+or [PerfView](https://github.com/microsoft/perfview). The design goal of ETWAnalyzer is to extract from huge ETL files the smallest data set that is necessary to identify performance bottlenenecks or regression issues in 
 one or a collection of thousands of ETL files. 
 
 After extraction ETWAnalyzer has many query commands to make the data much more accessible. It can query one or many files where the output is either printed to console, 
@@ -46,10 +46,10 @@ Normally you would want to use all builtin extractors which include
 
 ### Example
 
-The following command extracts everything, using Microsoft symbols from a single ETL file. The option -AllCPU will include also methods with < 10 ms CPU time which 
-are normally not relevant for performance regression issues to keep the file size as small as possible. 
+The following command extracts everything, using Microsoft symbols from a single ETL file. 
 
 ![](ETWAnalyzer/Documentation/Images/ExtractionCommand.png "Extract Command")
+The option -AllCPU will include also methods with < 10 ms CPU or Wait time which are normally not relevant for performance regression issues to keep the file size as small as possible. 
 
 There is extracted example data located at [Test Data](https://github.com/Siemens-Healthineers/ETWAnalyzer/blob/main/ETWAnalyzer_uTest/TestData/CallupAdhocWarmReadingCT_3117msFO9DE01T0162PC.20200717-124447.json) which you can query at your own. Can you find the performance bug?
 Download the data to a directory and try
