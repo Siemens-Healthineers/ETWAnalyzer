@@ -287,6 +287,15 @@
       <Entrypoint Module="vfpd.sys" Method="*" />
     </Tag>
   </Tag>
+  <Tag Name="Antivirus - Sentinel One" >
+    <Tag Name="Sentinel One Device Driver" Priority="101">
+      <Entrypoint Module="SentinelMonitor.sys" Method="*" />
+    </Tag>
+    <Tag Name="Sentinel One Injected Dll">
+      <Entrypoint Module="InProcessClient64.dll" Method="*" />
+      <Entrypoint Module="InProcessClient32.dll" Method="*" />
+     </Tag>
+  </Tag>
   <Tag Name="DWM Render">
         <Entrypoint Module="dwmcore.dll" Method="CPartitionVerticalBlankScheduler::ProcessFrame*"/>
   </Tag>
