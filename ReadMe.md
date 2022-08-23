@@ -26,6 +26,9 @@ An ETW Json file is typically a few MB while the input .etl file including PDBs 
 ## Contributing
 You want to contribute, miss specific data, or want to add your specific dump command? Check out [Contributing](ETWAnalyzer/Documentation/Contributing.md) to get started.
 
+## Data Generation
+There is a sample .wprp profile located at [MultiProfile.wprp](https://github.com/Alois-xx/FileWriter/blob/master/MultiProfile.wprp) to record ETW data in the way ETWAnalyzer likes best. To generate data in automated regression tests see the other example project [https://github.com/Alois-xx/FileWriter](https://github.com/Alois-xx/FileWriter).
+
 ## Data Extraction
 Data extraction is done for one or a directory of ETL files. Zipped ETL files are extracted. By default 75% of all cores are used.
 Normally you would want to use all builtin extractors which include 
@@ -35,13 +38,13 @@ Normally you would want to use all builtin extractors which include
 | ------------- | ------------- |
 | All  | Include all extractors  |
 | Default  | Include all extractors except File  |
-| CPU|CPU consumption of all proceses part of the recording. CPU Sampling (PROFILE) and/or Context Switch tracing (CSWITCH) data with stacks must be present. |
-| Stacktag | Get from all processes the CPU call stack summary by the WPA stacktag names.  |
-| Memory| Get workingset/committed memory machine wide and of all processes at trace start and a second time at trace end. MEMINFO_WS must be present. |
-| Exception|Get all .NET Exception Messages, Type and their call stacks when present with Process,ThreadId and TimeStamp. The Microsoft-Windows-DotNETRuntime ETW provider with ExceptionKeyword 0x8000 and stacks must be present. |
-| Disk| Disk IO summary and a per file summary of read/write/flush disk service times. DISK_IO data must be present in trace to get this data.|
-| File| Open/Close/Read/Write summary of all accessed files per process. The ETL file must contain FILEIO data.|
-| Module| Dump all loaded modules with file path and version. LOADER data must be present in trace. |
+| CPU|CPU consumption of all proceses part of the recording. CPU Sampling (*PROFILE*) and/or Context Switch tracing (*CSWITCH*) data with stacks must be present. |
+| Stacktag | Get from all processes the CPU call stack summary by the WPA stacktag names. |
+| Memory| Get workingset/committed memory machine wide and of all processes at trace start and a second time at trace end. *MEMINFO_WS* must be present. |
+| Exception|Get all .NET Exception Messages, Type and their call stacks when present with Process,ThreadId and TimeStamp. The *Microsoft-Windows-DotNETRuntime* ETW provider with *ExceptionKeyword 0x8000* and stacks must be present. |
+| Disk| Disk IO summary and a per file summary of read/write/flush disk service times. *DISK_IO* data must be present in trace to get this data.|
+| File| Open/Close/Read/Write summary of all accessed files per process. The ETL file must contain *FILEIO* data.|
+| Module| Dump all loaded modules with file path and version. *LOADER* data must be present in trace. |
 | PMC      | Extract CPU cache misses, branch mispredictions. This reads low level CPU performance data. Additionally LBR (Last Branch Record) traces are processed to estimate call counts without the need to instrument any code. The ETL file must have enabled PMC tracing in counting mode or LBR (Last Branch Record) tracing. To enable see [PMC Help](https://github.com/Siemens-Healthineers/ETWAnalyzer/blob/main/ETWAnalyzer/Documentation/DumpPMCCommand.md). |
 
 ### Example
