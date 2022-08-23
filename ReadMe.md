@@ -7,11 +7,11 @@ ETWAnalyzer main license is [MIT][ETWAnalyzerLicense].
 ETWAnalyzer uses Open Source and 3rd Party Software listed in [ReadMe.oss][ETWAnalyzerOSS].
 
 ## What is it? 
-ETWAnalyzer can extract summary information into Json files from ETL files which are produced by the builtin profiling infrastructure of Windows [Event Tracing for Windows (ETW)](https://docs.microsoft.com/en-us/windows/win32/etw/about-event-tracing). 
-The profiling data can be collected with e.g. [wpr](https://docs.microsoft.com/en-us/windows-hardware/test/wpt/windows-performance-recorder). The command line version of WPRUI is already installed on your machine if you are using Windows 10 or later. 
-These ETL files are usually large (multi GB) and load slow into analysis tools such as 
+ETWAnalyzer extracts from ETL files summary information into Json files. The ETL files are produced by the builtin profiling infrastructure of Windows [Event Tracing for Windows (ETW)](https://docs.microsoft.com/en-us/windows/win32/etw/about-event-tracing). 
+Profiling data can be collected with e.g. [wpr](https://docs.microsoft.com/en-us/windows-hardware/test/wpt/windows-performance-recorder), wprUI, xperf, PerfView, ... . Wpr is part of Windows 10 which enables you to record data on any Windows machine without additional software installation in the field. 
+These recorded ETL files are usually large (multi GB) and load slow into analysis tools such as 
 [Windows Performance Analyzer (WPA)](https://docs.microsoft.com/en-us/windows-hardware/test/wpt/windows-performance-analyzer#:~:text=Included%20in%20the%20Windows%20Assessment,run%20in%20the%20Assessment%20Platform.) 
-or [PerfView](https://github.com/microsoft/perfview). The design goal of ETWAnalyzer is to make the huge ETL files small by keeping just the data that is necessary to identify performance bottlenenecks or regression issues in 
+or [PerfView](https://github.com/microsoft/perfview). The design goal of ETWAnalyzer is to extract from huge ETL files the smallest data set that is necessary to identify performance bottlenenecks or regression issues in 
 one or a collection of thousands of ETL files. 
 
 After extraction ETWAnalyzer has many query commands to make the data much more accessible. It can query one or many files where the output is either printed to console, 
@@ -26,6 +26,9 @@ An ETW Json file is typically a few MB while the input .etl file including PDBs 
 ## Contributing
 You want to contribute, miss specific data, or want to add your specific dump command? Check out [Contributing](ETWAnalyzer/Documentation/Contributing.md) to get started.
 
+## Data Generation
+There is a sample .wprp profile located at [MultiProfile.wprp](https://github.com/Alois-xx/FileWriter/blob/master/MultiProfile.wprp) to record ETW data in the way ETWAnalyzer likes best. To generate data in automated regression tests see the other example project [https://github.com/Alois-xx/FileWriter](https://github.com/Alois-xx/FileWriter).
+
 ## Data Extraction
 Data extraction is done for one or a directory of ETL files. Zipped ETL files are extracted. By default 75% of all cores are used.
 Normally you would want to use all builtin extractors which include 
@@ -35,21 +38,21 @@ Normally you would want to use all builtin extractors which include
 | ------------- | ------------- |
 | All  | Include all extractors  |
 | Default  | Include all extractors except File  |
-| CPU|CPU consumption of all proceses part of the recording. CPU Sampling (PROFILE) and/or Context Switch tracing (CSWITCH) data with stacks must be present. |
-| Memory| Get workingset/committed memory machine wide and of all processes at trace start and a second time at trace end. MEMINFO_WS must be present. |
-| Exception|Get all .NET Exception Messages, Type and their call stacks when present with Process,ThreadId and TimeStamp. To get call stacks you need symbols. See below -symServer section. The Microsoft-Windows-DotNETRuntime ETW provider with ExceptionKeyword 0x8000 and stacks must be present. |
-| Disk| Disk IO summary and a per file summary of read/write/flush disk service times. DISK_IO data must be present in trace to get this data.|
-| Module| Dump all loaded modules with file path and version. LOADER data must be present in trace. |
-| File| Open/Close/Read/Write summary of all accessed files per process. The ETL file must contain FILEIO data.|
-| Stacktag | Get from all processes the CPU call stack summary by the WPA stacktag names. To work properly you need symbols. See below -symServer section |
-| PMC      | Extract CPU cache misses, branch mispredictions. This reads low level CPU performance data. Additionally LBR (Last Branch Record) traces are processed to estimate call counts without the need to instrument any code. The ETL file must have enabled PMC tracing in counting mode or LBR (Last Branch Record) tracing. |
+| CPU|CPU consumption of all proceses part of the recording. CPU Sampling (*PROFILE*) and/or Context Switch tracing (*CSWITCH*) data with stacks must be present. |
+| Stacktag | Get from all processes the CPU call stack summary by the WPA stacktag names. |
+| Memory| Get workingset/committed memory machine wide and of all processes at trace start and a second time at trace end. *MEMINFO_WS* must be present. |
+| Exception|Get all .NET Exception Messages, Type and their call stacks when present with Process,ThreadId and TimeStamp. The *Microsoft-Windows-DotNETRuntime* ETW provider with *ExceptionKeyword 0x8000* and stacks must be present. |
+| Disk| Disk IO summary and a per file summary of read/write/flush disk service times. *DISK_IO* data must be present in trace to get this data.|
+| File| Open/Close/Read/Write summary of all accessed files per process. The ETL file must contain *FILEIO* data.|
+| Module| Dump all loaded modules with file path and version. *LOADER* data must be present in trace. |
+| PMC      | Extract CPU cache misses, branch mispredictions. This reads low level CPU performance data. Additionally LBR (Last Branch Record) traces are processed to estimate call counts without the need to instrument any code. The ETL file must have enabled PMC tracing in counting mode or LBR (Last Branch Record) tracing. To enable see [PMC Help](https://github.com/Siemens-Healthineers/ETWAnalyzer/blob/main/ETWAnalyzer/Documentation/DumpPMCCommand.md). |
 
 ### Example
 
-The following command extracts everything, using Microsoft symbols from a single ETL file. The option -AllCPU will include also methods with < 10 ms CPU time which 
-are normally not relevant for performance regression issues to keep the file size as small as possible. 
+The following command extracts everything, using Microsoft symbols from a single ETL file. 
 
 ![](ETWAnalyzer/Documentation/Images/ExtractionCommand.png "Extract Command")
+The option -AllCPU will include also methods with < 10 ms CPU or Wait time which are normally not relevant for performance regression issues to keep the file size as small as possible. 
 
 There is extracted example data located at [Test Data](https://github.com/Siemens-Healthineers/ETWAnalyzer/blob/main/ETWAnalyzer_uTest/TestData/CallupAdhocWarmReadingCT_3117msFO9DE01T0162PC.20200717-124447.json) which you can query at your own. Can you find the performance bug?
 Download the data to a directory and try
@@ -65,7 +68,7 @@ Download the data to a directory and try
 This shows a Microsoft Bug at work while some serialization performance test was executed.
 
 ## Querying the Data
-After extraction you have from the over 600 MB input file a small ca. 6 MB file in the output folder. 
+After extraction from a > 600 MB input file a small ca. 6 MB file in the output folder. 
 
 ![alt text](ETWAnalyzer/Documentation/Images/ExtractedDataFiles.png "Extracted Data Files")
 

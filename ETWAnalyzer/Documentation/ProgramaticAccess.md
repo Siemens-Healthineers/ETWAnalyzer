@@ -50,7 +50,7 @@ This very simple application gives you already the top 10 CPU consumers of a fil
 
 Below is the class Diagram of IETWExtract
 
-![](Images/IEtwExtract.png)
+![](Images/IETWExtract.png)
 
 ## Scalable Json 
 
