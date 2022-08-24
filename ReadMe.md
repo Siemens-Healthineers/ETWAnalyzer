@@ -39,7 +39,7 @@ Normally you would want to use all builtin extractors which include
 | All  | Include all extractors  |
 | Default  | Include all extractors except File  |
 | CPU|CPU consumption of all proceses part of the recording. CPU Sampling (*PROFILE*) and/or Context Switch tracing (*CSWITCH*) data with stacks must be present. |
-| Stacktag | Get from all processes the CPU call stack summary by the WPA stacktag names. |
+| Stacktag | Get from all processes the CPU call stack summary by the WPA stacktag names. Same recording settings as for CPU are needed. |
 | Memory| Get workingset/committed memory machine wide and of all processes at trace start and a second time at trace end. *MEMINFO_WS* must be present. |
 | Exception|Get all .NET Exception Messages, Type and their call stacks when present with Process,ThreadId and TimeStamp. The *Microsoft-Windows-DotNETRuntime* ETW provider with *ExceptionKeyword 0x8000* and stacks must be present. |
 | Disk| Disk IO summary and a per file summary of read/write/flush disk service times. *DISK_IO* data must be present in trace to get this data.|
