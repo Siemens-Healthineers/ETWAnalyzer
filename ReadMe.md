@@ -3,7 +3,7 @@
 ## License
 ETWAnalyzer main license is [MIT][ETWAnalyzerLicense].
 
-## Open Source and 3rd Party Softwaredddddd
+## Open Source and 3rd Party Software
 ETWAnalyzer uses Open Source and 3rd Party Software listed in [ReadMe.oss][ETWAnalyzerOSS].
 
 ## What is it? 
