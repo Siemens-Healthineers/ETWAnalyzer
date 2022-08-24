@@ -130,7 +130,7 @@ not printed. But you can add *-IncludeDll* or *-id* to get besides method names 
 That small intro showed some of the key features of ETWAnalyzer. With this tool it is easy to detect patterns in thousands of ETL files which
 was an impossible task with other publicly available tools. If you have performance trending tests it makes a lot of sense to run them with ETW profiling enabled 
 so you can later find systematic deviations with a simple query. Issues which were before that tool 
-too much work to track down are now a simple query. If your test is e.g. 3 out of 30 times 20% slower you can query all tests for common patterns to 
+too much work to track down are now a simple query. If your test is e.g. 3/30 times 20% slower you can query all tests for common patterns to 
 see if e.g. a running Windows Installer did have an effect to your test execution time or if that did occur in other fast tests as well. 
 
 The currently supported dump commands are

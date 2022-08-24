@@ -20,7 +20,7 @@ the compressed file must contain an equally named ETL file inside the archive.
 
 e.g. P03CTOpen_11299ms_IBDI1VIARELP648_CLT_TestStatus-Passed_20211023-213242 is a valid compressed test case name.
 
-A test measures at least one time value which is part of the file name which allows you to create to create a simple
+A test measures at least one time value which is a part of the file name which allows you to create a simple
 viewer which just needs to parse a directory of file names to visualize the runtime of all executed test cases with 
 no external database. Everything is self contained. 
 ```
@@ -48,7 +48,7 @@ Total Tests: 5000000
         P07                            :   100000
 ```
 
-All other dump commands supports filtering for such named tests by
+All other dump commands support filtering for such named tests by
 - TestCase Name *-TestCase xxx*
 - Test Machine name *-Machine xxxx*
 - Selecting only n Tests of a test case per TestRun *-TestsPerRun dd*
