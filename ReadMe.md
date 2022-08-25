@@ -39,7 +39,7 @@ Normally you would want to use all builtin extractors which include
 | All  | Include all extractors  |
 | Default  | Include all extractors except File  |
 | CPU|CPU consumption of all proceses part of the recording. CPU Sampling (*PROFILE*) and/or Context Switch tracing (*CSWITCH*) data with stacks must be present. |
-| Stacktag | Get from all processes the CPU call stack summary by the WPA stacktag names. |
+| Stacktag | Get from all processes the CPU call stack summary by the WPA stacktag names. Same recording settings as for CPU are needed. |
 | Memory| Get workingset/committed memory machine wide and of all processes at trace start and a second time at trace end. *MEMINFO_WS* must be present. |
 | Exception|Get all .NET Exception Messages, Type and their call stacks when present with Process,ThreadId and TimeStamp. The *Microsoft-Windows-DotNETRuntime* ETW provider with *ExceptionKeyword 0x8000* and stacks must be present. |
 | Disk| Disk IO summary and a per file summary of read/write/flush disk service times. *DISK_IO* data must be present in trace to get this data.|
@@ -130,7 +130,7 @@ not printed. But you can add *-IncludeDll* or *-id* to get besides method names 
 That small intro showed some of the key features of ETWAnalyzer. With this tool it is easy to detect patterns in thousands of ETL files which
 was an impossible task with other publicly available tools. If you have performance trending tests it makes a lot of sense to run them with ETW profiling enabled 
 so you can later find systematic deviations with a simple query. Issues which were before that tool 
-too much work to track down are now a simple query. If your test is e.g. 3 out of 30 times 20% slower you can query all tests for common patterns to 
+too much work to track down are now a simple query. If your test is e.g. 3/30 times 20% slower you can query all tests for common patterns to 
 see if e.g. a running Windows Installer did have an effect to your test execution time or if that did occur in other fast tests as well. 
 
 The currently supported dump commands are
