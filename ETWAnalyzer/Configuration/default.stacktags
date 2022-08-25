@@ -277,14 +277,26 @@
     </Tag>
   </Tag>
   <Tag Name="Antivirus - CyberArk Security" Priority="1">
-    <Tag Name="CyberArk Device Driver Overhead">
+    <Tag Name="vfdrv Driver Overhead">
       <Entrypoint Module="vfdrv.sys" Method="*" />
     </Tag>
-    <Tag Name="CyberArk EPM Network Driver Overhead">
+    <Tag Name="CybKernelTracker Driver Overhead">
+      <Entrypoint Module="CybKernelTracker.sys" Method="*" />
+    </Tag>
+    <Tag Name="EPM Network Driver Overhead">
       <Entrypoint Module="vfnet.sys" Method="*" />
     </Tag>
-    <Tag Name="CyberArk EPM Protection Driver Driver Overhead">
+    <Tag Name="EPM Protection Driver Driver Overhead">
       <Entrypoint Module="vfpd.sys" Method="*" />
+    </Tag>
+  </Tag>
+  <Tag Name="Antivirus - Sentinel One" >
+    <Tag Name="Sentinel One Device Driver" Priority="101">
+      <Entrypoint Module="SentinelMonitor.sys" Method="*" />
+    </Tag>
+    <Tag Name="Sentinel One Injected Dll">
+      <Entrypoint Module="InProcessClient64.dll" Method="*" />
+      <Entrypoint Module="InProcessClient32.dll" Method="*" />
     </Tag>
   </Tag>
   <Tag Name="DWM Render">
