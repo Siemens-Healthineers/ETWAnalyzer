@@ -2,7 +2,7 @@
 Print CPU consumption of processes as total or by method. 
 
 The data in the extracted JSON file is stored for all processes in method granularity. During extraction the default setting is to skip all 
-methods with a CPU consumption < 10ms. If you want to see all methods like you do in WPA you need to add *-allCPU* during extraction.
+methods with a *CPU/Wait Time < 10ms*. If you want to see all methods like you do in WPA you need to add *-allCPU* during extraction.
 
 The picture below illustrates what data is stored per method for all processes of the ETL file: 
 

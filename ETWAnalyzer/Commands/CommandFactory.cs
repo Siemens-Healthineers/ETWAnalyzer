@@ -28,7 +28,7 @@ namespace ETWAnalyzer.Commands
         {
             ICommand lret = new HelpCommand(args);
 
-            foreach(var potentialCommand in args.Select(x=>x.ToLowerInvariant()))
+            foreach(var potentialCommand in args.Select(arg => arg.ToLowerInvariant()))
             {
                 switch(potentialCommand)
                 {
