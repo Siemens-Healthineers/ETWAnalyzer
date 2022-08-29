@@ -2,6 +2,7 @@
 //// SPDX-License-Identifier:   MIT
 
 using ETWAnalyzer.Extract;
+using ETWAnalyzer.Infrastructure;
 using ETWAnalyzer.ProcessTools;
 using System;
 using System.Collections.Generic;
@@ -16,6 +17,7 @@ namespace ETWAnalyzer.EventDump
     {
         internal List<MatchData> myUTestData;
         public Func<string, bool> MarkerFilter { get; internal set; } = _ => true;
+        public MinMaxRange<double> MinMaxMarkDiffTime { get; internal set; }
 
         internal class MatchData
         {
@@ -24,6 +26,11 @@ namespace ETWAnalyzer.EventDump
             public ETWMark Mark { get; internal set; }
             public DateTimeOffset SessionStart { get; internal set; }
             public double ZeroTimeS { get; internal set; }
+
+            public double DiffToZeroS
+            {
+                get => (Mark.Time - SessionStart).TotalSeconds - ZeroTimeS;
+            }
         }
 
         public override List<MatchData> ExecuteInternal()
@@ -55,9 +62,9 @@ namespace ETWAnalyzer.EventDump
             foreach (var match in data.GroupBy(x => x.File).OrderBy(x => x.Key.PerformedAt))
             {
                 Console.WriteLine($"{Path.GetFileNameWithoutExtension(match.Key.FileName)} {GetDateTimeString(match.Key.PerformedAt)} {match.First().BaseLine}");
-                foreach (var mark in match.OrderBy(x => x.Mark.Time))
+                foreach (var mark in match.Where(x => MinMaxMarkDiffTime.IsWithin(x.DiffToZeroS)).OrderBy(x => x.Mark.Time) ) 
                 {
-                    string diff = $"{( (mark.Mark.Time - mark.SessionStart).TotalSeconds - mark.ZeroTimeS):F3} s";
+                    string diff = $"{mark.DiffToZeroS:F3} s";
                     string timepoint = GetDateTimeString(mark.Mark.Time, mark.SessionStart, TimeFormatOption);
 
                     ColorConsole.WriteEmbeddedColorLine($"    [green]{timepoint,10} [/green] [red]DiffToZero: {diff,10}[/red] [magenta]{mark.Mark.MarkMessage}[/magenta]");
