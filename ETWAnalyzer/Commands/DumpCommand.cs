@@ -254,8 +254,9 @@ namespace ETWAnalyzer.Commands
         "  Mark -filedir/fd Extract\\ or xxx.json [-MarkerFilter xxx] [-ZeroTime marker filter] [-recursive] [-csv xxx.csv] [-NoCSVSeparator] [-TimeFmt s,Local,LocalTime,UTC,UTCTime,Here,HereTime] [-NoCmdLine] [-Clip] " + Environment.NewLine +
         "       [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd] [-TestCase xx] [-Machine xxxx] [-ProcessName/pn xxx.exe(pid)] [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-CmdLine substring]" + Environment.NewLine +
         "                         Print ETW Marker events" + Environment.NewLine +
-        "                         -MarkerFilter xxx         Filter for specific marker events. Multiple filters are separated by ; Exclusion filters start with ! Supported wildcards are * and ?" + Environment.NewLine + 
-        "                         -ZeroTime marker filter   Print diff time relative to a specific marker. The first matching marker (defined by filter) defines the zero time." + Environment.NewLine;
+        "                         -MarkerFilter xxx          Filter for specific marker events. Multiple filters are separated by ; Exclusion filters start with ! Supported wildcards are * and ?" + Environment.NewLine +
+        "                         -MinMaxMarkDiffTime min [max]  Filter all marker events where the Mark Diff time is within the defined time range in seconds." + Environment.NewLine + 
+        "                         -ZeroTime marker filter    Print diff time relative to a specific marker. The first matching marker (defined by filter) defines the zero time." + Environment.NewLine;
 
         static readonly string PMCHelpString =
         "  PMC -filedir/fd Extract\\ or xxx.json [-NoCounters] [-recursive] [-csv xxx.csv] [-NoCSVSeparator] [-NoCmdLine] [-Clip] " + Environment.NewLine +
@@ -630,6 +631,7 @@ namespace ETWAnalyzer.Commands
 
         // Dump Marker specific Flags
         public Func<string, bool> MarkerFilter { get; private set; } = _ => true;
+        public MinMaxRange<double> MinMaxMarkDiffTime = new MinMaxRange<double>();
 
         // Dump PMC specific flags
         public bool NoCounters { get; private set; }
@@ -921,6 +923,12 @@ namespace ETWAnalyzer.Commands
                         string maxExTime = GetNextNonArg("-minmaxextime", false); // optional
                         Tuple<double, double> exMinMax = minExTime.GetMinMaxDouble(maxExTime);
                         MinMaxExTimeS = new MinMaxRange<double>(exMinMax.Item1, exMinMax.Item2);
+                        break;
+                    case "-minmaxmarkdifftime":
+                        string minmarkdiffTime = GetNextNonArg("-minmaxmarkdifftime");
+                        string maxmarkDiffTime = GetNextNonArg("-minmaxmarkdifftime", false); // optional
+                        Tuple<double, double> minmaxmarkdifftimedouble = minmarkdiffTime.GetMinMaxDouble(maxmarkDiffTime);
+                        MinMaxMarkDiffTime = new MinMaxRange<double>(minmaxmarkdifftimedouble.Item1, minmaxmarkdifftimedouble.Item2);
                         break;
                     case "-cutstack":
                         string cutStackStr = GetNextNonArg("-cutstack");
@@ -1477,6 +1485,8 @@ namespace ETWAnalyzer.Commands
                             MarkerFilter = MarkerFilter,
                             ZeroTimeMode = ZeroTimeMode,
                             ZeroTimeFilter = ZeroTimeFilter,
+
+                            MinMaxMarkDiffTime = MinMaxMarkDiffTime,
                         };
                         break;
 
