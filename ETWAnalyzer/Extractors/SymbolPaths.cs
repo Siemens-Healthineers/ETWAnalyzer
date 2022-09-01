@@ -60,7 +60,11 @@ namespace ETWAnalyzer.Extract
         {
             foreach(string shortcut in myShortCuts)
             {
-                Directory.Delete(shortcut);
+
+                if (Directory.Exists(shortcut))
+                {
+                    Directory.Delete(shortcut);
+                }
             }
 
             myShortCuts.Clear();
