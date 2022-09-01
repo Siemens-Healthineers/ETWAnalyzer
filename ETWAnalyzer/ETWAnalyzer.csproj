@@ -79,7 +79,7 @@
       <Version>3.0.1</Version>
     </PackageReference>
     <PackageReference Include="Microsoft.Windows.EventTracing.Processing.All">
-      <Version>1.11.19-preview</Version>
+      <Version>1.11.89-preview</Version>
     </PackageReference>
     <PackageReference Include="Newtonsoft.Json">
       <Version>13.0.1</Version>
