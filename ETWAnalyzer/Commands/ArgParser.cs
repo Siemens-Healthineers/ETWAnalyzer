@@ -147,7 +147,7 @@ abstract class ArgParser : ICommand
     /// </summary>
     /// <param name="result">Next argument or null if there is none.</param>
     /// <returns>true if next argument is a switch, false otherwise</returns>        
-    protected bool PeekNextArgumentSwitch(out string result)
+    protected internal bool PeekNextArgumentSwitch(out string result)
     {
         result = myInputArguments.Count > 0 ? myInputArguments.Peek() : null;
 
@@ -289,7 +289,7 @@ abstract class ArgParser : ICommand
     /// </summary>
     /// <param name="digit"></param>
     /// <returns></returns>
-    static bool IsNumberChar(char digit)
+    internal static bool IsNumberChar(char digit)
     {
         return Char.IsDigit(digit) || CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator.Contains(digit) || CultureInfo.CurrentCulture.NumberFormat.NumberGroupSeparator.Contains(digit);
     }
