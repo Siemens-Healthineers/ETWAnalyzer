@@ -30,7 +30,7 @@ namespace ETWAnalyzer.Extract
         } = "C:\\SymCache";
 
         /// <summary>
-        /// When an ETL is unzipped we create a symlink from C:\temp\extract\xxx.etl.NGENPDB => SymbolFolder\xxx.ETL 
+        /// When an ETL is unzipped we create a symlink from SymbolFolder\xxx => C:\temp\extract\xxx.etl.NGENPDB
         /// to shorten the path names
         /// </summary>
         public string SymbolFolder
@@ -51,6 +51,14 @@ namespace ETWAnalyzer.Extract
         /// </summary>
         List<string> myShortCuts = new();
 
+        internal const string NgenPdbExtension = ".NGENPDB";
+        internal const string EmbeddedPdbExtension = ".EmbeddedPdbs";
+
+        /// <summary>
+        /// Currently two directories besides the etl file are created
+        /// </summary>
+        static readonly string[] PdbExtensions = new string[] { NgenPdbExtension, EmbeddedPdbExtension };
+
         /// <summary>
         /// Despite being long path aware the underlying symcache.dll is still compiled with the 250 MAX_PATH limit.
         /// to work around we still need shortcuts, but these can only be created as Administrator, so this will work now all 
@@ -60,7 +68,6 @@ namespace ETWAnalyzer.Extract
         {
             foreach(string shortcut in myShortCuts)
             {
-
                 if (Directory.Exists(shortcut))
                 {
                     Directory.Delete(shortcut);
@@ -75,61 +82,67 @@ namespace ETWAnalyzer.Extract
         /// and a local folder which is usually the NGENPDB folder from a shortcut directory link to keep symbol file names below the MAX_PATH limit.
         /// </summary>
         /// <param name="etlFile">Existing ETL file.</param>
-        /// <returns>Combined symbol server folder.</returns>
+        /// <returns>Combined symbol server folder for .NET Ngenpdb folder and EmbeddedPDBs folder.</returns>
         public string GetCombinedSymbolPath(string etlFile)
         {
-            string folderName = GetShortSymbolFolderForEtl(etlFile);
+            string shortSymPathInsertions = "";
 
-            // if link was not created for some reason fallback to long folder name besides ETL file
-            if( !Directory.Exists(folderName) )
+            foreach (var extension in PdbExtensions)
             {
-                try
-                {
-                    string shortcutName = GetShortSymbolFolderForEtl(etlFile);
+                string longPdbFolder = GetLongSymbolFolderForEtl(etlFile, extension);
 
-                    CreateSymLinkToSymbolFolder(GetShortSymbolFolderForEtl(etlFile), etlFile);
-                    myShortCuts.Add(shortcutName);
-                }
-                catch(Exception)
+                if (Directory.Exists(longPdbFolder) )
                 {
-                }
+                    try
+                    {
+                        CreateSymLinkToSymbolFolder(etlFile, extension);
+                    }
+                    catch (Exception)
+                    {
+                    }
 
-                if (!Directory.Exists(folderName))
-                {
-                    Logger.Warn($"Symbolic link directory does not exist {folderName} fallback to long path name.");
-                    folderName = GetLongSymbolFolderForEtl(etlFile);
+                    string shortPdbFolder = GetShortSymbolFolderForEtl(etlFile, extension);
+                    if (!Directory.Exists(shortPdbFolder))
+                    {
+                        Logger.Warn($"Symbolic link directory does not exist {shortPdbFolder} fallback to long path name.");
+                        shortPdbFolder = longPdbFolder;
+                    }
+                    else
+                    {
+                        Logger.Info($"Short folder name found at: {shortPdbFolder} for file {etlFile}");
+                    }
+
+                    shortSymPathInsertions += $"SRV*{shortPdbFolder};";
                 }
             }
-            else
-            {
-                Logger.Info($"Short folder name found at: {folderName} for file {etlFile}");
-            }
-            
+           
 
             // We return first SRV*{SymbolFolder} because that folder is used as download folder by TraceEvent for remotely downloaded symbols
             // Otherwise we would download the pdbs to the NGenPDB folder of the ETL which is not what we want
-            return $"SRV*{SymbolFolder};SRV*{folderName};{RemoteSymbolServer}";
+            return $"SRV*{SymbolFolder};{shortSymPathInsertions}{RemoteSymbolServer}";
         }
 
         /// <summary>
         /// Create a folder name which is beneath the <see cref="SymbolFolder"/> with a directory name 
-        /// of the ETL file like SymbolFolder\etlFileName without etl or other extensions.
+        /// of the ETL file like SymbolFolder\#_dddd where ddd is the hash code of the combined string of input etl and extension
         /// </summary>
-        /// <param name="etlFile"></param>
+        /// <param name="etlFile">Full path to input etl file</param>
+        /// <param name="extension">Extension folder name</param>
         /// <returns>Short Symbol folder name for given ETL file</returns>
-        public string GetShortSymbolFolderForEtl(string etlFile)
+        public string GetShortSymbolFolderForEtl(string etlFile, string extension)
         {
-            return Path.Combine(SymbolFolder, "#_"+ Math.Abs(etlFile.GetHashCode()));
+            return Path.Combine(SymbolFolder, "#_"+ Math.Abs((etlFile+extension).GetHashCode()));
         }
 
         /// <summary>
         /// Get corresponding folder for native image pdbs besides the ETL file
         /// </summary>
         /// <param name="etlFile"></param>
+        /// <param name="extension">File extension which is a pdb directory</param>
         /// <returns></returns>
-        public string GetLongSymbolFolderForEtl(string etlFile)
+        public string GetLongSymbolFolderForEtl(string etlFile, string extension)
         {
-            return Path.GetFullPath(etlFile) + ".NGENPDB";
+            return Path.GetFullPath(etlFile) + extension;
         }
 
         /// <summary>
@@ -142,39 +155,48 @@ namespace ETWAnalyzer.Extract
             return env ?? "";
         }
 
-        static internal void CreateSymLinkToSymbolFolder(string sourceFolder, string finalEtLFile)
+        /// <summary>
+        /// Create in symbol download folder a shortcut to the NGENPDB folder for etl file
+        /// </summary>
+        /// <param name="etlFile"></param>
+        /// <param name="extension"></param>
+        /// <exception cref="UnauthorizedAccessException"></exception>
+        internal void CreateSymLinkToSymbolFolder(string etlFile, string extension)
         {
+            
             // convention is that besides the xxx.etl a folder named xxx.ETL.NGENPDB exists which contains
             // the managed pdbs.
-            string ngenPDBFolder = finalEtLFile + ".NGENPDB";
+            string pdbFolder = etlFile + extension;
 
-            if (!Directory.Exists(ngenPDBFolder))
+            if (!Directory.Exists(pdbFolder))
             {
-                // ETL does not contain .NGENPDB folder 
+                // ETL does not contain e.g. .NGENPDB folder 
                 // Strange because we normally always have a NGenPDB folder in an ETL file
-                Logger.Error($"ETL file does not have a .NGENPDB folder {finalEtLFile}");
-                Console.WriteLine($"Warning: ETL file does not have a corresponding .NGENPDB folder! File was: {finalEtLFile}");
+                Logger.Info($"ETL file does not have a {extension} folder for {etlFile}");
                 return;
             }
 
-            if (Directory.Exists(sourceFolder))
+            string shortcutFolder = GetShortSymbolFolderForEtl(etlFile, extension);
+
+            if (Directory.Exists(shortcutFolder))
             {
-                Logger.Info($"Link already exists. No need to create {sourceFolder}");
+                Logger.Info($"Link already exists. No need to create {shortcutFolder}");
                 // Nothing to do. Link was already created.
                 return;
             }
 
             // ensure symbol folder exists.
-            Directory.CreateDirectory(Path.GetDirectoryName(sourceFolder));
+            Directory.CreateDirectory(Path.GetDirectoryName(shortcutFolder));
 
-            Logger.Info($"Create Symbol link from {sourceFolder} ==> {ngenPDBFolder}");
-            bool linkState = CreateSymbolicLink(sourceFolder, ngenPDBFolder, LinkFlags.TargetIsDirectory);
-
+            Logger.Info($"Create Symbol link from {shortcutFolder} ==> {pdbFolder}");
+            bool linkState = CreateSymbolicLink(shortcutFolder, pdbFolder, LinkFlags.TargetIsDirectory);
+            
             if (linkState == false)
             {
-                throw new UnauthorizedAccessException($"Could not create directory link {sourceFolder} => {ngenPDBFolder}.{Environment.NewLine}You have to run this application with Administrator rights.", new Win32Exception());
+                throw new UnauthorizedAccessException($"Could not create directory link {shortcutFolder} => {pdbFolder}.{Environment.NewLine}You have to run this application with Administrator rights.", new Win32Exception());
             }
 
+            myShortCuts.Add(shortcutFolder);
         }
 
         enum LinkFlags

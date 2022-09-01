@@ -154,12 +154,7 @@ namespace ETWAnalyzer_uTest
             Assert.True(EtlZipCommand.HasSingleFileError(lines1));
         }
 
-        [Fact]
-        public void Link_Is_Created_In_SymbolFolder()
-        {
-            using var tmp = TempDir.Create();
-            Unzip_And_Check_Link(tmp);
-        }
+
 
         private static void Unzip_And_Check_Link(ITempOutput tmp)
         {
@@ -172,13 +167,7 @@ namespace ETWAnalyzer_uTest
             Assert.True(Directory.Exists(symlinkDir), $"Symbolic link directory should exist {symlinkDir}");
         }
 
-        [Fact]
-        public void Link_Creation_Does_Not_Fail_If_Link_Already_Exists()
-        {
-            using var tmp = TempDir.Create();
-            Unzip_And_Check_Link(tmp);
-            Unzip_And_Check_Link(tmp);
-        }
+
 
         [Fact]
         public void ThrowArgumentEx_When_Path_Is_Null()
