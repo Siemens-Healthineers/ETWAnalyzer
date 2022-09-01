@@ -252,8 +252,15 @@ namespace ETWAnalyzer.Extractors
 
             // load symbols. If essential symbols like ntdll.pdb, clr.pdb are present in trace but could not be loaded
             string combinedSymbolPath = mySymbols.GetCombinedSymbolPath(myEtlFile);
-            Logger.Info($"Loading symbols. Symbol Cache Folder: {mySymbols.SymCacheFolder}, Symbol Folder: {combinedSymbolPath}");
-            LoadSymbolsWithExplicitSymbolPath(combinedSymbolPath);
+            try
+            {
+                Logger.Info($"Loading symbols. Symbol Cache Folder: {mySymbols.SymCacheFolder}, Symbol Folder: {combinedSymbolPath}");
+                LoadSymbolsWithExplicitSymbolPath(combinedSymbolPath);
+            }
+            finally
+            {
+                mySymbols.RemoveShortCuts();
+            }
 
             foreach (var pdb in myPendingSymbols.Result.Pdbs)
             {

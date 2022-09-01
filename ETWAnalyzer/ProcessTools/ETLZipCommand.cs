@@ -204,8 +204,6 @@ namespace ETWAnalyzer
                 throw new InvalidZipContentsException($"Unzipping of file {zipFile} failed. Expected a decompressed ETL file at {finalEtLFile}.", zipFile);
             }
 
-            CreateSymLinkToSymbolFolder(symbols.GetShortSymbolFolderForEtl(finalEtLFile), finalEtLFile);
-
             return finalEtLFile;
         }
 
@@ -243,52 +241,5 @@ namespace ETWAnalyzer
 
             return errorCount;
         }
-
-        static private void CreateSymLinkToSymbolFolder(string sourceFolder, string finalEtLFile)
-        {
-            // convention is that besides the xxx.etl a folder named xxx.ETL.NGENPDB exists which contains
-            // the managed pdbs.
-            string ngenPDBFolder = finalEtLFile + ".NGENPDB";
-
-            if ( !Directory.Exists(ngenPDBFolder) )
-            {
-                // ETL does not contain .NGENPDB folder 
-                // Strange because we normally always have a NGenPDB folder in an ETL file
-                Logger.Error($"ETL file does not have a .NGENPDB folder {finalEtLFile}");
-                Console.WriteLine($"Warning: ETL file does not have a corresponding .NGENPDB folder! File was: {finalEtLFile}");
-                return;
-            }
-           
-            if( Directory.Exists(sourceFolder))
-            {
-                Logger.Info($"Link already exists. No need to create {sourceFolder}");
-                // Nothing to do. Link was already created.
-                return;
-            }
-
-            // ensure symbol folder exists.
-            Directory.CreateDirectory(Path.GetDirectoryName(sourceFolder));
-
-            Logger.Info($"Create Symbol link from {sourceFolder} ==> {ngenPDBFolder}");
-            bool linkState = CreateSymbolicLink(sourceFolder, ngenPDBFolder, LinkFlags.TargetIsDirectory);
-
-            if (linkState == false)
-            {
-                throw new UnauthorizedAccessException($"Could not create directory link {sourceFolder} => {ngenPDBFolder}.{Environment.NewLine}You have to run this application with Administrator rights.", new Win32Exception());
-            }
-
-        }
-
-        enum LinkFlags
-        {
-            TargetIsFile = 0,
-            TargetIsDirectory = 1,
-        }
-
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1060:MovePInvokesToNativeMethodsClass")]
-        [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        static extern bool CreateSymbolicLink(string lpSymlinkFileName, string lpTargetFileName, LinkFlags dwFlags);
-
     }
 }
