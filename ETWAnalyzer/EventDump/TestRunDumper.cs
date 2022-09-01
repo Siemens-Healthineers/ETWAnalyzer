@@ -28,22 +28,20 @@ namespace ETWAnalyzer.EventDump
         public bool ValidTestsOnly { get; internal set; }
         public string CopyFilesTo { get; internal set; }
         public int TestsPerRun { get; internal set; }
-        public Func<string,bool> TestCaseFilter { get; internal set; }
-        public Func<string, bool> MachineFilter { get; internal set; }
         public int SkipNTests { get; internal set; }
         public bool WithETL { get; internal set; }
         public bool Overwrite { get; internal set; }
-        
+        public List<MinMaxRange<int>> MinMaxMsTestTimes { get; internal set; } = new();
+
 
         /// <summary>
         /// Filter tests by name and if they are a properly formatted test case name
         /// </summary>
         /// <param name="test"></param>
         /// <returns></returns>
-        bool TestFilter(SingleTest test) => TestCaseFilter(test.Name) &&
+        bool TestFilter(SingleTest test) => (MinMaxMsTestTimes.Count == 0 || MinMaxMsTestTimes.Any( x=> x.IsWithin(test.DurationInMs)) ) &&
                                             (ValidTestsOnly ? test.Files.Any(x => x.IsValidTest) : true);
-        bool TestFilter(TestDataFile file) => TestCaseFilter(file.TestName) &&
-                                              MachineFilter(file.MachineName) &&
+        bool TestFilter(TestDataFile file) => (MinMaxMsTestTimes.Count == 0 || MinMaxMsTestTimes.Any(x => x.IsWithin(file.DurationInMs))) &&
                                               (ValidTestsOnly ? file.IsValidTest : true);
         bool TestFilter(TestRun run) => run.AllTestFilesSortedAscendingByTime.Any(TestFilter);
         bool TestFilter(KeyValuePair<string, SingleTest[]> kvp) => kvp.Value.Any(TestFilter);
@@ -99,8 +97,9 @@ namespace ETWAnalyzer.EventDump
 
                 foreach (var testNameAndSingleTests in filteredTests)
                 {
-                    IfVerbose(() => WriteLine($"\t{testNameAndSingleTests.Key} {testNameAndSingleTests.Value.Length} "));
-                    foreach (SingleTest test in testNameAndSingleTests.Value.OrderBy(x=>x.PerformedAt).Skip(SkipNTests).Take(TestsPerRun == 0 ? int.MaxValue : TestsPerRun))
+                    SingleTest[] filteredSingleTests = testNameAndSingleTests.Value.Where(TestFilter).ToArray();
+                    IfVerbose(() => WriteLine($"\t{testNameAndSingleTests.Key} {filteredSingleTests.Length} "));
+                    foreach (SingleTest test in filteredSingleTests.OrderBy(x=>x.PerformedAt).Skip(SkipNTests).Take(TestsPerRun == 0 ? int.MaxValue : TestsPerRun))
                     {
                         IfVerbose(() =>
                         {

@@ -29,7 +29,7 @@ namespace ETWAnalyzer.EventDump
             Local = 0,
 
             /// <summary>
-            /// Same as <see cref="Local"/> where the date part is omited
+            /// Same as <see cref="Local"/> where the date part is omitted
             /// </summary>
             LocalTime,
 

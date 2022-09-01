@@ -4,6 +4,7 @@
 using ETWAnalyzer.Analyzers;
 using ETWAnalyzer.Analyzers.Infrastructure;
 using ETWAnalyzer.Extract;
+using ETWAnalyzer.Infrastructure;
 using ETWAnalyzer.ProcessTools;
 using ETWAnalyzer.TraceProcessorHelpers;
 using System;
@@ -22,8 +23,8 @@ namespace ETWAnalyzer.EventDump
     {
         public Func<string, bool> ProcessNameFilter { get; set; } = _ => true;
         public Func<string, bool> CommandLineFilter { get; set; } = _ => true;
-        public Func<string, bool> TestCaseFilter { get; set; } = _ => true;
-        public Func<string, bool> MachineFilter { get; set; } = _ => true;
+
+        public List<MinMaxRange<int>> MinMaxMsTestTimes = new();
 
         public ZeroTimeModes ZeroTimeMode { get; set; }
         public KeyValuePair<string, Func<string, bool>> ZeroTimeFilter { get; set; } = new KeyValuePair<string, Func<string, bool>>(null, _ => false);
@@ -131,25 +132,25 @@ namespace ETWAnalyzer.EventDump
         }
 
         /// <summary>
-        /// Filter by test case name
+        /// Filter by test case time
         /// </summary>
         /// <param name="test"></param>
         /// <returns></returns>
         protected bool SingleTestCaseFilter(SingleTest test)
         {
-            return TestCaseFilter(test.Name);
+            return MinMaxMsTestTimes.Count == 0 || MinMaxMsTestTimes.Any(x => x.IsWithin(test.DurationInMs));
         }
 
         /// <summary>
-        /// Filter by file name which is here basically only the machine name
+        /// Filter by file name
         /// </summary>
         /// <param name="file"></param>
         /// <returns></returns>
         protected bool TestFileFilter(TestDataFile file)
         {
-            return MachineFilter(file.MachineName);
+            return true;
         }
-
+		
         protected static void WarnIfNoTestRunsFound(Lazy<SingleTest>[] runs)
         {
             if (runs.Length == 0)
