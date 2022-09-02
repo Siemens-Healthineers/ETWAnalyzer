@@ -49,8 +49,6 @@ Total Tests: 5000000
 ```
 
 All other dump commands support filtering for such named tests by
-- TestCase Name *-TestCase xxx*
-- Test Machine name *-Machine xxxx*
 - Selecting only n Tests of a test case per TestRun *-TestsPerRun dd*
 - Skipping n Tests *-SkipNTests dd*
 - Selecting a specific TestRun Index *-TestRunIndex dd*
