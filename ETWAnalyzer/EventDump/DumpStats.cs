@@ -51,6 +51,8 @@ namespace ETWAnalyzer
             "SessionStart",
             "SessionEnd",
             "SessionDurationS",
+            "BootTime",
+            "BootToSessionStart",
             "Model",
             "AdDomain",
             "IsDomainJoined",
@@ -105,6 +107,8 @@ namespace ETWAnalyzer
             { "SessionStart",       m => m.SessionStart },
             { "SessionEnd",         m => m.SessionEnd},
             { "SessionDurationS",    m => (int) (m.SessionEnd-m.SessionStart).TotalSeconds },
+            { "BootTime", m => m.BootTime },
+            { "BootToSessionStart", m => m.BootTime == default ? TimeSpan.Zero :  m.SessionStart - m.BootTime},
             { "Model",              m => m.Model },
             { "AdDomain",           m => m.AdDomain },
             { "IsDomainJoined",     m => m.IsDomainJoined },
@@ -130,6 +134,7 @@ namespace ETWAnalyzer
             public int CPUSpeedMHz;
             public DateTimeOffset SessionStart;
             public DateTimeOffset SessionEnd;
+            public DateTimeOffset BootTime;
             public string Model;
             public string AdDomain;
             public bool IsDomainJoined;
@@ -214,6 +219,7 @@ namespace ETWAnalyzer
                                 CPUHyperThreadingEnabled = file.Extract.CPUHyperThreadingEnabled,
                                 SessionStart = file.Extract.SessionStart,
                                 SessionEnd = file.Extract.SessionEnd,
+                                BootTime = file.Extract.BootTime,
                                 Model = file.Extract.Model,
                                 AdDomain = file.Extract.AdDomain,
                                 IsDomainJoined = file.Extract.IsDomainJoined,
@@ -241,11 +247,11 @@ namespace ETWAnalyzer
                 if (!myHeaderWritten)
                 {
                     myHeaderWritten = true;
-                    OpenCSVWithHeader("CSVOptions", "TestCase", "TestDate", "DurationMs", "SourceFile", "Machine", "SourceETLFileName", "UsedExtractOptions", "OSName", "OSBuild", "OSVersion", "MemorySizeMB", "NumberOfProcessors", "CPUSpeedMHz", "SessionStart", "SessionEnd", "Model",
+                    OpenCSVWithHeader("CSVOptions", "TestCase", "TestDate", "DurationMs", "SourceFile", "Machine", "SourceETLFileName", "UsedExtractOptions", "OSName", "OSBuild", "OSVersion", "MemorySizeMB", "NumberOfProcessors", "CPUSpeedMHz", "SessionStart", "SessionEnd", "BootTime", "Model",
                                       "AdDomain", "IsDomainJoined", "DisplaysHorizontalResolution", "DisplaysVerticalResolution", "DisplayNames", "MainModuleVersion", "DisplaysMemoryMiB");
                 }
 
-                WriteCSVLine(CSVOptions, m.TestCase, m.PerformedAt, m.DurationMs, m.Source, m.Machine, m.SourceETLFileName, m.UsedExtractOptions, m.OSName, m.OSBuild, m.OSVersion, m.MemorySizeMB, m.NumberOfProcessors, m.CPUSpeedMHz, m.SessionStart, m.SessionEnd, m.Model,
+                WriteCSVLine(CSVOptions, m.TestCase, m.PerformedAt, m.DurationMs, m.Source, m.Machine, m.SourceETLFileName, m.UsedExtractOptions, m.OSName, m.OSBuild, m.OSVersion, m.MemorySizeMB, m.NumberOfProcessors, m.CPUSpeedMHz, m.SessionStart, m.SessionEnd, m.BootTime, m.Model,
                              m.AdDomain, m.IsDomainJoined, m.DisplaysHorizontalResolution, m.DisplaysVerticalResolution, m.DisplaysNames, m.MainModuleVersion, m.DisplaysMemoryMiB);
             }
             else
@@ -256,8 +262,17 @@ namespace ETWAnalyzer
                     string alignment = OneLine ? "0" : "-20";
                     string fmtString = "\t[yellow]{0," + alignment + "}[/yellow]: {1}";
                     object value = format.Value(m);
-                    if ((value is string strValue && !String.IsNullOrEmpty(strValue)) || (value != null && value is not string) )
+                    if ((value is string strValue && !String.IsNullOrEmpty(strValue)) || (value != null && value is not string) ) 
                     {
+                        if( (value is DateTimeOffset) && (((DateTimeOffset)value) == default) )
+                        {
+                            continue;
+                        }
+                        if ((value is TimeSpan) && (((TimeSpan)value) == default))
+                        {
+                            continue;
+                        }
+
                         ColorConsole.WriteEmbeddedColorLine(String.Format(fmtString, format.Key, value), null, OneLine);
                     }
                 }
