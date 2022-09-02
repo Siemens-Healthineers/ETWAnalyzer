@@ -94,6 +94,11 @@ namespace ETWAnalyzer.Extract
         public TimeSpan SessionDuration { get => SessionEnd - SessionStart; }
 
         /// <summary>
+        /// System boot time
+        /// </summary>
+        public DateTimeOffset BootTime { get; set; }
+
+        /// <summary>
         /// Extracted ETW Marker events
         /// </summary>
         public List<ETWMark> ETWMarks { get; set; } 

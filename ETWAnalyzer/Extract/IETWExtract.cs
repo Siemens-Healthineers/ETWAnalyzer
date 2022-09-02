@@ -165,6 +165,11 @@ namespace ETWAnalyzer.Extract
         DateTimeOffset SessionStart { get; }
 
         /// <summary>
+        /// System boot time
+        /// </summary>
+        public DateTimeOffset BootTime { get; }
+
+        /// <summary>
         /// Input ETL file name
         /// </summary>
         string SourceETLFileName { get; }

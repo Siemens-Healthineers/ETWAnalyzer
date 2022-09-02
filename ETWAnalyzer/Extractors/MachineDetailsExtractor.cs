@@ -22,11 +22,12 @@ namespace ETWAnalyzer.Extractors
         IPendingResult<ISystemMetadata> myMetaData;
         ITraceMetadata myTraceMetaData;
         IPendingResult<IMarkDataSource> myETWMarks;
-
+        SpecialEventsParser mySpecialEvents = new SpecialEventsParser();
 
         public MachineDetailsExtractor()
         {
         }
+
 
 
         public override void RegisterParsers(ITraceProcessor processor)
@@ -35,7 +36,10 @@ namespace ETWAnalyzer.Extractors
             myMetaData = processor.UseSystemMetadata();
             myTraceMetaData = processor.UseMetadata();
             myETWMarks = processor.UseMarks();
+            mySpecialEvents.RegisterSpecialEvents(processor);
         }
+
+       
 
         public override void Extract(ITraceProcessor processor, ETWExtract results)
         {
@@ -74,6 +78,12 @@ namespace ETWAnalyzer.Extractors
             results.SourceETLFileName = myTraceMetaData?.TracePath ?? "";
             results.SessionStart = myTraceMetaData?.StartTime ?? DateTimeOffset.MinValue;
             results.SessionEnd = myTraceMetaData?.StopTime ?? DateTimeOffset.MaxValue;
+
+            if (mySpecialEvents.BootTimeUTC.HasValue && results.SessionStart != default)
+            {
+                DateTime localTime = new DateTime(mySpecialEvents.BootTimeUTC.Value.Ticks, DateTimeKind.Local) - results.SessionStart.Offset;
+                results.BootTime = new DateTimeOffset(localTime, results.SessionStart.Offset);
+            }
 
             ExtractDisplayInformation(meta, results);
             ExtractRunningProcesses(myProcesses.Result, results);
