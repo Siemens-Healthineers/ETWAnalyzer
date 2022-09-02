@@ -1,11 +1,11 @@
-﻿using ETWAnalyzer.TraceProcessorHelpers;
+﻿//// SPDX-FileCopyrightText:  © 2022 Siemens Healthcare GmbH
+//// SPDX-License-Identifier:   MIT
+
+
+using ETWAnalyzer.TraceProcessorHelpers;
 using Microsoft.Windows.EventTracing;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ETWAnalyzer.Extractors
 {
