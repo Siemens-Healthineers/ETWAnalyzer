@@ -171,7 +171,7 @@ namespace ETWAnalyzer_iTest
             Assert.Equal(TestData.ServerEtlFileNameNoPath, fileName);
             Assert.Equal("10.0.19043", extractedServer.OSVersion.ToString());
 
-            Assert.Equal(new DateTimeOffset(637735999555000000L, TimeSpan.FromMinutes(60.0d)), extractedServer.BootTime);
+            Assert.Equal(new DateTimeOffset(637736071555000000L, TimeSpan.FromMinutes(60.0d)), extractedServer.BootTime);
 
             // Check Marks count, string and time
             Assert.Empty(extractedServer.ETWMarks);
