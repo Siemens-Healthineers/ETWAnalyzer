@@ -289,7 +289,7 @@ namespace ETWAnalyzer.EventDump
                 return;
             }
 
-            foreach(KeyValuePair<ProcessKey, IReadOnlyList<IStackTagDuration>> process2Tags in extract.SummaryStackTags.Stats)
+            foreach(KeyValuePair<ProcessKey, IReadOnlyList<IStackTagDuration>> process2Tags in extract.SummaryStackTags.Stats.Concat(extract.SpecialStackTags.Stats))
             {
                 if( process2Tags.Key.Pid <= 0 )
                 {
