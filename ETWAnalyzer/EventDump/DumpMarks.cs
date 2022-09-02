@@ -87,7 +87,7 @@ namespace ETWAnalyzer.EventDump
             {
                 foreach (TestDataFile file in test.Value.Files)
                 {
-                    if (file?.Extract?.ETWMarks?.Count == 0)
+                    if (file?.Extract?.ETWMarks?.Count == null)
                     {
                         ColorConsole.WriteError($"Warning: File {Path.GetFileNameWithoutExtension(file.FileName)} does not contain Mark data.");
                         continue;
