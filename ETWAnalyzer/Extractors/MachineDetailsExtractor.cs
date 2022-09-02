@@ -81,7 +81,7 @@ namespace ETWAnalyzer.Extractors
 
             if (mySpecialEvents.BootTimeUTC.HasValue && results.SessionStart != default)
             {
-                DateTime localTime = new DateTime(mySpecialEvents.BootTimeUTC.Value.Ticks, DateTimeKind.Unspecified) - results.SessionStart.Offset;
+                DateTime localTime = new DateTime(mySpecialEvents.BootTimeUTC.Value.Ticks, DateTimeKind.Unspecified) + results.SessionStart.Offset;
                 results.BootTime = new DateTimeOffset(localTime, results.SessionStart.Offset);
             }
 
