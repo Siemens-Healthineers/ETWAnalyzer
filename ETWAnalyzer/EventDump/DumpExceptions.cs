@@ -38,9 +38,8 @@ namespace ETWAnalyzer.EventDump
             public string Message;
             public string Type;
             public DateTimeOffset TimeStamp;
-            public string Process;
+            public ETWProcess Process;
             public string Stack;
-            public ETWProcess ETWProcess;
             public string SourceFile;
             internal DateTime PerformedAt;
             public DateTimeOffset SessionStart;
@@ -96,10 +95,12 @@ namespace ETWAnalyzer.EventDump
 
         private void WriteToCSVFile(List<MatchData> matches)
         {
-            OpenCSVWithHeader("CSVOptions", "Time", "Exception Type", "Message", "Process", "Command Line", "StackTrace", "TestCase", "PerformedAt", "SourceFile");
+            OpenCSVWithHeader("CSVOptions", "Time", "Exception Type", "Message", "Process", "Process Name", "Start Time", "Command Line", "StackTrace", "TestCase", "PerformedAt", "SourceFile");
             foreach(var match in matches)
             {
-                WriteCSVLine(CSVOptions, GetDateTimeString(match.TimeStamp, match.SessionStart, TimeFormatOption), match.Type, match.Message, match.Process, match.ETWProcess.CmdLine, match.Stack, match.TestCase, GetDateTimeString(match.PerformedAt), match.SourceFile);
+                WriteCSVLine(CSVOptions, GetDateTimeString(match.TimeStamp, match.SessionStart, TimeFormatOption), match.Type, match.Message, match.Process.GetProcessWithId(UsePrettyProcessName), 
+                    match.Process.GetProcessName(UsePrettyProcessName), match.Process.StartTime,
+                    match.Process.CmdLine, match.Stack, match.TestCase, GetDateTimeString(match.PerformedAt), match.SourceFile);
             }
         }
 
@@ -130,8 +131,7 @@ namespace ETWAnalyzer.EventDump
                 {
                     Message = ex.Message,
                     Type = ex.Type,
-                    Process = ex.Process.GetProcessWithId(UsePrettyProcessName),
-                    ETWProcess = ex.Process,
+                    Process = ex.Process,
                     TimeStamp = ex.Time.AddSeconds(-1.0d*zeroTimeS),
                     Stack = ex.Stack,
                     SourceFile = file.JsonExtractFileWhenPresent,
@@ -152,8 +152,7 @@ namespace ETWAnalyzer.EventDump
                 ColorConsole.WriteLine(Path.GetFileNameWithoutExtension(byFile.Key), ConsoleColor.Cyan);
                 foreach (var processExceptions in matches.GroupBy(x => x.Process))
                 {
-                    MatchData firstGroup = processExceptions.First();
-                    ColorConsole.WriteEmbeddedColorLine($"[magenta]{processExceptions.Key} {firstGroup.ETWProcess.StartStopTags}[/magenta] {(NoCmdLine ? String.Empty : firstGroup.ETWProcess.CommandLineNoExe)}", ConsoleColor.DarkCyan);
+                    ColorConsole.WriteEmbeddedColorLine($"[magenta]{processExceptions.Key.GetProcessWithId(UsePrettyProcessName)} {processExceptions.Key.StartStopTags}[/magenta] {(NoCmdLine ? String.Empty : processExceptions.Key.CommandLineNoExe)}", ConsoleColor.DarkCyan);
                     foreach (var byType in processExceptions.GroupBy(x => x.Type))
                     {
                         ColorConsole.WriteLine($"\t{byType.Key}", ConsoleColor.Green);

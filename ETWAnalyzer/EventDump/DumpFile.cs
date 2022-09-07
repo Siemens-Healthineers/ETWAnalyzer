@@ -94,7 +94,7 @@ namespace ETWAnalyzer.EventDump
 
             if (IsCSVEnabled)
             {
-                OpenCSVWithHeader("CSVOptions", "Date", "InputDirectory", "InputFileName", "Test Case", "Test Time in ms", "Baseline", "ProcessName", "Process", "Command Line", 
+                OpenCSVWithHeader("CSVOptions", "Date", "InputDirectory", "InputFileName", "Test Case", "Test Time in ms", "Baseline", "ProcessName", "Process", "Start Time", "Command Line", 
                                   "File Directory", "File Name",
                                   "Open Count", "Open Duration us", "Open Status",
                                   "Close Count", "Close Duration us",
@@ -111,7 +111,7 @@ namespace ETWAnalyzer.EventDump
                     var stats = fileIO.Stats;
                     string times = String.Join(";", stats?.SetSecurity?.Times?.Select(x => base.GetDateTimeString(x, fileIO.SessionStart, TimeFormatOption)) ?? Array.Empty<string>());
                     WriteCSVLine(CSVOptions, fileIO.DataFile.PerformedAt, Path.GetDirectoryName(fileIO.DataFile.FileName), Path.GetFileNameWithoutExtension(fileIO.DataFile.FileName), fileIO.DataFile.TestName, fileIO.DataFile.DurationInMs,
-                                fileIO.BaseLine, fileIO.Process.GetProcessName(UsePrettyProcessName), fileIO.Process.GetProcessWithId(UsePrettyProcessName), NoCmdLine ? "" : fileIO.Process.CommandLineNoExe,
+                                fileIO.BaseLine, fileIO.Process.GetProcessName(UsePrettyProcessName), fileIO.Process.GetProcessWithId(UsePrettyProcessName), fileIO.Process.StartTime, NoCmdLine ? "" : fileIO.Process.CommandLineNoExe,
                                 Path.GetDirectoryName(fileIO.FileName), Path.GetFileName(fileIO.FileName),
                                 stats?.Open?.Count, stats?.Open?.Durationus, String.Join(" ", stats?.Open?.NtStatus?.Select(x => ((NtStatus)x).ToString()) ?? Enumerable.Empty<string>()),
                                 stats?.Close?.Count, stats?.Close?.Durationus,
