@@ -265,13 +265,13 @@ namespace ETWAnalyzer.Commands
                         break;
                     case FileOrDirectoryArg:
                     case FileOrDirectoryAlias:
-                        string path = GetNextNonArg("-filedir");
-                        InputFileOrDirectories.Add(path); // we support multiple occurrences 
+                        string FileOrDir = GetNextNonArg(FileOrDirectoryArg);
+                        InputFileOrDirectories.Add(FileOrDir); // we support multiple occurrences 
                         break;
                     // All optional Arguments
                     case OutDirArg:
-                        path = GetNextNonArg("-outdir");
-                        OutDir.OutputDirectory = ArgParser.CheckIfFileOrDirectoryExistsAndExtension(path);
+                        FileOrDir = GetNextNonArg(OutDirArg);
+                        OutDir.OutputDirectory = ArgParser.CheckIfFileOrDirectoryExistsAndExtension(FileOrDir);
                         OutDir.IsDefault = false;
                         break;
                     case TempDirArg:
