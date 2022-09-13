@@ -180,8 +180,9 @@ namespace ETWAnalyzer.Commands
         internal const string PrintFlatStackArg = "-printflatstack";
         internal const string PrintFullMsgArg = "-printfullmessage";
         internal const string PrintFlatMsgArg = "-printflatmessage";
-        internal const string OnlyStillActivesArg = "-onlystillactives";
         internal const string FactorMulipliedWithQuartilDistanceArg = "-factor";
+        internal const string OnlyStillActivesArg = "-onlystillactives";
+        
 
 
 
