@@ -101,7 +101,7 @@ namespace ETWAnalyzer.Commands
         /// </summary>
         internal const string ETLFileNameVariable = "#ETLFileName#";
 
-        internal const string UnzipOperationArg = "-unzipoperation";
+        
         internal const string TempDirArg = "-tempdir";
         internal const string KeepTempArg = "-keeptemp";
         internal const string NoOverWriteArg = "-nooverwrite";
