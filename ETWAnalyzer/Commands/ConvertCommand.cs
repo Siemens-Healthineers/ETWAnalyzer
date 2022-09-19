@@ -27,7 +27,7 @@ namespace ETWAnalyzer.Commands
             "ETWAnalyzer -convert -filedir/-fd xx.etl [-pid ddd or -1] [-perthread] [-symServer NtSymbolPath, MS, Google or syngo] [-debug]" + Environment.NewLine +
             "Convert CPU Sample Profiling data from an  ETL file to a Json file which can be read by SpeedScope." + Environment.NewLine + 
             "See https://www.speedscope.app/ and https://adamsitnik.com/speedscope/ for more information." + Environment.NewLine +
-            "  -filedir/-fd xxx.etl Input ETL file." + Environment.NewLine +
+            "  -filedir/-fd xxx.etl Input ETL file/s." + Environment.NewLine +
             "  -pid dd              Optional. If -1 then all processes are combined into the converted file. Otherwise you need to specify an existing process id." + Environment.NewLine +
             "  -perthread           By default all threads are merged. If used then the profiling data per thread is extracted." + Environment.NewLine + 
             "  -debug               Print exception on console if a command has an error." +Environment.NewLine +
@@ -37,9 +37,15 @@ namespace ETWAnalyzer.Commands
            ;
 
         /// <summary>
-        /// Input ETL file name
+        /// ETL file name query
         /// </summary>
-        string myEtlFileName;
+        string myFileDirQuery;
+        
+        
+        /// <summary>
+        /// Input ETL File List
+        /// </summary>
+        string[] myInputEtlFiles;
 
         /// <summary>
         /// Process id to extract or -1 if all 
@@ -82,8 +88,7 @@ namespace ETWAnalyzer.Commands
                         break;
                     case FileOrDirectoryArg:
                     case FileOrDirectoryAlias:
-                        string path = GetNextNonArg(FileOrDirectoryArg);
-                        myEtlFileName = ArgParser.CheckIfFileOrDirectoryExistsAndExtension(path, EtlExtension, ZipExtension, SevenZipExtension);
+                        myFileDirQuery = GetNextNonArg(FileOrDirectoryArg);
                         break;
                     case PidArg:
                         myPid = int.Parse(GetNextNonArg(PidArg), CultureInfo.InvariantCulture);
@@ -106,17 +111,37 @@ namespace ETWAnalyzer.Commands
                 }
             }
 
-            if( myEtlFileName == null || !File.Exists(myEtlFileName))
+            if( myFileDirQuery == null)
             {
                 throw new NotSupportedException($"You need to enter {FileOrDirectoryArg} with an existing input file.");
             }
+            
+            TestRunData runData = new(myFileDirQuery, SearchOption.TopDirectoryOnly);
+            IReadOnlyList<TestDataFile> filesToAnalyze = runData.AllFiles;
+            myInputEtlFiles = filesToAnalyze.Where(file => file.EtlFileNameIfPresent != null).Select(file => file.EtlFileNameIfPresent).ToArray();
         }
 
+        /// <summary>
+        /// Convert the list of ETL files into and convert each file into a single json file (speedscope)
+        /// </summary>
         public override void Run()
         {
             TextWriter dbgOutputWriter = myDebugOutputToConsole ? Console.Out : new StringWriter();
+            foreach(string currFile in myInputEtlFiles)
+            {
+                ConvertSingleFile(currFile, dbgOutputWriter);
+            }
+            
+        }
 
-            using var log = TraceLog.OpenOrConvert(myEtlFileName, new TraceLogOptions
+        /// <summary>
+        /// The ETL file is converted into a json file
+        /// </summary>
+        /// <param name="etlFileName"></param>
+        /// <param name="dbgOutputWriter"></param>
+        void ConvertSingleFile(string etlFileName, TextWriter dbgOutputWriter)
+        {
+            using var log = TraceLog.OpenOrConvert(etlFileName, new TraceLogOptions
             {
                 ConversionLog = dbgOutputWriter,
             });
@@ -136,7 +161,7 @@ namespace ETWAnalyzer.Commands
                 ColorConsole.WriteEmbeddedColorLine($"Convert process [green]{process.Name}({process.ProcessID})[/green] {process.CommandLine}, PerThread: {myPerThreadFlag}");
             }
 
-            using Microsoft.Diagnostics.Symbols.SymbolReader reader = new(dbgOutputWriter, Symbols.GetCombinedSymbolPath(myEtlFileName))
+            using Microsoft.Diagnostics.Symbols.SymbolReader reader = new(dbgOutputWriter, Symbols.GetCombinedSymbolPath(etlFileName))
             {
                 SecurityCheck = (x) => true,
             };
@@ -182,8 +207,8 @@ namespace ETWAnalyzer.Commands
             stackSource.DoneAddingSamples();
             stackSource.LookupWarmSymbols(1, reader);
 
-            string processName = myPid == AllProcessesPid ? "_AllProcesses" : $"_{ process?.Name}_{ myPid}";
-            string outFile = Path.Combine(Path.GetDirectoryName(myEtlFileName), Path.GetFileNameWithoutExtension(myEtlFileName) + $"{processName}.speedscope");
+            string processName = myPid == AllProcessesPid ? "_AllProcesses" : $"_{process?.Name}_{myPid}";
+            string outFile = Path.Combine(Path.GetDirectoryName(etlFileName), Path.GetFileNameWithoutExtension(etlFileName) + $"{processName}.speedscope");
 
             SpeedScopeWriter.WriteStackViewAsJson(stackSource, outFile, !myPerThreadFlag);
             ColorConsole.WriteEmbeddedColorLine($"Converted File: [green]{Path.GetFullPath(outFile)}[/green]");
