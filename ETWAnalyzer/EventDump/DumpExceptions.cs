@@ -152,7 +152,7 @@ namespace ETWAnalyzer.EventDump
                 ColorConsole.WriteLine(Path.GetFileNameWithoutExtension(byFile.Key), ConsoleColor.Cyan);
                 foreach (var processExceptions in matches.GroupBy(x => x.Process))
                 {
-                    ColorConsole.WriteEmbeddedColorLine($"[magenta]{processExceptions.Key.GetProcessWithId(UsePrettyProcessName)} {processExceptions.Key.StartStopTags}[/magenta] {(NoCmdLine ? String.Empty : processExceptions.Key.CommandLineNoExe)}", ConsoleColor.DarkCyan);
+                    ColorConsole.WriteEmbeddedColorLine($"[magenta]{processExceptions.Key.GetProcessWithId(UsePrettyProcessName)} {GetProcessTags(processExceptions.Key, matches[0].SessionStart)}[/magenta] {(NoCmdLine ? String.Empty : processExceptions.Key.CommandLineNoExe)}", ConsoleColor.DarkCyan);
                     foreach (var byType in processExceptions.GroupBy(x => x.Type))
                     {
                         ColorConsole.WriteLine($"\t{byType.Key}", ConsoleColor.Green);
