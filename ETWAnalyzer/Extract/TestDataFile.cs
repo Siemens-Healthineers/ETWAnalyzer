@@ -268,6 +268,11 @@ namespace ETWAnalyzer.Extract
         {
             get
             {
+                string ext = Path.GetExtension(FileName);
+                if (ext.ToLowerInvariant() == ArgParser.EtlExtension)
+                {
+                    return FileName;
+                }
                 string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(FileName);
                 OutDir directory = ParentTest?.Parent?.Parent?.OutputDirectory;
                 string dir = directory?.TempDirectory ?? directory.OutputDirectory;
