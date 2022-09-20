@@ -68,6 +68,10 @@ namespace ETWAnalyzer.Commands
         /// </summary>
         bool myPerThreadFlag;
 
+        /// <summary>
+        /// for unit testability
+        /// </summary>
+        internal Action<string> myConvertCallback;
 
         public override string Help => HelpString;
 
@@ -118,7 +122,15 @@ namespace ETWAnalyzer.Commands
             
             TestRunData runData = new(myFileDirQuery, SearchOption.TopDirectoryOnly);
             IReadOnlyList<TestDataFile> filesToAnalyze = runData.AllFiles;
-            myInputEtlFiles = filesToAnalyze.Where(file => file.EtlFileNameIfPresent != null).Select(file => file.EtlFileNameIfPresent).ToArray();
+            myInputEtlFiles = filesToAnalyze.Where(file => file.EtlFileNameIfPresent != null)
+                                            .Select(file => file.EtlFileNameIfPresent)
+                                            .ToArray();
+
+            if (myInputEtlFiles.Length == 0)
+            {
+                throw new NotSupportedException($"No input files found.");
+            }
+
         }
 
         /// <summary>
@@ -141,6 +153,12 @@ namespace ETWAnalyzer.Commands
         /// <param name="dbgOutputWriter"></param>
         void ConvertSingleFile(string etlFileName, TextWriter dbgOutputWriter)
         {
+            if (myConvertCallback != null)
+            {
+                myConvertCallback.Invoke(etlFileName);
+                return;
+            }
+
             using var log = TraceLog.OpenOrConvert(etlFileName, new TraceLogOptions
             {
                 ConversionLog = dbgOutputWriter,
