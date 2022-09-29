@@ -30,7 +30,7 @@ abstract class ArgParser : ICommand
     internal const string DebugArg = "-debug";
     internal const string HelpArg = "-help";
     internal const string NoColorArg = "-nocolor";
-    internal const string OutDirArg = "-outdirarg";
+    internal const string OutDirArg = "-outdir";
     internal const string PidArg = "-pid";
     internal const string PerThreadArg = "-perthread";
     internal const string AllExceptionsArgs = "-allexceptions";
