@@ -172,14 +172,14 @@ namespace ETWAnalyzer.Analyzers
         /// </summary>
         /// <param name="file"></param>
         /// <param name="key">ProcessKey</param>
-        /// <returns>Found process or null if it was not found. If multiple processes would match the first occurrence is returned.</returns>
+        /// <returns>Found process or null if it was not found.</returns>
         public static ETWProcess FindProcessByKey(this TestDataFile file, ProcessKey key)
         {
             if( key == null )
             {
                 return null;
             }
-            return file.Extract.Processes.Where(x => x.ProcessName != null && (x.ProcessID == key.Pid && key.Name == x.ProcessName) ).FirstOrDefault();
+            return file.Extract.Processes.Where(x => x.ProcessName != null && (x.ProcessID == key.Pid && key.Name == x.ProcessName)  && ( x.StartTime == key.StartTime ) ).FirstOrDefault();
         }
 
         /// <summary>
