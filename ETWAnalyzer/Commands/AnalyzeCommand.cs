@@ -161,6 +161,28 @@ namespace ETWAnalyzer.Commands
            @"   ETWAnalyzer.exe -analyze testcount -filedir C:\jsonDir -testrunindex 10 20" + Environment.NewLine +
             new string('=', Console.WindowWidth);
 
+        internal const string TestRunIndexArg = "-testrunindex";
+        internal const string ComputerArg = "-computer";
+        internal const string TestCaseArg = "-testcase";
+        internal const string TimeRangeArg = "-timerange";
+        internal const string ExceptionExpircyDateArg = "-exceptionexpircydate";
+        internal const string IrrelevantMeasuredFromFirstExceptionOccArg = "-exceptionexpircybyfirstoccurrence";
+        internal const string DisjointTrendsArg = "-disjointtrends";
+        internal const string DisjointTrendsConsistentModVDiffArg = "-disjointtrendsconsistentmodvdiff";
+        internal const string DisjointTrendsInconsistentModVDiffArg = "-disjointtrendsinconsistentmodvdiff";
+        internal const string DisjointOutliersArg = "-disjointoutliers";
+        internal const string DisjointOutliersConsistentModVDiffArg = "-disjointoutliersconsistentmodvdiff";
+        internal const string DisjointOutliersInconsistentModVDiffArg = "-disjointoutliersinconsistentmodvdiff";
+        internal const string DisjointSporadicsArg = "-disjointsporadics";
+        internal const string DisjointSporadicsConsistentModVDiffArg = "-disjointsporadicsconsistentmodvdiff";
+        internal const string DisjointSporadicsInconsistentModVDiffArg = "-disjointsporadicsinconsistentmodvdiff";
+        internal const string PrintFullStackArg = "-printfullstack";
+        internal const string PrintFlatStackArg = "-printflatstack";
+        internal const string PrintFullMsgArg = "-printfullmessage";
+        internal const string PrintFlatMsgArg = "-printflatmessage";
+        internal const string FactorMulipliedWithQuartilDistanceArg = "-factor";
+        internal const string OnlyStillActivesArg = "-onlystillactives";
+
 
         /// <summary>
         /// Default Helpstring which prints all analyzer help

@@ -101,6 +101,17 @@ namespace ETWAnalyzer.Commands
         /// </summary>
         internal const string ETLFileNameVariable = "#ETLFileName#";
 
+        
+        internal const string TempDirArg = "-tempdir";
+        internal const string KeepTempArg = "-keeptemp";
+        internal const string NoOverWriteArg = "-nooverwrite";
+        internal const string PThreadsArgs = "-pthreads";
+        internal const string NThreadsArg = "-nthreads";
+        internal const string TimeLineArg = "-timeline";
+        internal const string ChildArg = "-child";  // Marker argument to prevent by accident to spawn child of child processes. Child processes process a trace single threaded
+        internal const string AllCPUArg = "-allcpu";
+
+
         public override string Help => HelpString;
 
         /// <summary>
@@ -265,13 +276,13 @@ namespace ETWAnalyzer.Commands
                         break;
                     case FileOrDirectoryArg:
                     case FileOrDirectoryAlias:
-                        string path = GetNextNonArg("-filedir");
-                        InputFileOrDirectories.Add(path); // we support multiple occurrences 
+                        string FileOrDir = GetNextNonArg(FileOrDirectoryArg);
+                        InputFileOrDirectories.Add(FileOrDir); // we support multiple occurrences 
                         break;
                     // All optional Arguments
                     case OutDirArg:
-                        path = GetNextNonArg("-outdir");
-                        OutDir.OutputDirectory = ArgParser.CheckIfFileOrDirectoryExistsAndExtension(path);
+                        FileOrDir = GetNextNonArg(OutDirArg);
+                        OutDir.OutputDirectory = ArgParser.CheckIfFileOrDirectoryExistsAndExtension(FileOrDir);
                         OutDir.IsDefault = false;
                         break;
                     case TempDirArg:
