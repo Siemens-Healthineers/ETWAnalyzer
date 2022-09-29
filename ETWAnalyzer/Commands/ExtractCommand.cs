@@ -276,13 +276,13 @@ namespace ETWAnalyzer.Commands
                         break;
                     case FileOrDirectoryArg:
                     case FileOrDirectoryAlias:
-                        string FileOrDir = GetNextNonArg(FileOrDirectoryArg);
-                        InputFileOrDirectories.Add(FileOrDir); // we support multiple occurrences 
+                        string fileOrDir = GetNextNonArg(FileOrDirectoryArg);
+                        InputFileOrDirectories.Add(fileOrDir); // we support multiple occurrences 
                         break;
                     // All optional Arguments
                     case OutDirArg:
-                        FileOrDir = GetNextNonArg(OutDirArg);
-                        OutDir.OutputDirectory = ArgParser.CheckIfFileOrDirectoryExistsAndExtension(FileOrDir);
+                        string outDir = GetNextNonArg(OutDirArg);
+                        OutDir.OutputDirectory = ArgParser.CheckIfFileOrDirectoryExistsAndExtension(outDir);
                         OutDir.IsDefault = false;
                         break;
                     case TempDirArg:
