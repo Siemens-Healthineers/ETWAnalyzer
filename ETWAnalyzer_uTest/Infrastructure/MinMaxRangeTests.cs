@@ -51,7 +51,7 @@ namespace ETWAnalyzer_uTest.Infrastructure
         }
 
         [Fact]
-        public void Upper_And_Lower_Boundary()
+        public void Upper_And_Lower_Boundary_Inclusive()
         {
             MinMaxRange<int> range = new MinMaxRange<int>(-10, 10);
             Assert.Equal(-10, range.Min);
