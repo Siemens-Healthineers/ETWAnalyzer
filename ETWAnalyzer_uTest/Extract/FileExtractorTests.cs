@@ -377,7 +377,7 @@ namespace ETWAnalyzer_uTest
 
             IReadOnlyList<FileIOContainer> flatList = deserialized.FileIO.GetFileNameProcessStats(deserialized).OrderBy(x => x.FileName).ToList();
 
-            Assert.Equal(3, flatList.Count);
+            Assert.Equal(2, flatList.Count);
             FileIOContainer first = flatList[0];
             FileIOContainer second = flatList[1];
 
