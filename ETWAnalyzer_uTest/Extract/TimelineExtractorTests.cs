@@ -2,6 +2,7 @@
 using ETWAnalyzer.Extract.CPU;
 using ETWAnalyzer.Extractors;
 using ETWAnalyzer.Extractors.CPU;
+using ETWAnalyzer_uTest.TestInfrastructure;
 using Microsoft.Windows.EventTracing;
 using Microsoft.Windows.EventTracing.Cpu;
 using Microsoft.Windows.EventTracing.Processes;
@@ -109,8 +110,9 @@ namespace ETWAnalyzer_uTest.Extract
             ExtractSerializer.Serialize(stream, extract);
             stream.Position = 0;
 
+            using var expprinter = new ExceptionalPrinter();
             string serialized = Encoding.UTF8.GetString(stream.ToArray());
-            Console.WriteLine($"Serialized Data: {serialized}");
+            expprinter.Messages.Add($"Serialized Data: {serialized}");
 
             IETWExtract deserialized = ExtractSerializer.Deserialize<ETWExtract>(stream);
 
