@@ -71,7 +71,6 @@ namespace ETWAnalyzer.ScreenshotBitmapping
             {
                 TestFolders.Add(new TestWithScreenshots(testfolder));
             }
-            Print();
         }
         /// <summary>
         /// Serializes the sample screenshot config if it does not exist
@@ -109,14 +108,6 @@ namespace ETWAnalyzer.ScreenshotBitmapping
         /// <summary>
         /// Prints the found folder structure
         /// </summary>
-        void Print()
-        {
-            Console.WriteLine($"PrimaryFolder: {PrimaryFolder}\n");
-            foreach (var test in TestFolders)
-            {
-                test.Print();
-            }
-        }
         /// <summary>
         /// Returns the the instance which matched to testname
         /// </summary>
@@ -171,18 +162,6 @@ namespace ETWAnalyzer.ScreenshotBitmapping
                     }
                     Screenshots.Add(new Screenshot(path));
                 });
-        }
-        /// <summary>
-        /// Prints the folderstructure below the Testfolder
-        /// </summary>
-        public void Print()
-        {
-            Console.WriteLine($"For Test: {TestName} ");
-            foreach (var shot in Screenshots)
-            {
-                Console.WriteLine(shot);
-            }
-            Console.WriteLine("found.\n");
         }
     }
 
