@@ -133,6 +133,11 @@ namespace ETWAnalyzer.Extractors.CPU
 
             results.SummaryStackTags = totalStackTags;
             results.SpecialStackTags = specialStackTags;
+
+            // Try to release memory as early as possible
+            myStackTags = null;
+            mySamplingData = null;
+            myCpuSchedlingData = null;
         }
 
         void ExtractStackTagsFromProfilingAndContextSwitchEvents(IStackTagMapper mapper, Dictionary<ProcessKey, Dictionary<string, StackTagDuration>> tags, bool addDefaultStackTag)
