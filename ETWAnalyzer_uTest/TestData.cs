@@ -4,6 +4,7 @@
 using ETWAnalyzer;
 using ETWAnalyzer.Extract;
 using ETWAnalyzer.Helper;
+using ETWAnalyzer_uTest.TestInfrastructure;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -252,7 +253,7 @@ namespace ETWAnalyzer_uTest
         /// <summary>
         /// Get directory containing uncompressed test run files which are all 0 bytes in size for testing the testrun logic.
         /// </summary>
-        public static string TestRunDirectory
+        public static DataOutput<string> TestRunDirectory
         {
             get => UnzipTestContainerFileOnlyOnce.Value;
         }
@@ -264,8 +265,8 @@ namespace ETWAnalyzer_uTest
         public static string TestRunDirectoryJson(ITempOutput temp)
         {
             Directory.CreateDirectory(Path.Combine(temp.Name, Program.ExtractFolder));
-
-            DirectoryInfo directoryInfo = new DirectoryInfo(UnzipTestContainerFileOnlyOnce.Value);
+            DataOutput<string> value = UnzipTestContainerFileOnlyOnce.Value;
+            DirectoryInfo directoryInfo = new DirectoryInfo(value.Data);
             FileInfo[] fileinfo = directoryInfo.GetFiles();
             HashSet<string> compressedEtl = new HashSet<string>();
             List<TestDataFile> filesToExtract = new List<TestDataFile>();
@@ -292,39 +293,49 @@ namespace ETWAnalyzer_uTest
             return Path.Combine(temp.Name, Program.ExtractFolder);
         }
 
-        public static string TestRunSample_Server
+        public static DataOutput<string> TestRunSample_Server
         {
-            get => Path.Combine(TestRunDirectory, TestSampleFileServer);
+            get 
+            {
+                DataOutput<string> output = TestRunDirectory;
+                return new DataOutput<string>(Path.Combine(output.Data, TestSampleFileServer), output.Output);
+            }
         }
 
-        public static string TestRunSample_Client
+        public static DataOutput<string> TestRunSample_Client
         {
-            get => Path.Combine(TestRunDirectory, TestSampleFileClient);
+            get
+            {
+                DataOutput<string> output = TestRunDirectory;
+                return new DataOutput<string>(Path.Combine(output.Data, TestSampleFileClient), output.Output);
+            }
         }
 
         /// <summary>
         /// Lazy is a special construct which executes the passed method only once. That way we
         /// can ensure that the access to the path is fast without uncompressing the 7z file during every property get call.
         /// </summary>
-        static readonly Lazy<string> UnzipTestContainerFileOnlyOnce = new Lazy<string>(UnzipFiles);
+        static readonly Lazy<DataOutput<string>> UnzipTestContainerFileOnlyOnce = new Lazy<DataOutput<string>>(UnzipFiles);
 
         const string TestSampleFileClient = "CallupAdhocColdReadingCR_11341msFO9DE01T0166PC.7z";
         const string TestSampleFileServer = "CallupAdhocColdReadingCR_11341msDEFOR09T121SRV.7z";
 
-        static string UnzipFiles()
+        static DataOutput<string> UnzipFiles()
         {
             string samplePath = GetPath("SampleData");
             string extractedFile = Path.Combine(samplePath, TestSampleFileServer);
+            string outputStr = null;
             // check if file is already uncompressed 
             if (!File.Exists(extractedFile))
             {
                 // No then uncompress it now
                 ProcessCommand cmd = new ProcessCommand("7z.exe", $"x {Path.Combine(samplePath, "SampleData.7z")} -o{samplePath}");
                 ExecResult output = cmd.Execute();
-                Console.WriteLine($"7z output: {output.AllOutput}");
+                outputStr = $"7z output: {output.AllOutput}";
             }
 
-            return samplePath;
+
+            return new DataOutput<string>(samplePath, outputStr);
         }
 
         public static string GetSampleDataV2SpecificDate
