@@ -10,6 +10,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.IO;
 using static ETWAnalyzer.Extract.TestDataFile;
+using ETWAnalyzer_uTest.TestInfrastructure;
 
 namespace ETWAnalyzer_uTest
 {
@@ -21,7 +22,10 @@ namespace ETWAnalyzer_uTest
         [Fact]
         public void Can_Load_Empty_7z_File()
         {
-            TestDataFile file = new TestDataFile(TestData.TestRunSample_Client);
+            using var printer = new ExceptionalPrinter();
+            var sampleOutput = TestData.TestRunSample_Client;
+            TestDataFile file = new TestDataFile(sampleOutput.Data);
+            printer.Add(sampleOutput.Output);
 
             Assert.Equal(ClientName, file.MachineName);
             Assert.True(file.IsValidTest);
