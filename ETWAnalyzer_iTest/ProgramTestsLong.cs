@@ -34,6 +34,7 @@ namespace ETWAnalyzer_iTest
         [Fact]
         public void Can_Extract_FullDetail_From_Zip()
         {
+            Program.DebugOutput = false;
             using var tmp = TempDir.Create();
             string pathName = Path.Combine(tmp.Name, Path.GetFileName(TestData.ServerZipFile));
             File.Copy(TestData.ServerZipFile, pathName);
