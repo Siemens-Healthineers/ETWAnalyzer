@@ -122,7 +122,7 @@ namespace ETWAnalyzer_uTest.Extract
             List<KeyValuePair<DateTimeOffset,decimal>> timelineAsMsCPU = deserialized.CPU.TimeLine.GetProcessTimeLineData(extract, key, false);
             for(int i = 0; i < timelineAsMsCPU.Count; i++)
             {
-                Console.WriteLine($"timeline[{i} at {timelineAsMsCPU[i].Key}]: {timelineAsMsCPU[i].Value}");
+                expprinter.Messages.Add($"timeline[{i} at {timelineAsMsCPU[i].Key}]: {timelineAsMsCPU[i].Value}");
             }
 
             Assert.Equal(DateTimeOffset.MinValue + TimeSpan.FromSeconds(1.0d), timelineAsMsCPU[0].Key);
@@ -138,7 +138,7 @@ namespace ETWAnalyzer_uTest.Extract
             List<KeyValuePair<DateTimeOffset, decimal>> timelineAsPercentCPU = deserialized.CPU.TimeLine.GetProcessTimeLineData(extract, key, true);
             for (int i = 0; i < timelineAsPercentCPU.Count; i++)
             {
-                Console.WriteLine($"timeline[{i} at {timelineAsPercentCPU[i].Key}]: {timelineAsPercentCPU[i].Value}");
+                expprinter.Messages.Add($"timeline[{i} at {timelineAsPercentCPU[i].Key}]: {timelineAsPercentCPU[i].Value}");
             }
 
             Assert.Equal(100.0m, timelineAsPercentCPU[2].Value);
