@@ -15,7 +15,9 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace ETWAnalyzer_uTest
 {
@@ -71,10 +73,12 @@ namespace ETWAnalyzer_uTest
         /// Generated once by DiskExtractorTestsFixture which is injected via ctor
         /// </summary>
         readonly ETWExtract myExtract;
+        readonly ITestOutputHelper myWriter;
 
-        public FileExtractorTests(FileExtractorTestsFixture fixture)
+        public FileExtractorTests(FileExtractorTestsFixture fixture, ITestOutputHelper writer)
         {
             myExtract = fixture.Extract;
+            myWriter = writer;
         }
 
         [Fact]
@@ -369,7 +373,7 @@ namespace ETWAnalyzer_uTest
             stream.Position = 0;
             string serialized = Encoding.UTF8.GetString(stream.ToArray());
 
-            using var expprinter = new ExceptionalPrinter();
+            using var expprinter = new ExceptionalPrinter(myWriter);
 
 
             IETWExtract deserialized = ExtractSerializer.Deserialize<ETWExtract>(stream);

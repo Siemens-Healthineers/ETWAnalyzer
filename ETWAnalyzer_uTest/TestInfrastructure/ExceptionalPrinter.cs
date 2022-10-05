@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Xunit;
+using Xunit.Abstractions;
 
 namespace ETWAnalyzer_uTest.TestInfrastructure
 {
@@ -15,6 +17,13 @@ namespace ETWAnalyzer_uTest.TestInfrastructure
     class ExceptionalPrinter : IDisposable
     {
         public List<string> Messages { get; set; } = new List<string>();
+
+        ITestOutputHelper myWriter;
+
+        public ExceptionalPrinter(ITestOutputHelper writer)
+        {
+            myWriter = writer;
+        }
 
         public void Add(string message)
         {
@@ -30,7 +39,7 @@ namespace ETWAnalyzer_uTest.TestInfrastructure
             {
                 foreach (var message in Messages)
                 {
-                    Console.WriteLine(message);
+                    myWriter.WriteLine(message);
                 }
             }
 
