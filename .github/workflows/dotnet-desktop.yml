@@ -86,8 +86,8 @@ jobs:
 
     # Tag results into an artifact
     - name: Upload artifacts unit_tests
-        uses: actions/upload-artifact@v3
-        with:
-          name: unit_tests
-          path: artifacts/unit_tests
-        if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: unit_tests
+        path: artifacts/unit_tests
+      if: always()
