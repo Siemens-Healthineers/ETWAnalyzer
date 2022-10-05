@@ -90,13 +90,14 @@ jobs:
 
     # create a artifact repository
     - name: Create an artifact repository
-      run: mkdir -p artifacts/unit_tests
-           echo "{path}"
+      run: |
+        mkdir -p path/to/artifacts/unit_tests
+        echo "{path}"
 
     # Upload unit tests artifacts
     - name: Upload unit tests artifacts
       uses: actions/upload-artifact@v3
       with:
-        name: unit_tests
-        path: ${{github.path}}/
+        name: unit_tests_results
+        path: path/to/artifacts/unit_tests/
       if: always()
