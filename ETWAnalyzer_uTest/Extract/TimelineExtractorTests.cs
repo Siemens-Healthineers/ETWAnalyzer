@@ -14,11 +14,19 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace ETWAnalyzer_uTest.Extract
 {
     public class TimelineExtractorTests
     {
+        private ITestOutputHelper myWriter;
+
+        public TimelineExtractorTests(ITestOutputHelper myWriter)
+        {
+            this.myWriter = myWriter;
+        }
+
         [Fact]
         public void Values_Are_Propagated()
         {
@@ -110,7 +118,7 @@ namespace ETWAnalyzer_uTest.Extract
             ExtractSerializer.Serialize(stream, extract);
             stream.Position = 0;
 
-            using var expprinter = new ExceptionalPrinter();
+            using var expprinter = new ExceptionalPrinter(myWriter);
             string serialized = Encoding.UTF8.GetString(stream.ToArray());
             expprinter.Messages.Add($"Serialized Data: {serialized}");
 

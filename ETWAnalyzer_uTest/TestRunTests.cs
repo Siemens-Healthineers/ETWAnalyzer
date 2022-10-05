@@ -15,12 +15,20 @@ using System.Threading.Tasks;
 using ETWAnalyzer.Analyzers.Infrastructure;
 using ETWAnalyzer.Configuration;
 using ETWAnalyzer_uTest.TestInfrastructure;
+using Xunit.Abstractions;
 
 namespace ETWAnalyzer_uTest
 {
 
     public class TestRunTests
     {
+        private ITestOutputHelper myWriter;
+
+        public TestRunTests(ITestOutputHelper myWriter)
+        {
+            this.myWriter = myWriter;
+        }
+
         static readonly string[] TestCaseNames = new string[]
         {
                 "SSTUaPMapWorkitemFromRTC2",
@@ -42,7 +50,7 @@ namespace ETWAnalyzer_uTest
         [Fact]
         public void Can_Create_TestRun_List_From_Directory()
         {
-            using var printer = new ExceptionalPrinter();
+            using var printer = new ExceptionalPrinter(myWriter);
             DataOutput<string> testrunDirectory = TestData.TestRunDirectory;
             printer.Add(testrunDirectory.Output);
             TestRun[] runs = TestRun.CreateFromDirectory(testrunDirectory.Data, SearchOption.TopDirectoryOnly, null);
@@ -108,7 +116,7 @@ namespace ETWAnalyzer_uTest
         [Fact]
         public void Can_Create_TestRun_List_From_List_Of_Paths()
         {
-            using var printer = new ExceptionalPrinter();
+            using var printer = new ExceptionalPrinter(myWriter);
             DataOutput<string> testrunDirectory = TestData.TestRunDirectory;
             printer.Add(testrunDirectory.Output);
             List<ETWAnalyzer.Extract.TestDataFile> files = new List<ETWAnalyzer.Extract.TestDataFile>();
@@ -128,7 +136,7 @@ namespace ETWAnalyzer_uTest
         [Fact]
         public void Can_Create_TestRun_From_Two_SingleTests()
         {
-            using var printer = new ExceptionalPrinter();
+            using var printer = new ExceptionalPrinter(myWriter);
             DataOutput<string> testrunDirectory = TestData.TestRunDirectory;
             printer.Add(testrunDirectory.Output);
             List<List<TestDataFile>> tempGroup = new List<List<TestDataFile>>();
@@ -175,7 +183,7 @@ namespace ETWAnalyzer_uTest
         [Fact]
         public void InputNumber_Of_TestDataFiles_Match_Number()
         {
-            using var printer = new ExceptionalPrinter();
+            using var printer = new ExceptionalPrinter(myWriter);
             DataOutput<string> testrunDirectory = TestData.TestRunDirectory;
             printer.Add(testrunDirectory.Output);
             int numberOfTestdata = 0;
@@ -191,7 +199,7 @@ namespace ETWAnalyzer_uTest
         [Fact]
         public void InputNumber_Of_SingleTests_Match_NumberOf_TestRun()
         {
-            using var printer = new ExceptionalPrinter();
+            using var printer = new ExceptionalPrinter(myWriter);
             DataOutput<string> testrunDirectory = TestData.TestRunDirectory;
             printer.Add(testrunDirectory.Output);
             TestRunData runData = new TestRunData(testrunDirectory.Data);
@@ -360,7 +368,7 @@ namespace ETWAnalyzer_uTest
         [Fact]
         public void Can_Find_All_DoubleFiles_And_Include_TimeRange()
         {
-            using var printer = new ExceptionalPrinter();
+            using var printer = new ExceptionalPrinter(myWriter);
             DataOutput<string> testrunDirectory = TestData.TestRunDirectory;
             printer.Add(testrunDirectory.Output);
             string pcEtl = Path.Combine(testrunDirectory.Data, "CallupClaimWarmReadingMR_2275msFO9DE01T0166PC.etl");

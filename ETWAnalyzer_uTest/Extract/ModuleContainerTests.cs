@@ -12,11 +12,19 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace ETWAnalyzer_uTest.Extract
 {
     public class ModuleContainerTests
     {
+        private ITestOutputHelper myWriter;
+
+        public ModuleContainerTests(ITestOutputHelper writer)
+        {
+            myWriter = writer;
+        }
+
         [Fact]
         public void Can_Serialize_Deserialize_Data()
         {
@@ -39,7 +47,7 @@ namespace ETWAnalyzer_uTest.Extract
 
             stream.Position = 0;
 
-            using var expprinter = new ExceptionalPrinter();
+            using var expprinter = new ExceptionalPrinter(myWriter);
 
             string str = Encoding.UTF8.GetString(stream.ToArray());
             expprinter.Messages.Add($"Serialized: {str}");
