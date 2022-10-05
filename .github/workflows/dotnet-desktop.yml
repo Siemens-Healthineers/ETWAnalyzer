@@ -83,11 +83,3 @@ jobs:
       run: msbuild $env:Solution_Name /t:Restore /p:Configuration=$env:Configuration
       env:
         Configuration: ${{ matrix.configuration }}
-
-    # Tag results into an artifact
-    - name: Upload artifacts unit_tests
-      uses: actions/upload-artifact@v3
-      with:
-        name: unit_tests
-        path: artifacts/unit_tests
-      if: always()
