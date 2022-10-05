@@ -89,5 +89,5 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: unit_tests
-        path: artifacts/unit_tests
+        path: ~/artifacts/unit_tests
       if: always()
