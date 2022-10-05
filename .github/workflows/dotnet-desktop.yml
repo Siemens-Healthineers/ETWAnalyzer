@@ -86,7 +86,7 @@ jobs:
 
     # Tag results into an artifact
     - name: "Upload artifact: unit_tests"
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v2
         with:
           name: unit_tests
           path: artifacts/unit_tests
