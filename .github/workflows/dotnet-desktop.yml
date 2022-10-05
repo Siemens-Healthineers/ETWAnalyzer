@@ -80,7 +80,7 @@ jobs:
 
     # Execute all unit tests in the solution
     - name: Execute unit tests
-      run: dotnet test -p:ParallelizeTestCollections=false
+      run: dotnet test -p:ParallelizeTestCollections=false --logger "html;LogFileName=TestResults-${{ runner.os }}.html" --logger GitHubActions
 
     # Restore the application to populate the obj folder with RuntimeIdentifiers
     - name: Restore the application
@@ -88,17 +88,10 @@ jobs:
       env:
         Configuration: ${{ matrix.configuration }}
 
-    # create a artifact repository
-    - name: Create an artifact repository
-      run: |
-        mkdir -p path/to/artifacts/unit_tests
-        echo "dir /s C:\"
-        echo "dir /s D:\"
-
     # Upload unit tests artifacts
     - name: Upload unit tests artifacts
       uses: actions/upload-artifact@v3
       with:
-        name: unit_tests_results
-        path: path/to/artifacts/unit_tests/
+        name: TestResults-${{ runner.os }}
+        path: TestResults-${{ runner.os }}.html
       if: always()
