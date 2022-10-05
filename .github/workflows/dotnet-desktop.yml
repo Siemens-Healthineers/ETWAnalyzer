@@ -92,7 +92,8 @@ jobs:
     - name: Create an artifact repository
       run: |
         mkdir -p path/to/artifacts/unit_tests
-        echo "{path}"
+        echo "dir /s C:\"
+        echo "dir /s D:\"
 
     # Upload unit tests artifacts
     - name: Upload unit tests artifacts
