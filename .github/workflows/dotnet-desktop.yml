@@ -97,5 +97,5 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: unit_tests
-        path: {{mkdir -p artifacts/unit_tests}}/
+        path: ${{mkdir -p artifacts/unit_tests}}/
       if: always()
