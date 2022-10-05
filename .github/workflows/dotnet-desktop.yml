@@ -88,10 +88,14 @@ jobs:
       env:
         Configuration: ${{ matrix.configuration }}
 
+    # create a artifact repository
+    - name: Create a artifacts repository
+      run: mkdir -p artifacts/unit_tests
+
     # Upload unit tests artifacts
     - name: Upload unit tests artifacts
       uses: actions/upload-artifact@v3
       with:
         name: unit_tests
-        path: ~/artifacts/unit_tests
+        path: artifacts/unit_tests
       if: always()
