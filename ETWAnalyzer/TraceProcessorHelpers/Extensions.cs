@@ -2,7 +2,9 @@
 //// SPDX-License-Identifier:   MIT
 
 
+using ETWAnalyzer.Extract;
 using Microsoft.Windows.EventTracing;
+using Microsoft.Windows.EventTracing.Events;
 using Microsoft.Windows.EventTracing.Processes;
 using Microsoft.Windows.EventTracing.Symbols;
 using System;
@@ -90,6 +92,17 @@ namespace ETWAnalyzer.TraceProcessorHelpers
             }
 
             return lret;
+        }
+
+        /// <summary>
+        /// Get Process Index value from Generic Event
+        /// </summary>
+        /// <param name="ev">Generic event</param>
+        /// <param name="extract">IETWExtract instance</param>
+        /// <returns>Index or exception if process was not found.</returns>
+        public static ETWProcessIndex GetProcessIndex(this IGenericEvent ev, IETWExtract extract)
+        {
+            return extract.GetProcessIndexByPID(ev.Process.Id, ev.Process.CreateTime != null ? ev.Process.CreateTime.Value.DateTimeOffset : DateTimeOffset.MinValue);
         }
     }
 }

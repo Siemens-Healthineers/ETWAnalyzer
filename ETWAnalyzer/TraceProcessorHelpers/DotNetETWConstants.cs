@@ -12,7 +12,7 @@ namespace ETWAnalyzer.TraceProcessorHelpers
     /// <summary>
     /// Common .NET Runtime ETW Constants
     /// </summary>
-    public static class Constants
+    public static class DotNetETWConstants
     {
         /// <summary>
         /// Registered ETW Provider name for .NET Runtime 

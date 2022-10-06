@@ -5,6 +5,7 @@ using ETWAnalyzer.Extract.Disk;
 using ETWAnalyzer.Extract.Exceptions;
 using ETWAnalyzer.Extract.FileIO;
 using ETWAnalyzer.Extract.Modules;
+using ETWAnalyzer.Extract.Network;
 using ETWAnalyzer.Extract.PMC;
 using ETWAnalyzer.Extract.ThreadPool;
 using ETWAnalyzer.Infrastructure;
@@ -76,6 +77,11 @@ namespace ETWAnalyzer.Extract
         /// information on the CLR ThreadPool
         /// </summary>
         IThreadPoolStats ThreadPool { get; }
+
+        /// <summary>
+        /// Get Network data
+        /// </summary>
+        INetwork Network { get; }
 
         /// <summary>
         /// True when machine is joined domain

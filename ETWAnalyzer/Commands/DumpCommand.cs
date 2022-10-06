@@ -276,6 +276,15 @@ namespace ETWAnalyzer.Commands
         "                         -topNMethods dd nn         Include methods which were called most often in trace. Optional nn skips the first nn lines." + Environment.NewLine +
         "                         -Methods *Func1*;xxx.dll!FullMethodName   Dump one or more methods from all or selected processes. When omitted only process total method call is printed to give an overview." + Environment.NewLine;
 
+        static readonly string DnsHelpString =
+        "  Dns -filedir/fd Extract\\ or xxx.json [-ShowAdapter] [-ShowReturnCode] [-TopN dd nn] [-SortBy Time/Count] [-recursive] [-csv xxx.csv] [-NoCSVSeparator] [-NoCmdLine] [-Clip] " + Environment.NewLine +
+        "       [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd] [-MinMaxMsTestTimes xx-yy ...] [-ProcessName/pn xxx.exe(pid)] [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-CmdLine substring]" + Environment.NewLine +
+        "                         Print Dns summaries and Dns delay metrics. To see data you need to enable the Microsoft-Windows-DNS-Client ETW provider" + Environment.NewLine +
+        "                         -ShowAdapter               Show which network adapters were used to query DNS." + Environment.NewLine +
+        "                         -ShowReturnCode            Show DNS API Win32 return code/s. Success and InvalidParameter are not shown." + Environment.NewLine +
+        "                         -TopN dd nn                Show only the queries with dd highest DNS time/count. Optional nn skips the first nn lines." + Environment.NewLine +
+        "                         -SortBy [Time/Count]       Default is Time which sorts by total query time. The other option is to sort DNS queries by count." + Environment.NewLine;
+
         static readonly string ExamplesHelpString =
         "[yellow]Examples[/yellow]" + Environment.NewLine;
 
@@ -402,6 +411,16 @@ namespace ETWAnalyzer.Commands
         "[green]Dump top 6 methods with highest call estimates from functioncaller.exe. Show also calling method.[/green]" + Environment.NewLine +
         " ETWAnalyzer -fd xx.json -dump LBR -pn functioncaller -topnmethods 6 -showcaller" + Environment.NewLine;
 
+        static readonly string DnsExamples = ExamplesHelpString +
+        "[green]Dump Dns latency metrics[/green]" + Environment.NewLine +
+        " ETWAnalyzer -fd xx.json -dump Dns" + Environment.NewLine +
+        "[green]Export dns data to CSV file and use as time column just the time part to make it easier to parse in Excel.[/green]" + Environment.NewLine +
+        " ETWAnalyzer -fd xx.json -dump Dns -timefmt localtime -csv dns.csv" + Environment.NewLine +
+        "[green]Show Dns latency for Firefox browser process omitting command line but with queried network adapters. If more than one network adapter was queried it could be that the first adapter query timed out.[/green]" + Environment.NewLine +
+        " ETWAnalyzer -fd xx.json -dump Dns -ShowAdapter -NoCmdLine -pn firefox" + Environment.NewLine;
+
+
+
         /// <summary>
         /// Default Helpstring which prints all dump commands
         /// </summary>
@@ -419,7 +438,8 @@ namespace ETWAnalyzer.Commands
             ThreadPoolHelpString + 
             MarkHelpString + 
             PMCHelpString +
-            LBRHelpString;
+            LBRHelpString +
+            DnsHelpString;
 
 
         DumpCommands myCommand = DumpCommands.None;
@@ -644,7 +664,9 @@ namespace ETWAnalyzer.Commands
         public int ScalingFactor { get; private set; } = 1;
         public MinMaxRange<int> MinMaxCount { get; private set; } = new MinMaxRange<int>();
 
-
+        // Dump Dns specific flags
+        public bool ShowAdapter { get; set; }
+        public bool ShowReturnCode { get; set; }
 
         /// <summary>
         /// Ctor
@@ -744,6 +766,12 @@ namespace ETWAnalyzer.Commands
                         break;
                     case "-nocounters":
                         NoCounters = true;
+                        break;
+                    case "-showadapter":
+                        ShowAdapter = true;
+                        break;
+                    case "-showreturncode":
+                        ShowReturnCode = true;
                         break;
                     case "-showmoduleinfo":
                     case "-smi":
@@ -1079,6 +1107,9 @@ namespace ETWAnalyzer.Commands
                     case "lbr":
                         myCommand = DumpCommands.LBR;
                         break;
+                    case "dns":
+                        myCommand = DumpCommands.Dns;
+                        break;
                     default:
                         // parse all command line arguments and throw exception for last found wrong argument to enable context sensitive help
                         delayedThrower = () =>
@@ -1143,6 +1174,9 @@ namespace ETWAnalyzer.Commands
                         break;
                     case DumpCommands.LBR:
                         lret = LBRExamples + Environment.NewLine + LBRHelpString;
+                        break;
+                    case DumpCommands.Dns:
+                        lret = DnsExamples + Environment.NewLine + DnsHelpString;
                         break;
                 }
                 return lret.TrimEnd(Environment.NewLine.ToCharArray());
@@ -1559,6 +1593,33 @@ namespace ETWAnalyzer.Commands
                             ShowCaller = ShowCaller,
                             ScalingFactor = ScalingFactor,
                             MinMaxCount = MinMaxCount,
+                        };
+                        break;
+                    case DumpCommands.Dns:
+                        ThrowIfFileOrDirectoryIsInvalid(FileOrDirectoryQueries);
+                        dumper = new DumpDns
+                        {
+                            FileOrDirectoryQueries = FileOrDirectoryQueries,
+                            Recursive = mySearchOption,
+                            TestsPerRun = TestsPerRun,
+                            SkipNTests = SkipNTests,
+                            TestRunIndex = TestRunIndex,
+                            TestRunCount = TestRunCount,
+                            LastNDays = LastNDays,
+                            MinMaxMsTestTimes = MinMaxMsTestTimes,
+                            CSVFile = CSVFile,
+                            NoCSVSeparator = NoCSVSeparator,
+                            ProcessNameFilter = ProcessNameFilter,
+                            CommandLineFilter = CmdLineFilter,
+                            NewProcessFilter = NewProcess,
+                            UsePrettyProcessName = UsePrettyProcessName,
+                            TimeFormatOption = TimeFormat,
+                            
+                            NoCmdLine = NoCmdLine,
+                            TopN = TopN,
+                            SortOrder = SortOrder,
+                            ShowAdapter = ShowAdapter,
+                            ShowReturnCode = ShowReturnCode,
                         };
                         break;
                     case DumpCommands.None:

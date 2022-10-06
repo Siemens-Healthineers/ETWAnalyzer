@@ -92,6 +92,11 @@ namespace ETWAnalyzer.EventDump
                 
         } 
 
+        protected string GetPrintFileName(string fileName)
+        {
+            return Path.GetFileNameWithoutExtension(fileName);
+        }
+
         protected void OpenCSVWithHeader(params string[] csvColumns)
         {
             FileStream csv = new(CSVFile, FileMode.Create, FileAccess.Write, FileShare.None); 

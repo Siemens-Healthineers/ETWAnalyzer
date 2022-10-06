@@ -17,7 +17,7 @@ namespace ETWAnalyzer.Commands
         private static readonly string HelpString =
             $"ETWAnalyzer {FileVersionInfo.GetVersionInfo(Process.GetCurrentProcess().MainModule.FileName).FileVersion}" + Environment.NewLine +
             " ETWAnalyzer [green]-help[/green] [extract, dump, convert or analyze]  Get further information about the specific sub command" + Environment.NewLine +
-            " ETWAnalyzer [green]-extract[/green] [All or CPU Disk File Module Memory Exception Stacktag ThreadPool PMC] -filedir inEtlOrZip [-outDir xxxxx] [-symServer [MS, syngo or NtSymbolPath] [-keepTemp] [-symFolder bbbb]" + Environment.NewLine +
+            " ETWAnalyzer [green]-extract[/green] [All or CPU Disk File Module Memory Exception Stacktag ThreadPool PMC Dns] -filedir inEtlOrZip [-outDir xxxxx] [-symServer [MS, syngo or NtSymbolPath] [-keepTemp] [-symFolder bbbb]" + Environment.NewLine +
             " ETWAnalyzer [green]-dump[/green] [Stats,Process,CPU,Memory,Disk,File,ThreadPool,Exception,Mark,TestRun,Version,PMC,LBR]" + Environment.NewLine +
             " ETWAnalyzer [green]-convert[/green] -filedir xx.etl -pid dd [-perthread]" + Environment.NewLine +
             " ETWAnalyzer [green]-analyze[/green] is WIP" + Environment.NewLine +
