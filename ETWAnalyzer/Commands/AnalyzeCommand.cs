@@ -184,6 +184,8 @@ namespace ETWAnalyzer.Commands
         internal const string OnlyStillActivesArg = "-onlystillactives";
 
 
+        public bool DisablePrint { get; set; }
+
         /// <summary>
         /// Default Helpstring which prints all analyzer help
         /// </summary>
@@ -440,7 +442,12 @@ namespace ETWAnalyzer.Commands
 
             Analyze(allSingleTests, results);
             Analyze(testruns, results);
-            PrintAnalysis();
+
+            if ( DisablePrint )
+            {
+                PrintAnalysis();
+            }
+
         }
 
         private void SetPersistentAnalyzerFlags()

@@ -13,12 +13,21 @@ using ETWAnalyzer.Analyzers.Infrastructure;
 using ETWAnalyzer.Commands;
 using ETWAnalyzer_uTest.TestInfrastructure;
 using Newtonsoft.Json.Linq;
+using Xunit.Abstractions;
 
 namespace ETWAnalyzer_uTest
 {
     
     public class ProgramTests
     {
+
+        private ITestOutputHelper myWriter;
+
+        public ProgramTests(ITestOutputHelper myWriter)
+        {
+            this.myWriter = myWriter;
+        }
+
         [Fact]
         public void Throw_FileNotFoundException_On_Not_Existing_Input_File()
         {
@@ -115,7 +124,7 @@ namespace ETWAnalyzer_uTest
         [Fact]
         public void Can_Read_Folder_With_No_TestCaseName_And_No_StartAndStopDates_And_No_ComputerName() // T(0)-S(0)-C(0)
         {
-            using var printer = new ExceptionalPrinter();
+            using var printer = new ExceptionalPrinter(myWriter);
             DataOutput<string> testrunDirectory = TestData.TestRunDirectory;
             printer.Add(testrunDirectory.Output);
 
@@ -128,7 +137,7 @@ namespace ETWAnalyzer_uTest
         [Fact]
         public void Can_Read_Folder_With_ComputerName_And_No_StartAndStopDates_And_No_TestCaseName()// T(0)-S(0)-C(1)
         {
-            using var printer = new ExceptionalPrinter();
+            using var printer = new ExceptionalPrinter(myWriter);
             DataOutput<string> testrunDirectory = TestData.TestRunDirectory;
             printer.Add(testrunDirectory.Output);
 
@@ -148,7 +157,7 @@ namespace ETWAnalyzer_uTest
         [Fact]
         public void Can_Read_Folder_With_StartAndStopDates_And_No_TestCaseName_And_No_Computer() // T(0)-S(1)-C(0)
         {
-            using var printer = new ExceptionalPrinter();
+            using var printer = new ExceptionalPrinter(myWriter);
             DataOutput<string> testrunDirectory = TestData.TestRunDirectory;
             printer.Add(testrunDirectory.Output);
 
@@ -179,7 +188,7 @@ namespace ETWAnalyzer_uTest
         [Fact]
         public void Can_Read_Folder_With_StartAndStopDates_And_Computer_And_No_TestCaseName()// T(0)-S(1)-C(1)
         {
-            using var printer = new ExceptionalPrinter();
+            using var printer = new ExceptionalPrinter(myWriter);
             DataOutput<string> testrunDirectory = TestData.TestRunDirectory;
             printer.Add(testrunDirectory.Output);
 
@@ -193,7 +202,7 @@ namespace ETWAnalyzer_uTest
         [Fact]
         public void Can_Read_Folder_With_TestCaseName_And_No_StartAndStopDates_And_No_Computer() // T(1)-S(0)-C(0)
         {
-            using var printer = new ExceptionalPrinter();
+            using var printer = new ExceptionalPrinter(myWriter);
             DataOutput<string> testrunDirectory = TestData.TestRunDirectory;
             printer.Add(testrunDirectory.Output);
 
@@ -207,7 +216,7 @@ namespace ETWAnalyzer_uTest
         [Fact]
         public void Can_Read_Folder_With_TestCaseName_And_Computer_And_No_StartAndStopDates()// T(1)-S(0)-C(1)
         {
-            using var printer = new ExceptionalPrinter();
+            using var printer = new ExceptionalPrinter(myWriter);
             DataOutput<string> testrunDirectory = TestData.TestRunDirectory;
             printer.Add(testrunDirectory.Output);
             var runner = new AnalyzeCommand(new string[] { "-filedir", testrunDirectory.Data, "-testcase", "CallupAdhocWarmReadingMR", "-computer", "DEFOR09T121SRV", "-outdir", "C:\\Temp" });
@@ -220,7 +229,7 @@ namespace ETWAnalyzer_uTest
         [Fact]
         public void Can_Read_Folder_With_TestCaseName_And_StartAndStopDates_No_Computer() // T(1)-S(1)-C(0)
         {
-            using var printer = new ExceptionalPrinter();
+            using var printer = new ExceptionalPrinter(myWriter);
             DataOutput<string> testrunDirectory = TestData.TestRunDirectory;
             printer.Add(testrunDirectory.Output);
             var runner = new AnalyzeCommand(new string[] { "-filedir", testrunDirectory.Data, "-testcase", "CallupAdhocWarmReadingMR", "-timerange", "21.09.2018 22.09.2018", "-outdir", "C:\\Temp" });
@@ -233,7 +242,7 @@ namespace ETWAnalyzer_uTest
         [Fact]
         public void Can_Read_Folder_With_TestCaseName_And_StartAndStopDates_And_Computer()// T(1)-S(1)-C(1)
         {
-                   using var printer = new ExceptionalPrinter();
+                   using var printer = new ExceptionalPrinter(myWriter);
             DataOutput<string> testrunDirectory = TestData.TestRunDirectory;
             printer.Add(testrunDirectory.Output);
             var runner = new AnalyzeCommand(new string[] { "-filedir", testrunDirectory.Data, "-testcase", "CallupAdhocWarmReadingMR", "-timerange", "21.09.2018 22.09.2018", "-Computer", "FO9DE01T0166PC", "-outdir", "C:\\Temp" });

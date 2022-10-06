@@ -34,6 +34,7 @@ namespace ETWAnalyzer_iTest
         [Fact]
         public void Can_Extract_FullDetail_From_Zip()
         {
+            Program.DebugOutput = false;
             using var tmp = TempDir.Create();
             string pathName = Path.Combine(tmp.Name, Path.GetFileName(TestData.ServerZipFile));
             File.Copy(TestData.ServerZipFile, pathName);
@@ -55,6 +56,8 @@ namespace ETWAnalyzer_iTest
         [Fact]
         public void Can_Extract_FullDetail_From_Zip_With_Optional_Args()
         {
+            
+            Program.DebugOutput = false;
             using var tmp = TempDir.Create();
             string pathName = Path.Combine(tmp.Name, Path.GetFileName(TestData.ServerZipFile));
             File.Copy(TestData.ServerZipFile, pathName);
@@ -80,9 +83,10 @@ namespace ETWAnalyzer_iTest
         [Fact]
         public void Can_Extract_FullDetail_From_ETL()
         {
+            Program.DebugOutput = false;
             using var tmp = TempDir.Create();
             string pathName = Path.Combine(tmp.Name, Path.GetFileName(TestData.ServerEtlFile));
-            Program.DebugOutput = true;
+            Program.DebugOutput = false;
             Program.MainCore(new string[] { "-extract", "Disk", "CPU", "Memory", "Exception", "Stacktag","-filedir", TestData.ServerEtlFile,   "-outdir", tmp.Name });
 
             string outFile = GetExtractFile(tmp, TestData.ServerEtlFile);
@@ -106,6 +110,7 @@ namespace ETWAnalyzer_iTest
         [Fact]
         public void Can_Extract_FullDetail_From_ETLFolder()
         {
+            Program.DebugOutput = false;
             using var tmp = TempDir.Create();
             string pathName = Path.Combine(tmp.Name, Path.GetFileName(TestData.ServerEtlFile));
             File.Copy(TestData.ServerEtlFile, pathName);
@@ -138,6 +143,7 @@ namespace ETWAnalyzer_iTest
         [Fact]
         public void Can_Extract_From_ETLFolder_Check_Extract()
         {
+            Program.DebugOutput = false;
             using var tmp = TempDir.Create();
             string pathName = Path.Combine(tmp.Name, Path.GetFileName(TestData.ServerEtlFile));
             File.Copy(TestData.ServerEtlFile, pathName);
@@ -240,6 +246,7 @@ namespace ETWAnalyzer_iTest
         [Fact]
         public void Can_Extract_FullDetail_From_SevenZipFolder()
         {
+            Program.DebugOutput = false;
             using var tmp = TempDir.Create();
             string pathName = Path.Combine(tmp.Name, Path.GetFileName(TestData.ServerZipFile));
             File.Copy(TestData.ServerZipFile, pathName);
@@ -269,6 +276,7 @@ namespace ETWAnalyzer_iTest
         [Fact]
         public void Can_Extract_FullDetail_From_SevenZipFolder_KeepingTemp()
         {
+            Program.DebugOutput = false;
             using var tmp = TempDir.Create();
             string pathName = Path.Combine(tmp.Name, Path.GetFileName(TestData.ServerZipFile));
             File.Copy(TestData.ServerZipFile, pathName);

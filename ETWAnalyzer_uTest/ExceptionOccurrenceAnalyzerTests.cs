@@ -80,6 +80,8 @@ namespace ETWAnalyzer_uTest
 
             var runner = new AnalyzeCommand(new string[] { "-analyze", "ExceptionOccurrence", "-filedir", TestData.GetSampleDataJson, "-outdir", tmp.Name });
             runner.Parse();
+
+            runner.DisablePrint = true;
             runner.Run();
             ExceptionOccurrenceAnalyzer analyzer = (ExceptionOccurrenceAnalyzer)runner.Analyzers[0];
             Assert.NotNull(analyzer.ExceptionOrderedByOccurrenceCountWithSources.First().Value.Keys);

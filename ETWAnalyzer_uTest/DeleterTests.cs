@@ -132,7 +132,7 @@ namespace ETWAnalyzer_uTest
         [Fact]
         public void Can_Delete_Directory_With_Content_And_SubDirectories_TempDir()
         {
-            Program.DebugOutput = true;
+            Program.DebugOutput = false;
 
             using var tmp = TempDir.Create();
             string etwRoot = Path.Combine(tmp.Name, "ETWAnalyzer");
