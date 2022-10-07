@@ -96,9 +96,6 @@ namespace ETWAnalyzer.EventDump
                 return data;
             }
 
-
-            
-
             // group by file or if merge is used do not group at all
             TestDataFile grouping(MatchData data) => Merge ? null : data.DataFile;
 
@@ -107,7 +104,7 @@ namespace ETWAnalyzer.EventDump
                 List<MatchData> aggregatedByDirectory = AggregateByDirectory(byFileOrNoGroup.ToList(), DirectoryLevel);
                 if (byFileOrNoGroup.Key != null)
                 {
-                    Console.WriteLine($"{byFileOrNoGroup.Key.PerformedAt} {Path.GetFileNameWithoutExtension(byFileOrNoGroup.Key.JsonExtractFileWhenPresent)}");
+                    PrintFileName(byFileOrNoGroup.Key.JsonExtractFileWhenPresent, null, byFileOrNoGroup.Key.PerformedAt, byFileOrNoGroup.Key.Extract?.MainModuleVersion?.ToString());
                 }
 
                 ColorConsole.WriteEmbeddedColorLine("[green]Read                                [/green][yellow]Write                               [/yellow][cyan]Flush       [/cyan] Directory or File if -dirLevel 100 is used");
@@ -131,7 +128,7 @@ namespace ETWAnalyzer.EventDump
                     Console.WriteLine();
                     if (byFileOrNoGroup.Key != null)
                     {
-                        Console.WriteLine($"{byFileOrNoGroup.Key.PerformedAt} {Path.GetFileNameWithoutExtension(byFileOrNoGroup.Key.JsonExtractFileWhenPresent)}");
+                        PrintFileName(byFileOrNoGroup.Key.JsonExtractFileWhenPresent, null, byFileOrNoGroup.Key.PerformedAt, byFileOrNoGroup.Key.Extract?.MainModuleVersion?.ToString());
                     }
                     ColorConsole.WriteEmbeddedColorLine("[green]Read                            [/green][yellow]Write                           [/yellow][cyan]Flush         [/cyan]Involved Processes");
 

@@ -54,6 +54,10 @@ namespace ETWAnalyzer.EventDump
         private void PrintMatches(List<MatchData> lret)
         {
             List<IGrouping<string, MatchData>> byFileGroups = lret.GroupBy(x => x.File.FileName).OrderBy(x=>x.First().File.PerformedAt).ToList();
+
+            decimal totalTimeS = 0;
+            int totalQueries = 0;
+
             foreach (var byFile in byFileGroups)
             {
                 MatchData firstMatch = byFile.First();
@@ -63,7 +67,7 @@ namespace ETWAnalyzer.EventDump
                 MatchData[] sorted = byFile.GroupBy(x => x.Dns.Query).Select(x => new MatchData
                 {
                     GroupQuery = x.Key,
-                    GroupQueries = x.Count(),
+                    GroupQueryCount = x.Count(),
                     GroupQueryTimeS = x.Sum(y => (decimal)y.Dns.Duration.TotalSeconds),
                     GroupMinQueryTimeS = x.Select(y => (decimal)y.Dns.Duration.TotalSeconds).Min(),
                     GroupMaxQueryTimeS = x.Select(y => (decimal)y.Dns.Duration.TotalSeconds).Max(),
@@ -73,7 +77,7 @@ namespace ETWAnalyzer.EventDump
                     GroupStatus = String.Join(";", x.Select(x=>x.Dns.QueryStatus)
                                         .Where(x => x != (int)Win32ErrorCodes.ERROR_INVALID_PARAMETER && x != (int)Win32ErrorCodes.SUCCESS).Distinct().OrderBy(x=>x).Select(x=> (Win32ErrorCodes)x).Select(x=>x.ToString())),
                 })
-                .SortAscendingGetTopNLast(x => SortOrder == DumpCommand.SortOrders.Count ? x.GroupQueries : x.GroupQueryTimeS, null, TopN).ToArray();
+                .SortAscendingGetTopNLast(x => SortOrder == DumpCommand.SortOrders.Count ? x.GroupQueryCount : x.GroupQueryTimeS, null, TopN).ToArray();
 
                 string adapterHeadline = "";
                 const int adapterWidth = 30;
@@ -105,15 +109,23 @@ namespace ETWAnalyzer.EventDump
                     }
                     previous = data.GroupProcesses;
 
-                    string totalTime = $"{data.GroupQueryTimeS:F3}";
+                    totalTimeS += data.GroupQueryTimeS;
+                    totalQueries += data.GroupQueryCount;
+
+                    string dnsQueryTime = $"{data.GroupQueryTimeS:F3}";
                     string minTime = $"{data.GroupMinQueryTimeS:F3}";
                     string maxTime = $"{data.GroupMaxQueryTimeS:F3}";
                     string timedOut = $"{(data.GroupTimedOut ? "1" : "")}";
                     string adapter = ShowAdapter ? $" {data.GroupAdapters.WithWidth(adapterWidth-1)}" : "";
                     string returnCode = ShowReturnCode ? $" {data.GroupStatus.WithWidth(returnCodeWidth-1)}" : "";
 
-                    ColorConsole.WriteEmbeddedColorLine($"[green]{totalTime,8} s[/green]  {minTime,6} s  [yellow]{maxTime,7}s[/yellow] {data.GroupQueries,6} [red]{timedOut,7}[/red] {data.GroupQuery,dnsQueryWidth}{returnCode}{adapter}");
+                    ColorConsole.WriteEmbeddedColorLine($"[green]{dnsQueryTime,8} s[/green]  {minTime,6} s  [yellow]{maxTime,7} s[/yellow] {data.GroupQueryCount,6} [red]{timedOut,7}[/red] {data.GroupQuery,dnsQueryWidth}{returnCode}{adapter}");
                 }
+            }
+
+            if( totalQueries > 0 )
+            {
+                ColorConsole.WriteEmbeddedColorLine($"Totals: [green]{totalTimeS:F3} s[/green] Dns query time for [magenta]{totalQueries}[/magenta] Dns queries");
             }
         }
 
@@ -178,7 +190,7 @@ namespace ETWAnalyzer.EventDump
             /// </summary>
             public string GroupQuery;
             public decimal GroupQueryTimeS;
-            public int GroupQueries;
+            public int GroupQueryCount;
             public decimal GroupMinQueryTimeS { get; set; }
             public decimal GroupMaxQueryTimeS { get; set; }
             public string GroupAdapters { get; set; }

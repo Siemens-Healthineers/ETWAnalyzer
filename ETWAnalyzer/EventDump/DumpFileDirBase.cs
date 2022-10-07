@@ -111,7 +111,7 @@ namespace ETWAnalyzer.EventDump
         /// <param name="baseline">Version which was running</param>
         protected void PrintFileName(string fileName, string totalString, DateTime performedAt, string baseline)
         {
-            ColorConsole.WriteEmbeddedColorLine($"{performedAt,-22} {totalString}{GetPrintFileName(fileName)} {baseline}", ConsoleColor.DarkCyan);
+            ColorConsole.WriteEmbeddedColorLine($"{performedAt,-22} {totalString}{GetPrintFileName(fileName)} {baseline}", ConsoleColor.Cyan);
         }
 
         protected void OpenCSVWithHeader(params string[] csvColumns)

@@ -147,6 +147,7 @@ namespace ETWAnalyzer
             public string CPUVendor { get; internal set; }
             public string CPUName { get; internal set; }
             public bool? CPUHyperThreadingEnabled { get; internal set; }
+            public string BaseLine { get; internal set; }
         }
 
 
@@ -203,6 +204,7 @@ namespace ETWAnalyzer
                             {
                                 TestCase = file.TestName,
                                 PerformedAt = file.PerformedAt,
+                                BaseLine = file.Extract?.MainModuleVersion?.ToString() ?? "",
                                 DurationMs = file.DurationInMs,
                                 Source = file.FileName,
                                 Machine = file.MachineName,
@@ -247,16 +249,16 @@ namespace ETWAnalyzer
                 if (!myHeaderWritten)
                 {
                     myHeaderWritten = true;
-                    OpenCSVWithHeader("CSVOptions", "TestCase", "TestDate", "DurationMs", "SourceFile", "Machine", "SourceETLFileName", "UsedExtractOptions", "OSName", "OSBuild", "OSVersion", "MemorySizeMB", "NumberOfProcessors", "CPUSpeedMHz", "SessionStart", "SessionEnd", "BootTime", "Model",
+                    OpenCSVWithHeader("CSVOptions", "TestCase", "TestDate", "DurationMs", "SourceFile", "Machine", "SourceETLFileName", "BaseLine", "UsedExtractOptions", "OSName", "OSBuild", "OSVersion", "MemorySizeMB", "NumberOfProcessors", "CPUSpeedMHz", "SessionStart", "SessionEnd", "BootTime", "Model",
                                       "AdDomain", "IsDomainJoined", "DisplaysHorizontalResolution", "DisplaysVerticalResolution", "DisplayNames", "MainModuleVersion", "DisplaysMemoryMiB");
                 }
 
-                WriteCSVLine(CSVOptions, m.TestCase, m.PerformedAt, m.DurationMs, m.Source, m.Machine, m.SourceETLFileName, m.UsedExtractOptions, m.OSName, m.OSBuild, m.OSVersion, m.MemorySizeMB, m.NumberOfProcessors, m.CPUSpeedMHz, m.SessionStart, m.SessionEnd, m.BootTime, m.Model,
+                WriteCSVLine(CSVOptions, m.TestCase, m.PerformedAt, m.DurationMs, m.Source, m.Machine, m.SourceETLFileName, m.BaseLine,  m.UsedExtractOptions, m.OSName, m.OSBuild, m.OSVersion, m.MemorySizeMB, m.NumberOfProcessors, m.CPUSpeedMHz, m.SessionStart, m.SessionEnd, m.BootTime, m.Model,
                              m.AdDomain, m.IsDomainJoined, m.DisplaysHorizontalResolution, m.DisplaysVerticalResolution, m.DisplaysNames, m.MainModuleVersion, m.DisplaysMemoryMiB);
             }
             else
             {
-                ColorConsole.WriteLine($"{m.Source}", ConsoleColor.DarkCyan);
+                PrintFileName(m.Source, null, m.PerformedAt, m.BaseLine);
                 foreach (var format in myFormatters)
                 {
                     string alignment = OneLine ? "0" : "-20";

@@ -46,6 +46,7 @@ namespace ETWAnalyzer.EventDump
 
             public string TestCase { get; internal set; }
             public double ZeroTimeS { get; internal set; }
+            public string BaseLine { get; internal set; }
         }
 
         readonly ExceptionFilters myFilters = ExceptionExtractor.ExceptionFilters();
@@ -95,12 +96,12 @@ namespace ETWAnalyzer.EventDump
 
         private void WriteToCSVFile(List<MatchData> matches)
         {
-            OpenCSVWithHeader("CSVOptions", "Time", "Exception Type", "Message", "Process", "Process Name", "Start Time", "Command Line", "StackTrace", "TestCase", "PerformedAt", "SourceFile");
+            OpenCSVWithHeader("CSVOptions", "Time", "Exception Type", "Message", "Process", "Process Name", "Start Time", "Command Line", "StackTrace", "TestCase", "BaseLine", "PerformedAt", "SourceFile");
             foreach(var match in matches)
             {
                 WriteCSVLine(CSVOptions, GetDateTimeString(match.TimeStamp, match.SessionStart, TimeFormatOption), match.Type, match.Message, match.Process.GetProcessWithId(UsePrettyProcessName), 
                     match.Process.GetProcessName(UsePrettyProcessName), match.Process.StartTime,
-                    match.Process.CmdLine, match.Stack, match.TestCase, GetDateTimeString(match.PerformedAt), match.SourceFile);
+                    match.Process.CmdLine, match.Stack, match.TestCase, match.BaseLine, GetDateTimeString(match.PerformedAt), match.SourceFile);
             }
         }
 
@@ -137,6 +138,7 @@ namespace ETWAnalyzer.EventDump
                     SourceFile = file.JsonExtractFileWhenPresent,
                     TestCase = file.TestName,
                     PerformedAt = file.PerformedAt,
+                    BaseLine = file.Extract?.MainModuleVersion?.ToString(),
                     SessionStart = file.Extract.SessionStart,
                     ZeroTimeS = zeroTimeS,
                 };
@@ -149,7 +151,8 @@ namespace ETWAnalyzer.EventDump
         {
             foreach(var byFile in matches.GroupBy(x=>x.SourceFile).OrderBy(x=>x.First().PerformedAt) )
             {
-                ColorConsole.WriteLine(Path.GetFileNameWithoutExtension(byFile.Key), ConsoleColor.Cyan);
+                PrintFileName(byFile.Key, null, byFile.First().PerformedAt, byFile.First().BaseLine);
+
                 foreach (var processExceptions in matches.GroupBy(x => x.Process))
                 {
                     ColorConsole.WriteEmbeddedColorLine($"[magenta]{processExceptions.Key.GetProcessWithId(UsePrettyProcessName)} {GetProcessTags(processExceptions.Key, matches[0].SessionStart)}[/magenta] {(NoCmdLine ? String.Empty : processExceptions.Key.CommandLineNoExe)}", ConsoleColor.DarkCyan);
