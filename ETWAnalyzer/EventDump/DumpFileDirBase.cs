@@ -92,9 +92,26 @@ namespace ETWAnalyzer.EventDump
                 
         } 
 
+        /// <summary>
+        /// Get printable file name depending on other flag from full file path
+        /// </summary>
+        /// <param name="fileName"></param>
+        /// <returns></returns>
         protected string GetPrintFileName(string fileName)
         {
             return Path.GetFileNameWithoutExtension(fileName);
+        }
+
+        /// <summary>
+        /// Print file name string in a common format with the same colors
+        /// </summary>
+        /// <param name="fileName">full path to file name</param>
+        /// <param name="totalString">totals per file if needed</param>
+        /// <param name="performedAt">Time when test did run</param>
+        /// <param name="baseline">Version which was running</param>
+        protected void PrintFileName(string fileName, string totalString, DateTime performedAt, string baseline)
+        {
+            ColorConsole.WriteEmbeddedColorLine($"{performedAt,-22} {totalString}{GetPrintFileName(fileName)} {baseline}", ConsoleColor.DarkCyan);
         }
 
         protected void OpenCSVWithHeader(params string[] csvColumns)

@@ -57,7 +57,8 @@ namespace ETWAnalyzer.EventDump
             foreach (var byFile in byFileGroups)
             {
                 MatchData firstMatch = byFile.First();
-                ColorConsole.WriteEmbeddedColorLine($"{firstMatch.File.PerformedAt,-22} {GetPrintFileName(firstMatch.File.FileName)}");
+
+                PrintFileName(firstMatch.File.FileName, null, firstMatch.File.PerformedAt, firstMatch.Baseline);
 
                 MatchData[] sorted = byFile.GroupBy(x => x.Dns.Query).Select(x => new MatchData
                 {
@@ -75,31 +76,35 @@ namespace ETWAnalyzer.EventDump
                 .SortAscendingGetTopNLast(x => SortOrder == DumpCommand.SortOrders.Count ? x.GroupQueries : x.GroupQueryTimeS, null, TopN).ToArray();
 
                 string adapterHeadline = "";
-                int adapterWidth = 30;
+                const int adapterWidth = 30;
                 if( ShowAdapter )
                 {
                     adapterHeadline = " Network Adapter".WithWidth(adapterWidth);
                 }
 
                 string returnCodeHeadline = "";
-                int returnCodeWidth = 30;
+                const int returnCodeWidth = 30;
                 if( ShowReturnCode )
                 {
                     returnCodeHeadline = " Return Code".WithWidth(returnCodeWidth);
                 }
-                
-                ColorConsole.WriteEmbeddedColorLine($"     [green]Total[/green]       Min       [yellow]Max[/yellow]  Count TimeOut DNS Query                                         {adapterHeadline}{returnCodeHeadline}");
-                ETWProcess previous = null;
+
+                const int dnsQueryWidth = -70;
+                string dnsQueryHeadline = "DNS Query".WithWidth(dnsQueryWidth);
+
+                ColorConsole.WriteEmbeddedColorLine($"     [green]Total[/green]       Min       [yellow]Max[/yellow]  Count TimeOut {dnsQueryHeadline}{returnCodeHeadline}{adapterHeadline}");
+                ETWProcess[] previous = null;
                 foreach (MatchData data in sorted)
                 {
-                    foreach(var proc in data.GroupProcesses)
+                    if (previous == null || !previous.SequenceEqual(data.GroupProcesses))
                     {
-                        if (previous != proc)
+                        foreach (var proc in data.GroupProcesses)
                         {
                             ColorConsole.WriteEmbeddedColorLine($"[magenta]{proc.GetProcessWithId(UsePrettyProcessName)}[/magenta] {(NoCmdLine ? "" : proc.CommandLineNoExe)}");
                         }
-                        previous = proc;
                     }
+                    previous = data.GroupProcesses;
+
                     string totalTime = $"{data.GroupQueryTimeS:F3}";
                     string minTime = $"{data.GroupMinQueryTimeS:F3}";
                     string maxTime = $"{data.GroupMaxQueryTimeS:F3}";
@@ -107,7 +112,7 @@ namespace ETWAnalyzer.EventDump
                     string adapter = ShowAdapter ? $" {data.GroupAdapters.WithWidth(adapterWidth-1)}" : "";
                     string returnCode = ShowReturnCode ? $" {data.GroupStatus.WithWidth(returnCodeWidth-1)}" : "";
 
-                    ColorConsole.WriteEmbeddedColorLine($"[green]{totalTime,8} s[/green]  {minTime,6} s  [yellow]{maxTime,7}s[/yellow] {data.GroupQueries,6} [red]{timedOut,7}[/red] {data.GroupQuery,-50}{adapter}{returnCode}");
+                    ColorConsole.WriteEmbeddedColorLine($"[green]{totalTime,8} s[/green]  {minTime,6} s  [yellow]{maxTime,7}s[/yellow] {data.GroupQueries,6} [red]{timedOut,7}[/red] {data.GroupQuery,dnsQueryWidth}{returnCode}{adapter}");
                 }
             }
         }

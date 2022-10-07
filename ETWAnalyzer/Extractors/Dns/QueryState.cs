@@ -1,12 +1,15 @@
-﻿using ETWAnalyzer.Extract;
+﻿//// SPDX-FileCopyrightText:  © 2022 Siemens Healthcare GmbH
+//// SPDX-License-Identifier:   MIT
+
+using ETWAnalyzer.Extract;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ETWAnalyzer.Extractors.Dns
 {
+    /// <summary>
+    /// State object to capture DNS query state while collecting key events
+    /// </summary>
     class QueryState
     {
         public ETWProcessIndex ProcessIndex { get; set; }
