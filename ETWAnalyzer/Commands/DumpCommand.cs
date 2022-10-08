@@ -675,7 +675,7 @@ namespace ETWAnalyzer.Commands
         public bool ShowReturnCode { get; set; }
         public KeyValuePair<string, Func<string, bool>> DnsQueryFilter { get; private set; } = new KeyValuePair<string, Func<string, bool>>(null, _ => true);
         public MinMaxRange<double> MinMaxTimeMs { get; private set; } = new MinMaxRange<double>();
-        public MinMaxRange<double> MinMaxTotalTimeMs { get; private set; }
+        public MinMaxRange<double> MinMaxTotalTimeMs { get; private set; } = new MinMaxRange<double>();
 
         /// <summary>
         /// Ctor
