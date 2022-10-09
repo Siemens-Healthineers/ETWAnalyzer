@@ -22,6 +22,18 @@ namespace ETWAnalyzer.EventDump
         public bool ShowAdapter { get; set; }
         public DumpCommand.SortOrders SortOrder { get; internal set; }
 
+        /// <summary>
+        /// Filter for total query time which is the sum of all DNS query times for one host.
+        /// </summary>
+        public MinMaxRange<double> MinMaxTotalTimeMs { get; set; } = new MinMaxRange<double>();
+
+        /// <summary>
+        /// Filter for every DNS query duration before they are aggregated
+        /// </summary>
+        public MinMaxRange<double> MinMaxTimeMs { get; set;  } = new MinMaxRange<double>();
+
+        public KeyValuePair<string, Func<string, bool>> DnsQueryFilter { get; internal set; } = new KeyValuePair<string, Func<string, bool>>(null, x => true);
+
         List<MatchData> myUTestData = null;
 
         public override List<MatchData> ExecuteInternal()
@@ -100,6 +112,11 @@ namespace ETWAnalyzer.EventDump
                 ETWProcess[] previous = null;
                 foreach (MatchData data in sorted)
                 {
+                    if( !MinMaxTotalTimeMs.IsWithin( (double) (data.GroupQueryTimeS*1000) ) )
+                    {
+                        continue;
+                    }
+
                     if (previous == null || !previous.SequenceEqual(data.GroupProcesses))
                     {
                         foreach (var proc in data.GroupProcesses)
@@ -155,6 +172,16 @@ namespace ETWAnalyzer.EventDump
                         ETWProcess process = file.Extract.GetProcess(dns.ProcessIdx);
 
                         if( !IsMatchingProcessAndCmdLine(file, process) )
+                        {
+                            continue;
+                        }
+
+                        if( !MinMaxTimeMs.IsWithin( dns.Duration.TotalMilliseconds) )
+                        {
+                            continue;
+                        }
+
+                        if( DnsQueryFilter.Value?.Invoke(dns.Query) != true)
                         {
                             continue;
                         }
