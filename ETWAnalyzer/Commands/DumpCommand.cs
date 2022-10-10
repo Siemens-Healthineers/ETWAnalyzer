@@ -1585,7 +1585,6 @@ namespace ETWAnalyzer.Commands
                         {
                             Recursive = mySearchOption,
                             Directories = FileOrDirectoryQueries,
-                            ShowFullFileName = ShowFullFileName,
                             TestsPerRun = TestsPerRun,
                             SkipNTests = SkipNTests,
                             MinMaxMsTestTimes = MinMaxMsTestTimes,
