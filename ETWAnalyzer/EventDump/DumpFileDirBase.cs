@@ -26,6 +26,8 @@ namespace ETWAnalyzer.EventDump
 
         public List<MinMaxRange<int>> MinMaxMsTestTimes = new();
 
+        public bool ShowFullFileName { get; set; }
+
         public ZeroTimeModes ZeroTimeMode { get; set; }
         public KeyValuePair<string, Func<string, bool>> ZeroTimeFilter { get; set; } = new KeyValuePair<string, Func<string, bool>>(null, _ => false);
         public Func<string, bool> ZeroTimeProcessNameFilter { get; set; } = (x) => true;
@@ -90,16 +92,16 @@ namespace ETWAnalyzer.EventDump
                 return tmp;
             }
                 
-        } 
+        }
 
         /// <summary>
-        /// Get printable file name depending on other flag from full file path
+        /// Get printable file name depending on ShowFullFileName flag from full file path
         /// </summary>
         /// <param name="fileName"></param>
-        /// <returns></returns>
+        /// <returns>full file path or just the file name.</returns>
         protected string GetPrintFileName(string fileName)
         {
-            return Path.GetFileNameWithoutExtension(fileName);
+            return ShowFullFileName ? fileName : Path.GetFileNameWithoutExtension(fileName);
         }
 
         /// <summary>

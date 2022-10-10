@@ -25,6 +25,7 @@ namespace ETWAnalyzer.Commands
 
         static readonly string StatsHelpString =
         "   Stats    -filedir/fd x.etl/.json   [-Properties xxxx] [-recursive] [-csv xxx.csv] [-NoCSVSeparator] [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd] [-MinMaxMsTestTimes xx-yy ...] [-Clip]" + Environment.NewLine + "" +
+        "                                      [-ShowFullFileName/-sffn]" + Environment.NewLine +
         "                         ETL Only:                  Dump from an ETL file or compressed 7z file which will be uncompressed in-place ETW statistics." + Environment.NewLine +
         "                                                    This includes OS version, bitness, trace start/end and a list of all contained events and their counts and sizes of the ETL file." + Environment.NewLine +
         "                         Json Only:                 When Json files are dumped some or all extracted data is printed or exported to a CSV file. You can also filter by testcase, machine, ... to extract data of specific files" + Environment.NewLine +
@@ -36,6 +37,7 @@ namespace ETWAnalyzer.Commands
         static readonly string VersionHelpString =
         "   Version  -filedir/fd x.etl/.json [-dll xxxx.dll] [-VersionFilter xxx] [-ModuleFilter xxx] [-ProcessName/pn xxx.exe(pid)] [-NoCmdLine] [-csv xx.csv]" + Environment.NewLine +
         "                           [-Clip] [-PlainProcessNames] [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd] [-MinMaxMsTestTimes xx-yy ...]" + Environment.NewLine +
+        "                           [-ShowFullFileName/-sffn]" + Environment.NewLine +
         "                         Dump module versions of given ETL or Json. For Json files the option '-extract Module' must be used during extraction to get with -dll version information." + Environment.NewLine +
         "                         -dll xxx.dll              All file versions of that dll are printed. If -dll * is used all file versions are printed." + Environment.NewLine +
         "                         -VersionFilter filter     Filter against module path and version strings. Multiple filters are separated by ;. Wildcards are * and ?. Exclusion filters start with !" + Environment.NewLine +
@@ -44,12 +46,14 @@ namespace ETWAnalyzer.Commands
         "   Process  -filedir/fd x.etl/.json [-recursive] [-csv xxx.csv] [-NoCSVSeparator] [-TimeFmt s,Local,LocalTime,UTC,UTCTime,Here,HereTime] [-ProcessName/pn xxx.exe(pid)] [-CmdLine *xxx*] [-Crash] " + Environment.NewLine +
         "            [-ZeroTime/zt Marker/First/Last/ProcessStart filter] [-ZeroProcessName/zpn filter]" + Environment.NewLine +
         "            [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-MinMax xx-yy] [-ShowFileOnLine] [-ShowAllProcesses] [-NoCmdLine] [-Clip] [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd] [-MinMaxMsTestTimes xx-yy ...]" + Environment.NewLine +
+        "            [-ShowFullFileName/-sffn]" + Environment.NewLine + 
         "                         Print process name, pid, command line, start/stop time return code and parent process id" + Environment.NewLine +
         "                         Default: The processes are grouped by exe sorted by name and then sorted by time to allow easy checking of recurring process starts." + Environment.NewLine +
         "                         -csv xx.csv                Write output to a CSV file with ; as separator for later processing." + Environment.NewLine +
         "                                                    Dates are formatted as yyyy-MM-dd HH:mm:ss.fff For Excel use yyyy-mm-dd hh:mm:ss.000 as custom date time format string to parse it back." + Environment.NewLine +
         "                                                    On machines where the . is not the decimal point change the locale setting (Control Panel - Region - Additional Settings - Numbers - Decimal Symbol) to ." + Environment.NewLine +
         "                         -NoCSVSeparator            Skip the first line with sep=; which is there to aid Excel to detect the CSV separator character." + Environment.NewLine +
+        "                         -ShowFullFileName/-sffn    Show full file name of input file" + Environment.NewLine + 
         "                         -ZeroTime/zt               Shift first/last method time. This also affects -csv output. Useful to see method timings relative to the first occurrence of e.g. method OnClick." + Environment.NewLine +
         "                             Marker filter          Zero is a ETW marker event defined by filter." + Environment.NewLine +
         "                             First  filter          Select the first occurrence of a method/stacktag as zero time point. If the filter is ambiguous consider to refine the filter or add -ZeroProcessName to limit it to a specific process." + Environment.NewLine +
@@ -84,7 +88,7 @@ namespace ETWAnalyzer.Commands
         "                         -ShowFileOnLine            Show etl file name on each printed line." + Environment.NewLine +
         "                         -Crash                     Show potentially crashed processes with unusual return codes, or did trigger Windows Error Reporting." + Environment.NewLine +
         "                         For other options [-TestsPerRun] [-SkipNTests] [-TestRunIndex] [-TestRunCount] [-MinMaxMsTestTimes]" + Environment.NewLine +
-        "                         refer to help of TestRun. Run \'EtwAnalyzer -help dump\' to get more infos." + Environment.NewLine;
+        "                         [-ShowFullFileName] refer to help of TestRun. Run \'EtwAnalyzer -help dump\' to get more infos." + Environment.NewLine;
         static readonly string TestRunHelpString =
         "   TestRun  -filedir/fd xxx [-recursive] [-verbose] [-ValidTestsOnly] [[-CopyFilesTo xxx] [-WithEtl] [-OverWrite]] [-TestRunIndex dd -TestRunCount dd] [-MinMaxTestTime xx [yy]] [-PrintFiles] [-Clip]" + Environment.NewLine +
         "                         Print for a directory which contains automated profiling data test execution counts. You can also download data to a local directory once you know which" + Environment.NewLine +
@@ -109,6 +113,7 @@ namespace ETWAnalyzer.Commands
         "            [-ThreadCount] [-SortBy [CPU/Wait/Ready/StackDepth/First/Last] [-StackTags tag1;tag2] [-CutMethod xx-yy] [-ShowOnMethod] [-ShowModuleInfo [Driver]] [-NoCmdLine] [-Clip]" + Environment.NewLine +
         "            [-ShowTotal Total, Process, Method] [-topn dd nn] [-topNMethods dd nn] [-ZeroTime/zt Marker/First/Last/ProcessStart filter] [-ZeroProcessName/zpn filter] " + Environment.NewLine +
         "            [-includeDll] [-includeArgs] [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd] [-MinMaxMsTestTimes xx-yy ...] [-ProcessName/pn xxx.exe(pid)] [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-CmdLine substring]" + Environment.NewLine +
+        "            [-ShowFullFileName/-sffn]" + Environment.NewLine +
         "                         Print CPU, Wait and Ready duration of selected methods of one extracted Json or a directory of Json files. To get output -extract CPU, All or Default must have been used during extraction." + Environment.NewLine +
         "                         The numbers for a method are method inclusive times (based on CPU Sampling (CPU) and Context Switch (Wait) data)." + Environment.NewLine +
         "                         CPU   is the method inclusive time summed across all threads. E.g. Main is always the most expensive method but CPU is consumed by the called methods." + Environment.NewLine +
@@ -150,12 +155,13 @@ namespace ETWAnalyzer.Commands
         "                         -MinMaxCpuMs xx-yy or xx   Only include methods/stacktags with a minimum CPU consumption of [xx,yy] ms." + Environment.NewLine +
         "                         -MinMaxWaitMs xx-yy or xx  Only include methods/stacktags with a minimum wait time of [xx,yy] ms." + Environment.NewLine +
         "                         For other options [-recursive] [-csv] [-NoCSVSeparator] [-TimeFmt] [-TestsPerRun] [-SkipNTests] [-TestRunIndex] [-TestRunCount] [-MinMaxMsTestTimes] [-ProcessName/pn] [-NewProcess] [-CmdLine]" + Environment.NewLine +
-        "                         refer to help of TestRun and Process. Run \'EtwAnalyzer -help dump\' to get more infos." + Environment.NewLine;
+        "                         [-ShowFullFileName] refer to help of TestRun and Process. Run \'EtwAnalyzer -help dump\' to get more infos." + Environment.NewLine;
 
         static readonly string MemoryHelpString =
         "  Memory    -filedir/fd Extract\\ or xxx.json [-recursive] [-csv xxx.csv] [-NoCSVSeparator] [-TopN dd nn] [-TimeFmt s,Local,LocalTime,UTC,UTCTime,Here,HereTime] [-ProcessFmt timefmt] [-TotalMemory] [-MinDiffMB dd] " + Environment.NewLine +
         "                           [-SortBy Commit/WorkingSet/SharedCommit/Diff] [-GlobalDiffMB dd] [-MinWorkingSetMB dd] [-Clip] [-NoCmdLine] " + Environment.NewLine +
         "                           [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd] [-MinMaxMsTestTimes xx-yy ...] [-ProcessName/pn xxx.exe(pid)] [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-CmdLine substring]" + Environment.NewLine +
+        "                           [-ShowFullFileName/-sffn]" + Environment.NewLine +
         "                         Print memory (Working Set, Committed Memory) of all or some processes from extracted Json files. To get output -extract Memory, All or Default must have been used during extraction." + Environment.NewLine +
         "                         -SortBy Commit/SharedCommit Sort by Committed/Shared Committed (this is are memory mapped files, or page file allocated file mappings). " + Environment.NewLine + "" +
         "                                 WorkingSet/Diff    Sort by working set or committed memory difference" + Environment.NewLine +
@@ -165,12 +171,13 @@ namespace ETWAnalyzer.Commands
         "                         -MinDiffMB    dd           Include processes which have gained inside one Json file more than xx MB of committed memory." + Environment.NewLine +
         "                         -GlobalDiffMB dd           Same as before but the diff is calculated across all incuded Json files." + Environment.NewLine +
         "                         For other options [-recursive] [-csv] [-NoCSVSeparator] [-TimeFmt] [-NoCmdLine] [-TestsPerRun] [-SkipNTests] [-TestRunIndex] [-TestRunCount] [-MinMaxMsTestTimes] [-ProcessName/pn] [-NewProcess] [-CmdLine]" + Environment.NewLine +
-        "                         refer to help of TestRun, Process and CPU (-ProcessFmt). Run \'EtwAnalyzer -help dump\' to get more infos." + Environment.NewLine;
+        "                         [-ShowFullFileName] refer to help of TestRun, Process and CPU (-ProcessFmt). Run \'EtwAnalyzer -help dump\' to get more infos." + Environment.NewLine;
         static readonly string ExceptionHelpString =
         "  Exception -filedir/fd Extract\\ or xxx.json [-FilterExceptions] [-Type xxx] [-Message xxx] [-Showstack] [-MaxMessage dd] [-CutStack dd-yy] [-Stackfilter xxx] [-recursive] [-csv xxx.csv] [-NoCSVSeparator] " + Environment.NewLine +
         "                           [-TimeFmt s,Local,LocalTime,UTC,UTCTime,Here,HereTime] [-ProcessFmt timefmt] [-NoCmdLine] [-Clip] [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd] [-MinMaxMsTestTimes xx-yy ...]" + Environment.NewLine +
         "                           [-MinMaxExTime minS [maxS]] [-ZeroTime/zt Marker/First/Last/ProcessStart filter] [-ZeroProcessName/zpn filter]" + Environment.NewLine +
         "                           [-ProcessName/pn xxx.exe(pid)] [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-CmdLine substring]" + Environment.NewLine +
+        "                           [-ShowFullFileName/-sffn]" + Environment.NewLine +
         "                         Print Managed Exceptions from extracted Json file. To get output -extract Exception, All or Default must have been used during extraction." + Environment.NewLine +
         "                         Before each message the number how often that exception was thrown is printed. That number also includes rethrows in finally blocks which leads to higher numbers as one might expect!" + Environment.NewLine +
         "                         When a filter (type,message or stack) is used then the exception throw times are also printed." + Environment.NewLine +
@@ -187,12 +194,13 @@ namespace ETWAnalyzer.Commands
         "                         -FilterExceptions          Filter exceptions away which are normally harmless. The filter file is located in Configuration\\ExceptionFilters.xml." + Environment.NewLine +
         "                                                    You need this only when you have used during -extract Exception -allExceptions where the same filter will be applied during extraction already." + Environment.NewLine +
         "                         For other options [-ZeroTime ..] [-recursive] [-csv] [-NoCSVSeparator] [-TimeFmt] [-NoCmdLine] [-TestsPerRun] [-SkipNTests] [-TestRunIndex] [-TestRunCount] [-MinMaxMsTestTimes] [-ProcessName/pn] " + Environment.NewLine +
-        "                         [-NewProcess] [-CmdLine] refer to help of TestRun, Process and CPU (-ProcessFmt).  Run \'EtwAnalyzer -help dump\' to get more infos." + Environment.NewLine;
+        "                         [-NewProcess] [-CmdLine] [-ShowFullFileName] refer to help of TestRun, Process and CPU (-ProcessFmt).  Run \'EtwAnalyzer -help dump\' to get more infos." + Environment.NewLine;
 
         static readonly string DiskHelpString =
         "  Disk -filedir/fd Extract\\ or xxx.json [-DirLevel dd] [-PerProcess] [-filename *C:*] [-MinMax xx-yy] [-TopN dd nn] [-SortBy order] [-FileOperation op] [-ReverseFileName/rfn] [-Merge] [-recursive] [-csv xxx.csv] [-NoCSVSeparator]" + Environment.NewLine +
         "                         [-TopNProcesses dd nn] [-TimeFmt s,Local,LocalTime,UTC,UTCTime,Here,HereTime] [-Clip] [-TestsPerRun dd - SkipNTests dd] [-TestRunIndex dd - TestRunCount dd] [-MinMaxMsTestTimes xx-yy ...] [-ProcessName/pn xxx.exe(pid)]" + Environment.NewLine +
         "                         [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-CmdLine substring]" + Environment.NewLine +
+        "                         [-ShowFullFileName/-sffn]" + Environment.NewLine +
         "                         Print disk IO metrics to console or to a CSV file if -csv is used. To get output -extract Disk, All or Default must have been used during extraction." + Environment.NewLine +
         "                         The extracted data is an exact summary per file and all involved processes. If multiple processes access one file you get only the list of processes but not which process did attribute how much." + Environment.NewLine +
         "                         -DirLevel dd               Print Disk IO per directory up to n levels. Default is 0 which shows aggregates per drive. -Dirlevel 100 shows a per file summary." + Environment.NewLine +
@@ -210,12 +218,13 @@ namespace ETWAnalyzer.Commands
         "                         -ReverseFileName/rfn       Reverse file name. Useful with -Clip to keep output clean (no console wraparound regardless how long the file name is)." + Environment.NewLine +
         "                         -Merge                     Merge all selected Json files into one summary output. Useful to get a merged view of a session consisting of multiple ETL files." + Environment.NewLine +
         "                         For other options [-recursive] [-csv] [-NoCSVSeparator] [-TimeFmt] [-TestsPerRun] [-SkipNTests] [-TestRunIndex] [-TestRunCount] [-MinMaxMsTestTimes] [-ProcessName/pn] [-NewProcess] [-CmdLine]" + Environment.NewLine +
-        "                         refer to help of TestRun and Process. Run \'EtwAnalyzer -help dump\' to get more infos." + Environment.NewLine;
+        "                         [-ShowFullFileName] refer to help of TestRun and Process. Run \'EtwAnalyzer -help dump\' to get more infos." + Environment.NewLine;
 
         static readonly string FileHelpString =
         "  File -filedir/fd Extract\\ or xxx.json [-DirLevel dd] [-PerProcess] [-filename *C:*] [-ShowTotal [Total/Process/File]] [-MinMax xx-yy] [-TopN dd nn] [-SortBy order] [-FileOperation op] [-ReverseFileName/rfn] [-Merge] [-Details] [-recursive] " + Environment.NewLine +
         "                         [-TopNProcesses dd nn] [-csv xxx.csv] [-NoCSVSeparator] [-TimeFmt s,Local,LocalTime,UTC,UTCTime,Here,HereTime] [-ProcessFmt timefmt] [-Clip] [-TestsPerRun dd -SkipNTests dd] " + Environment.NewLine +
         "                         [-TestRunIndex dd -TestRunCount dd] [-MinMaxMsTestTimes xx-yy ...] [-ProcessName/pn xxx.exe(pid)] [-NoCmdLine] [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-CmdLine substring]" + Environment.NewLine +
+        "                         [-ShowFullFileName/-sffn]" + Environment.NewLine +
         "                         Print File IO metrics to console or to a CSV file if -csv is used. To get output -extract File, All or Default must have been used during extraction." + Environment.NewLine +
         "                         The extracted data is an exact summary per file and process. Unlike Disk IO, File IO tracing captures all file accesses regardless if the data was e.g. read from disk or file system cache." + Environment.NewLine +
         "                         -DirLevel dd               Print File IO per directory up to n levels. Default is 0 which shows summary per drive. -Dirlevel 100 will give a per file summary." + Environment.NewLine +
@@ -239,7 +248,7 @@ namespace ETWAnalyzer.Commands
         "                         -Merge                     Merge all selected Json files into one summary output. Useful to get a merged view of a session consisting of multiple ETL files." + Environment.NewLine +
         "                         -ShowTotal [Total/Process/File] Show totals for the complete File/per process but skip aggregated directory metrics/per process but show also original aggregated directory metrics." + Environment.NewLine +
         "                         For other options [-recursive] [-csv] [-NoCSVSeparator] [-NoCmdLine] [-TimeFmt] [-TestsPerRun] [-SkipNTests] [-TestRunIndex] [-TestRunCount] [-MinMaxMsTestTimes] [-ProcessName/pn] [-NewProcess] [-CmdLine]" + Environment.NewLine +
-        "                         refer to help of TestRun, Process and CPU (-ProcessFmt). Run \'EtwAnalyzer -help dump\' to get more infos." + Environment.NewLine;
+        "                         [-ShowFullFileName] refer to help of TestRun, Process and CPU (-ProcessFmt). Run \'EtwAnalyzer -help dump\' to get more infos." + Environment.NewLine;
 
         static readonly string ThreadPoolHelpString =
         "  ThreadPool -filedir/fd Extract\\ or xxx.json [-TimeFmt s,Local,LocalTime,UTC,UTCTime,Here,HereTime] [-recursive] [-csv xxx.csv] [-NoCSVSeparator] [-NoCmdLine] [-Clip] " + Environment.NewLine +
@@ -345,7 +354,11 @@ namespace ETWAnalyzer.Commands
         "[green]Show method timings (first and last occurrence in trace) relative to OnClick[/green]" + Environment.NewLine +
         " ETWAnalyzer -dump CPU -methods *import*;!*file* -ZeroTime FirstMethod *OnClick* -fld s s" + Environment.NewLine +
         "[green]Show unique methods which were executed in the last 5 s before process with pid 136816 did terminate. You see e.g. invoked error handlers just before a crash.[/green]" + Environment.NewLine +
-        " ETWAnalyzer -dump CPU -fd xxx.json -methods * -SortBy First -ZeroTime ProcessEnd -ZeroProcessName 136816 -pn 136816 -MinMaxFirst -5" + Environment.NewLine;
+        " ETWAnalyzer -dump CPU -fd xxx.json -methods * -SortBy Last -ZeroTime ProcessEnd -ZeroProcessName 136816 -pn 136816 -MinMaxFirst -5" + Environment.NewLine +
+        "[green]Show CPU and process lifetime (along with duration if it did start/stop) with full Json path name[/green]" + Environment.NewLine +
+        " ETWAnalyzer -dump CPU -fd xxx.json -ProcessFmt s -ShowFullFileName" + Environment.NewLine;
+
+
 
 
         static readonly string MemoryExamples = ExamplesHelpString +
@@ -560,6 +573,12 @@ namespace ETWAnalyzer.Commands
         /// Controls how time is formatted in dump command output
         /// </summary>
         public DumpBase.TimeFormats TimeFormat { get; private set; }
+
+        /// <summary>
+        /// Show full input file name. By default file name is printed without path and extension
+        /// </summary>
+        public bool ShowFullFileName { get; private set; }
+
 
         /// <summary>
         /// Format process start/end time in the desired way
@@ -987,6 +1006,10 @@ namespace ETWAnalyzer.Commands
                         } while( (minMaxTestTime = GetNextNonArg("-minmaxmstesttimes", false)) != null);
 
                         break;
+                    case "-showfullfilename":
+                    case "-sffn":
+                        ShowFullFileName = true;
+                        break;
                     case "-cutstack":
                         string cutStackStr = GetNextNonArg("-cutstack");
                         KeyValuePair<int, int> cutStackMinMax = cutStackStr.GetMinMax();
@@ -1241,6 +1264,7 @@ namespace ETWAnalyzer.Commands
                         {
                             ETLFile = decompressedETL,
                             FileOrDirectoryQueries = FileOrDirectoryQueries,
+                            ShowFullFileName = ShowFullFileName,
                             Recursive = mySearchOption,
                             TestsPerRun = TestsPerRun,
                             SkipNTests = SkipNTests,
@@ -1261,6 +1285,7 @@ namespace ETWAnalyzer.Commands
                         dumper = new DumpModuleVersions()
                         {
                             FileOrDirectoryQueries = FileOrDirectoryQueries,
+                            ShowFullFileName = ShowFullFileName,
                             Recursive = mySearchOption,
                             TestsPerRun = TestsPerRun,
                             SkipNTests = SkipNTests,
@@ -1285,6 +1310,7 @@ namespace ETWAnalyzer.Commands
                         dumper = new DumpProcesses
                         {
                             FileOrDirectoryQueries = FileOrDirectoryQueries,
+                            ShowFullFileName = ShowFullFileName,
                             Recursive = mySearchOption,
                             TestsPerRun = TestsPerRun,
                             SkipNTests = SkipNTests,
@@ -1317,6 +1343,7 @@ namespace ETWAnalyzer.Commands
                         dumper = new DumpCPUMethod
                         {
                             FileOrDirectoryQueries = FileOrDirectoryQueries,
+                            ShowFullFileName = ShowFullFileName,
                             Recursive = mySearchOption,
                             TestsPerRun = TestsPerRun,
                             SkipNTests = SkipNTests,
@@ -1365,6 +1392,7 @@ namespace ETWAnalyzer.Commands
                         dumper = new DumpDisk
                         {
                             FileOrDirectoryQueries = FileOrDirectoryQueries,
+                            ShowFullFileName = ShowFullFileName,
                             Recursive = mySearchOption,
                             TestsPerRun = TestsPerRun,
                             SkipNTests = SkipNTests,
@@ -1398,6 +1426,7 @@ namespace ETWAnalyzer.Commands
                         dumper = new DumpFile
                         {
                             FileOrDirectoryQueries = FileOrDirectoryQueries,
+                            ShowFullFileName = ShowFullFileName,
                             Recursive = mySearchOption,
                             TestsPerRun = TestsPerRun,
                             SkipNTests = SkipNTests,
@@ -1436,6 +1465,7 @@ namespace ETWAnalyzer.Commands
                         dumper = new DumpExceptions
                         {
                             FileOrDirectoryQueries = FileOrDirectoryQueries,
+                            ShowFullFileName = ShowFullFileName,
                             Recursive = mySearchOption,
                             TestsPerRun = TestsPerRun,
                             SkipNTests = SkipNTests,
@@ -1472,6 +1502,7 @@ namespace ETWAnalyzer.Commands
                         dumper = new DumpMemory
                         {
                             FileOrDirectoryQueries = FileOrDirectoryQueries,
+                            ShowFullFileName = ShowFullFileName,
                             Recursive = mySearchOption,
                             TestsPerRun = TestsPerRun,
                             SkipNTests = SkipNTests,
@@ -1501,6 +1532,7 @@ namespace ETWAnalyzer.Commands
                         dumper = new DumpThreadPool
                         {
                             FileOrDirectoryQueries = FileOrDirectoryQueries,
+                            ShowFullFileName = ShowFullFileName,
                             Recursive = mySearchOption,
                             TestsPerRun = TestsPerRun,
                             SkipNTests = SkipNTests,
@@ -1524,6 +1556,7 @@ namespace ETWAnalyzer.Commands
                         dumper = new DumpMarks
                         {
                             FileOrDirectoryQueries = FileOrDirectoryQueries,
+                            ShowFullFileName = ShowFullFileName,
                             Recursive = mySearchOption,
                             TestsPerRun = TestsPerRun,
                             SkipNTests = SkipNTests,
@@ -1552,6 +1585,7 @@ namespace ETWAnalyzer.Commands
                         {
                             Recursive = mySearchOption,
                             Directories = FileOrDirectoryQueries,
+                            ShowFullFileName = ShowFullFileName,
                             TestsPerRun = TestsPerRun,
                             SkipNTests = SkipNTests,
                             MinMaxMsTestTimes = MinMaxMsTestTimes,
@@ -1573,6 +1607,7 @@ namespace ETWAnalyzer.Commands
                         dumper = new DumpPMC
                         {
                             FileOrDirectoryQueries = FileOrDirectoryQueries,
+                            ShowFullFileName = ShowFullFileName,
                             Recursive = mySearchOption,
                             TestsPerRun = TestsPerRun,
                             SkipNTests = SkipNTests,
@@ -1596,6 +1631,7 @@ namespace ETWAnalyzer.Commands
                         dumper = new DumpLBR
                         {
                             FileOrDirectoryQueries = FileOrDirectoryQueries,
+                            ShowFullFileName = ShowFullFileName,
                             Recursive = mySearchOption,
                             TestsPerRun = TestsPerRun,
                             SkipNTests = SkipNTests,
@@ -1625,6 +1661,7 @@ namespace ETWAnalyzer.Commands
                         dumper = new DumpDns
                         {
                             FileOrDirectoryQueries = FileOrDirectoryQueries,
+                            ShowFullFileName = ShowFullFileName,
                             Recursive = mySearchOption,
                             TestsPerRun = TestsPerRun,
                             SkipNTests = SkipNTests,
