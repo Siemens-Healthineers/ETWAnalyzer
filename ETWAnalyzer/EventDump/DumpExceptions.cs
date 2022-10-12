@@ -147,6 +147,9 @@ namespace ETWAnalyzer.EventDump
             }
         }
 
+        public bool IsTimeMode = false;
+
+
         private void PrintMatches(List<MatchData> matches)
         {
             foreach(var byFile in matches.GroupBy(x=>x.SourceFile).OrderBy(x=>x.First().PerformedAt) )

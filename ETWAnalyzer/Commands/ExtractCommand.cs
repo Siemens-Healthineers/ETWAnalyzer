@@ -36,13 +36,13 @@ namespace ETWAnalyzer.Commands
          "Extract Options are separated by space" + Environment.NewLine +
          " -extract Op1 Op2 ..." + Environment.NewLine +
          "  All      : Include all extractors" + Environment.NewLine +
-         "  Default  : Include all extractors except File" + Environment.NewLine + 
+         "  Default  : Include all extractors except File" + Environment.NewLine +
          "  CPU      : CPU consumption of all proceses part of the recording. CPU Sampling (PROFILE) and/or Context Switch tracing (CSWITCH) data with stacks must be present." + Environment.NewLine +
          "  Memory   : Get workingset/committed memory machine wide and of all processes at trace start and a second time at trace end. MEMINFO_WS must be present." + Environment.NewLine +
          "  Exception: Get all .NET Exception Messages, Type and their call stacks when present with Process,ThreadId and TimeStamp" + Environment.NewLine +
          "             To get call stacks you need symbols. See below -symServer section. The Microsoft-Windows-DotNETRuntime ETW provider with ExceptionKeyword 0x8000 and stacks must be present." + Environment.NewLine +
          "  Disk     : Disk IO summary and a per file summary of read/write/flush disk service times. DISK_IO data must be present in trace to get this data." + Environment.NewLine +
-         "  Module   : Dump all loaded modules with file path and version. LOADER data must be present in trace." + Environment.NewLine + 
+         "  Module   : Dump all loaded modules with file path and version. LOADER data must be present in trace." + Environment.NewLine +
          "  File     : Open/Close/Read/Write summary of all accessed files per process" + Environment.NewLine +
          "             The ETL file must contain FILEIO data." + Environment.NewLine +
          "  Stacktag : Get from all processes the CPU call stack summary by the WPA stacktag names" + Environment.NewLine +
@@ -210,7 +210,7 @@ namespace ETWAnalyzer.Commands
         /// <summary>
         /// Set via -timeLine dd
         /// </summary>
-        float? TimelineDataExtractionIntervalS { get; set;  }
+        float? TimelineDataExtractionIntervalS { get; set; }
 
         /// <summary>
         /// List to store extracting actions 
@@ -291,7 +291,7 @@ namespace ETWAnalyzer.Commands
                         break;
                     case TempDirArg:
                         string tmpDir = GetNextNonArg(TempDirArg);
-                        if( !Directory.Exists(tmpDir) )
+                        if (!Directory.Exists(tmpDir))
                         {
                             throw new DirectoryNotFoundException($"Temp Directory {tmpDir} does not exist.");
                         }
