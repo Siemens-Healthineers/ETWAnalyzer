@@ -40,6 +40,11 @@ namespace ETWAnalyzer.Extractors
             
             foreach (var ins in starvations)
             {
+                if( ins?.Process?.ImageName == null )
+                {
+                    continue;
+                }
+
                 var pk = new ProcessKey(ins.Process.ImageName, ins.Process.Id, ins.Process.CreateTime.HasValue ? ins.Process.CreateTime.Value.DateTimeOffset : default(DateTimeOffset));
 
                 IList<ThreadPoolStarvationInfo> value;

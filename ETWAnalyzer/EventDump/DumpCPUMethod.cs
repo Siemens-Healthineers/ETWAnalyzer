@@ -212,6 +212,7 @@ namespace ETWAnalyzer.EventDump
             public uint ReadyMs { get; internal set; }
             public bool? HasCPUSamplingData { get; internal set; }
             public bool? HasCSwitchData { get; internal set; }
+            public ProcessKey ProcessKey { get; internal set; }
 
             public override string ToString()
             {
@@ -320,6 +321,7 @@ namespace ETWAnalyzer.EventDump
                             HasCSwitchData = file.Extract.CPU.PerProcessMethodCostsInclusive.HasCSwitchData,
                             BaseLine = file.Extract.MainModuleVersion != null ? file.Extract.MainModuleVersion.ToString() : "",
                             ProcessAndPid = process.GetProcessWithId(UsePrettyProcessName),
+                            ProcessKey = process.ToProcessKey(),
                             SourceFile = file.JsonExtractFileWhenPresent,
                             FirstCallTime = stacktag.FirstOccurence.AddSeconds(-1.0d* zeroTimeS),
                             LastCallTime =  stacktag.FirstOccurence.AddSeconds(-1.0d* zeroTimeS) + stacktag.FirstLastOccurenceDuration,
@@ -395,6 +397,7 @@ namespace ETWAnalyzer.EventDump
                             HasCSwitchData = file.Extract.CPU.PerProcessMethodCostsInclusive.HasCSwitchData,
                             BaseLine = file.Extract.MainModuleVersion != null ? file.Extract.MainModuleVersion.ToString() : "",
                             ProcessAndPid = process.GetProcessWithId(UsePrettyProcessName),
+                            ProcessKey = process.ToProcessKey(),
                             SourceFile = file.JsonExtractFileWhenPresent,
                             FirstCallTime = firstCallTime,
                             LastCallTime = lastCallTime,
@@ -485,6 +488,7 @@ namespace ETWAnalyzer.EventDump
                     BaseLine = file.Extract.MainModuleVersion != null ? file.Extract.MainModuleVersion.ToString() : "",
                     Method = "",
                     ProcessAndPid = process.GetProcessWithId(UsePrettyProcessName),
+                    ProcessKey = process.ToProcessKey(),
                     SourceFile = file.JsonExtractFileWhenPresent,
                     Process = process,
                 });
@@ -578,7 +582,7 @@ namespace ETWAnalyzer.EventDump
                 // order processes by CPU ascending by their total CPU
                 // then take the TopN processes and reverse the list so that we display on console
                 // the process with highest CPU as last so we do not need to scroll upwards in the output in the optimal scenario
-                IGrouping<string, MatchData>[] subGroup = timeGroup.GroupBy(x => x.ProcessAndPid).OrderByDescending(x => x.Sum(x => x.CPUMs)).Take(TopN.TakeN).Reverse().ToArray();
+                IGrouping<ProcessKey, MatchData>[] subGroup = timeGroup.GroupBy(x => x.ProcessKey).OrderByDescending(x => x.Sum(x => x.CPUMs)).Take(TopN.TakeN).Reverse().ToArray();
 
                 if (!IsCSVEnabled)
                 {
@@ -622,8 +626,8 @@ namespace ETWAnalyzer.EventDump
 
                         string cmdLine = NoCmdLine ? "" : processGroup.First().Process.CommandLineNoExe;
                         MatchData current = processGroup.First();
-
-                        ColorConsole.WriteEmbeddedColorLine($"   [grey]{processGroup.Key}{GetProcessTags(processGroup.First().Process, current.SessionStart.AddSeconds(current.ZeroTimeS))}[/grey]{totals} {cmdLine}", ConsoleColor.DarkCyan, false);
+                        ETWProcess process = processGroup.First().Process;
+                        ColorConsole.WriteEmbeddedColorLine($"   [grey]{process.GetProcessWithId(UsePrettyProcessName)}{GetProcessTags(process, current.SessionStart.AddSeconds(current.ZeroTimeS))}[/grey]{totals} {cmdLine}", ConsoleColor.DarkCyan, false);
 
                     }
 
@@ -779,12 +783,12 @@ namespace ETWAnalyzer.EventDump
 
             if (!myCSVHeaderPrinted)
             {
-                OpenCSVWithHeader("CSVOptions", "Test Case", "Date", "Test Time in ms", "Module", "Method", "CPU ms", "Wait ms", "Ready ms", "# Threads", "Baseline", "Process", "Process Name", "StackDepth",
+                OpenCSVWithHeader("CSVOptions", "Test Case", "Date", "Test Time in ms", "Module", "Method", "CPU ms", "Wait ms", "Ready ms", "# Threads", "Baseline", "Process", "Process Name", "Start Time", "StackDepth",
                                   "FirstLastCall Duration in s", $"First Call time in {GetAbbreviatedName(firstFormat)}", $"Last Call time in {GetAbbreviatedName(lastFormat)}", "Command Line", "SourceFile", "IsNewProcess", "Module and Driver Info");
                 myCSVHeaderPrinted = true;
             }
 
-            WriteCSVLine(CSVOptions, match.TestName, match.PerformedAt, match.DurationInMs, match.ModuleName, match.Method, match.CPUMs, match.WaitMs, match.ReadyMs, match.Threads, match.BaseLine, match.ProcessAndPid, match.Process.GetProcessName(UsePrettyProcessName), match.CPUMs / Math.Exp(match.StackDepth),
+            WriteCSVLine(CSVOptions, match.TestName, match.PerformedAt, match.DurationInMs, match.ModuleName, match.Method, match.CPUMs, match.WaitMs, match.ReadyMs, match.Threads, match.BaseLine, match.ProcessAndPid, match.Process.GetProcessName(UsePrettyProcessName), match.Process.StartTime, match.CPUMs / Math.Exp(match.StackDepth),
                          firstLastDurationS, GetDateTimeString(match.FirstCallTime, match.SessionStart, firstFormat), GetDateTimeString(match.LastCallTime, match.SessionStart, lastFormat), NoCmdLine ? "" : match.Process.CmdLine, match.SourceFile, (match.Process.IsNew ? 1 : 0), moduleDriverInfo);
         }
 
@@ -806,7 +810,7 @@ namespace ETWAnalyzer.EventDump
         {
             foreach (var group in matches.GroupBy(x => x.Process.GetProcessName(this.UsePrettyProcessName)).OrderBy(x => x.Sum(x => x.CPUMs)))
             {
-                foreach (var subgroup in group.GroupBy(x => x.ProcessAndPid).OrderBy(x => x.Sum(x => x.CPUMs)))
+                foreach (var subgroup in group.GroupBy(x => x.ProcessKey).OrderBy(x => x.Sum(x => x.CPUMs)))
                 {
                     long cpu = subgroup.Sum(x => x.CPUMs);
 
@@ -819,10 +823,10 @@ namespace ETWAnalyzer.EventDump
 
         private void WriteCSVProcessTotal(List<MatchData> matches)
         {
-            OpenCSVWithHeader("CSVOptions", "Test Case", "Date", "Test Time in ms", "CPU ms", "Baseline", "Process", "Process Name", "Command Line", "SourceFile", "SourceDirectory", "IsNewProcess");
+            OpenCSVWithHeader("CSVOptions", "Test Case", "Date", "Test Time in ms", "CPU ms", "Baseline", "Process", "Process Name", "Start Time", "Command Line", "SourceFile", "SourceDirectory", "IsNewProcess");
             foreach (var match in matches.OrderBy(x => x.PerformedAt).ThenByDescending(x => x.CPUMs))
             {
-                WriteCSVLine(CSVOptions, match.TestName, match.PerformedAt, match.DurationInMs, match.CPUMs, match.BaseLine, match.ProcessAndPid, match.Process.GetProcessName(UsePrettyProcessName), match.Process.CmdLine, 
+                WriteCSVLine(CSVOptions, match.TestName, match.PerformedAt, match.DurationInMs, match.CPUMs, match.BaseLine, match.ProcessAndPid, match.Process.GetProcessName(UsePrettyProcessName), match.Process.StartTime, match.Process.CmdLine, 
                     Path.GetFileNameWithoutExtension(match.SourceFile), Path.GetDirectoryName(match.SourceFile), (match.Process.IsNew ? 1 : 0));
             }
         }

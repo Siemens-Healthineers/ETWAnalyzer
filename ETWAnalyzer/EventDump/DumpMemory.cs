@@ -39,6 +39,8 @@ namespace ETWAnalyzer.EventDump
         public bool TotalMemory { get; internal set; }
         public int MinWorkingSetMB { get; internal set; }
         public DumpCommand.SortOrders SortOrder { get; internal set; }
+        public bool NoCmdLine { get; internal set; }
+
 
         public class Match
         {
@@ -296,7 +298,7 @@ namespace ETWAnalyzer.EventDump
                 foreach (var m in fileGroup.SortAscendingGetTopNLast(SortByValue, null, TopN))
                 {
                     ColorConsole.WriteEmbeddedColorLine($"[darkcyan]{GetDateTimeString(m.Time, m.SessionStart, TimeFormatOption)}[/darkcyan] [{GetColor(m.DiffMb)}]Diff: {m.DiffMb,4}[/{GetColor(m.DiffMb)}] [{GetColorTotal(m.CommitedMiB)}]Commit {m.CommitedMiB,4} MiB[/{GetColorTotal(m.CommitedMiB)}] [{GetColorTotal(m.WorkingSetMiB)}]WorkingSet {m.WorkingSetMiB,4} MiB[/{GetColorTotal(m.WorkingSetMiB)}] [{GetColorTotal(m.SharedCommitInMiB)}]Shared Commit: {m.SharedCommitInMiB,4} MiB [/{GetColorTotal(m.SharedCommitInMiB)}] ", null, true);
-                    ColorConsole.WriteLine($"{m.Process} {m.CmdLine}", ConsoleColor.Magenta);
+                    ColorConsole.WriteLine($"{m.Process} {(NoCmdLine ? "" : m.CmdLine)}", ConsoleColor.Magenta);
                 }
             }
         }
