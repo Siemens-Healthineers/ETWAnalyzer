@@ -380,15 +380,26 @@ namespace ETWAnalyzer_uTest
 
             SimulateTestCountAnalysis(syntheticRunData, testCountAnalyzer, testAnalysisResults);
 
-            testCountAnalyzer.Print();
-            List<TestAnalysisResult> tempResult = testAnalysisResults.Where(x => x.Issues.Count > 0).ToList();
+            try
+            {
+                List<TestAnalysisResult> tempResult = testAnalysisResults.Where(x => x.Issues.Count > 0).ToList();
+                Assert.Equal(39, tempResult.Count);
+                Assert.Equal(39, tempResult.Where(x => x.Issues[0].Description == "TestCount difference trend starts").Count());
+                Assert.Equal(syntheticRunData.Runs[6].Tests.Values.Last().Last().PerformedAt, tempResult.Last().PerformedAt);
+                Assert.True(tempResult.SelectMany(x => x.Issues).SelectMany(x => x.Details).ToList().Exists(x => x.Contains(syntheticRunData.Runs[8].Tests.First().Value.First().PerformedAt.ToString())));
+                Assert.True(tempResult.SelectMany(x => x.Issues).SelectMany(x => x.Details).ToList().Exists(x => x.Contains(syntheticRunData.Runs[9].Tests.First().Value.First().PerformedAt.ToString())));
+                Assert.True(tempResult.SelectMany(x => x.Issues).SelectMany(x => x.Details).ToList().Exists(x => x.Contains(syntheticRunData.Runs[10].Tests.First().Value.First().PerformedAt.ToString())));
+            }
+            finally
+            {   
+                if (ExceptionHelper.InException)
+                {
+                    testCountAnalyzer.Print();
+                }
+            }
+            
 
-            Assert.Equal(39, tempResult.Count);
-            Assert.Equal(39, tempResult.Where(x => x.Issues[0].Description == "TestCount difference trend starts").Count());
-            Assert.Equal(syntheticRunData.Runs[6].Tests.Values.Last().Last().PerformedAt, tempResult.Last().PerformedAt);
-            Assert.True(tempResult.SelectMany(x => x.Issues).SelectMany(x => x.Details).ToList().Exists(x => x.Contains(syntheticRunData.Runs[8].Tests.First().Value.First().PerformedAt.ToString())));
-            Assert.True(tempResult.SelectMany(x => x.Issues).SelectMany(x => x.Details).ToList().Exists(x => x.Contains(syntheticRunData.Runs[9].Tests.First().Value.First().PerformedAt.ToString())));
-            Assert.True(tempResult.SelectMany(x => x.Issues).SelectMany(x => x.Details).ToList().Exists(x => x.Contains(syntheticRunData.Runs[10].Tests.First().Value.First().PerformedAt.ToString())));
+            
         }
 
         [Fact]

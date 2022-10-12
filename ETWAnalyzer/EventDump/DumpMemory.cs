@@ -39,12 +39,15 @@ namespace ETWAnalyzer.EventDump
         public bool TotalMemory { get; internal set; }
         public int MinWorkingSetMB { get; internal set; }
         public DumpCommand.SortOrders SortOrder { get; internal set; }
+        public bool NoCmdLine { get; internal set; }
+
 
         public class Match
         {
             public string Process;
             public string ProcessName;
-            public DateTimeOffset Time;
+            public DateTimeOffset SessionEnd;
+            public DateTime PerformedAt;
             public string TestCase;
             public string Machine;
             public uint TestDurationInMs;
@@ -123,7 +126,7 @@ namespace ETWAnalyzer.EventDump
 
             foreach(var m in matches.GroupBy(x=>x.Process))
             {
-                var sortedByTime = m.OrderBy(x => x.Time);
+                var sortedByTime = m.OrderBy(x => x.SessionEnd);
                 Match first = m.FirstOrDefault();
                 Match last = m.LastOrDefault();
                 if( first != null && last != null)
@@ -180,19 +183,20 @@ namespace ETWAnalyzer.EventDump
                                 CmdLine = process.CommandLineNoExe,
                                 CommitedMiB = mem2.CommitInMiB,
                                 SharedCommitInMiB = mem2.SharedCommitSizeInMiB,
-                                Time = file.Extract.SessionEnd,
+                                SessionEnd = file.Extract.SessionEnd,
                                 Process = process.GetProcessWithId(UsePrettyProcessName),
                                 ProcessName = process.GetProcessName(UsePrettyProcessName),
                                 WorkingSetMiB = mem2.WorkingSetInMiB,
                                 DiffMb = DiffMb,
 
                                 SourceFile = file.FileName,
-                                Baseline = file.Extract?.MainModuleVersion?.Version ?? "Unknown",
+                                PerformedAt = file.PerformedAt,
+                                Baseline = file.Extract?.MainModuleVersion?.Version ?? "",
                                 TestCase = file.TestName,
                                 TestDurationInMs = (uint)file.DurationInMs,
                                 Machine = file.MachineName,
                                 SessionStart = file.Extract.SessionStart,
-                            }) ; 
+                            }); 
                         }
 
                         break;
@@ -216,13 +220,14 @@ namespace ETWAnalyzer.EventDump
                         CmdLine = process.CommandLineNoExe,
                         CommitedMiB = mem2.CommitInMiB,
                         SharedCommitInMiB = mem2.SharedCommitSizeInMiB,
-                        Time = file.Extract.SessionEnd,
+                        SessionEnd = file.Extract.SessionEnd,
                         Process = process.GetProcessWithId(UsePrettyProcessName),
                         ProcessName = process.GetProcessName(UsePrettyProcessName),
                         WorkingSetMiB = mem2.WorkingSetInMiB,
                         DiffMb = 0,
                         SourceFile = file.FileName,
-                        Baseline = file.Extract?.MainModuleVersion?.Version ?? "Unknown",
+                        PerformedAt = file.PerformedAt,
+                        Baseline = file.Extract?.MainModuleVersion?.Version ?? "",
                         TestCase = file.TestName,
                         TestDurationInMs = (uint) file.DurationInMs,
                         Machine = file.MachineName,
@@ -237,7 +242,7 @@ namespace ETWAnalyzer.EventDump
             OpenCSVWithHeader("CSVOptions", "Time", "Process", "ProcessName", "Commit MiB", "Shared CommitMiB", "Working Set MiB", "Cmd Line", "Baseline", "TestCase", "TestDurationInMs", "SourceJsonFile", "Machine");
             foreach (var match in matches)
             {
-                WriteCSVLine(CSVOptions, base.GetDateTimeString(match.Time, match.SessionStart, TimeFormatOption), match.Process, match.ProcessName, match.CommitedMiB, match.SharedCommitInMiB, match.WorkingSetMiB, match.CmdLine, match.Baseline, match.TestCase, match.TestDurationInMs, match.SourceFile, match.Machine);
+                WriteCSVLine(CSVOptions, base.GetDateTimeString(match.SessionEnd, match.SessionStart, TimeFormatOption), match.Process, match.ProcessName, match.CommitedMiB, match.SharedCommitInMiB, match.WorkingSetMiB, match.CmdLine, match.Baseline, match.TestCase, match.TestDurationInMs, match.SourceFile, match.Machine);
             }
         }
 
@@ -290,13 +295,14 @@ namespace ETWAnalyzer.EventDump
 
         private void Print(List<Match> matches)
         {
-            foreach (var fileGroup in matches.GroupBy(x=>x.SourceFile).OrderBy(x=>x.First().Time))
+            foreach (var fileGroup in matches.GroupBy(x=>x.SourceFile).OrderBy(x=>x.First().SessionEnd))
             {
-                ColorConsole.WriteLine(Path.GetFileNameWithoutExtension(fileGroup.Key), ConsoleColor.Cyan);
+                PrintFileName(fileGroup.Key, null, fileGroup.First().PerformedAt, fileGroup.First().Baseline);
+
                 foreach (var m in fileGroup.SortAscendingGetTopNLast(SortByValue, null, TopN))
                 {
-                    ColorConsole.WriteEmbeddedColorLine($"[darkcyan]{GetDateTimeString(m.Time, m.SessionStart, TimeFormatOption)}[/darkcyan] [{GetColor(m.DiffMb)}]Diff: {m.DiffMb,4}[/{GetColor(m.DiffMb)}] [{GetColorTotal(m.CommitedMiB)}]Commit {m.CommitedMiB,4} MiB[/{GetColorTotal(m.CommitedMiB)}] [{GetColorTotal(m.WorkingSetMiB)}]WorkingSet {m.WorkingSetMiB,4} MiB[/{GetColorTotal(m.WorkingSetMiB)}] [{GetColorTotal(m.SharedCommitInMiB)}]Shared Commit: {m.SharedCommitInMiB,4} MiB [/{GetColorTotal(m.SharedCommitInMiB)}] ", null, true);
-                    ColorConsole.WriteLine($"{m.Process} {m.CmdLine}", ConsoleColor.Magenta);
+                    ColorConsole.WriteEmbeddedColorLine($"[darkcyan]{GetDateTimeString(m.SessionEnd, m.SessionStart, TimeFormatOption)}[/darkcyan] [{GetColor(m.DiffMb)}]Diff: {m.DiffMb,4}[/{GetColor(m.DiffMb)}] [{GetColorTotal(m.CommitedMiB)}]Commit {m.CommitedMiB,4} MiB[/{GetColorTotal(m.CommitedMiB)}] [{GetColorTotal(m.WorkingSetMiB)}]WorkingSet {m.WorkingSetMiB,4} MiB[/{GetColorTotal(m.WorkingSetMiB)}] [{GetColorTotal(m.SharedCommitInMiB)}]Shared Commit: {m.SharedCommitInMiB,4} MiB [/{GetColorTotal(m.SharedCommitInMiB)}] ", null, true);
+                    ColorConsole.WriteLine($"{m.Process} {(NoCmdLine ? "" : m.CmdLine)}", ConsoleColor.Magenta);
                 }
             }
         }

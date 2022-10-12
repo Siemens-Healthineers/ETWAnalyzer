@@ -161,6 +161,30 @@ namespace ETWAnalyzer.Commands
            @"   ETWAnalyzer.exe -analyze testcount -filedir C:\jsonDir -testrunindex 10 20" + Environment.NewLine +
             new string('=', Console.WindowWidth);
 
+        internal const string TestRunIndexArg = "-testrunindex";
+        internal const string ComputerArg = "-computer";
+        internal const string TestCaseArg = "-testcase";
+        internal const string TimeRangeArg = "-timerange";
+        internal const string ExceptionExpircyDateArg = "-exceptionexpircydate";
+        internal const string IrrelevantMeasuredFromFirstExceptionOccArg = "-exceptionexpircybyfirstoccurrence";
+        internal const string DisjointTrendsArg = "-disjointtrends";
+        internal const string DisjointTrendsConsistentModVDiffArg = "-disjointtrendsconsistentmodvdiff";
+        internal const string DisjointTrendsInconsistentModVDiffArg = "-disjointtrendsinconsistentmodvdiff";
+        internal const string DisjointOutliersArg = "-disjointoutliers";
+        internal const string DisjointOutliersConsistentModVDiffArg = "-disjointoutliersconsistentmodvdiff";
+        internal const string DisjointOutliersInconsistentModVDiffArg = "-disjointoutliersinconsistentmodvdiff";
+        internal const string DisjointSporadicsArg = "-disjointsporadics";
+        internal const string DisjointSporadicsConsistentModVDiffArg = "-disjointsporadicsconsistentmodvdiff";
+        internal const string DisjointSporadicsInconsistentModVDiffArg = "-disjointsporadicsinconsistentmodvdiff";
+        internal const string PrintFullStackArg = "-printfullstack";
+        internal const string PrintFlatStackArg = "-printflatstack";
+        internal const string PrintFullMsgArg = "-printfullmessage";
+        internal const string PrintFlatMsgArg = "-printflatmessage";
+        internal const string FactorMulipliedWithQuartilDistanceArg = "-factor";
+        internal const string OnlyStillActivesArg = "-onlystillactives";
+
+
+        public bool DisablePrint { get; set; }
 
         /// <summary>
         /// Default Helpstring which prints all analyzer help
@@ -418,7 +442,12 @@ namespace ETWAnalyzer.Commands
 
             Analyze(allSingleTests, results);
             Analyze(testruns, results);
-            PrintAnalysis();
+
+            if ( DisablePrint )
+            {
+                PrintAnalysis();
+            }
+
         }
 
         private void SetPersistentAnalyzerFlags()
@@ -438,7 +467,6 @@ namespace ETWAnalyzer.Commands
                     analyzer.AnalyzeTestsByTime(results, allSingleTests[i].Backend, allSingleTests[i].Frontend);
                     analyzer.IsLastElement = false;
                 }
-                PrintProcessBar("Single Testcase-analysis progress",i + 1, allSingleTests.Count);
             }
         }
         private void Analyze(TestRun[] testruns, TestAnalysisResultCollection results)
@@ -454,20 +482,9 @@ namespace ETWAnalyzer.Commands
                     analyzer.AnalyzeTestRun(results, testruns[i]);
                     analyzer.IsLastElement = false;
                 }
-                PrintProcessBar("Testrun-analysis progress",i + 1, testruns.Length);
             }
         }
         private bool IsLastElement(int currIdx, ICollection sourceCollection) => currIdx == sourceCollection.Count - 1;
-        private void PrintProcessBar(string content, int currProgress, int absolut)
-        {
-            int progress = (int)(100 * (double)currProgress / absolut);
-            Console.Write($"\r{content}:\t[{new string('#', progress)}{new string(' ', 100 - progress)}] {progress} %");
-
-            if(progress == 100)
-            {
-                Console.Write(Environment.NewLine);
-            }
-        }
         private void PrintAnalysis()
         {
             Analyzers.ForEach(analyzer => analyzer.Print());

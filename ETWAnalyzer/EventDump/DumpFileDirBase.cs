@@ -26,6 +26,8 @@ namespace ETWAnalyzer.EventDump
 
         public List<MinMaxRange<int>> MinMaxMsTestTimes = new();
 
+        public bool ShowFullFileName { get; set; }
+
         public ZeroTimeModes ZeroTimeMode { get; set; }
         public KeyValuePair<string, Func<string, bool>> ZeroTimeFilter { get; set; } = new KeyValuePair<string, Func<string, bool>>(null, _ => false);
         public Func<string, bool> ZeroTimeProcessNameFilter { get; set; } = (x) => true;
@@ -90,7 +92,29 @@ namespace ETWAnalyzer.EventDump
                 return tmp;
             }
                 
-        } 
+        }
+
+        /// <summary>
+        /// Get printable file name depending on ShowFullFileName flag from full file path
+        /// </summary>
+        /// <param name="fileName"></param>
+        /// <returns>full file path or just the file name.</returns>
+        protected string GetPrintFileName(string fileName)
+        {
+            return ShowFullFileName ? fileName : Path.GetFileNameWithoutExtension(fileName);
+        }
+
+        /// <summary>
+        /// Print file name string in a common format with the same colors
+        /// </summary>
+        /// <param name="fileName">full path to file name</param>
+        /// <param name="totalString">totals per file if needed</param>
+        /// <param name="performedAt">Time when test did run</param>
+        /// <param name="baseline">Version which was running</param>
+        protected void PrintFileName(string fileName, string totalString, DateTime performedAt, string baseline)
+        {
+            ColorConsole.WriteEmbeddedColorLine($"{performedAt,-22} {totalString}{GetPrintFileName(fileName)} {baseline}", ConsoleColor.Cyan);
+        }
 
         protected void OpenCSVWithHeader(params string[] csvColumns)
         {

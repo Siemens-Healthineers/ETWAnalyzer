@@ -299,7 +299,31 @@
       <Entrypoint Module="InProcessClient32.dll" Method="*" />
     </Tag>
   </Tag>
-  <Tag Name="DWM Render">
+  <Tag Name="Antivirus - Avast">
+    <Tag Name="aswhook.dll InProcess Hooking">
+      <Entrypoint Module="aswhook.dll" Method="*" />
+    </Tag>    
+    <Tag Name="File System Driver">
+      <Entrypoint Module="aswMonFlt.sys" Method="*" />
+    </Tag>
+    <Tag Name="aswSnx.sys Interceptor Driver">
+      <Entrypoint Module="aswSnx.sys" Method="*" />
+    </Tag>
+    <Tag Name="aswbidsdriver.sys Interceptor Driver">
+      <Entrypoint Module="aswSnx.sys" Method="*" />
+    </Tag>
+    <Tag Name="aswArPot.sys AntiRootkit Driver">
+      <Entrypoint Module="aswArPot.sys" Method="*" />
+    </Tag>
+    <Tag Name="aswArDisk.sys AntiRootkit Disk Driver">
+      <Entrypoint Module="aswArDisk.sys" Method="*" />
+    </Tag>
+    <Tag Name="aswRdr2.sys Driver">
+      <Entrypoint Module="aswRdr2.sys" Method="*" />
+    </Tag>
+  </Tag>
+
+<Tag Name="DWM Render">
         <Entrypoint Module="dwmcore.dll" Method="CPartitionVerticalBlankScheduler::ProcessFrame*"/>
   </Tag>
   <Tag Name="MS Teams">

@@ -76,7 +76,7 @@ namespace ETWAnalyzer.EventDump
 
             if (IsCSVEnabled)
             {
-                OpenCSVWithHeader("CSVOptions", "Directory", "FileName", "Date", "Test Case", "Test Time in ms", "Baseline", "Process", "ProcessName", 
+                OpenCSVWithHeader("CSVOptions", "Directory", "FileName", "Date", "Test Case", "Test Time in ms", "BaseLine", "Process", "ProcessName", 
                                   "Instructions", "Cycles", "CPI", "CacheMisses", "LLCReferences", "% Cache Misses", "Branches", "BranchMispreditions", "% BranchMispredictions", "Command Line");
 
                 foreach( var pmcEvent in data )
@@ -240,7 +240,7 @@ namespace ETWAnalyzer.EventDump
                 
                 if (firstMatch != null)
                 {
-                    ColorConsole.WriteEmbeddedColorLine($"{firstMatch.PerformedAt,-22} {firstMatch.SourceFile}");
+                    PrintFileName(firstMatch.SourceFile, null, firstMatch.PerformedAt, firstMatch.BaseLine);
 
                     formatters = GetFormatters(firstMatch);
 
@@ -337,7 +337,7 @@ namespace ETWAnalyzer.EventDump
                                     File = file,
                                     PerformedAt = file.PerformedAt,
                                     SourceFile = file.JsonExtractFileWhenPresent,
-                                    BaseLine = file.Extract.MainModuleVersion != null ? file.Extract.MainModuleVersion.ToString() : "",
+                                    BaseLine = file.Extract?.MainModuleVersion?.ToString() ?? "",
                                 };
                                 lret.Add(data);
                             }

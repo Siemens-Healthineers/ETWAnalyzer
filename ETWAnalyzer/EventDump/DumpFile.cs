@@ -142,7 +142,7 @@ namespace ETWAnalyzer.EventDump
             {
                 if (group.Key != null)
                 {
-                    Console.WriteLine($"{group.Key.PerformedAt} {Path.GetFileNameWithoutExtension(group.Key.JsonExtractFileWhenPresent)}");
+                    PrintFileName(group.Key.JsonExtractFileWhenPresent, null, group.Key.PerformedAt, group.Key.Extract.MainModuleVersion?.ToString());
                 }
 
                 List<MatchData> perFile = group.ToList();
@@ -239,7 +239,7 @@ namespace ETWAnalyzer.EventDump
 
                     if (IsPerProcess && bPrintOnce && !IsTotalMode)
                     {
-                        ColorConsole.WriteLine($"{group.Key.GetProcessWithId(UsePrettyProcessName)}{group.Key.StartStopTags}", ConsoleColor.Yellow);
+                        ColorConsole.WriteLine($"{group.Key.GetProcessWithId(UsePrettyProcessName)}{GetProcessTags(group.Key, group.First().SessionStart)} {(NoCmdLine ? "" : group.Key.CmdLine)}", ConsoleColor.Yellow);
                         bPrintOnce = false;
                     }
 
@@ -454,7 +454,7 @@ namespace ETWAnalyzer.EventDump
                 {
                     if (file.Extract == null || file.Extract.FileIO == null)
                     {
-                        ColorConsole.WriteError($"File {file.FileName} does not contain disk File IO data");
+                        ColorConsole.WriteError($"File {file.FileName} does not contain File IO data");
                         continue;
                     }
 

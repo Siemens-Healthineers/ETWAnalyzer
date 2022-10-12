@@ -117,8 +117,8 @@ namespace ETWAnalyzer.Extractors
             // that when we have exception happening at the same time in different threads we do not by accident 
             // use the wrong stackwalk event. With grouping by thread we eliminate that entire problem
             foreach (var eventsPerThread in myGenericEvents.Result.Events.Where(x => 
-                                                                                x.ProviderName == Constants.DotNetRuntimeProviderName && 
-                                                                                (x.Id == Constants.ExceptionEventId || x.Id == Constants.ClrStackWalkEventId) )
+                                                                                x.ProviderName == DotNetETWConstants.DotNetRuntimeProviderName && 
+                                                                                (x.Id == DotNetETWConstants.ExceptionEventId || x.Id == DotNetETWConstants.ClrStackWalkEventId) )
                                                                           .GroupBy(x=>x.ThreadId))
             {
                 foreach (IGenericEvent ev in eventsPerThread)
@@ -126,7 +126,7 @@ namespace ETWAnalyzer.Extractors
                     bool bInvalidEvent = false;
 
                     // if we have got no stacktrace from ETW check for additional CLR Stack walk events which can be enabled for the .NET Runtime
-                    if (ev.Id == Constants.ClrStackWalkEventId && prevRow != null && prevRow.Stack == NoStackString)
+                    if (ev.Id == DotNetETWConstants.ClrStackWalkEventId && prevRow != null && prevRow.Stack == NoStackString)
                     {
                         StackEvent stackEv = StackEvents.Find(x => x.TimeStamp == ev.Timestamp);
                         if (stackEv != default(StackEvent))
@@ -168,7 +168,7 @@ namespace ETWAnalyzer.Extractors
                         }
                         AddPrevRow();
                     }
-                    else if (ev.Id == Constants.ExceptionEventId)
+                    else if (ev.Id == DotNetETWConstants.ExceptionEventId)
                     {
                         AddPrevRow();
 
@@ -202,15 +202,15 @@ namespace ETWAnalyzer.Extractors
         {
             TraceEvent ev = eventContext.Event;
 
-            if (ev.ProviderId == Constants.DotNetRuntimeGuid)
+            if (ev.ProviderId == DotNetETWConstants.DotNetRuntimeGuid)
             {
-                if (ev.Id == Constants.ExceptionEventId)
+                if (ev.Id == DotNetETWConstants.ExceptionEventId)
                 {
                     myNeedsStack = true;
                 }
 
                 // potentially every exception event is followed by a stackwalk event
-                if (myNeedsStack && ev.Id == Constants.ClrStackWalkEventId)
+                if (myNeedsStack && ev.Id == DotNetETWConstants.ClrStackWalkEventId)
                 {
                     myNeedsStack = false;
 

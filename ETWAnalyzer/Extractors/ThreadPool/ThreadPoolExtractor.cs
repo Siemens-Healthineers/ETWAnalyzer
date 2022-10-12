@@ -32,7 +32,7 @@ namespace ETWAnalyzer.Extractors
 
         private void ExtractThreadPoolStarvarvations(ETWExtract results)
         {
-            var starvations = myGenericEvents.Result.Events.Where(x => x.ProviderName == Constants.DotNetRuntimeProviderName
+            var starvations = myGenericEvents.Result.Events.Where(x => x.ProviderName == DotNetETWConstants.DotNetRuntimeProviderName
                             && x.TaskName == "ThreadPoolWorkerThreadAdjustment"
                             && x.OpcodeName == "Adjustment"
                             && x.Fields.Dictionary["Reason"].EnumValue == "Starvation"
@@ -40,6 +40,11 @@ namespace ETWAnalyzer.Extractors
             
             foreach (var ins in starvations)
             {
+                if( ins?.Process?.ImageName == null )
+                {
+                    continue;
+                }
+
                 var pk = new ProcessKey(ins.Process.ImageName, ins.Process.Id, ins.Process.CreateTime.HasValue ? ins.Process.CreateTime.Value.DateTimeOffset : default(DateTimeOffset));
 
                 IList<ThreadPoolStarvationInfo> value;

@@ -21,50 +21,21 @@ abstract class ArgParser : ICommand
     /// Input arguments for command line parser
     /// </summary>
     internal const string FileOrDirectoryArg = "-filedir";
-    internal const string UnzipOperationArg = "-unzipoperation";
     internal const string FileOrDirectoryAlias = "-fd";
     internal const string ExtractArg = "-extract";
     internal const string SymFolderArg = "-symfolder";
     internal const string SymbolServerArg = "-symserver";
-    internal const string OutDirArg = "-outdirarg";
-    internal const string TempDirArg = "-tempdir";
-    internal const string KeepTempArg = "-keeptemp";
     internal const string DumpArg = "-dump";
     internal const string RecursiveArg = "-recursive";
     internal const string DebugArg = "-debug";
     internal const string HelpArg = "-help";
     internal const string NoColorArg = "-nocolor";
-    internal const string NoOverWriteArg = "-nooverwrite";
-    internal const string PThreadsArgs = "-pthreads";
-    internal const string NThreadsArg = "-nthreads";
-    internal const string TimeLineArg = "-timeline";
-    internal const string ChildArg = "-child";  // Marker argument to prevent by accident to spawn child of child processes. Child processes process a trace single threaded
-    internal const string AllCPUArg = "-allcpu";
-
-    internal const string AllExceptionsArgs = "-allexceptions";
+    internal const string OutDirArg = "-outdir";
     internal const string PidArg = "-pid";
     internal const string PerThreadArg = "-perthread";
-    internal const string TestRunIndexArg = "-testrunindex";
-    internal const string ComputerArg = "-computer";
-    internal const string TestCaseArg = "-testcase";
-    internal const string TimeRangeArg = "-timerange";
-    internal const string ExceptionExpircyDateArg = "-exceptionexpircydate";
-    internal const string IrrelevantMeasuredFromFirstExceptionOccArg = "-exceptionexpircybyfirstoccurrence";
-    internal const string DisjointTrendsArg = "-disjointtrends";
-    internal const string DisjointTrendsConsistentModVDiffArg = "-disjointtrendsconsistentmodvdiff";
-    internal const string DisjointTrendsInconsistentModVDiffArg = "-disjointtrendsinconsistentmodvdiff";
-    internal const string DisjointOutliersArg = "-disjointoutliers";
-    internal const string DisjointOutliersConsistentModVDiffArg = "-disjointoutliersconsistentmodvdiff";
-    internal const string DisjointOutliersInconsistentModVDiffArg = "-disjointoutliersinconsistentmodvdiff";
-    internal const string DisjointSporadicsArg = "-disjointsporadics";
-    internal const string DisjointSporadicsConsistentModVDiffArg = "-disjointsporadicsconsistentmodvdiff";
-    internal const string DisjointSporadicsInconsistentModVDiffArg = "-disjointsporadicsinconsistentmodvdiff";
-    internal const string PrintFullStackArg = "-printfullstack";
-    internal const string PrintFlatStackArg = "-printflatstack";
-    internal const string PrintFullMsgArg = "-printfullmessage";
-    internal const string PrintFlatMsgArg = "-printflatmessage";
-    internal const string OnlyStillActivesArg = "-onlystillactives";
-    internal const string FactorMulipliedWithQuartilDistanceArg = "-factor";
+    internal const string AllExceptionsArgs = "-allexceptions";
+    internal const string UnzipOperationArg = "-unzipoperation";
+
 
 
     /// <summary>

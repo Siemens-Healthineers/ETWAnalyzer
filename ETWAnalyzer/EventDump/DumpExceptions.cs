@@ -10,7 +10,6 @@ using ETWAnalyzer.Extractors;
 using ETWAnalyzer.Infrastructure;
 using ETWAnalyzer.ProcessTools;
 using System;
-using System.CodeDom;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -88,6 +87,11 @@ namespace ETWAnalyzer.EventDump
             /// Time shift offset if -zt (zerotime) feature is used
             /// </summary>
             public double ZeroTimeS { get; internal set; }
+
+            /// <summary>
+            /// Baseline version
+            /// </summary>
+            public string BaseLine { get; internal set; }
         }
 
         readonly ExceptionFilters myFilters = ExceptionExtractor.ExceptionFilters();
@@ -102,7 +106,7 @@ namespace ETWAnalyzer.EventDump
             var testsOrderedByTime = GetTestRuns(true, SingleTestCaseFilter, TestFileFilter);
             WarnIfNoTestRunsFound(testsOrderedByTime);
 
-            if (CutStackMax == 0)
+            if ( CutStackMax == 0 )
             {
                 CutStackMax = 50; // by default show the first 50 stack frames
             }
@@ -137,18 +141,18 @@ namespace ETWAnalyzer.EventDump
 
         private void WriteToCSVFile(List<MatchData> matches)
         {
-            OpenCSVWithHeader("CSVOptions", "Time", "Exception Type", "Message", "Process", "Process Name", "Start Time", "Command Line", "StackTrace", "TestCase", "PerformedAt", "SourceFile");
-            foreach (var match in matches)
+            OpenCSVWithHeader("CSVOptions", "Time", "Exception Type", "Message", "Process", "Process Name", "Start Time", "Command Line", "StackTrace", "TestCase", "BaseLine", "PerformedAt", "SourceFile");
+            foreach(var match in matches)
             {
-                WriteCSVLine(CSVOptions, GetDateTimeString(match.TimeStamp, match.SessionStart, TimeFormatOption), match.Type, match.Message, match.Process.GetProcessWithId(UsePrettyProcessName),
+                WriteCSVLine(CSVOptions, GetDateTimeString(match.TimeStamp, match.SessionStart, TimeFormatOption), match.Type, match.Message, match.Process.GetProcessWithId(UsePrettyProcessName), 
                     match.Process.GetProcessName(UsePrettyProcessName), match.Process.StartTime,
-                    match.Process.CmdLine, match.Stack, match.TestCase, GetDateTimeString(match.PerformedAt), match.SourceFile);
+                    match.Process.CmdLine, match.Stack, match.TestCase, match.BaseLine, GetDateTimeString(match.PerformedAt), match.SourceFile);
             }
         }
 
         private void AddRelevantExceptions(TestDataFile file, List<MatchData> matches)
         {
-            if (file?.Extract?.Exceptions == null)
+            if( file?.Extract?.Exceptions == null)
             {
                 ColorConsole.WriteError($"File {file.JsonExtractFileWhenPresent} does not contain exception data.");
                 return;
@@ -161,9 +165,9 @@ namespace ETWAnalyzer.EventDump
                 return
                     IsMatchingProcessAndCmdLine(file, arg.Process) &&
                     MessageFilter.Value(arg.Message) &&
-                    TypeFilter.Value(arg.Type) &&
+                    TypeFilter.Value(arg.Type) && 
                     StackFilter.Value(arg.Stack) &&
-                    MinMaxExTimeS.IsWithin((arg.Time - file.Extract.SessionStart).TotalSeconds - zeroTimeS) &&
+                    MinMaxExTimeS.IsWithin( (arg.Time - file.Extract.SessionStart).TotalSeconds - zeroTimeS) && 
                     (FilterExceptions ? myFilters.IsRelevantException(arg.Process.ProcessWithID, arg.Type, arg.Message, arg.Stack) : true);
             };
 
@@ -174,13 +178,14 @@ namespace ETWAnalyzer.EventDump
                     Message = ex.Message,
                     Type = ex.Type,
                     Process = ex.Process,
-                    TimeStamp = ex.Time.AddSeconds(-1.0d * zeroTimeS),
+                    TimeStamp = ex.Time.AddSeconds(-1.0d*zeroTimeS),
                     Stack = ex.Stack,
                     SourceFile = file.JsonExtractFileWhenPresent,
                     TestCase = file.TestName,
                     PerformedAt = file.PerformedAt,
+                    BaseLine = file.Extract?.MainModuleVersion?.ToString(),
                     SessionStart = file.Extract.SessionStart,
-                    ZeroTimeS = zeroTimeS,  
+                    ZeroTimeS = zeroTimeS,
                 };
 
                 matches.Add(data);
@@ -193,7 +198,8 @@ namespace ETWAnalyzer.EventDump
         {
             foreach (var byFile in matches.GroupBy(x => x.SourceFile).OrderBy(x => x.First().PerformedAt))
             {
-                ColorConsole.WriteLine(Path.GetFileNameWithoutExtension(byFile.Key), ConsoleColor.Cyan);
+                PrintFileName(byFile.Key, null, byFile.First().PerformedAt, byFile.First().BaseLine);
+                
                 if (IsByTime)
                 {
                     PrintByTime(byFile);
@@ -233,9 +239,6 @@ namespace ETWAnalyzer.EventDump
 
             foreach (var item in byFile.OrderBy(match => match.TimeStamp))
             {
-                /*
-                Invalidddafasdfa 15.3 s InvalidOperationExceitpn  Proexess(1)
-                InvalidOperationExceitpn ...*/
                 string timeStr = GetDateTimeString(item.TimeStamp, item.SessionStart, TimeFormatOption).WithWidth(timeWidth);
                 ColorConsole.WriteEmbeddedColorLine($"{timeStr} [magenta]{item.Process.GetProcessWithId(UsePrettyProcessName),processWidth}[/magenta] [green]{item.Type}[/green] {item.Message}");
             }

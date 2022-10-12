@@ -22,5 +22,12 @@
       </CmdLineSubstrings>
       <NewExeName>svchost WMI Service</NewExeName>
     </RenameRule>
+      <RenameRule>
+          <ExeName>svchost.exe</ExeName>
+          <CmdLineSubstrings>
+              <string>LocalServiceNoNetworkFirewall</string>
+          </CmdLineSubstrings>
+          <NewExeName>svchost Firewall</NewExeName>
+      </RenameRule>
   </ProcessRenamers>
 </ProcessRenamer>

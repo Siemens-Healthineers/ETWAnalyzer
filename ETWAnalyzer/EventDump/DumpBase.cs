@@ -346,6 +346,10 @@ namespace ETWAnalyzer.EventDump
                 {
                     lret += " - " + GetDateTimeString(process.EndTime, sessionStart, ProcessFormatOption.Value);
                 }
+                if( process.IsNew && process.HasEnded) // print process duration as timespan
+                {
+                    lret += $" {process.EndTime - process.StartTime}";
+                }
 
                 return lret;
             }
