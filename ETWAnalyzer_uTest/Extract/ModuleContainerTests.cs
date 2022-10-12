@@ -4,6 +4,7 @@
 using ETWAnalyzer.Extract;
 using ETWAnalyzer.Extract.Modules;
 using ETWAnalyzer.Extractors;
+using ETWAnalyzer_uTest.TestInfrastructure;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -11,11 +12,19 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace ETWAnalyzer_uTest.Extract
 {
     public class ModuleContainerTests
     {
+        private ITestOutputHelper myWriter;
+
+        public ModuleContainerTests(ITestOutputHelper writer)
+        {
+            myWriter = writer;
+        }
+
         [Fact]
         public void Can_Serialize_Deserialize_Data()
         {
@@ -38,8 +47,10 @@ namespace ETWAnalyzer_uTest.Extract
 
             stream.Position = 0;
 
+            using var expprinter = new ExceptionalPrinter(myWriter);
+
             string str = Encoding.UTF8.GetString(stream.ToArray());
-            Console.WriteLine($"Serialized: {str}");
+            expprinter.Messages.Add($"Serialized: {str}");
             ETWExtract deser = ExtractSerializer.Deserialize<ETWExtract>(stream);
 
             ModuleContainer dcontainer = deser.Modules;

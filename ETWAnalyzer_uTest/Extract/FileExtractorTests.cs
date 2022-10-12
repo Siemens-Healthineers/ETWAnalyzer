@@ -7,6 +7,7 @@ using ETWAnalyzer.Extract;
 using ETWAnalyzer.Extract.FileIO;
 using ETWAnalyzer.Extractors;
 using ETWAnalyzer.Extractors.FileIO;
+using ETWAnalyzer_uTest.TestInfrastructure;
 using Microsoft.Windows.EventTracing;
 using System;
 using System.Collections.Generic;
@@ -14,7 +15,9 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace ETWAnalyzer_uTest
 {
@@ -70,10 +73,12 @@ namespace ETWAnalyzer_uTest
         /// Generated once by DiskExtractorTestsFixture which is injected via ctor
         /// </summary>
         readonly ETWExtract myExtract;
+        readonly ITestOutputHelper myWriter;
 
-        public FileExtractorTests(FileExtractorTestsFixture fixture)
+        public FileExtractorTests(FileExtractorTestsFixture fixture, ITestOutputHelper writer)
         {
             myExtract = fixture.Extract;
+            myWriter = writer;
         }
 
         [Fact]
@@ -366,13 +371,15 @@ namespace ETWAnalyzer_uTest
             MemoryStream stream = new();
             ExtractSerializer.Serialize(stream, extract);
             stream.Position = 0;
-
             string serialized = Encoding.UTF8.GetString(stream.ToArray());
-            Console.WriteLine($"Serialized Data: {serialized}");
+
+            using var expprinter = new ExceptionalPrinter(myWriter);
+
 
             IETWExtract deserialized = ExtractSerializer.Deserialize<ETWExtract>(stream);
+            expprinter.Messages.Add($"Serialized Data: {serialized}");
 
-            IReadOnlyList<FileIOContainer> flatList = deserialized.FileIO.GetFileNameProcessStats(deserialized).OrderBy(x=>x.FileName).ToList();
+            IReadOnlyList<FileIOContainer> flatList = deserialized.FileIO.GetFileNameProcessStats(deserialized).OrderBy(x => x.FileName).ToList();
 
             Assert.Equal(2, flatList.Count);
             FileIOContainer first = flatList[0];
@@ -390,13 +397,19 @@ namespace ETWAnalyzer_uTest
             Assert.Equal(stat1.Read.MaxFilePosition, first.Stats.Read.MaxFilePosition);
             Assert.Null(first.Stats.Write);
 
-            
+
             Assert.Null(second.Stats.Read);
 
             Assert.Equal(stat2.Write.Count, second.Stats.Write.Count);
             Assert.Equal(stat2.Write.AccessedBytes, second.Stats.Write.AccessedBytes);
             Assert.Equal(stat2.Write.Durationus, second.Stats.Write.Durationus);
             Assert.Equal(stat2.Write.MaxFilePosition, second.Stats.Write.MaxFilePosition);
+            
+
+
+
+
+
         }
 
         [Fact]

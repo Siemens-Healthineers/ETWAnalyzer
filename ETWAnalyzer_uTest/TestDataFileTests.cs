@@ -10,18 +10,31 @@ using System.Text;
 using System.Threading.Tasks;
 using System.IO;
 using static ETWAnalyzer.Extract.TestDataFile;
+using ETWAnalyzer_uTest.TestInfrastructure;
+using Xunit.Abstractions;
 
 namespace ETWAnalyzer_uTest
 {
     
     public class TestDataFileTests
     {
+        private ITestOutputHelper myWriter;
+
+
+        public TestDataFileTests(ITestOutputHelper myWriter)
+        {
+            this.myWriter = myWriter;
+        }
+
         const string ClientName = "FO9DE01T0166PC";
 
         [Fact]
         public void Can_Load_Empty_7z_File()
         {
-            TestDataFile file = new TestDataFile(TestData.TestRunSample_Client);
+            using var printer = new ExceptionalPrinter(myWriter);
+            var sampleOutput = TestData.TestRunSample_Client;
+            TestDataFile file = new TestDataFile(sampleOutput.Data);
+            printer.Add(sampleOutput.Output);
 
             Assert.Equal(ClientName, file.MachineName);
             Assert.True(file.IsValidTest);

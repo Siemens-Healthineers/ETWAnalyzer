@@ -3,6 +3,7 @@
 
 using ETWAnalyzer.Configuration;
 using ETWAnalyzer.Extract;
+using ETWAnalyzer.Extractors.Dns;
 using ETWAnalyzer.Extractors;
 using ETWAnalyzer.Extractors.CPU;
 using ETWAnalyzer.Extractors.FileIO;
@@ -29,7 +30,7 @@ namespace ETWAnalyzer.Commands
     class ExtractCommand : ArgParser
     {
         internal static readonly string HelpString =
-         "ETWAnalyzer [-extract [All, Default or Disk File CPU Memory Exception Stacktag ThreadPool PMC] -filedir/-fd inEtlOrZip [-symServer NtSymbolPath/MS/Google/syngo] [-keepTemp] [-NoOverwrite] [-pThreads dd] [-nThreads dd]" + Environment.NewLine +
+         "ETWAnalyzer [-extract [All, Default or Disk File CPU Memory Exception Stacktag ThreadPool PMC Dns] -filedir/-fd inEtlOrZip [-symServer NtSymbolPath/MS/Google/syngo] [-keepTemp] [-NoOverwrite] [-pThreads dd] [-nThreads dd]" + Environment.NewLine +
          "Retrieve data from ETL files and store extracted data in a serialized format in Json in the output directory \\Extract folder." + Environment.NewLine +
          "The data can the be analyzed by other tools or ETWAnalyzer itself which can also analyze the data for specific patterns or issues." + Environment.NewLine +
          "Extract Options are separated by space" + Environment.NewLine +
@@ -53,17 +54,18 @@ namespace ETWAnalyzer.Commands
          "  ThreadPool: Extract relevant data from .NET Runtime ThreadPool if available. ThreadingKeyword 0x10000 needs to be set for the Microsoft-Windows-DotNETRuntime ETW Provider during recording." + Environment.NewLine +
          "              Json Nodes: ThreadPool-PerProcessThreadPoolStarvations" + Environment.NewLine +
          "  PMC       : Extract Performance Monitoring Counters and Last Branch Record CPU traces. You need to enable PMC/LBR ETW Tracing during the recording to get data." + Environment.NewLine +
+        "   DNS       : Extract DNS Queries. You need to enable ETW provider Microsoft-Windows-DNS-Client" + Environment.NewLine + 
          " -NoOverwrite         By default existing Json files are overwritten during a new extraction run. If you want to extract from a large directory only the missing extraction files you can use this option" + Environment.NewLine +
          "                      This way you can have the same extract command line in a script after a profiling run to extract only the newly added profiling data." + Environment.NewLine +
         "  -recursive           Test data is searched recursively below -filedir" + Environment.NewLine +
          " -filedir/-fd  xxx    Can occur multiple times. If a directory is entered all compressed and contained ETL files are extracted. You can also specify a single etl/zip file." + Environment.NewLine +
-        @"                      File queries and exclusions are also supported. E.g. -fd C:\Temp\*error*.etl;!*disk* will extract all etl files in c:\temp containing the name error but exclude the ones which contain disk in the file name" + Environment.NewLine +
-         " -pthreads dd         Percentage of threads to use during extract. Default is 75% of all cores  with a cap at 5 parallel extractions. " + Environment.NewLine +
+        @"                      File queries and exclusions are also supported. E.g. -fd C:\Temp\*error*.etl;!*disk* will extract all etl files in c:\temp containing the name error but exclude the ones which contain disk in the file name" + Environment.NewLine + 
+         " -pthreads dd         Percentage of threads to use during extract. Default is 75% of all cores  with a cap at 5 parallel extractions. " + Environment.NewLine + 
          "                      This can already utilize 100% of all cores because some operations are multithreaded like symbol transcoding." + Environment.NewLine +
          " -nthreads dd         Absolute number of threads/processes used during extract." + Environment.NewLine +
          " -symServer [NtSymbolPath, MS, Google or syngo]  Load pdbs from remote symbol server which is stored in the ETWAnalyzer.dll/exe.config file." + Environment.NewLine +
          "                      With NtSymbolPath the contents of the environment variable _NT_SYMBOL_PATH are used." + Environment.NewLine +
-        $"                      The config file {ConfigFiles.RequiredPDBs} declares which pdbs" + Environment.NewLine +
+        $"                      The config file {ConfigFiles.RequiredPDBs} declares which pdbs" + Environment.NewLine + 
          "                      must have been successfully loaded during extraction. Otherwise a warning is printed due to symbol loading errors." + Environment.NewLine +
          " -keepTemp            If you want to analyze the ETL files more than once from compressed files you can use this option to keep the uncompressed ETL files in the output folder. " + Environment.NewLine +
          " -allCPU              By default only methods with CPU or Wait > 10 ms are extracted. Used together with -extract CPU." + Environment.NewLine +
@@ -73,9 +75,9 @@ namespace ETWAnalyzer.Commands
          " -child               Force single threaded in-process extraction" + Environment.NewLine +
          " -recursive           Search below -filedir directory recursively for data to extract." + Environment.NewLine +
          " -outdir xxxx         By default the extracted data will be put into the folder \"Extract\" besides the input file. You can override the output folder with that switch." + Environment.NewLine +
-         " -tempdir xxxx        If input data needs to be unzipped you can enter here an alternate path to e.g. prevent extraction on slow network shares. " + Environment.NewLine +
+         " -tempdir xxxx        If input data needs to be unzipped you can enter here an alternate path to e.g. prevent extraction on slow network shares. " + Environment.NewLine + 
         $" -unzipoperation \"cmd\" Execute command after a compressed zip archive was uncompressed. The variables {ETLFileNameVariable} and {ETLFileDirVariable} are expanded. " + Environment.NewLine +
-        $"                      You can use ' to escape an exe with spaces. E.g. -unzipoperation \"'C:\\Program Files\\Relogger.exe' {ETLFileNameVariable}\"" + Environment.NewLine +
+        $"                      You can use ' to escape an exe with spaces. E.g. -unzipoperation \"'C:\\Program Files\\Relogger.exe' {ETLFileNameVariable}\"" + Environment.NewLine + 
          " -nocolor             Do not colorize output on shells with different color schemes. Writing console output is also much faster if it is not colorized." + Environment.NewLine +
 
          "[yellow]Examples[/yellow]" + Environment.NewLine +
@@ -83,7 +85,7 @@ namespace ETWAnalyzer.Commands
          " ETWAnalyzer -extract Disk CPU Memory Exception Stacktag -filedir xxx.etl -symServer NtSymbolPath " + Environment.NewLine +
          "[green]Extract from zip/7z file and keep extracted ETL files besides the zip/7z file. Use the Microsoft symbol server to resolve stack traces.[/green]" + Environment.NewLine +
          " ETWAnalyzer -extract Disk CPU Memory Exception Stacktag -filedir xxx.7z -symServer MS -keepTemp " + Environment.NewLine +
-         "[green]Extract all data except FileIO data from a network share with compressed files. Uncompress files to a local folder to prevent long path issues and to get faster." + Environment.NewLine +
+         "[green]Extract all data except FileIO data from a network share with compressed files. Uncompress files to a local folder to prevent long path issues and to get faster." + Environment.NewLine + 
           "The extracted Json files are written to -outdir xxx. The extracted ETL files are kept in C:\\RawETL.[/green]" + Environment.NewLine +
          " ETWAnalyzer -extract Default -filedir \\\\PerformanceHost\\ProfilingShare\\Baseline_12122022 -outdir c:\\temp\\Profiling\\Baseline_Extracted -keepTemp -tempdir c:\\RawETL" + Environment.NewLine +
          "[green]Update after a profiling run the missing Json extract files but do not overwrite already extracted ETL files again[/green]" + Environment.NewLine +
@@ -101,7 +103,7 @@ namespace ETWAnalyzer.Commands
         /// </summary>
         internal const string ETLFileNameVariable = "#ETLFileName#";
 
-
+        
         internal const string TempDirArg = "-tempdir";
         internal const string KeepTempArg = "-keeptemp";
         internal const string NoOverWriteArg = "-nooverwrite";
@@ -110,7 +112,6 @@ namespace ETWAnalyzer.Commands
         internal const string TimeLineArg = "-timeline";
         internal const string ChildArg = "-child";  // Marker argument to prevent by accident to spawn child of child processes. Child processes process a trace single threaded
         internal const string AllCPUArg = "-allcpu";
-
 
 
         public override string Help => HelpString;
@@ -131,7 +132,8 @@ namespace ETWAnalyzer.Commands
             StackTag,
             ThreadPool,
             Module,
-            PMC
+            PMC,
+            Dns,
         }
 
         /// <summary>
@@ -156,6 +158,7 @@ namespace ETWAnalyzer.Commands
             { ExtractionOptions.ThreadPool, () => new ThreadPoolExtractor() },
             { ExtractionOptions.Module,     () => new ModuleExtractor()     },
             { ExtractionOptions.PMC,        () => new PMCExtractor()        },
+            { ExtractionOptions.Dns,        () => new DnsClientExtractor()  },
         };
 
         /// <summary>
@@ -255,7 +258,7 @@ namespace ETWAnalyzer.Commands
         /// Create an extract command with given command line switches
         /// </summary>
         /// <param name="args"></param>
-        public ExtractCommand(string[] args) : base(args)
+        public ExtractCommand(string[] args):base(args)
         {
         }
 
@@ -277,13 +280,13 @@ namespace ETWAnalyzer.Commands
                         break;
                     case FileOrDirectoryArg:
                     case FileOrDirectoryAlias:
-                        string path = GetNextNonArg(FileOrDirectoryArg);
-                        InputFileOrDirectories.Add(path); // we support multiple occurrences 
+                        string fileOrDir = GetNextNonArg(FileOrDirectoryArg);
+                        InputFileOrDirectories.Add(fileOrDir); // we support multiple occurrences 
                         break;
                     // All optional Arguments
                     case OutDirArg:
-                        path = GetNextNonArg(OutDirArg);
-                        OutDir.OutputDirectory = ArgParser.CheckIfFileOrDirectoryExistsAndExtension(path);
+                        string outDir = GetNextNonArg(OutDirArg);
+                        OutDir.OutputDirectory = ArgParser.CheckIfFileOrDirectoryExistsAndExtension(outDir);
                         OutDir.IsDefault = false;
                         break;
                     case TempDirArg:
@@ -305,7 +308,7 @@ namespace ETWAnalyzer.Commands
                         break;
                     case NThreadsArg:
                         string nThreadsStr = GetNextNonArg(NThreadsArg);
-                        if (!int.TryParse(nThreadsStr, out int tmpNThreads))
+                        if( !int.TryParse(nThreadsStr, out int tmpNThreads))
                         {
                             throw new InvalidDataException($"{NThreadsArg} {nThreadsStr} is not a valid number for the thread count.");
                         }
@@ -313,14 +316,14 @@ namespace ETWAnalyzer.Commands
                         break;
                     case TimeLineArg:
                         string timelineInterval = GetNextNonArg(TimeLineArg);
-                        if (!float.TryParse(timelineInterval, out float tmpTimeLine))
+                        if( !float.TryParse(timelineInterval, out float tmpTimeLine))
                         {
                             throw new InvalidDataException($"{TimeLineArg} {timelineInterval} is not a valid number for the timeline sampling interval.");
                         }
                         TimelineDataExtractionIntervalS = tmpTimeLine;
                         break;
                     case UnzipOperationArg:
-                        AfterUnzipCommand = GetNextNonArg(UnzipOperationArg);
+                        AfterUnzipCommand =  GetNextNonArg(UnzipOperationArg);
                         break;
                     case ChildArg: // -child
                         IsChildProcess = true;
@@ -356,12 +359,12 @@ namespace ETWAnalyzer.Commands
                 }
             }
 
-
+            
             // If Output directory is not set, set it to Input folder. The extract file will then go into InputFolder/Extract
             // If explicitly set we will not append Extract to the folder
             if (OutDir.OutputDirectory == null && InputFileOrDirectories.Count == 1)
             {
-                OutDir.SetDefault(File.Exists(InputFileOrDirectories[0]) ? Path.GetDirectoryName(Path.GetFullPath(InputFileOrDirectories[0])) : InputFileOrDirectories[0]);
+                OutDir.SetDefault( File.Exists(InputFileOrDirectories[0]) ? Path.GetDirectoryName(Path.GetFullPath(InputFileOrDirectories[0])) : InputFileOrDirectories[0]);
             }
 
             ConfigureExtractors(Extractors, myProcessingActionList);
@@ -388,7 +391,7 @@ namespace ETWAnalyzer.Commands
                     {
                         extractors.AddRange(myExtractorFactory.Values.Select(x => x()));
                     }
-                    else if (enumActionExtract == ExtractionOptions.Default) // all except File IO so far
+                    else if( enumActionExtract == ExtractionOptions.Default) // all except File IO so far
                     {
                         extractors.Add(myExtractorFactory[ExtractionOptions.Disk]());
                         extractors.Add(myExtractorFactory[ExtractionOptions.CPU]());
@@ -398,6 +401,7 @@ namespace ETWAnalyzer.Commands
                         extractors.Add(myExtractorFactory[ExtractionOptions.ThreadPool]());
                         extractors.Add(myExtractorFactory[ExtractionOptions.Module]());
                         extractors.Add(myExtractorFactory[ExtractionOptions.PMC]());
+                        extractors.Add(myExtractorFactory[ExtractionOptions.Dns]());
                     }
                     else
                     {
@@ -523,7 +527,7 @@ namespace ETWAnalyzer.Commands
         {
             bool defaultThreading = myNThreads == null && myPThreads == null;
 
-            int maxThreads = myNThreads ?? (int)(Environment.ProcessorCount * ((myPThreads ?? 75) / 100.0f)); // use at most myPThreads % of all cores
+            int maxThreads = myNThreads ?? (int)(Environment.ProcessorCount * ( (myPThreads ?? 75) / 100.0f)); // use at most myPThreads % of all cores
 
             if (defaultThreading) // Only cap at 5 parallel extractors when default threading policy (-pthreads was not set) is active
             {
@@ -594,7 +598,7 @@ namespace ETWAnalyzer.Commands
 
             IReadOnlyList<string> outFiles = ExtractFile(Extractors, fileToAnalyze.EtlFileNameIfPresent ?? fileToAnalyze.FileName, OutDir, Symbols, HaveToDeleteTemp, AfterUnzipCommand);
 
-            if (outFiles == null || outFiles.Count == 0)
+            if( outFiles == null || outFiles.Count == 0 )
             {
                 string msg = "outFiles was null or count was 0!";
                 Logger.Error(msg);
@@ -633,7 +637,7 @@ namespace ETWAnalyzer.Commands
             bool fileDirSeen = false;
             for (int i = 0; i < myOriginalInputArguments.Length; i++)
             {
-                if (myOriginalInputArguments[i].ToLower(CultureInfo.InvariantCulture) == FileOrDirectoryArg || (myOriginalInputArguments[i].ToLower(CultureInfo.InvariantCulture) == FileOrDirectoryAlias))
+                if (myOriginalInputArguments[i].ToLower(CultureInfo.InvariantCulture) == FileOrDirectoryArg || (myOriginalInputArguments[i].ToLower(CultureInfo.InvariantCulture) == FileOrDirectoryAlias) )
                 {
                     if (!fileDirSeen)
                     {
@@ -655,7 +659,7 @@ namespace ETWAnalyzer.Commands
                     sb.Append(' ');
                 }
 
-                if (myOriginalInputArguments[i].ToLowerInvariant() == UnzipOperationArg)
+                if( myOriginalInputArguments[i].ToLowerInvariant() == UnzipOperationArg)
                 {
                     i++;
                     sb.Append($"\"{AfterUnzipCommand}\" ");

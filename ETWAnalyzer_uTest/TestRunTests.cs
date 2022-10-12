@@ -14,12 +14,21 @@ using System.Text;
 using System.Threading.Tasks;
 using ETWAnalyzer.Analyzers.Infrastructure;
 using ETWAnalyzer.Configuration;
+using ETWAnalyzer_uTest.TestInfrastructure;
+using Xunit.Abstractions;
 
 namespace ETWAnalyzer_uTest
 {
 
     public class TestRunTests
     {
+        private ITestOutputHelper myWriter;
+
+        public TestRunTests(ITestOutputHelper myWriter)
+        {
+            this.myWriter = myWriter;
+        }
+
         static readonly string[] TestCaseNames = new string[]
         {
                 "SSTUaPMapWorkitemFromRTC2",
@@ -41,7 +50,10 @@ namespace ETWAnalyzer_uTest
         [Fact]
         public void Can_Create_TestRun_List_From_Directory()
         {
-            TestRun[] runs = TestRun.CreateFromDirectory(TestData.TestRunDirectory, SearchOption.TopDirectoryOnly, null);
+            using var printer = new ExceptionalPrinter(myWriter);
+            DataOutput<string> testrunDirectory = TestData.TestRunDirectory;
+            printer.Add(testrunDirectory.Output);
+            TestRun[] runs = TestRun.CreateFromDirectory(testrunDirectory.Data, SearchOption.TopDirectoryOnly, null);
 
             Assert.NotNull(runs);
 
@@ -104,8 +116,11 @@ namespace ETWAnalyzer_uTest
         [Fact]
         public void Can_Create_TestRun_List_From_List_Of_Paths()
         {
+            using var printer = new ExceptionalPrinter(myWriter);
+            DataOutput<string> testrunDirectory = TestData.TestRunDirectory;
+            printer.Add(testrunDirectory.Output);
             List<ETWAnalyzer.Extract.TestDataFile> files = new List<ETWAnalyzer.Extract.TestDataFile>();
-            TestRun[] runs = TestRun.CreateFromDirectory(TestData.TestRunDirectory, SearchOption.TopDirectoryOnly, null);
+            TestRun[] runs = TestRun.CreateFromDirectory(testrunDirectory.Data, SearchOption.TopDirectoryOnly, null);
             files = TestRun.ExistingSingleTestsIncludeComputerAndTestNameAndDateFilter(null, null, new KeyValuePair<DateTime, DateTime>(DateTime.MinValue, DateTime.MaxValue), runs , false).ToTestDataFiles();
             runs = TestRun.CreateForSpecifiedFiles(files);
 
@@ -121,13 +136,16 @@ namespace ETWAnalyzer_uTest
         [Fact]
         public void Can_Create_TestRun_From_Two_SingleTests()
         {
+            using var printer = new ExceptionalPrinter(myWriter);
+            DataOutput<string> testrunDirectory = TestData.TestRunDirectory;
+            printer.Add(testrunDirectory.Output);
             List<List<TestDataFile>> tempGroup = new List<List<TestDataFile>>();
             List<TestDataFile> tempTestData = new List<TestDataFile>
             {
-                new TestDataFile(Path.Combine(TestData.TestRunDirectory, "CallupClaimWarmReadingMR_2286msDEFOR09T121SRV.7z")),
-                new TestDataFile(Path.Combine(TestData.TestRunDirectory, "CallupClaimWarmReadingMR_2286msFO9DE01T0166PC.7z")),
-                new TestDataFile(Path.Combine(TestData.TestRunDirectory, "CallupAdhocColdReadingCT_44043msDEFOR09T121SRV.7z")),
-                new TestDataFile(Path.Combine(TestData.TestRunDirectory, "CallupAdhocColdReadingCT_44043msFO9DE01T0166PC.7z"))
+                new TestDataFile(Path.Combine(testrunDirectory.Data, "CallupClaimWarmReadingMR_2286msDEFOR09T121SRV.7z")),
+                new TestDataFile(Path.Combine(testrunDirectory.Data, "CallupClaimWarmReadingMR_2286msFO9DE01T0166PC.7z")),
+                new TestDataFile(Path.Combine(testrunDirectory.Data, "CallupAdhocColdReadingCT_44043msDEFOR09T121SRV.7z")),
+                new TestDataFile(Path.Combine(testrunDirectory.Data, "CallupAdhocColdReadingCT_44043msFO9DE01T0166PC.7z"))
             };
 
             List<SingleTest> allSingleTests=TestRun.ConvertTestDataFilesToSingleTests(TestRun.GroupTestDataFilesByTests(tempTestData));
@@ -165,9 +183,11 @@ namespace ETWAnalyzer_uTest
         [Fact]
         public void InputNumber_Of_TestDataFiles_Match_Number()
         {
-
+            using var printer = new ExceptionalPrinter(myWriter);
+            DataOutput<string> testrunDirectory = TestData.TestRunDirectory;
+            printer.Add(testrunDirectory.Output);
             int numberOfTestdata = 0;
-            foreach(var element in TestRun.GroupFilesByTests(TestData.TestRunDirectory, SearchOption.TopDirectoryOnly, TestData.TestRunDirectory))
+            foreach(var element in TestRun.GroupFilesByTests(testrunDirectory.Data, SearchOption.TopDirectoryOnly, testrunDirectory.Data))
             {
                 numberOfTestdata += element.Count;
             }
@@ -179,7 +199,10 @@ namespace ETWAnalyzer_uTest
         [Fact]
         public void InputNumber_Of_SingleTests_Match_NumberOf_TestRun()
         {
-            TestRunData runData = new TestRunData(TestData.TestRunDirectory);
+            using var printer = new ExceptionalPrinter(myWriter);
+            DataOutput<string> testrunDirectory = TestData.TestRunDirectory;
+            printer.Add(testrunDirectory.Output);
+            TestRunData runData = new TestRunData(testrunDirectory.Data);
 
             int dataFiles = 0;
 
@@ -345,23 +368,26 @@ namespace ETWAnalyzer_uTest
         [Fact]
         public void Can_Find_All_DoubleFiles_And_Include_TimeRange()
         {
-            string pcEtl = Path.Combine(TestData.TestRunDirectory, "CallupClaimWarmReadingMR_2275msFO9DE01T0166PC.etl");
+            using var printer = new ExceptionalPrinter(myWriter);
+            DataOutput<string> testrunDirectory = TestData.TestRunDirectory;
+            printer.Add(testrunDirectory.Output);
+            string pcEtl = Path.Combine(testrunDirectory.Data, "CallupClaimWarmReadingMR_2275msFO9DE01T0166PC.etl");
             if( !File.Exists(pcEtl) )
             {
-                File.Copy(Path.Combine(TestData.TestRunDirectory,"CallupClaimWarmReadingMR_2275msFO9DE01T0166PC.7z"), pcEtl);
+                File.Copy(Path.Combine(testrunDirectory.Data,"CallupClaimWarmReadingMR_2275msFO9DE01T0166PC.7z"), pcEtl);
             }
-            string srvEtl = Path.Combine(TestData.TestRunDirectory, "CallupClaimWarmReadingMR_2275msDEFOR09T121SRV.etl");
+            string srvEtl = Path.Combine(testrunDirectory.Data, "CallupClaimWarmReadingMR_2275msDEFOR09T121SRV.etl");
             if( !File.Exists(srvEtl) ) 
             {
-                File.Copy(Path.Combine(TestData.TestRunDirectory, "CallupClaimWarmReadingMR_2275msDEFOR09T121SRV.7z"), srvEtl);
+                File.Copy(Path.Combine(testrunDirectory.Data, "CallupClaimWarmReadingMR_2275msDEFOR09T121SRV.7z"), srvEtl);
             }
-            string extractEtl = Path.Combine(TestData.TestRunDirectory, "CallupClaimWarmReadingMR_2128msFO9DE01T0166PC.etl");
+            string extractEtl = Path.Combine(testrunDirectory.Data, "CallupClaimWarmReadingMR_2128msFO9DE01T0166PC.etl");
             if (!File.Exists(extractEtl))
             {
-                File.Copy(Path.Combine(TestData.TestRunDirectory, "CallupClaimWarmReadingMR_2128msFO9DE01T0166PC.7z"), extractEtl);
+                File.Copy(Path.Combine(testrunDirectory.Data, "CallupClaimWarmReadingMR_2128msFO9DE01T0166PC.7z"), extractEtl);
             }
 
-            TestRunData data = new TestRunData(TestData.TestRunDirectory);
+            TestRunData data = new TestRunData(testrunDirectory.Data);
 
             var duplicates = data.AllFiles.Where(x => x.EtlFileNameIfPresent != null).ToArray();
 
@@ -369,9 +395,9 @@ namespace ETWAnalyzer_uTest
 
             string[] mainFiles = duplicates.Select(x => x.FileName).ToArray();
 
-            string mrClient7z = Path.Combine(TestData.TestRunDirectory, "CallupClaimWarmReadingMR_2275msFO9DE01T0166PC.7z");
-            string mrServer7z = Path.Combine(TestData.TestRunDirectory, "CallupClaimWarmReadingMR_2275msDEFOR09T121SRV.7z");
-            string mrClient7z2 = Path.Combine(TestData.TestRunDirectory, "CallupClaimWarmReadingMR_2128msFO9DE01T0166PC.7z");
+            string mrClient7z = Path.Combine(testrunDirectory.Data, "CallupClaimWarmReadingMR_2275msFO9DE01T0166PC.7z");
+            string mrServer7z = Path.Combine(testrunDirectory.Data, "CallupClaimWarmReadingMR_2275msDEFOR09T121SRV.7z");
+            string mrClient7z2 = Path.Combine(testrunDirectory.Data, "CallupClaimWarmReadingMR_2128msFO9DE01T0166PC.7z");
 
             Assert.Contains(mrClient7z, mainFiles);
             Assert.Contains(mrServer7z, mainFiles);

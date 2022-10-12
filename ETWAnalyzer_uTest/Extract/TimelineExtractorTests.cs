@@ -2,6 +2,7 @@
 using ETWAnalyzer.Extract.CPU;
 using ETWAnalyzer.Extractors;
 using ETWAnalyzer.Extractors.CPU;
+using ETWAnalyzer_uTest.TestInfrastructure;
 using Microsoft.Windows.EventTracing;
 using Microsoft.Windows.EventTracing.Cpu;
 using Microsoft.Windows.EventTracing.Processes;
@@ -13,11 +14,19 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace ETWAnalyzer_uTest.Extract
 {
     public class TimelineExtractorTests
     {
+        private ITestOutputHelper myWriter;
+
+        public TimelineExtractorTests(ITestOutputHelper myWriter)
+        {
+            this.myWriter = myWriter;
+        }
+
         [Fact]
         public void Values_Are_Propagated()
         {
@@ -109,8 +118,9 @@ namespace ETWAnalyzer_uTest.Extract
             ExtractSerializer.Serialize(stream, extract);
             stream.Position = 0;
 
+            using var expprinter = new ExceptionalPrinter(myWriter);
             string serialized = Encoding.UTF8.GetString(stream.ToArray());
-            Console.WriteLine($"Serialized Data: {serialized}");
+            expprinter.Messages.Add($"Serialized Data: {serialized}");
 
             IETWExtract deserialized = ExtractSerializer.Deserialize<ETWExtract>(stream);
 
@@ -120,7 +130,7 @@ namespace ETWAnalyzer_uTest.Extract
             List<KeyValuePair<DateTimeOffset,decimal>> timelineAsMsCPU = deserialized.CPU.TimeLine.GetProcessTimeLineData(extract, key, false);
             for(int i = 0; i < timelineAsMsCPU.Count; i++)
             {
-                Console.WriteLine($"timeline[{i} at {timelineAsMsCPU[i].Key}]: {timelineAsMsCPU[i].Value}");
+                expprinter.Messages.Add($"timeline[{i} at {timelineAsMsCPU[i].Key}]: {timelineAsMsCPU[i].Value}");
             }
 
             Assert.Equal(DateTimeOffset.MinValue + TimeSpan.FromSeconds(1.0d), timelineAsMsCPU[0].Key);
@@ -136,7 +146,7 @@ namespace ETWAnalyzer_uTest.Extract
             List<KeyValuePair<DateTimeOffset, decimal>> timelineAsPercentCPU = deserialized.CPU.TimeLine.GetProcessTimeLineData(extract, key, true);
             for (int i = 0; i < timelineAsPercentCPU.Count; i++)
             {
-                Console.WriteLine($"timeline[{i} at {timelineAsPercentCPU[i].Key}]: {timelineAsPercentCPU[i].Value}");
+                expprinter.Messages.Add($"timeline[{i} at {timelineAsPercentCPU[i].Key}]: {timelineAsPercentCPU[i].Value}");
             }
 
             Assert.Equal(100.0m, timelineAsPercentCPU[2].Value);

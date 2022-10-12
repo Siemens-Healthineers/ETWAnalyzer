@@ -32,7 +32,7 @@ namespace ETWAnalyzer.Extractors
 
         private void ExtractThreadPoolStarvarvations(ETWExtract results)
         {
-            var starvations = myGenericEvents.Result.Events.Where(x => x.ProviderName == Constants.DotNetRuntimeProviderName
+            var starvations = myGenericEvents.Result.Events.Where(x => x.ProviderName == DotNetETWConstants.DotNetRuntimeProviderName
                             && x.TaskName == "ThreadPoolWorkerThreadAdjustment"
                             && x.OpcodeName == "Adjustment"
                             && x.Fields.Dictionary["Reason"].EnumValue == "Starvation"

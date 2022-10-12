@@ -466,9 +466,8 @@ namespace ETWAnalyzer.EventDump
                 {
                     long cpuTotal = filtered.Select(x => (long) x.Value).Sum();
                     CpuString = $" [green]CPU {cpuTotal:N0} ms[/green] ";
-                    CpuString = $"{CpuString,10}";
                 }
-                ColorConsole.WriteEmbeddedColorLine($"{file.PerformedAt,-22} {CpuString}{Path.GetFileNameWithoutExtension(file.JsonExtractFileWhenPresent)} {file.Extract.MainModuleVersion}");
+                PrintFileName(file.JsonExtractFileWhenPresent, CpuString, file.PerformedAt, file.Extract.MainModuleVersion?.ToString());
             }
 
             // When printing data with -topN dd we sort by CPU ascending because in a shell console window we do not want
@@ -586,7 +585,7 @@ namespace ETWAnalyzer.EventDump
 
                 if (!IsCSVEnabled)
                 {
-                    ColorConsole.Write($"{timeGroup.Key}", ConsoleColor.DarkCyan);
+                    ColorConsole.Write($"{timeGroup.Key}", ConsoleColor.Cyan);
 
                     // calculate totals at file level, but respect -topn -topnmethod filters for total calculation
                     if (ShowTotal != TotalModes.None)

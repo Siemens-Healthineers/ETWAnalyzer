@@ -79,7 +79,7 @@ namespace ETWAnalyzer.EventDump
             {
                 if( currentSourceFile != m.SourceFile && !ShowFileOnLine)
                 {
-                    ColorConsole.WriteLine($"{Path.GetFileNameWithoutExtension(m.SourceFile)}", ConsoleColor.Cyan);
+                    PrintFileName(m.SourceFile, null, m.PerformedAt.DateTime, m.BaseLine);
                     currentSourceFile = m.SourceFile;
                 }
 
@@ -271,6 +271,7 @@ namespace ETWAnalyzer.EventDump
                         EndTime = (process.EndTime == DateTimeOffset.MaxValue || process.EndTime == DateTimeOffset.MinValue ) ? (DateTimeOffset?)null : process.EndTime.AddSeconds((-1.0d)*zeroS),
                         LifeTime = (process.StartTime != DateTimeOffset.MinValue && process.EndTime != DateTimeOffset.MaxValue) ? (process.EndTime - process.StartTime) : null,
                         SessionStart = extract.SessionStart,
+                        BaseLine = extract.MainModuleVersion?.ToString(),
                         ZeroTimeS = zeroS,
                     });
                 }
@@ -363,11 +364,12 @@ namespace ETWAnalyzer.EventDump
 
         private void WriteToCSV(List<MatchData> rowData)
         {
-            OpenCSVWithHeader("CSVOptions", "TestCase", "TestDate", "ProcessName", "ProcessName(pid)", "Parent ProcessId", "Return Code", "NewProcess", "Start Time", "End Time", "LifeTime in minutes", "Command Line", "SourceFile");
+            OpenCSVWithHeader("CSVOptions", "TestCase", "TestDate", "ProcessName", "ProcessName(pid)", "Parent ProcessId", "Return Code", "NewProcess", "Start Time", "End Time", "LifeTime in minutes", "Command Line", "BaseLine", "SourceFile");
             foreach (var data in rowData)
             {
                 WriteCSVLine(CSVOptions, data.TestCase, data.PerformedAt, data.ProcessName, data.ProcessWithPid, data.ParentProcessId, ETWProcess.GetReturnString(data.ReturnCode, out bool bCrash), Convert.ToInt32(data.IsNewProcess),
-                            GetDateTimeString(data.StartTime, data.SessionStart, TimeFormatOption), GetDateTimeString(data.EndTime, data.SessionStart, TimeFormatOption), GetDurationInMinutes(data.LifeTime),  data.CmdLine, data.SourceFile);
+                            GetDateTimeString(data.StartTime, data.SessionStart, TimeFormatOption), GetDateTimeString(data.EndTime, data.SessionStart, TimeFormatOption), GetDurationInMinutes(data.LifeTime),  
+                            data.CmdLine, data.BaseLine, data.SourceFile);
             }
         }
 
@@ -439,6 +441,7 @@ namespace ETWAnalyzer.EventDump
             public bool HasEnded { get; internal set; }
             public DateTimeOffset SessionStart { get; internal set; }
             public double ZeroTimeS { get; internal set; }
+            public string BaseLine { get; internal set; }
 
             public bool IsMatch(ProcessStates? filter)
             {

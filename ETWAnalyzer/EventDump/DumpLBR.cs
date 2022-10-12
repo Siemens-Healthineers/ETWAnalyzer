@@ -65,13 +65,13 @@ namespace ETWAnalyzer.EventDump
 
             if (IsCSVEnabled)
             {
-                OpenCSVWithHeader("CSVOptions", "Directory", "FileName", "Date", "Test Case", "Test Time in ms", "Baseline", "Process", "ProcessName",
+                OpenCSVWithHeader("CSVOptions", "Directory", "FileName", "Date", "Test Case", "Test Time in ms", "BaseLine", "Process", "ProcessName",
                                   "Caller", "MethodName", "Count", "Command Line");
 
                 foreach (var lbrEvent in data)
                 {
                     WriteCSVLine(CSVOptions, Path.GetDirectoryName(lbrEvent.File.FileName),
-                        Path.GetFileNameWithoutExtension(lbrEvent.File.FileName), lbrEvent.File.PerformedAt, lbrEvent.File.TestName, lbrEvent.File.DurationInMs, lbrEvent.Baseline,
+                        Path.GetFileNameWithoutExtension(lbrEvent.File.FileName), lbrEvent.File.PerformedAt, lbrEvent.File.TestName, lbrEvent.File.DurationInMs, lbrEvent.BaseLine,
                         lbrEvent.Process.ProcessWithID, lbrEvent.Process.ProcessNamePretty,
                         lbrEvent.Caller, lbrEvent.MethodName, lbrEvent.Count,
                         NoCmdLine ? "" : lbrEvent.Process.CommandLineNoExe);
@@ -97,7 +97,7 @@ namespace ETWAnalyzer.EventDump
 
                 if (firstMatch != null)
                 {
-                    ColorConsole.WriteEmbeddedColorLine($"{firstMatch.PerformedAt,-22} {firstMatch.SourceFile}");
+                    PrintFileName(firstMatch.SourceFile, null, firstMatch.PerformedAt, firstMatch.BaseLine);
                     PrintHeader(columnPrinters);
                 }
 
@@ -249,7 +249,7 @@ namespace ETWAnalyzer.EventDump
                                     File = file,
                                     PerformedAt = file.PerformedAt,
                                     SourceFile = file.JsonExtractFileWhenPresent,
-                                    Baseline = file.Extract.MainModuleVersion != null ? file.Extract.MainModuleVersion.ToString() : "",
+                                    BaseLine = file.Extract?.MainModuleVersion?.ToString() ?? "",
                                     Process = call.Process,
                                     MethodName = MethodFormatter.Format(call.MethodName),
                                     Caller = MethodFormatter.Format(call.Caller),
@@ -308,7 +308,7 @@ namespace ETWAnalyzer.EventDump
             public string Caller { get; internal set; }
             public long Count { get; internal set; }
             public TestDataFile File { get; internal set; }
-            public string Baseline { get; internal set; }
+            public string BaseLine { get; internal set; }
             public DateTime PerformedAt { get; internal set; }
             public string SourceFile { get; internal set; }
             public bool IsAggregate { get; internal set; }

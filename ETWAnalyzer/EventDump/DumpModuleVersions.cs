@@ -130,7 +130,7 @@ namespace ETWAnalyzer.EventDump
             {
                 if (!IsCSVEnabled)
                 {
-                    ColorConsole.WriteLine($"{myCurrentFile}", ConsoleColor.Cyan);
+                    PrintFileName(myCurrentFile, null, sourceFile.PerformedAt, data?.MainModuleVersion?.ToString());
                 }
 
                 if ( data.Modules == null)
@@ -204,7 +204,7 @@ namespace ETWAnalyzer.EventDump
 
                 if (!IsCSVEnabled)
                 {
-                    ColorConsole.WriteLine($"{myCurrentFile}", ConsoleColor.Cyan);
+                    PrintFileName(myCurrentFile, null, sourceFile.PerformedAt, data?.MainModuleVersion?.ToString());
                     ColorConsole.WriteEmbeddedColorLine($"Main Version from [yellow]{MachineDetailsExtractor.GetBuildDate(new Version(data.MainModuleVersion.Version)).ToShortDateString()}[/yellow] [green]{data.MainModuleVersion}[/green]");
                     Console.WriteLine("Module Versions");
                 }

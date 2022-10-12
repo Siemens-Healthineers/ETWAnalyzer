@@ -142,7 +142,7 @@ namespace ETWAnalyzer.EventDump
             {
                 if (group.Key != null)
                 {
-                    Console.WriteLine($"{group.Key.PerformedAt} {Path.GetFileNameWithoutExtension(group.Key.JsonExtractFileWhenPresent)}");
+                    PrintFileName(group.Key.JsonExtractFileWhenPresent, null, group.Key.PerformedAt, group.Key.Extract.MainModuleVersion?.ToString());
                 }
 
                 List<MatchData> perFile = group.ToList();

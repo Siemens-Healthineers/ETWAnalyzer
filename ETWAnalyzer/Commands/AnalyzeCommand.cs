@@ -184,6 +184,8 @@ namespace ETWAnalyzer.Commands
         internal const string OnlyStillActivesArg = "-onlystillactives";
 
 
+        public bool DisablePrint { get; set; }
+
         /// <summary>
         /// Default Helpstring which prints all analyzer help
         /// </summary>
@@ -440,7 +442,12 @@ namespace ETWAnalyzer.Commands
 
             Analyze(allSingleTests, results);
             Analyze(testruns, results);
-            PrintAnalysis();
+
+            if ( DisablePrint )
+            {
+                PrintAnalysis();
+            }
+
         }
 
         private void SetPersistentAnalyzerFlags()
@@ -460,7 +467,6 @@ namespace ETWAnalyzer.Commands
                     analyzer.AnalyzeTestsByTime(results, allSingleTests[i].Backend, allSingleTests[i].Frontend);
                     analyzer.IsLastElement = false;
                 }
-                PrintProcessBar("Single Testcase-analysis progress",i + 1, allSingleTests.Count);
             }
         }
         private void Analyze(TestRun[] testruns, TestAnalysisResultCollection results)
@@ -476,20 +482,9 @@ namespace ETWAnalyzer.Commands
                     analyzer.AnalyzeTestRun(results, testruns[i]);
                     analyzer.IsLastElement = false;
                 }
-                PrintProcessBar("Testrun-analysis progress",i + 1, testruns.Length);
             }
         }
         private bool IsLastElement(int currIdx, ICollection sourceCollection) => currIdx == sourceCollection.Count - 1;
-        private void PrintProcessBar(string content, int currProgress, int absolut)
-        {
-            int progress = (int)(100 * (double)currProgress / absolut);
-            Console.Write($"\r{content}:\t[{new string('#', progress)}{new string(' ', 100 - progress)}] {progress} %");
-
-            if(progress == 100)
-            {
-                Console.Write(Environment.NewLine);
-            }
-        }
         private void PrintAnalysis()
         {
             Analyzers.ForEach(analyzer => analyzer.Print());

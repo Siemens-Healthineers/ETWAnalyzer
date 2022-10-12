@@ -115,6 +115,19 @@ Perfview
   The publicly available binary package is consumed, of which a copy has been archieved locally.  
   ETWAnalyzer neither statically nor dynamically links to 7-Zip, instead ETWAnalyzer starts a new 7z.exe process and provides required command line parameters.
 
+**PInvoke.NET**
+-----
+* version  
+  n.a.
+ * copyrights
+
+ * license terms  
+   http://www.pinvoke.net/termsofuse.htm
+ * source code  
+  [Win32ErrorCodes.cs](http://pinvoke.net/default.aspx/Constants/Win32ErrorCodes.html)
+ * integration  
+   The code was modified and is located at 
+   [Win32ErrorCodes.cs](https://github.com/Siemens-Healthineers/ETWAnalyzer/blob/main/ETWAnalyzer/Extract/PInvoke.NET/WinErrorCodes.cs)
 
 
 <!-- References -->
