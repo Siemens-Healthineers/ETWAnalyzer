@@ -10,6 +10,7 @@ using ETWAnalyzer.Extractors;
 using ETWAnalyzer.Infrastructure;
 using ETWAnalyzer.ProcessTools;
 using System;
+using System.CodeDom;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -22,7 +23,7 @@ namespace ETWAnalyzer.EventDump
     {
         public KeyValuePair<string, Func<string, bool>> TypeFilter { get; internal set; }
         public KeyValuePair<string, Func<string, bool>> MessageFilter { get; internal set; }
-        public KeyValuePair<string,Func<string, bool>> StackFilter { get; internal set; }
+        public KeyValuePair<string, Func<string, bool>> StackFilter { get; internal set; }
 
         public bool FilterExceptions { get; internal set; }
         public bool ShowStack { get; internal set; }
@@ -33,18 +34,59 @@ namespace ETWAnalyzer.EventDump
         public MinMaxRange<double> MinMaxExTimeS { get; internal set; }
         public int MaxMessage { get; internal set; } = DumpCommand.MaxMessageLength;
 
+
         public class MatchData
         {
+            /// <summary>
+            /// Exception Message
+            /// </summary>
             public string Message;
+
+            /// <summary>
+            /// Exception Type
+            /// </summary>
             public string Type;
+
+            /// <summary>
+            ///  Exception timestamp
+            /// </summary>
             public DateTimeOffset TimeStamp;
+
+            /// <summary>
+            /// Throwing proces
+            /// </summary>
             public ETWProcess Process;
+
+            /// <summary>
+            /// Exception stacktrace
+            /// </summary>
             public string Stack;
+
+            /// <summary>
+            /// Input json file name 
+            /// </summary>
             public string SourceFile;
+
+            /// <summary>
+            /// Time when test was run
+            /// </summary>
             internal DateTime PerformedAt;
+
+
+            /// <summary>
+            /// ETW Session start time
+            /// </summary>
             public DateTimeOffset SessionStart;
 
+
+            /// <summary>
+            /// Test case name
+            /// </summary>
             public string TestCase { get; internal set; }
+
+            /// <summary>
+            /// Time shift offset if -zt (zerotime) feature is used
+            /// </summary>
             public double ZeroTimeS { get; internal set; }
         }
 
@@ -60,7 +102,7 @@ namespace ETWAnalyzer.EventDump
             var testsOrderedByTime = GetTestRuns(true, SingleTestCaseFilter, TestFileFilter);
             WarnIfNoTestRunsFound(testsOrderedByTime);
 
-            if ( CutStackMax == 0 )
+            if (CutStackMax == 0)
             {
                 CutStackMax = 50; // by default show the first 50 stack frames
             }
@@ -96,9 +138,9 @@ namespace ETWAnalyzer.EventDump
         private void WriteToCSVFile(List<MatchData> matches)
         {
             OpenCSVWithHeader("CSVOptions", "Time", "Exception Type", "Message", "Process", "Process Name", "Start Time", "Command Line", "StackTrace", "TestCase", "PerformedAt", "SourceFile");
-            foreach(var match in matches)
+            foreach (var match in matches)
             {
-                WriteCSVLine(CSVOptions, GetDateTimeString(match.TimeStamp, match.SessionStart, TimeFormatOption), match.Type, match.Message, match.Process.GetProcessWithId(UsePrettyProcessName), 
+                WriteCSVLine(CSVOptions, GetDateTimeString(match.TimeStamp, match.SessionStart, TimeFormatOption), match.Type, match.Message, match.Process.GetProcessWithId(UsePrettyProcessName),
                     match.Process.GetProcessName(UsePrettyProcessName), match.Process.StartTime,
                     match.Process.CmdLine, match.Stack, match.TestCase, GetDateTimeString(match.PerformedAt), match.SourceFile);
             }
@@ -106,7 +148,7 @@ namespace ETWAnalyzer.EventDump
 
         private void AddRelevantExceptions(TestDataFile file, List<MatchData> matches)
         {
-            if( file?.Extract?.Exceptions == null)
+            if (file?.Extract?.Exceptions == null)
             {
                 ColorConsole.WriteError($"File {file.JsonExtractFileWhenPresent} does not contain exception data.");
                 return;
@@ -119,9 +161,9 @@ namespace ETWAnalyzer.EventDump
                 return
                     IsMatchingProcessAndCmdLine(file, arg.Process) &&
                     MessageFilter.Value(arg.Message) &&
-                    TypeFilter.Value(arg.Type) && 
+                    TypeFilter.Value(arg.Type) &&
                     StackFilter.Value(arg.Stack) &&
-                    MinMaxExTimeS.IsWithin( (arg.Time - file.Extract.SessionStart).TotalSeconds - zeroTimeS) && 
+                    MinMaxExTimeS.IsWithin((arg.Time - file.Extract.SessionStart).TotalSeconds - zeroTimeS) &&
                     (FilterExceptions ? myFilters.IsRelevantException(arg.Process.ProcessWithID, arg.Type, arg.Message, arg.Stack) : true);
             };
 
@@ -132,66 +174,115 @@ namespace ETWAnalyzer.EventDump
                     Message = ex.Message,
                     Type = ex.Type,
                     Process = ex.Process,
-                    TimeStamp = ex.Time.AddSeconds(-1.0d*zeroTimeS),
+                    TimeStamp = ex.Time.AddSeconds(-1.0d * zeroTimeS),
                     Stack = ex.Stack,
                     SourceFile = file.JsonExtractFileWhenPresent,
                     TestCase = file.TestName,
                     PerformedAt = file.PerformedAt,
                     SessionStart = file.Extract.SessionStart,
-                    ZeroTimeS = zeroTimeS,
+                    ZeroTimeS = zeroTimeS,  
                 };
 
                 matches.Add(data);
             }
         }
 
+        public bool IsByTime = true;
+
         private void PrintMatches(List<MatchData> matches)
         {
-            foreach(var byFile in matches.GroupBy(x=>x.SourceFile).OrderBy(x=>x.First().PerformedAt) )
+            foreach (var byFile in matches.GroupBy(x => x.SourceFile).OrderBy(x => x.First().PerformedAt))
             {
                 ColorConsole.WriteLine(Path.GetFileNameWithoutExtension(byFile.Key), ConsoleColor.Cyan);
-                foreach (var processExceptions in matches.GroupBy(x => x.Process))
+                if (IsByTime)
                 {
-                    ColorConsole.WriteEmbeddedColorLine($"[magenta]{processExceptions.Key.GetProcessWithId(UsePrettyProcessName)} {processExceptions.Key.StartStopTags}[/magenta] {(NoCmdLine ? String.Empty : processExceptions.Key.CommandLineNoExe)}", ConsoleColor.DarkCyan);
-                    foreach (var byType in processExceptions.GroupBy(x => x.Type))
+                    PrintByTime(byFile);
+
+                }
+                else
+                {
+                    PrintByFileAndProcess(matches);
+                }
+            }
+        }
+
+
+        private void  PrintByTime(IGrouping<string, MatchData> byFile)
+        {
+            List<MatchData> matches = new List<MatchData>();
+
+            string timeHeader = "Time";
+            int timeWidth = TimeFormatOption switch
+            {
+                TimeFormats.s => 6,
+                TimeFormats.Local => 24,
+                TimeFormats.LocalTime => 12,
+                TimeFormats.UTC => 24,
+                TimeFormats.UTCTime => 12,
+                TimeFormats.Here => 24,
+                TimeFormats.HereTime => 12,
+                _ => 100,
+            };
+            const int expTypeWidth = 32;
+            string excheader = "Exception Type";
+            const int processWidth = 40;
+            string processheader = "Process";
+            const int expmsgWidth = 90;
+            string expmsgheader = "Exception Message";
+            ColorConsole.WriteEmbeddedColorLine($"{timeHeader.WithWidth(timeWidth)}[magenta]{processheader.WithWidth(processWidth)}[/magenta] [green]{excheader.WithWidth(expTypeWidth)}[/green] {expmsgheader.WithWidth(expmsgWidth)}");
+
+            foreach (var item in byFile.OrderBy(match => match.TimeStamp))
+            {
+                /*
+                Invalidddafasdfa 15.3 s InvalidOperationExceitpn  Proexess(1)
+                InvalidOperationExceitpn ...*/
+                string timeStr = GetDateTimeString(item.TimeStamp, item.SessionStart, TimeFormatOption).WithWidth(timeWidth);
+                ColorConsole.WriteEmbeddedColorLine($"{timeStr} [magenta]{item.Process.GetProcessWithId(UsePrettyProcessName),processWidth}[/magenta] [green]{item.Type}[/green] {item.Message}");
+            }
+        }
+
+        private void PrintByFileAndProcess(List<MatchData> matches)
+        {
+            foreach (var processExceptions in matches.GroupBy(x => x.Process))
+            {
+                ColorConsole.WriteEmbeddedColorLine($"[magenta]{processExceptions.Key.GetProcessWithId(UsePrettyProcessName)} {processExceptions.Key.StartStopTags}[/magenta] {(NoCmdLine ? String.Empty : processExceptions.Key.CommandLineNoExe)}", ConsoleColor.DarkCyan);
+                foreach (var byType in processExceptions.GroupBy(x => x.Type))
+                {
+                    ColorConsole.WriteLine($"\t{byType.Key}", ConsoleColor.Green);
+                    foreach (var byMessage in byType.GroupBy(x => x.Message))
                     {
-                        ColorConsole.WriteLine($"\t{byType.Key}", ConsoleColor.Green);
-                        foreach (var byMessage in byType.GroupBy(x => x.Message))
+                        ColorConsole.WriteLine($"\t\t{byMessage.Count(),-4} {TruncateMessage(byMessage.Key)}");
+
+                        foreach (var byStack in byMessage.GroupBy(x => ShowStack ? x.Stack : null)) // if we do not display stacks do not group by stack
                         {
-                            ColorConsole.WriteLine($"\t\t{byMessage.Count(),-4} {TruncateMessage(byMessage.Key)}");
-
-                            foreach (var byStack in byMessage.GroupBy(x => ShowStack ? x.Stack : null)) // if we do not display stacks do not group by stack
+                            List<MatchData> chunk = new();
+                            if (ShowStack)
                             {
-                                List<MatchData> chunk = new();
-                                if (ShowStack)
+                                foreach (var line in TruncateStack(byStack.Key))
                                 {
-                                    foreach (var line in TruncateStack(byStack.Key))
-                                    {
-                                        ColorConsole.WriteLine(line);
-                                    }
-                                }
-
-                                foreach (MatchData data in byStack.OrderBy(x => x.TimeStamp))
-                                {
-                                    if (TypeFilter.Key != null || MessageFilter.Key != null || StackFilter.Key != null)
-                                    {
-                                        if (TimeFormatOption == TimeFormats.s || TimeFormatOption == TimeFormats.second)
-                                        {
-                                            ColorConsole.WriteLine($"\t\t\t{GetDateTimeString(data.TimeStamp, data.SessionStart, TimeFormatOption)}");
-                                        }
-                                        else
-                                        {
-                                            ColorConsole.WriteLine($"\t\t\t{GetDateTimeString(data.TimeStamp, data.SessionStart, TimeFormatOption)} {GetDateTimeString(data.TimeStamp, data.SessionStart, TimeFormats.s)}");
-                                        }
-
-                                    }
+                                    ColorConsole.WriteLine(line);
                                 }
                             }
 
+                            foreach (MatchData data in byStack.OrderBy(x => x.TimeStamp))
+                            {
+                                if (TypeFilter.Key != null || MessageFilter.Key != null || StackFilter.Key != null)
+                                {
+                                    if (TimeFormatOption == TimeFormats.s || TimeFormatOption == TimeFormats.second)
+                                    {
+                                        ColorConsole.WriteLine($"\t\t\t{GetDateTimeString(data.TimeStamp, data.SessionStart, TimeFormatOption)}");
+                                    }
+                                    else
+                                    {
+                                        ColorConsole.WriteLine($"\t\t\t{GetDateTimeString(data.TimeStamp, data.SessionStart, TimeFormatOption)} {GetDateTimeString(data.TimeStamp, data.SessionStart, TimeFormats.s)}");
+                                    }
+
+                                }
+                            }
                         }
+
                     }
                 }
-
             }
         }
 

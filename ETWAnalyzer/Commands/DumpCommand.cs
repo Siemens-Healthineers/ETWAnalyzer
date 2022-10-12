@@ -567,6 +567,7 @@ namespace ETWAnalyzer.Commands
         public const int MaxMessageLength = 500;
         public int MaxMessage { get; private set;  }  = MaxMessageLength;
         public MinMaxRange<double> MinMaxExTimeS { get; private set; } = new MinMaxRange<double>();
+        public bool IsByTime { get; private set; }
 
         // Dump Process specific Flags
         public bool ShowAllProcesses { get; private set; }
@@ -644,7 +645,6 @@ namespace ETWAnalyzer.Commands
 
         public int ScalingFactor { get; private set; } = 1;
         public MinMaxRange<int> MinMaxCount { get; private set; } = new MinMaxRange<int>();
-
 
 
         /// <summary>
@@ -798,6 +798,9 @@ namespace ETWAnalyzer.Commands
                     case "-filterexceptions":
                         FilterExceptions = true;
                         break;
+                    case "-isbytime":
+                        IsByTime = true;
+                        break;
                     case "-modulefilter":
                         ModuleFilter =      Matcher.CreateMatcher(GetNextNonArg("-modulefilter"));
                         break;
@@ -925,7 +928,7 @@ namespace ETWAnalyzer.Commands
                         string maxmarkDiffTime = GetNextNonArg("-minmaxmarkdifftime", false); // optional
                         Tuple<double, double> minmaxmarkdifftimedouble = minmarkdiffTime.GetMinMaxDouble(maxmarkDiffTime);
                         MinMaxMarkDiffTime = new MinMaxRange<double>(minmaxmarkdifftimedouble.Item1, minmaxmarkdifftimedouble.Item2);
-                        break;						
+                        break;
                     case "-minmaxmstesttimes":
                         string minMaxTestTime = GetNextNonArg("-minmaxmstesttimes");
                         do
@@ -1405,6 +1408,7 @@ namespace ETWAnalyzer.Commands
                             ZeroTimeMode = ZeroTimeMode,
                             ZeroTimeFilter = ZeroTimeFilter,
                             ZeroTimeProcessNameFilter = ZeroTimeProcessNameFilter,
+                            IsByTime = IsByTime,
                         };
                         break;
                     case DumpCommands.Memory:

@@ -26,7 +26,7 @@ abstract class ArgParser : ICommand
     internal const string ExtractArg = "-extract";
     internal const string SymFolderArg = "-symfolder";
     internal const string SymbolServerArg = "-symserver";
-    internal const string OutDirArg = "-outdir";
+    internal const string OutDirArg = "-outdirarg";
     internal const string TempDirArg = "-tempdir";
     internal const string KeepTempArg = "-keeptemp";
     internal const string DumpArg = "-dump";

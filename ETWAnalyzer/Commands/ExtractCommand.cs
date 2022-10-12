@@ -265,7 +265,7 @@ namespace ETWAnalyzer.Commands
                         break;
                     case FileOrDirectoryArg:
                     case FileOrDirectoryAlias:
-                        string path = GetNextNonArg("-filedir");
+                        string path = GetNextNonArg(FileOrDirectoryArg);
                         InputFileOrDirectories.Add(path); // we support multiple occurrences 
                         break;
                     // All optional Arguments
