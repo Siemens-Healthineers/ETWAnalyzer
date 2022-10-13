@@ -83,6 +83,22 @@ namespace ETWAnalyzer.Extractors
             {
                 DateTime localTime = new DateTime(mySpecialEvents.BootTimeUTC.Value.Ticks, DateTimeKind.Unspecified) + results.SessionStart.Offset;
                 results.BootTime = new DateTimeOffset(localTime, results.SessionStart.Offset);
+
+                results.TraceHeader = new TraceHeader
+                {
+                    BufferSize = mySpecialEvents.BufferSize,
+                    BuffersLost = mySpecialEvents.BuffersLost,
+                    BuffersWritten = mySpecialEvents.BuffersWritten,
+                    EventsLost = mySpecialEvents.EventsLost,
+                    LogFileMode = mySpecialEvents.LogFileModeNice,
+                    MajorVersion = mySpecialEvents.MajorVersion,
+                    MaximumFileSizeMB = mySpecialEvents.MaximumFileSizeMB,
+                    MinorVersion = mySpecialEvents.MinorVersion,
+                    ProviderVersion = mySpecialEvents.ProviderVersion,
+                    SubMinorVersion = mySpecialEvents.SubMinorVersion,
+                    SubVersion = mySpecialEvents.SubVersion,
+                    TimerResolution = mySpecialEvents.TimerResolution,
+                };
             }
 
             ExtractDisplayInformation(meta, results);
