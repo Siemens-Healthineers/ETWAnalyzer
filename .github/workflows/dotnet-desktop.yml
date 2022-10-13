@@ -53,22 +53,22 @@ jobs:
   
         strategy:
             matrix:
-            on:
-                - 'x64-windows'
+                onsystem:
+                    - 'x64-windows'
 
-            configuration: [Release]
+                configuration: [Release]
         
-            package:
-                - name: 'libusb'
+                package:
+                    - name: 'libusb'
     
         env:
             VCPKG_ROOT: C:\vcpkg
             Solution_Name: ETWAnalyzer.sln 
     
         steps:
-        - name: Build ${{matrix.package.name}}:${{matrix.on}}
+        - name: Build ${{matrix.package.name}}:${{matrix.onsystem}}
           run: |
-            vcpkg install ${{matrix.package.name}}:${{matrix.on}}
+            vcpkg install ${{matrix.package.name}}:${{matrix.onsystem}}
 
         - name: Checkout
           uses: actions/checkout@v3
