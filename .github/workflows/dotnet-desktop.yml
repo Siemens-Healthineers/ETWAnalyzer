@@ -50,15 +50,25 @@ jobs:
 
     strategy:
       matrix:
+        on:
+         - 'x64-windows'
+
         configuration: [Release]
+        
+        package:
+        -name: 'libusb'
 
     runs-on: windows-latest  # For a list of available runner types, refer to
                              # https://help.github.com/en/actions/reference/workflow-syntax-for-github-actions#jobsjob_idruns-on
 
     env:
       Solution_Name: ETWAnalyzer.sln 
+      VCPKG_ROOT: C:\vcpkg
     
     steps:
+    - name: Build ${{matrix.package.name}}:${{matrix.on}}
+      run: vcpkg install ${{matrix.package.name}}:${{matrix.on}}
+
     - name: Checkout
       uses: actions/checkout@v3
       with:
@@ -89,9 +99,17 @@ jobs:
         Configuration: ${{ matrix.configuration }}
 
     # Upload unit tests artifacts
-    - name: Upload unit tests artifacts
+    - name: Upload vcpkg unit tests artifacts
       uses: actions/upload-artifact@v3
       with:
-        name: TestResults-${{ runner.os }}
-        path: TestResults-${{ runner.os }}.html
+        name: ${{ matrix.package.name }}-${{ github.run_id }}
+        path: ${{ env.VCPKG_ROOT }}/installed/
+      if: always()
+
+    # Upload vcpkg build tree
+    - name: Upload vcpkg build tree
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ matrix.package.name }}-${{ github.run_id }}-buildtree
+        path: ${{ env.VCPKG_ROOT }}/buildtrees/${{ matrix.package.name }}/
       if: always()
