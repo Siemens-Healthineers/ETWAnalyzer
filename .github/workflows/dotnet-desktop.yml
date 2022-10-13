@@ -45,10 +45,10 @@ on:
     branches: [ main ]
 
 jobs:
-
-  build:
-
-    strategy:
+  runs-on: windows-latest  # For a list of available runner types, refer to
+                             # https://help.github.com/en/actions/reference/workflow-syntax-for-github-actions#jobsjob_idruns-on  
+  
+  strategy:
       matrix:
         on:
             - 'x64-windows'
@@ -57,13 +57,10 @@ jobs:
         
         package:
             - name: 'libusb'
-
-    runs-on: windows-latest  # For a list of available runner types, refer to
-                             # https://help.github.com/en/actions/reference/workflow-syntax-for-github-actions#jobsjob_idruns-on
-
+    
     env:
-      Solution_Name: ETWAnalyzer.sln 
       VCPKG_ROOT: C:\vcpkg
+      Solution_Name: ETWAnalyzer.sln 
     
     steps:
     - name: Build ${{matrix.package.name}}:${{matrix.on}}
@@ -73,6 +70,12 @@ jobs:
       uses: actions/checkout@v3
       with:
         fetch-depth: 0
+
+    # Download the actions-artifacts 
+    - uses: actions/download-artifact@v2
+        with:
+            name: libusb-${{ github.run_id }}
+            path: ${{ env.VCPKG_ROOT }}/installed/
 
     # Install the .NET Core workload
     - name: Install .NET Core
