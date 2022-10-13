@@ -75,11 +75,11 @@ jobs:
           with:
             fetch-depth: 0
 
-        # Download the actions-artifacts 
-        - uses: actions/download-artifact@v2
-          with:
-            name: libusb-${{ github.run_id }}
-            path: ${{ env.VCPKG_ROOT }}/installed/
+        ## Download the actions-artifacts 
+        #- uses: actions/download-artifact@v2
+        #  with:
+        #    name: libusb-${{ github.run_id }}
+        #    path: ${{ env.VCPKG_ROOT }}/installed/
 
         # Install the .NET Core workload
         - name: Install .NET Core
