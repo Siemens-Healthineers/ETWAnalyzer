@@ -97,7 +97,7 @@ jobs:
 
         # Build a package
         - name: Build solution
-          run: dotnet pack src\ETWAnalyzer.sln -c Release -o ${{ github.workspace }}/nuget/
+          run: dotnet pack ETWAnalyzer.sln -c Release -o ${{ github.workspace }}/nuget/
 
         # Execute all unit tests in the solution
         - name: Execute unit tests
