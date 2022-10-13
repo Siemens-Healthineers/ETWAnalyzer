@@ -76,7 +76,7 @@ jobs:
 
     # Execute all unit tests in the solution
     - name: Execute unit tests
-      run: dotnet test -p:ParallelizeTestCollections=false --logger "html;LogFileName=TestResults-${{ runner.os }}.html" --logger "trx;LogFileName=TestResults-${{ runner.os }}.trx" --logger GitHubActions
+      run: dotnet test -p:ParallelizeTestCollections=false --logger "html;LogFileName=TestResults-${{ runner.os }}.html" --logger "trx;LogFileName=TestResults-${{ runner.os }}.trx" 
 
     - name: Upload test results
       uses: actions/upload-artifact@v2
