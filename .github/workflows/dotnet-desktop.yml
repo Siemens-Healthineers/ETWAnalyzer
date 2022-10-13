@@ -67,56 +67,57 @@ jobs:
     
         steps:
         - name: Build ${{matrix.package.name}}:${{matrix.on}}
-            run: vcpkg install ${{matrix.package.name}}:${{matrix.on}}
+          run: |
+            vcpkg install ${{matrix.package.name}}:${{matrix.on}}
 
         - name: Checkout
-            uses: actions/checkout@v3
-            with:
+          uses: actions/checkout@v3
+          with:
             fetch-depth: 0
 
         # Download the actions-artifacts 
         - uses: actions/download-artifact@v2
-            with:
-            name: libusb-${{ github.run_id }}
-            path: ${{ env.VCPKG_ROOT }}/installed/
+          with:
+          name: libusb-${{ github.run_id }}
+          path: ${{ env.VCPKG_ROOT }}/installed/
 
         # Install the .NET Core workload
         - name: Install .NET Core
-            uses: actions/setup-dotnet@v3
-            with:
+          uses: actions/setup-dotnet@v3
+          with:
             dotnet-version: 6.0.x
 
         # Add  MSBuild to the PATH: https://github.com/microsoft/setup-msbuild
         - name: Setup MSBuild.exe
-            uses: microsoft/setup-msbuild@v1.1
+          uses: microsoft/setup-msbuild@v1.1
 
         # Print .NET information
         - name: Get .NET Information
-            run: dotnet --info
+          run: dotnet --info
 
         # Execute all unit tests in the solution
         - name: Execute unit tests
-            run: |
+          run: |
             dotnet test -p:ParallelizeTestCollections=false
 
         # Restore the application to populate the obj folder with RuntimeIdentifiers
         - name: Restore the application
-            run: msbuild $env:Solution_Name /t:Restore /p:Configuration=$env:Configuration
-            env:
+          run: msbuild $env:Solution_Name /t:Restore /p:Configuration=$env:Configuration
+          env:
             Configuration: ${{ matrix.configuration }}
 
         # Upload unit tests artifacts
         - name: Upload vcpkg unit tests artifacts
-            uses: actions/upload-artifact@v3
-            with:
+          uses: actions/upload-artifact@v3
+          with:
             name: ${{ matrix.package.name }}-${{ github.run_id }}
             path: '${{ github.workspace }}/nuget/'
-            if: always()
+          if: always()
 
         # Upload vcpkg build tree
         - name: Upload vcpkg build tree
-            uses: actions/upload-artifact@v3
-            with:
+          uses: actions/upload-artifact@v3
+          with:
             name: ${{ matrix.package.name }}-${{ github.run_id }}-buildtree
             path: ${{ env.VCPKG_ROOT }}/buildtrees/${{ matrix.package.name }}/
-            if: always()
+          if: always()
