@@ -90,7 +90,9 @@ jobs:
 
     # Execute all unit tests in the solution
     - name: Execute unit tests
-      run: dotnet test -p:ParallelizeTestCollections=false --logger "html;LogFileName=TestResults-${{ runner.os }}.html" --logger GitHubActions
+      run: |
+        set PATH=%PATH%;%VCPKG_ROOT%\installed\x64-windows\bin
+        dotnet test -p:ParallelizeTestCollections=false
 
     # Restore the application to populate the obj folder with RuntimeIdentifiers
     - name: Restore the application
@@ -103,7 +105,7 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: ${{ matrix.package.name }}-${{ github.run_id }}
-        path: ${{ env.VCPKG_ROOT }}/installed/
+        path: '${{ github.workspace }}/nuget/'
       if: always()
 
     # Upload vcpkg build tree
