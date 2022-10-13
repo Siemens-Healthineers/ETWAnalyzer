@@ -91,7 +91,6 @@ jobs:
     # Execute all unit tests in the solution
     - name: Execute unit tests
       run: |
-        set PATH=%PATH%;%VCPKG_ROOT%\installed\x64-windows\bin
         dotnet test -p:ParallelizeTestCollections=false
 
     # Restore the application to populate the obj folder with RuntimeIdentifiers
