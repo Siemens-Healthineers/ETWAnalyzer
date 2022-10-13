@@ -51,12 +51,12 @@ jobs:
     strategy:
       matrix:
         on:
-         - 'x64-windows'
+            - 'x64-windows'
 
         configuration: [Release]
         
         package:
-         -name: 'libusb'
+            - name: 'libusb'
 
     runs-on: windows-latest  # For a list of available runner types, refer to
                              # https://help.github.com/en/actions/reference/workflow-syntax-for-github-actions#jobsjob_idruns-on
