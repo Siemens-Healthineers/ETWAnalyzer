@@ -76,8 +76,15 @@ jobs:
 
     # Execute all unit tests in the solution
     - name: Execute unit tests
-      run: dotnet test -p:ParallelizeTestCollections=false
+      run: dotnet test -p:ParallelizeTestCollections=false --logger "html;LogFileName=TestResults-${{ runner.os }}.html" --logger "trx;LogFileName=TestResults-${{ runner.os }}.trx" --logger GitHubActions
 
+    - name: Upload test results
+      uses: actions/upload-artifact@v2
+      if: always()
+      with:
+       name: TestResults-${{ runner.os }}
+       path: TestResults-${{ runner.os }}.html
+          
     # Restore the application to populate the obj folder with RuntimeIdentifiers
     - name: Restore the application
       run: msbuild $env:Solution_Name /t:Restore /p:Configuration=$env:Configuration
