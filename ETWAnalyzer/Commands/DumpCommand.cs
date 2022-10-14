@@ -286,9 +286,10 @@ namespace ETWAnalyzer.Commands
         "                         -Methods *Func1*;xxx.dll!FullMethodName   Dump one or more methods from all or selected processes. When omitted only process total method call is printed to give an overview." + Environment.NewLine;
 
         static readonly string DnsHelpString =
-        "  Dns -filedir/fd Extract\\ or xxx.json [-ShowAdapter] [-ShowReturnCode] [-TopN dd nn] [-SortBy Time/Count] [-DnsQueryFilter xxx] [-MinMaxTotalTimeMs min [max]] [-MinMaxTimeMs min [max]] [-recursive] " + Environment.NewLine +
+        "  Dns -filedir/fd Extract\\ or xxx.json [-DnsQueryFilter xxx] [-Details] [-ShowAdapter] [-ShowReturnCode] [-TopN dd nn] [-SortBy Time/Count] [-MinMaxTotalTimeMs min [max]] [-MinMaxTimeMs min [max]] [-recursive] " + Environment.NewLine +
         "       [-csv xxx.csv] [-NoCSVSeparator] [-NoCmdLine] [-Clip] [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd] [-MinMaxMsTestTimes xx-yy ...] [-ProcessName/pn xxx.exe(pid)] [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-CmdLine substring]" + Environment.NewLine +
-        "                         Print Dns summaries and Dns delay metrics. To see data you need to enable the Microsoft-Windows-DNS-Client ETW provider" + Environment.NewLine +
+        "                         Print Dns summary and delay metrics. To see data you need to enable the Microsoft-Windows-DNS-Client ETW provider" + Environment.NewLine +
+        "                         -Details                   Display time, duration, process, resolved IP of every Dns request." + Environment.NewLine +
         "                         -ShowAdapter               Show which network adapters were used to query Dns." + Environment.NewLine +
         "                         -ShowReturnCode            Show Dns API Win32 return code/s. Success and InvalidParameter are not shown." + Environment.NewLine +
         "                         -TopN dd nn                Show only the queries with dd highest Dns time/count. Optional nn skips the first nn lines." + Environment.NewLine +
@@ -669,9 +670,11 @@ namespace ETWAnalyzer.Commands
         public bool ShowAllFiles { get; private set; }
         public int Min { get; private set; }
         public int Max { get; private set; }
-        public bool ShowDetails { get; private set; }
         public Extract.FileIO.FileIOStatistics.FileOperation FileOperation { get; private set; }
-        
+
+
+        // Shared by -dump File and Dns 
+        public bool ShowDetails { get; private set; }
 
         // Dump ThreadPool specific Flags
         public bool NoCmdLine { get; private set; }
@@ -1679,6 +1682,7 @@ namespace ETWAnalyzer.Commands
                             NoCmdLine = NoCmdLine,
                             TopN = TopN,
                             SortOrder = SortOrder,
+                            ShowDetails = ShowDetails,
                             ShowAdapter = ShowAdapter,
                             ShowReturnCode = ShowReturnCode,
                             DnsQueryFilter = DnsQueryFilter,

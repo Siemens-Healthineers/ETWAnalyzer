@@ -7,9 +7,9 @@ using ETWAnalyzer.Infrastructure;
 using ETWAnalyzer.TraceProcessorHelpers;
 using Microsoft.Windows.EventTracing;
 using Microsoft.Windows.EventTracing.Events;
-using Microsoft.Windows.EventTracing.Symbols;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace ETWAnalyzer.Extractors.Dns
 {
@@ -28,11 +28,12 @@ namespace ETWAnalyzer.Extractors.Dns
         IPendingResult<IGenericEventDataSource> myGenericEvents;
 
         /// <summary>
-        /// State object per DNS query to capature start/stop/timeouts for each query
+        /// State object per DNS query and process to capture start/stop/timeouts for each query
         /// </summary>
-        Dictionary<string, QueryState> myQueryState = new Dictionary<string, QueryState>();
+        Dictionary<DnsQueryKey, QueryState> myQueryState = new Dictionary<DnsQueryKey, QueryState>();
 
         private const string PropertyQueryName = "QueryName";
+        private const string PropertyQueryType = "QueryType";
         private const string PropertyAddress = "Address";
         private const string PropertyDnsServerIpAddress = "DnsServerIpAddress";
         private const string PropertyAdapterName = "AdapterName";
@@ -56,37 +57,34 @@ namespace ETWAnalyzer.Extractors.Dns
                 return;
             }
             
-            foreach(var ev in myGenericEvents.Result.Events)
+            foreach(var ev in myGenericEvents.Result.Events.Where(IsValidDnsEvent).OrderBy(x=>x.Timestamp).ToArray())
             {
-                if (ev.Process?.ImageName == null) // do not allow dead or exiting processes
+                switch(ev.Id)
                 {
-                    continue;
-                }
-
-                if ( ev.ProviderId == DnsClientETWConstants.Guid)
-                {
-                    switch(ev.Id)
-                    {
-                        case DnsClientETWConstants.DnsQueryClientStart:
-                            OnClientQueryStart(results, ev);
-                            break;
-                        case DnsClientETWConstants.DnsQueryClientCompleted:
-                            OnClientQueryEnd(results, ev);
-                            break;
-                        case DnsClientETWConstants.DnsServerTimeout:
-                            OnDnsServerTimeout(results, ev);
-                            break;
-                        case DnsClientETWConstants.DnsQueryStarted:
-                            OnDnsServerQueryStart(ev);
-                            break;
-                        case DnsClientETWConstants.DNSQueryOneDnsServer:
-                            OnQueryOneDnsServer(ev);
-                            break;
-                        default:
-                            break;
-                    }
+                    case DnsClientETWConstants.DnsQueryClientStart:
+                        OnClientQueryStart(results, ev);
+                        break;
+                    case DnsClientETWConstants.DnsQueryClientCompleted:
+                        OnClientQueryEnd(results, ev);
+                        break;
+                    case DnsClientETWConstants.DnsServerTimeout:
+                        OnDnsServerTimeout(results, ev);
+                        break;
+                    case DnsClientETWConstants.DnsQueryStarted:
+                        OnDnsServerQueryStart(ev);
+                        break;
+                    case DnsClientETWConstants.DNSQueryOneDnsServer:
+                        OnQueryOneDnsServer(ev);
+                        break;
+                    default:
+                        break;
                 }
             }
+        }
+
+        private bool IsValidDnsEvent(IGenericEvent ev)
+        {
+            return ev.ProviderId == DnsClientETWConstants.Guid && ev.Process?.ImageName != null;
         }
 
         /// <summary>
@@ -100,12 +98,36 @@ namespace ETWAnalyzer.Extractors.Dns
         {
             ETWProcessIndex idx = ev.GetProcessIndex(results);
 
-            myQueryState[ev.Fields[PropertyQueryName].AsString] = new QueryState
+            if (IsNonIPv4QueryType(ev))
             {
-                Start = ev.Timestamp.DateTimeOffset,
-                ProcessIndex = idx,
-            };
+                DnsQueryKey key = new DnsQueryKey(ev.Fields[PropertyQueryName].AsString, idx);
+                myQueryState[key] = new QueryState
+                {
+                    Start = ev.Timestamp.DateTimeOffset,
+                    ProcessIndex = idx,
+                };
+            }
         }
+
+
+        /// <summary>
+        /// Filter away all DNS Queries which have QueryType != DNS_TYPE_A which are IPV4 addresses
+        /// </summary>
+        /// <param name="ev"></param>
+        /// <returns></returns>
+        bool IsNonIPv4QueryType(IGenericEvent ev)
+        {
+            // DNS Query types are defined in https://en.wikipedia.org/wiki/List_of_DNS_record_types
+            //      A     1  RFC 1035[1] Address record  Returns a 32 - bit IPv4 address, most commonly used to map hostnames to an IP address of the host, but it is also used for DNSBLs, storing subnet masks in RFC 1101, etc.
+            //   AAAA    28  RFC 3596[2] IPv6 address record Returns a 128 - bit IPv6 address, most commonly used to map hostnames to an IP address of the host.
+            // QueryType == A seems to
+            //   a) Fail
+            //   b) be redundant
+            //   Normally the query type is AAA which matches with the # of requests
+            return ev.Fields[PropertyQueryType].AsUInt32 != (UInt32) DnsRecordTypes.DNS_TYPE_A;
+        }
+
+
 
         /// <summary>
         /// DNS request in client process has ended. Calculate duration and write data to Extract.
@@ -114,25 +136,29 @@ namespace ETWAnalyzer.Extractors.Dns
         /// <param name="ev"></param>
         private void OnClientQueryEnd(ETWExtract results, IGenericEvent ev)
         {
-            string dnsQuery = ev.Fields[PropertyQueryName].AsString;
-            if (myQueryState.TryGetValue(dnsQuery, out QueryState state))
+            if (IsNonIPv4QueryType(ev))
             {
-                state.Duration = ev.Timestamp.DateTimeOffset - state.Start;
-
-                var dns = new DnsEvent()
+                ETWProcessIndex idx = ev.GetProcessIndex(results);
+                DnsQueryKey key = new DnsQueryKey(ev.Fields[PropertyQueryName].AsString, idx);
+                if (myQueryState.TryGetValue(key, out QueryState state))
                 {
-                    ProcessIdx = state.ProcessIndex,
-                    Query = dnsQuery,
-                    Result = ev.Fields[PropertyQueryResults].AsString,
-                    QueryStatus = (int)ev.Fields[PropertyQueryStatus].AsUInt32,
-                    Start = state.Start,
-                    Duration = state.Duration,
-                    ServerList = String.Join(";", state.DnsServerList),
-                    TimedOut = state.TimedOut,
-                    Adapters = state.AdapterName,
-                };
+                    state.Duration = ev.Timestamp.DateTimeOffset - state.Start;
 
-                results.Network.DnsClient.Events.Add(dns);
+                    var dns = new DnsEvent()
+                    {
+                        ProcessIdx = state.ProcessIndex,
+                        Query = key.DnsQuery,
+                        Result = ev.Fields[PropertyQueryResults].AsString,
+                        QueryStatus = (int)ev.Fields[PropertyQueryStatus].AsUInt32,
+                        Start = state.Start,
+                        Duration = state.Duration,
+                        ServerList = String.Join(";", state.DnsServerList),
+                        TimedOut = state.TimedOut,
+                        Adapters = state.AdapterName,
+                    };
+
+                    results.Network.DnsClient.Events.Add(dns);
+                }
             }
         }
 
@@ -143,7 +169,8 @@ namespace ETWAnalyzer.Extractors.Dns
         private void OnQueryOneDnsServer(IGenericEvent ev)
         {
             string dnsQuery = ev.Fields[PropertyQueryName].AsString;
-            if (myQueryState.TryGetValue(dnsQuery, out QueryState state))
+            DnsQueryKey key = new DnsQueryKey(dnsQuery, ETWProcessIndex.Invalid);
+            if (myQueryState.TryGetValue(key, out QueryState state))
             {
                 state.DnsServerList.Add( ev.Fields[PropertyDnsServerIpAddress].AsString);
             }
@@ -156,7 +183,8 @@ namespace ETWAnalyzer.Extractors.Dns
         private void OnDnsServerQueryStart(IGenericEvent ev)
         {
             string dnsQuery = ev.Fields[PropertyQueryName].AsString;
-            if (myQueryState.TryGetValue(dnsQuery, out QueryState state))
+            DnsQueryKey key = new DnsQueryKey(dnsQuery, ETWProcessIndex.Invalid);
+            if (myQueryState.TryGetValue(key, out QueryState state))
             {
                 string adapterName = ev.Fields[PropertyAdapterName].AsString.Replace(";", "_");
 
@@ -179,7 +207,8 @@ namespace ETWAnalyzer.Extractors.Dns
         private void OnDnsServerTimeout(ETWExtract results, IGenericEvent ev)
         {
             string dnsQuery = ev.Fields[PropertyQueryName].AsString;
-            if (myQueryState.TryGetValue(dnsQuery, out QueryState state))
+            DnsQueryKey key = new DnsQueryKey(dnsQuery, ETWProcessIndex.Invalid);
+            if (myQueryState.TryGetValue(key, out QueryState state))
             {
                 state.TimedOut = true;
                 state.DnsServer = ev.Fields[PropertyAddress].ToString();

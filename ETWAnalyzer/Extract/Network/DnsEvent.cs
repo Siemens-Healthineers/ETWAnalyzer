@@ -3,6 +3,7 @@
 
 
 using System;
+using System.Collections.Generic;
 
 namespace ETWAnalyzer.Extract.Network
 {
@@ -15,6 +16,11 @@ namespace ETWAnalyzer.Extract.Network
         /// Process index which can be resolved via <see cref="IProcessExtract.GetProcess(ETWProcessIndex)"/>
         /// </summary>
         public ETWProcessIndex ProcessIdx { get; set; }
+
+        /// <summary>
+        /// This is set during querying and not part of extracted data
+        /// </summary>
+        internal ETWProcess Process { get; set; }
 
         /// <summary>
         /// Name which was tried to resolve via DNS
@@ -56,5 +62,35 @@ namespace ETWAnalyzer.Extract.Network
         /// Win32 return code DNS query. DNS specific return codes are in the range 9000-9999
         /// </summary>
         public int QueryStatus { get; set; }
+
+
+        static readonly char[] DnsResultSep = new char[] { ';' };
+
+        internal string GetNonAliasResult()
+        {
+
+            // CNAME	5	RFC 1035[1]	Canonical name record	Alias of one name to another: the DNS lookup will continue by retrying the lookup with the new name.
+            const string AliasRecord = "type:  5";
+
+            List<string> nonAliasResults = new();
+
+            if( Result != null)
+            {
+                string[] results = Result.Split(DnsResultSep, StringSplitOptions.RemoveEmptyEntries);
+                foreach(var result in results)
+                {
+                    if( result.StartsWith(AliasRecord))
+                    {
+                        continue;
+                    }
+
+                    nonAliasResults.Add(result);
+                }
+            }
+
+            string lret = String.Join(";", nonAliasResults);
+
+            return lret;
+        }
     }
 }

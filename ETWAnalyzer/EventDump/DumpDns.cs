@@ -32,6 +32,11 @@ namespace ETWAnalyzer.EventDump
         /// </summary>
         public MinMaxRange<double> MinMaxTimeMs { get; set;  } = new MinMaxRange<double>();
 
+        /// <summary>
+        /// -Details flag to show query time for every DNS Request
+        /// </summary>
+        public bool ShowDetails { get; set; }
+
         public KeyValuePair<string, Func<string, bool>> DnsQueryFilter { get; internal set; } = new KeyValuePair<string, Func<string, bool>>(null, x => true);
 
         List<MatchData> myUTestData = null;
@@ -78,16 +83,19 @@ namespace ETWAnalyzer.EventDump
 
                 MatchData[] sorted = byFile.GroupBy(x => x.Dns.Query).Select(x => new MatchData
                 {
+                    SessionStart = firstMatch.SessionStart,
+
                     GroupQuery = x.Key,
                     GroupQueryCount = x.Count(),
                     GroupQueryTimeS = x.Sum(y => (decimal)y.Dns.Duration.TotalSeconds),
                     GroupMinQueryTimeS = x.Select(y => (decimal)y.Dns.Duration.TotalSeconds).Min(),
                     GroupMaxQueryTimeS = x.Select(y => (decimal)y.Dns.Duration.TotalSeconds).Max(),
                     GroupTimedOut = x.Any(x => x.Dns.TimedOut),
-                    GroupAdapters = String.Join(" ", x.SelectMany(x => x.Dns.Adapters?.Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries) ?? Array.Empty<string>()).Distinct().OrderBy(x=>x)),
+                    GroupAdapters = String.Join(";", x.SelectMany(x => x.Dns.Adapters?.Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries) ?? Array.Empty<string>()).Distinct().OrderBy(x=>x)),
                     GroupProcesses = x.Select(x=>x.Process).Distinct().ToArray(),
                     GroupStatus = String.Join(";", x.Select(x=>x.Dns.QueryStatus)
-                                        .Where(x => x != (int)Win32ErrorCodes.ERROR_INVALID_PARAMETER && x != (int)Win32ErrorCodes.SUCCESS).Distinct().OrderBy(x=>x).Select(x=> (Win32ErrorCodes)x).Select(x=>x.ToString())),
+                                        .Where(x => x != (int)Win32ErrorCodes.SUCCESS).Distinct().OrderBy(x=>x).Select(x=> (Win32ErrorCodes)x).Select(x=>x.ToString())),
+                    GroupQueries = x.Select(x=> (DnsEvent) x.Dns).ToArray(),
                 })
                 .SortAscendingGetTopNLast(x => SortOrder == DumpCommand.SortOrders.Count ? x.GroupQueryCount : x.GroupQueryTimeS, null, TopN).ToArray();
 
@@ -117,14 +125,17 @@ namespace ETWAnalyzer.EventDump
                         continue;
                     }
 
-                    if (previous == null || !previous.SequenceEqual(data.GroupProcesses))
+                    if (!ShowDetails) // when -Details is set we already show every query with process name
                     {
-                        foreach (var proc in data.GroupProcesses)
+                        if (previous == null || !previous.SequenceEqual(data.GroupProcesses))
                         {
-                            ColorConsole.WriteEmbeddedColorLine($"[magenta]{proc.GetProcessWithId(UsePrettyProcessName)}[/magenta] {(NoCmdLine ? "" : proc.CommandLineNoExe)}");
+                            foreach (var proc in data.GroupProcesses)
+                            {
+                                ColorConsole.WriteEmbeddedColorLine($"[magenta]{proc.GetProcessWithId(UsePrettyProcessName)}[/magenta] {(NoCmdLine ? "" : proc.CommandLineNoExe)}");
+                            }
                         }
+                        previous = data.GroupProcesses;
                     }
-                    previous = data.GroupProcesses;
 
                     totalTimeS += data.GroupQueryTimeS;
                     totalQueries += data.GroupQueryCount;
@@ -137,6 +148,15 @@ namespace ETWAnalyzer.EventDump
                     string returnCode = ShowReturnCode ? $" {data.GroupStatus.WithWidth(returnCodeWidth-1)}" : "";
 
                     ColorConsole.WriteEmbeddedColorLine($"[green]{dnsQueryTime,8} s[/green]  {minTime,6} s  [yellow]{maxTime,7} s[/yellow] {data.GroupQueryCount,6} [red]{timedOut,7}[/red] {data.GroupQuery,dnsQueryWidth}{returnCode}{adapter}");
+                    if (ShowDetails)
+                    {
+                        foreach (DnsEvent dnsEvent in data.GroupQueries.OrderBy(x => x.Start))
+                        {
+                            string duration = $"{dnsEvent.Duration.TotalSeconds:F3}".WithWidth(6);
+
+                            ColorConsole.WriteEmbeddedColorLine($"\t{GetTimeString(dnsEvent.Start, data.SessionStart, TimeFormatOption),-7} s Duration: [green]{duration} s[/green] [magenta]{dnsEvent.Process.GetProcessWithId(UsePrettyProcessName).WithWidth(-45)}[/magenta] {returnCode}{adapter}{dnsEvent.GetNonAliasResult()}");
+                        }
+                    }
                 }
             }
 
@@ -186,6 +206,9 @@ namespace ETWAnalyzer.EventDump
                             continue;
                         }
 
+                        DnsEvent ev = (DnsEvent) dns;
+                        ev.Process = file.Extract.GetProcess(ev.ProcessIdx);
+
                         MatchData data = new MatchData
                         {
                             Process = process,
@@ -225,6 +248,10 @@ namespace ETWAnalyzer.EventDump
             public ETWProcess[] GroupProcesses { get; set; }
             public string GroupStatus { get; set; }
 
+            /// <summary>
+            /// All DNS Queries belonging to this GroupQuery Key
+            /// </summary>
+            public DnsEvent[] GroupQueries { get; internal set; }
         }
     }
 }
