@@ -116,7 +116,7 @@ namespace ETWAnalyzer.EventDump
                 const int dnsQueryWidth = -70;
                 string dnsQueryHeadline = "DNS Query".WithWidth(dnsQueryWidth);
 
-                ColorConsole.WriteEmbeddedColorLine($"     [green]Total[/green]       Min       [yellow]Max[/yellow]  Count TimeOut {dnsQueryHeadline}{returnCodeHeadline}{adapterHeadline}");
+                ColorConsole.WriteEmbeddedColorLine($"     [green]Total[/green]       Min        [yellow]Max[/yellow]  Count TimeOut {dnsQueryHeadline}{returnCodeHeadline}{adapterHeadline}");
                 ETWProcess[] previous = null;
                 foreach (MatchData data in sorted)
                 {
