@@ -87,7 +87,7 @@ namespace ETWAnalyzer.EventDump
 
                     GroupQuery = x.Key,
                     GroupQueryCount = x.Count(),
-                    GroupQueryTimeS = x.Sum(y => (decimal)y.Dns.Duration.TotalSeconds),
+                    GroupQueryTimeS = (decimal) CalulcateNonOverlappingTime(x.Select(x=>x.Dns)).TotalSeconds,
                     GroupMinQueryTimeS = x.Select(y => (decimal)y.Dns.Duration.TotalSeconds).Min(),
                     GroupMaxQueryTimeS = x.Select(y => (decimal)y.Dns.Duration.TotalSeconds).Max(),
                     GroupTimedOut = x.Any(x => x.Dns.TimedOut),
@@ -116,7 +116,9 @@ namespace ETWAnalyzer.EventDump
                 const int dnsQueryWidth = -70;
                 string dnsQueryHeadline = "DNS Query".WithWidth(dnsQueryWidth);
 
-                ColorConsole.WriteEmbeddedColorLine($"     [green]Total[/green]       Min        [yellow]Max[/yellow]  Count TimeOut {dnsQueryHeadline}{returnCodeHeadline}{adapterHeadline}");
+                ColorConsole.WriteEmbeddedColorLine($"[green]NonOverlapping[/green]       Min        [yellow]Max[/yellow]  Count TimeOut {dnsQueryHeadline}{returnCodeHeadline}{adapterHeadline}");
+                ColorConsole.WriteEmbeddedColorLine($"       [green]Total s[/green]         s        [yellow]  s[/yellow]      #");
+
                 ETWProcess[] previous = null;
                 foreach (MatchData data in sorted)
                 {
@@ -147,7 +149,7 @@ namespace ETWAnalyzer.EventDump
                     string adapter = ShowAdapter ? $" {data.GroupAdapters.WithWidth(adapterWidth-1)}" : "";
                     string returnCode = ShowReturnCode ? $" {data.GroupStatus.WithWidth(returnCodeWidth-1)}" : "";
 
-                    ColorConsole.WriteEmbeddedColorLine($"[green]{dnsQueryTime,8} s[/green]  {minTime,6} s  [yellow]{maxTime,7} s[/yellow] {data.GroupQueryCount,6} [red]{timedOut,7}[/red] {data.GroupQuery,dnsQueryWidth}{returnCode}{adapter}");
+                    ColorConsole.WriteEmbeddedColorLine($"[green]{dnsQueryTime,12} s[/green]  {minTime,6} s  [yellow]{maxTime,7} s[/yellow] {data.GroupQueryCount,6} [red]{timedOut,7}[/red] {data.GroupQuery,dnsQueryWidth}{returnCode}{adapter}");
                     if (ShowDetails)
                     {
                         foreach (DnsEvent dnsEvent in data.GroupQueries.OrderBy(x => x.Start))
@@ -164,6 +166,24 @@ namespace ETWAnalyzer.EventDump
             {
                 ColorConsole.WriteEmbeddedColorLine($"Totals: [green]{totalTimeS:F3} s[/green] Dns query time for [magenta]{totalQueries}[/magenta] Dns queries");
             }
+        }
+
+        /// <summary>
+        /// Some DNS queries are executed in parallel. Count overlapping parallel time ranges only once to give an estimate
+        /// of the actual wall clock delay the user experiences. Summing up parallel queries for the same DNS Query leads 
+        /// to wrong estimates which query the user did see as slowest.
+        /// </summary>
+        /// <param name="events">Collection of DNS events for a given DNS query</param>
+        /// <returns>Non overlapping TimeSpan</returns>
+        TimeSpan CalulcateNonOverlappingTime( IEnumerable<IDnsEvent> events)
+        {
+            TimeRangeCalculatorDateTime calc = new TimeRangeCalculatorDateTime();
+            foreach(var ev in events)
+            {
+                calc.Add(ev.Start, ev.Duration);
+            }
+
+            return calc.GetDuration();
         }
 
         private List<MatchData> ReadFileData()
