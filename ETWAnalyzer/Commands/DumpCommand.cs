@@ -286,7 +286,7 @@ namespace ETWAnalyzer.Commands
         "                         -Methods *Func1*;xxx.dll!FullMethodName   Dump one or more methods from all or selected processes. When omitted only process total method call is printed to give an overview." + Environment.NewLine;
 
         static readonly string DnsHelpString =
-        "  Dns -filedir/fd Extract\\ or xxx.json [-DnsQueryFilter xxx] [-Details] [-ShowAdapter] [-ShowReturnCode] [-TopN dd nn] [-SortBy Time/Count] [-MinMaxTotalTimeMs min [max]] [-MinMaxTimeMs min [max]] [-recursive] " + Environment.NewLine +
+        "  Dns -filedir/fd Extract\\ or xxx.json [-DnsQueryFilter xxx] [-Details] [-ShowAdapter] [-ShowReturnCode] [-TopN dd nn] [-SortBy Time/Count] [-MinMaxTotalTimeMs min [max]] [-MinMaxTimeMs min [max]] [-recursive] [-TimeFmt s,Local,LocalTime,UTC,UTCTime,Here,HereTime]" + Environment.NewLine +
         "       [-csv xxx.csv] [-NoCSVSeparator] [-NoCmdLine] [-Clip] [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd] [-MinMaxMsTestTimes xx-yy ...] [-ProcessName/pn xxx.exe(pid)] [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-CmdLine substring]" + Environment.NewLine +
         "                         Print Dns summary and delay metrics. To see data you need to enable the Microsoft-Windows-DNS-Client ETW provider" + Environment.NewLine +
         "                         -Details                   Display time, duration, process, resolved IP of every Dns request." + Environment.NewLine +
@@ -437,7 +437,10 @@ namespace ETWAnalyzer.Commands
         "[green]Show Dns latency for Firefox browser process omitting command line but with queried network adapters. If more than one network adapter was queried it could be that the first adapter query timed out.[/green]" + Environment.NewLine +
         " ETWAnalyzer -fd xx.json -dump Dns -ShowAdapter -NoCmdLine -pn firefox" + Environment.NewLine +
         "[green]Count all Dns queries to *google* domains which were slower than 20ms.[/green]" + Environment.NewLine +
-        " ETWAnalyzer -fd xx.json -dump Dns -DnsQueryFilter *google* -SortBy Count -MinMaxTimeMs 20" + Environment.NewLine;
+        " ETWAnalyzer -fd xx.json -dump Dns -DnsQueryFilter *google* -SortBy Count -MinMaxTimeMs 20" + Environment.NewLine + 
+        "[green]Show every DNS query by time, process and returned IPs which were slower than 20ms. Query time is printed in WPA trace time. Overlapping (async) Dns query durations are only counted once for the sum in Total s column.[/green]" + Environment.NewLine +
+        " ETWAnalyzer -fd xx.json -dump Dns -Details -MinMaxTimeMs 20 -TimeFmt s" + Environment.NewLine;
+
 
 
 

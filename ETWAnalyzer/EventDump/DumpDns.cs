@@ -116,7 +116,7 @@ namespace ETWAnalyzer.EventDump
                 const int dnsQueryWidth = -70;
                 string dnsQueryHeadline = "DNS Query".WithWidth(dnsQueryWidth);
 
-                ColorConsole.WriteEmbeddedColorLine($"[green]NonOverlapping[/green]       Min        [yellow]Max[/yellow]  Count TimeOut {dnsQueryHeadline}{returnCodeHeadline}{adapterHeadline}");
+                ColorConsole.WriteEmbeddedColorLine($"[green]NonOverlapping[/green]       Min        [yellow]Max[/yellow]  Count TimeOut [yellow]{dnsQueryHeadline}[/yellow]{returnCodeHeadline}{adapterHeadline}");
                 ColorConsole.WriteEmbeddedColorLine($"       [green]Total s[/green]         s        [yellow]  s[/yellow]      #");
 
                 ETWProcess[] previous = null;
@@ -149,14 +149,14 @@ namespace ETWAnalyzer.EventDump
                     string adapter = ShowAdapter ? $" {data.GroupAdapters.WithWidth(adapterWidth-1)}" : "";
                     string returnCode = ShowReturnCode ? $" {data.GroupStatus.WithWidth(returnCodeWidth-1)}" : "";
 
-                    ColorConsole.WriteEmbeddedColorLine($"[green]{dnsQueryTime,12} s[/green]  {minTime,6} s  [yellow]{maxTime,7} s[/yellow] {data.GroupQueryCount,6} [red]{timedOut,7}[/red] {data.GroupQuery,dnsQueryWidth}{returnCode}{adapter}");
+                    ColorConsole.WriteEmbeddedColorLine($"[green]{dnsQueryTime,12} s[/green]  {minTime,6} s  [yellow]{maxTime,7} s[/yellow] {data.GroupQueryCount,6} [red]{timedOut,7}[/red] [yellow]{data.GroupQuery,dnsQueryWidth}[/yellow]{returnCode}{adapter}");
                     if (ShowDetails)
                     {
                         foreach (DnsEvent dnsEvent in data.GroupQueries.OrderBy(x => x.Start))
                         {
                             string duration = $"{dnsEvent.Duration.TotalSeconds:F3}".WithWidth(6);
 
-                            ColorConsole.WriteEmbeddedColorLine($"\t{GetTimeString(dnsEvent.Start, data.SessionStart, TimeFormatOption),-7} s Duration: [green]{duration} s[/green] [magenta]{dnsEvent.Process.GetProcessWithId(UsePrettyProcessName).WithWidth(-45)}[/magenta] {returnCode}{adapter}{dnsEvent.GetNonAliasResult()}");
+                            ColorConsole.WriteEmbeddedColorLine($"\t{GetDateTimeString(dnsEvent.Start, data.SessionStart, TimeFormatOption),-7} Duration: [green]{duration} s[/green] [magenta]{dnsEvent.Process.GetProcessWithId(UsePrettyProcessName).WithWidth(-45)}[/magenta] {returnCode}{adapter}{dnsEvent.GetNonAliasResult()}");
                         }
                     }
                 }
