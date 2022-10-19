@@ -44,7 +44,7 @@ namespace ETWAnalyzer.Commands
         "                         -ModuleFilter  filter     Print only version information for module. Multiple filters are separated by ;. Wildcards are * and ?. Exclusion filters start with !" + Environment.NewLine;
         static readonly string ProcessHelpString =
         "   Process  -filedir/fd x.etl/.json [-recursive] [-csv xxx.csv] [-NoCSVSeparator] [-TimeFmt s,Local,LocalTime,UTC,UTCTime,Here,HereTime] [-ProcessName/pn xxx.exe(pid)] [-CmdLine *xxx*] [-Crash] " + Environment.NewLine +
-        "            [-ZeroTime/zt Marker/First/Last/ProcessStart filter] [-ZeroProcessName/zpn filter]" + Environment.NewLine +
+        "            [-ShowUser] [-ZeroTime/zt Marker/First/Last/ProcessStart filter] [-ZeroProcessName/zpn filter]" + Environment.NewLine +
         "            [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-MinMax xx-yy] [-ShowFileOnLine] [-ShowAllProcesses] [-NoCmdLine] [-Clip] [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd] [-MinMaxMsTestTimes xx-yy ...]" + Environment.NewLine +
         "            [-ShowFullFileName/-sffn]" + Environment.NewLine + 
         "                         Print process name, pid, command line, start/stop time return code and parent process id" + Environment.NewLine +
@@ -77,6 +77,7 @@ namespace ETWAnalyzer.Commands
         "                                                   -1 Processes which have exited during the trace but have been potentially also started." + Environment.NewLine +
         "                                                    2 Processes which have been started but not stopped during the trace. " + Environment.NewLine +
         "                                                   -2 Processes which are stopped but not started during the trace." + Environment.NewLine +
+        "                         -ShowUser                  Show user name und which the process was started. If extraction is done on a different machine the user sids are displayed." + Environment.NewLine +
         "                         -SortBy[Time / Default]    Sort processes by start time or group by process and then sort by start time (default)." + Environment.NewLine +
         "                         -PlainProcessNames         Default is to use pretty process names based on rename rules in Configuration\\ProcessRenameRules.xml. If you do not want this use this flag." + Environment.NewLine +
         "                         -NoCmdLine                 Omit process command line string in output. Default is to print the full exe with command line." + Environment.NewLine +
@@ -620,6 +621,7 @@ namespace ETWAnalyzer.Commands
         public bool ShowAllProcesses { get; private set; }
         public bool ShowFileOnLine { get; private set; }
         public bool Crash { get; private set; }
+        public bool ShowUser { get; private set; }
 
         // Dump CPU specific Flags
         public KeyValuePair<string, Func<string, bool>> StackTagFilter { get; private set; }
@@ -786,6 +788,9 @@ namespace ETWAnalyzer.Commands
                         break;
                     case "-crash":
                         Crash = true;
+                        break;
+                    case "-showuser":
+                        ShowUser = true;
                         break;
                     case "-details":
                         ShowDetails = true;
@@ -1339,6 +1344,7 @@ namespace ETWAnalyzer.Commands
                             ShowFileOnLine = ShowFileOnLine,
                             ShowAllProcesses = ShowAllProcesses,
                             Crash = Crash,
+                            ShowUser = ShowUser,
                             ZeroTimeMode = ZeroTimeMode,
                             ZeroTimeFilter = ZeroTimeFilter,
                             ZeroTimeProcessNameFilter = ZeroTimeProcessNameFilter,
