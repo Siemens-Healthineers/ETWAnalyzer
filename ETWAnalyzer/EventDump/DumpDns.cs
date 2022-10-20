@@ -148,7 +148,6 @@ namespace ETWAnalyzer.EventDump
                     string timedOut = $"{(data.GroupTimedOut ? "1" : "")}";
                     string adapter = ShowAdapter ? $" {data.GroupAdapters.WithWidth(adapterWidth-1)}" : "";
                     string returnCode = ShowReturnCode ? $" {data.GroupStatus.WithWidth(returnCodeWidth-1)}" : "";
-                    string timedoutServer = "";
 
                     ColorConsole.WriteEmbeddedColorLine($"[green]{dnsQueryTime,12} s[/green]  {minTime,6} s  [yellow]{maxTime,7} s[/yellow] {data.GroupQueryCount,6} [red]{timedOut,7}[/red] [yellow]{data.GroupQuery,dnsQueryWidth}[/yellow]{returnCode}{adapter}");
                     if (ShowDetails)

@@ -147,7 +147,11 @@ namespace ETWAnalyzer.Extractors.Dns
             DnsQueryKey key = new DnsQueryKey(dnsQuery, ETWProcessIndex.Invalid);
             if (myQueryState.TryGetValue(key, out QueryState state))
             {
-                state.DnsServerList.Add( ev.Fields[PropertyDnsServerIpAddress].AsString);
+                string server = ev.Fields[PropertyDnsServerIpAddress].AsString;
+                if (!state.DnsServerList.Contains(server))
+                {
+                    state.DnsServerList.Add(server);
+                }
             }
         }
         
