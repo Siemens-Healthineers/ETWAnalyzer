@@ -53,6 +53,11 @@ namespace ETWAnalyzer.Extract.Network
         public bool TimedOut { get;  set; }
 
         /// <summary>
+        /// Contains the servers which did time out separated by ;
+        /// </summary>
+        public string TimedOutServer { get; set; }
+
+        /// <summary>
         /// Used network adapter names for the query. This can be interesting if e.g. a network is first tried which has no route 
         /// to the queried host which will then time out.
         /// </summary>
@@ -62,7 +67,7 @@ namespace ETWAnalyzer.Extract.Network
         /// Win32 return code DNS query. DNS specific return codes are in the range 9000-9999
         /// </summary>
         public int QueryStatus { get; set; }
-
+        
 
         static readonly char[] DnsResultSep = new char[] { ';' };
 

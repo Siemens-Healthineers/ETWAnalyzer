@@ -148,6 +148,7 @@ namespace ETWAnalyzer.EventDump
                     string timedOut = $"{(data.GroupTimedOut ? "1" : "")}";
                     string adapter = ShowAdapter ? $" {data.GroupAdapters.WithWidth(adapterWidth-1)}" : "";
                     string returnCode = ShowReturnCode ? $" {data.GroupStatus.WithWidth(returnCodeWidth-1)}" : "";
+                    string timedoutServer = "";
 
                     ColorConsole.WriteEmbeddedColorLine($"[green]{dnsQueryTime,12} s[/green]  {minTime,6} s  [yellow]{maxTime,7} s[/yellow] {data.GroupQueryCount,6} [red]{timedOut,7}[/red] [yellow]{data.GroupQuery,dnsQueryWidth}[/yellow]{returnCode}{adapter}");
                     if (ShowDetails)
@@ -155,8 +156,13 @@ namespace ETWAnalyzer.EventDump
                         foreach (DnsEvent dnsEvent in data.GroupQueries.OrderBy(x => x.Start))
                         {
                             string duration = $"{dnsEvent.Duration.TotalSeconds:F3}".WithWidth(6);
+                            string timedOutServer = "";
+                            if( dnsEvent.TimedOut )
+                            {
+                                timedOutServer = $"[red]TimedOut: {dnsEvent.TimedOutServer}[/red] Servers: {dnsEvent.ServerList} ";
+                            }
 
-                            ColorConsole.WriteEmbeddedColorLine($"\t{GetDateTimeString(dnsEvent.Start, data.SessionStart, TimeFormatOption),-7} Duration: [green]{duration} s[/green] [magenta]{dnsEvent.Process.GetProcessWithId(UsePrettyProcessName).WithWidth(-45)}[/magenta] {returnCode}{adapter}{dnsEvent.GetNonAliasResult()}");
+                            ColorConsole.WriteEmbeddedColorLine($"\t{GetDateTimeString(dnsEvent.Start, data.SessionStart, TimeFormatOption),-7} Duration: [green]{duration} s[/green] [magenta]{dnsEvent.Process.GetProcessWithId(UsePrettyProcessName).WithWidth(-45)}[/magenta] {returnCode}{adapter}{timedOutServer}DnsAnswer: {dnsEvent.GetNonAliasResult()}");
                         }
                     }
                 }
