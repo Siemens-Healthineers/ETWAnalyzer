@@ -155,8 +155,13 @@ namespace ETWAnalyzer.EventDump
                         foreach (DnsEvent dnsEvent in data.GroupQueries.OrderBy(x => x.Start))
                         {
                             string duration = $"{dnsEvent.Duration.TotalSeconds:F3}".WithWidth(6);
+                            string timedOutServer = "";
+                            if( dnsEvent.TimedOut )
+                            {
+                                timedOutServer = $"[red]TimedOut: {dnsEvent.TimedOutServer}[/red] Servers: {dnsEvent.ServerList} ";
+                            }
 
-                            ColorConsole.WriteEmbeddedColorLine($"\t{GetDateTimeString(dnsEvent.Start, data.SessionStart, TimeFormatOption),-7} Duration: [green]{duration} s[/green] [magenta]{dnsEvent.Process.GetProcessWithId(UsePrettyProcessName).WithWidth(-45)}[/magenta] {returnCode}{adapter}{dnsEvent.GetNonAliasResult()}");
+                            ColorConsole.WriteEmbeddedColorLine($"\t{GetDateTimeString(dnsEvent.Start, data.SessionStart, TimeFormatOption),-7} Duration: [green]{duration} s[/green] [magenta]{dnsEvent.Process.GetProcessWithId(UsePrettyProcessName).WithWidth(-45)}[/magenta] {returnCode}{adapter}{timedOutServer}DnsAnswer: {dnsEvent.GetNonAliasResult()}");
                         }
                     }
                 }

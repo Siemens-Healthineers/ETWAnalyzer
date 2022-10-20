@@ -18,7 +18,7 @@ namespace ETWAnalyzer.Extractors.Dns
         public bool TimedOut { get; set; }
 
         public List<string> DnsServerList { get; set; } = new List<string>();
-        public string DnsServer { get; internal set; }
+        public string TimedOutServer { get; internal set; }
         public string AdapterName { get; internal set; }
     }
 }
