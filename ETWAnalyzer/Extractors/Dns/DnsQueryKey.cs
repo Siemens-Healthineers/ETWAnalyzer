@@ -44,5 +44,10 @@ namespace ETWAnalyzer.Extractors.Dns
                 );
 
         }
+
+        public override string ToString()
+        {
+            return $"{DnsQuery}";
+        }
     }
 }
