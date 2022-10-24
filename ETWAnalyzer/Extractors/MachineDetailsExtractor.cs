@@ -298,12 +298,11 @@ namespace ETWAnalyzer.Extractors
             foreach (var data in processes.Processes)
             {
 #pragma warning disable CA1416
-                string userSid = data.User.Value;
+                string userSid = data.User?.Value ?? "";
                 if (!translateMap.TryGetValue(userSid, out string userName))
                 {
                     try
                     {
-
                         userName = new System.Security.Principal.SecurityIdentifier(userSid).Translate(typeof(System.Security.Principal.NTAccount)).ToString();
 #pragma warning restore CA1416
                     }
