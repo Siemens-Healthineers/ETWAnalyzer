@@ -85,15 +85,15 @@ jobs:
         # Execute all unit tests in the solution
         - name: Execute unit tests
           run: |
-            dotnet test -p:ParallelizeTestCollections=false --logger GitHubActions --logger "html;LogFileName=TestResults-${{ runner.os }}.html" --logger "trx;LogFileName=TestResults-${{ runner.os }}.trx"
+            dotnet test -p:ParallelizeTestCollections=false --logger GitHubActions
         
-        # Upload the test results
-        - name: Upload test results
-          uses: actions/upload-artifact@v3
-          if: always()
-          with:
-           name: TestResults-${{ runner.os }}
-           path: "**/*.TestResults-${{ runner.os }}.html*"
+        - name: Install ReportGenerator
+          if: success()
+          run: dotnet tool install --global dotnet-reportgenerator-globaltool
+
+        - name: Gerar relatório de cobertura de testes com ReportGenerator
+          if: success()
+          run: reportgenerator "-reports:**/TestResults/**/coverage.cobertura.xml" "-targetdir:coveragereport" -reporttypes:Html
 
         # Restore the application to populate the obj folder with RuntimeIdentifiers
         - name: Restore the application
