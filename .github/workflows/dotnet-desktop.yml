@@ -99,7 +99,7 @@ jobs:
           uses: actions/upload-artifact@v3
           with:
             name: testresults
-            path: ${{**/coveragereport/**.html}}
+            path: index.html
           if: always()
 
         # Restore the application to populate the obj folder with RuntimeIdentifiers
