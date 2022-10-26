@@ -102,7 +102,7 @@ jobs:
           uses: actions/upload-artifact@v3
           with:
             name: testresults
-            path: /**/coveragereport/*.html
+            path: path/**/coveragereport/*.html
             retention-days: 90
           if: always()
 
