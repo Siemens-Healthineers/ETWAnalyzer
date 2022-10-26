@@ -57,6 +57,11 @@ jobs:
                     - 'x64-windows'
 
                 configuration: [Release]
+
+        env:
+            Solution_Name: ETWAnalyzer.sln
+
+        steps:
         
         - name: Checkout
           uses: actions/checkout@v3
