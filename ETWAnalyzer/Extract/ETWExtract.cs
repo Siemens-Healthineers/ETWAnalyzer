@@ -5,10 +5,10 @@ using ETWAnalyzer.Extract.Disk;
 using ETWAnalyzer.Extract.Exceptions;
 using ETWAnalyzer.Extract.FileIO;
 using ETWAnalyzer.Extract.Modules;
+using ETWAnalyzer.Extract.Network;
 using ETWAnalyzer.Extract.PMC;
 using ETWAnalyzer.Extract.ThreadPool;
 using ETWAnalyzer.Extractors;
-using ETWAnalyzer.Infrastructure;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -97,6 +97,11 @@ namespace ETWAnalyzer.Extract
         /// System boot time
         /// </summary>
         public DateTimeOffset BootTime { get; set; }
+
+        /// <summary>
+        /// Detailed ETW Trace settings
+        /// </summary>
+        public TraceHeader TraceHeader { get; set; }
 
         /// <summary>
         /// Extracted ETW Marker events
@@ -312,6 +317,15 @@ namespace ETWAnalyzer.Extract
 
         IPMCData IETWExtract.PMC => PMC;
 
+        /// <summary>
+        /// Network data
+        /// </summary>
+        public Extract.Network.Network Network
+        {
+            get; set;
+        } = new Extract.Network.Network();
+
+        INetwork IETWExtract.Network => Network;
 
         /// <summary>
         /// When File  IO data is accessed via IETWExtract 

@@ -89,5 +89,9 @@ namespace ETWAnalyzer.EventDump
         /// Dump LBR data
         /// </summary>
         LBR,
+        /// <summary>
+        /// Dump Dns data
+        /// </summary>
+        Dns,
     }
 }

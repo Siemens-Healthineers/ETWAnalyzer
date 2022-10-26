@@ -13,10 +13,11 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
 
 namespace ETWAnalyzer.Extractors
 {
-    class MachineDetailsExtractor: ExtractorBase
+    class MachineDetailsExtractor : ExtractorBase
     {
         IPendingResult<IProcessDataSource> myProcesses;
         IPendingResult<ISystemMetadata> myMetaData;
@@ -39,7 +40,7 @@ namespace ETWAnalyzer.Extractors
             mySpecialEvents.RegisterSpecialEvents(processor);
         }
 
-       
+
 
         public override void Extract(ITraceProcessor processor, ETWExtract results)
         {
@@ -50,7 +51,7 @@ namespace ETWAnalyzer.Extractors
             results.MemorySizeMB = (int)(meta?.UsableMemorySize.TotalMegabytes ?? 0);
 
             results.NumberOfProcessors = meta?.ProcessorCount ?? 0;
-            results.CPUSpeedMHz = (int) (meta?.ProcessorSpeed.TotalMegahertz ?? 0 );
+            results.CPUSpeedMHz = (int)(meta?.ProcessorSpeed.TotalMegahertz ?? 0);
 
             try
             {
@@ -83,6 +84,21 @@ namespace ETWAnalyzer.Extractors
             {
                 DateTime localTime = new DateTime(mySpecialEvents.BootTimeUTC.Value.Ticks, DateTimeKind.Unspecified) + results.SessionStart.Offset;
                 results.BootTime = new DateTimeOffset(localTime, results.SessionStart.Offset);
+                results.TraceHeader = new TraceHeader
+                {
+                    BufferSize = mySpecialEvents.BufferSize,
+                    BuffersLost = mySpecialEvents.BuffersLost,
+                    BuffersWritten = mySpecialEvents.BuffersWritten,
+                    EventsLost = mySpecialEvents.EventsLost,
+                    LogFileMode = mySpecialEvents.LogFileModeNice,
+                    MajorVersion = mySpecialEvents.MajorVersion,
+                    MaximumFileSizeMB = mySpecialEvents.MaximumFileSizeMB,
+                    MinorVersion = mySpecialEvents.MinorVersion,
+                    ProviderVersion = mySpecialEvents.ProviderVersion,
+                    SubMinorVersion = mySpecialEvents.SubMinorVersion,
+                    SubVersion = mySpecialEvents.SubVersion,
+                    TimerResolution = mySpecialEvents.TimerResolution,
+                };
             }
 
             ExtractDisplayInformation(meta, results);
@@ -106,7 +122,7 @@ namespace ETWAnalyzer.Extractors
                         IsPrimaryDevice = (disp?.Display?.IsPrimaryDevice).GetValueOrDefault(),
                         RefreshRateHz = (disp?.Display?.RefreshRate).GetValueOrDefault().Hertz,
                         DisplayName = disp.DisplayName,
-                        GraphicsCardMemorySizeMiB = (long) disp.MemorySize.TotalMebibytes,
+                        GraphicsCardMemorySizeMiB = (long)disp.MemorySize.TotalMebibytes,
                         GraphicsCardChipName = disp.ChipName,
                     });
                 }
@@ -164,7 +180,7 @@ namespace ETWAnalyzer.Extractors
             {
                 return new DateTimeFileVersion
                 {
-                    FileName = fileVersionTraceData.OriginalFileName.Replace(".ni.","."),
+                    FileName = fileVersionTraceData.OriginalFileName.Replace(".ni.", "."),
                     FileVersion = fileVersionTraceData.FileVersionNumber,
                 };
             }
@@ -179,7 +195,7 @@ namespace ETWAnalyzer.Extractors
         /// <returns></returns>
         internal static DateTime GetBuildDate(Version version)
         {
-            int buildYear = 2000+GetHundredThousandDigitsAsNumber(version.Build);
+            int buildYear = 2000 + GetHundredThousandDigitsAsNumber(version.Build);
             int buildMonth = GetLastTwoDigits(version.Build);
             int buildDay = GetHundredThousandDigitsAsNumber(version.Revision);
             if (buildYear > 2000 && buildMonth > 0 && buildMonth < 13 && buildDay > 0 && buildDay < 32)
@@ -199,7 +215,7 @@ namespace ETWAnalyzer.Extractors
         /// <returns></returns>
         static int GetLastTwoDigits(int value)
         {
-            return value % 10 + 10*((value / 10) % 10);
+            return value % 10 + 10 * ((value / 10) % 10);
         }
 
         /// <summary>
@@ -234,7 +250,7 @@ namespace ETWAnalyzer.Extractors
         internal void ExtractBuildVersions(IProcessDataSource processes, ETWExtract results)
         {
             DateTimeFileVersion[] syngoVersions = processes.Processes.SelectMany(x => x.Images)
-                .Where(i => (i.FileName?.Contains("syngo")).GetValueOrDefault() )
+                .Where(i => (i.FileName?.Contains("syngo")).GetValueOrDefault())
                 .Select(ConvertToDateTimeFileVersion)
                 .Where(x => x != null)
                 .ToArray();
@@ -242,10 +258,10 @@ namespace ETWAnalyzer.Extractors
             ILookup<Version, DateTimeFileVersion> versions = syngoVersions.ToLookup(x => x.FileVersion);
             List<ModuleVersion> modules = new();
 
-            foreach(var file in syngoVersions.OrderBy(x=>x.FileVersion))
+            foreach (var file in syngoVersions.OrderBy(x => x.FileVersion))
             {
                 string module = myMappings.Value.GetModulePath(file.FileName);
-                if(module != null )
+                if (module != null)
                 {
                     // if .ni.dll and .dll are checked we can end up for one dll with multiple module version entries
                     // skip module version if we have already one with the same version
@@ -277,11 +293,27 @@ namespace ETWAnalyzer.Extractors
         {
             var _listProcess = new List<ETWProcess>();
 
-            //DateTime sessionStart = etlFile.SessionStartTime;
-            //DateTime sessionStop = etlFile.SessionEndTime;
+            Dictionary<string, string> translateMap = new();
 
             foreach (var data in processes.Processes)
             {
+#pragma warning disable CA1416
+                string userSid = data.User?.Value ?? "";
+                if (!translateMap.TryGetValue(userSid, out string userName))
+                {
+                    try
+                    {
+                        userName = new System.Security.Principal.SecurityIdentifier(userSid).Translate(typeof(System.Security.Principal.NTAccount)).ToString();
+#pragma warning restore CA1416
+                    }
+                    catch // this works only for well known sids and local users if extractions is done on same machine, but not for sids of other machines.
+                    {
+                        userName = userSid;  // if user name could not be resolved we use the sid 
+                    }
+
+                    translateMap[userSid] = userName;
+                }
+
                 var process = new ETWProcess()
                 {
                     ProcessID = data.Id,
@@ -293,6 +325,7 @@ namespace ETWAnalyzer.Extractors
                     ReturnCode = data.ExitCode,
                     ParentPid = data.ParentId,
                     HasEnded = data.ExitTime != null,
+                    Identity = userName,
                 };
                 _listProcess.Add(process);
             }

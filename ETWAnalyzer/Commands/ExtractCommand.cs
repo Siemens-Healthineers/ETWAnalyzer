@@ -3,6 +3,7 @@
 
 using ETWAnalyzer.Configuration;
 using ETWAnalyzer.Extract;
+using ETWAnalyzer.Extractors.Dns;
 using ETWAnalyzer.Extractors;
 using ETWAnalyzer.Extractors.CPU;
 using ETWAnalyzer.Extractors.FileIO;
@@ -29,19 +30,19 @@ namespace ETWAnalyzer.Commands
     class ExtractCommand : ArgParser
     {
         internal static readonly string HelpString =
-         "ETWAnalyzer [-extract [All, Default or Disk File CPU Memory Exception Stacktag ThreadPool PMC] -filedir/-fd inEtlOrZip [-symServer NtSymbolPath/MS/Google/syngo] [-keepTemp] [-NoOverwrite] [-pThreads dd] [-nThreads dd]" + Environment.NewLine +
+         "ETWAnalyzer [-extract [All, Default or Disk File CPU Memory Exception Stacktag ThreadPool PMC Dns] -filedir/-fd inEtlOrZip [-symServer NtSymbolPath/MS/Google/syngo] [-keepTemp] [-NoOverwrite] [-pThreads dd] [-nThreads dd]" + Environment.NewLine +
          "Retrieve data from ETL files and store extracted data in a serialized format in Json in the output directory \\Extract folder." + Environment.NewLine +
          "The data can the be analyzed by other tools or ETWAnalyzer itself which can also analyze the data for specific patterns or issues." + Environment.NewLine +
          "Extract Options are separated by space" + Environment.NewLine +
          " -extract Op1 Op2 ..." + Environment.NewLine +
          "  All      : Include all extractors" + Environment.NewLine +
-         "  Default  : Include all extractors except File" + Environment.NewLine + 
+         "  Default  : Include all extractors except File" + Environment.NewLine +
          "  CPU      : CPU consumption of all proceses part of the recording. CPU Sampling (PROFILE) and/or Context Switch tracing (CSWITCH) data with stacks must be present." + Environment.NewLine +
          "  Memory   : Get workingset/committed memory machine wide and of all processes at trace start and a second time at trace end. MEMINFO_WS must be present." + Environment.NewLine +
          "  Exception: Get all .NET Exception Messages, Type and their call stacks when present with Process,ThreadId and TimeStamp" + Environment.NewLine +
          "             To get call stacks you need symbols. See below -symServer section. The Microsoft-Windows-DotNETRuntime ETW provider with ExceptionKeyword 0x8000 and stacks must be present." + Environment.NewLine +
          "  Disk     : Disk IO summary and a per file summary of read/write/flush disk service times. DISK_IO data must be present in trace to get this data." + Environment.NewLine +
-         "  Module   : Dump all loaded modules with file path and version. LOADER data must be present in trace." + Environment.NewLine + 
+         "  Module   : Dump all loaded modules with file path and version. LOADER data must be present in trace." + Environment.NewLine +
          "  File     : Open/Close/Read/Write summary of all accessed files per process" + Environment.NewLine +
          "             The ETL file must contain FILEIO data." + Environment.NewLine +
          "  Stacktag : Get from all processes the CPU call stack summary by the WPA stacktag names" + Environment.NewLine +
@@ -52,7 +53,8 @@ namespace ETWAnalyzer.Commands
          "                           There you can configure with the ETWAnalyzer\\Configuration\\Special.stacktags to trend e.g. specific methods over one or more testruns to find regression issues or when an issue did start occurring." + Environment.NewLine +
          "  ThreadPool: Extract relevant data from .NET Runtime ThreadPool if available. ThreadingKeyword 0x10000 needs to be set for the Microsoft-Windows-DotNETRuntime ETW Provider during recording." + Environment.NewLine +
          "              Json Nodes: ThreadPool-PerProcessThreadPoolStarvations" + Environment.NewLine +
-         "  PMC       : Extract Performance Monitoring Counters and Last Branch Record CPU traces. You need to enable PMC/LBR ETW Tracing during the recording to get data." + Environment.NewLine + 
+         "  PMC       : Extract Performance Monitoring Counters and Last Branch Record CPU traces. You need to enable PMC/LBR ETW Tracing during the recording to get data." + Environment.NewLine +
+        "   DNS       : Extract DNS Queries. You need to enable ETW provider Microsoft-Windows-DNS-Client" + Environment.NewLine + 
          " -NoOverwrite         By default existing Json files are overwritten during a new extraction run. If you want to extract from a large directory only the missing extraction files you can use this option" + Environment.NewLine +
          "                      This way you can have the same extract command line in a script after a profiling run to extract only the newly added profiling data." + Environment.NewLine +
         "  -recursive           Test data is searched recursively below -filedir" + Environment.NewLine +
@@ -130,7 +132,8 @@ namespace ETWAnalyzer.Commands
             StackTag,
             ThreadPool,
             Module,
-            PMC
+            PMC,
+            Dns,
         }
 
         /// <summary>
@@ -155,6 +158,7 @@ namespace ETWAnalyzer.Commands
             { ExtractionOptions.ThreadPool, () => new ThreadPoolExtractor() },
             { ExtractionOptions.Module,     () => new ModuleExtractor()     },
             { ExtractionOptions.PMC,        () => new PMCExtractor()        },
+            { ExtractionOptions.Dns,        () => new DnsClientExtractor()  },
         };
 
         /// <summary>
@@ -206,7 +210,7 @@ namespace ETWAnalyzer.Commands
         /// <summary>
         /// Set via -timeLine dd
         /// </summary>
-        float? TimelineDataExtractionIntervalS { get; set;  }
+        float? TimelineDataExtractionIntervalS { get; set; }
 
         /// <summary>
         /// List to store extracting actions 
@@ -287,7 +291,7 @@ namespace ETWAnalyzer.Commands
                         break;
                     case TempDirArg:
                         string tmpDir = GetNextNonArg(TempDirArg);
-                        if( !Directory.Exists(tmpDir) )
+                        if (!Directory.Exists(tmpDir))
                         {
                             throw new DirectoryNotFoundException($"Temp Directory {tmpDir} does not exist.");
                         }
@@ -397,6 +401,7 @@ namespace ETWAnalyzer.Commands
                         extractors.Add(myExtractorFactory[ExtractionOptions.ThreadPool]());
                         extractors.Add(myExtractorFactory[ExtractionOptions.Module]());
                         extractors.Add(myExtractorFactory[ExtractionOptions.PMC]());
+                        extractors.Add(myExtractorFactory[ExtractionOptions.Dns]());
                     }
                     else
                     {

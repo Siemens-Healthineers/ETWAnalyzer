@@ -30,7 +30,7 @@ namespace ETWAnalyzer.EventDump
 
             if (IsCSVEnabled)
             {
-                OpenCSVWithHeader("CSVOptions", "Directory", "FileName", "Date", "Test Case", "Test Time in ms", "Baseline", "ProcessName", "Process", "Command Line", "Starvation Time", "ThreadCount");
+                OpenCSVWithHeader("CSVOptions", "Directory", "FileName", "Date", "Test Case", "Test Time in ms", "BaseLine", "ProcessName", "Process", "Command Line", "Starvation Time", "ThreadCount");
 
                 foreach (var threadEvent in data)
                 {
@@ -57,7 +57,7 @@ namespace ETWAnalyzer.EventDump
         {
             foreach(var match in data.GroupBy(x => x.File).OrderBy(x=>x.Key.PerformedAt))
             {
-                Console.WriteLine($"{Path.GetFileNameWithoutExtension(match.Key.FileName)} {GetDateTimeString(match.Key.PerformedAt)} {match.First().BaseLine}");
+                PrintFileName(match.Key.FileName, null, match.Key.PerformedAt, match.First().BaseLine);
                 foreach(var starvation in match.OrderBy(x=>x.Starvations.Count))
                 {
                     ColorConsole.Write($"{starvation.Process.GetProcessWithId(UsePrettyProcessName)}{starvation.Process.StartStopTags}", ConsoleColor.Yellow);

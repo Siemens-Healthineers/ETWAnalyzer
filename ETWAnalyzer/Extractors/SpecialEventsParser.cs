@@ -2,16 +2,64 @@
 //// SPDX-License-Identifier:   MIT
 
 
+using ETWAnalyzer.Extract;
 using ETWAnalyzer.TraceProcessorHelpers;
 using Microsoft.Windows.EventTracing;
+using Newtonsoft.Json.Linq;
 using System;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
 namespace ETWAnalyzer.Extractors
 {
     internal class SpecialEventsParser
     {
-        public DateTime? BootTimeUTC { get; set; }
+
+
+        public DateTime? BootTimeUTC { get; private set; }
+        public uint BufferSize { get; private set; }
+        public byte MajorVersion { get; private set; }
+        public byte MinorVersion { get; private set; }
+        public byte SubVersion { get; private set; }
+        public byte SubMinorVersion { get; private set; }
+        public uint ProviderVersion { get; private set; }
+        public uint TimerResolution { get; private set; }
+        public uint MaximumFileSizeMB { get; private set; }
+        public LogFileModeEnum LogFileMode { get; private set; }
+        public uint BuffersWritten { get; private set; }
+        public uint EventsLost { get; private set; }
+        public ulong LoggerName { get; private set; }
+        public ulong LogFileName { get; private set; }
+        public uint BuffersLost { get; private set; }
+
+        public string LogFileModeNice
+        {
+            get
+            {
+                List<string> values = new List<string>();
+                for (int i=0;i<32;i++)
+                {
+                    uint v = (uint) (1 << i);
+                    LogFileModeEnum definedValue = (LogFileModeEnum)v & LogFileModeEnum.All;
+                    if ( definedValue != LogFileModeEnum.None)
+                    {
+                        if( (definedValue & LogFileMode) != LogFileModeEnum.None)
+                        {
+                            values.Add(definedValue.ToString());
+                        }
+                    }
+                    else
+                    {
+                        if( ( v & (uint) LogFileMode ) != 0 ) // undefined value set not covered by enum
+                        {
+                            values.Add( "0x" + v.ToString("X"));
+                        }
+                    }
+                    
+                }
+                return string.Join(",", values);
+            }
+        }
 
         /// <summary>
         /// Get events out of ETL which are not exposed by TraceProcessing Library, such as boot time
@@ -45,6 +93,21 @@ namespace ETWAnalyzer.Extractors
                     NativeTraceHeaderEvent32 typedData = Marshal.PtrToStructure<NativeTraceHeaderEvent32>(pointer);
                     Marshal.FreeHGlobal(pointer);
                     rawBootTime = typedData.BootTime;
+
+                    BufferSize = typedData.BufferSize;
+                    BuffersLost = typedData.BuffersLost;
+                    BuffersWritten = typedData.BuffersWritten;
+                    EventsLost = typedData.EventsLost;
+                    LogFileMode = (LogFileModeEnum) typedData.LogFileMode;
+                    LogFileName = typedData.LogFileName;
+                    LoggerName = typedData.LoggerName;
+                    MajorVersion = typedData.MajorVersion;
+                    MinorVersion = typedData.MinorVersion;
+                    SubVersion = typedData.SubVersion;
+                    SubMinorVersion = typedData.SubMinorVersion;
+                    MaximumFileSizeMB = typedData.MaximumFileSize;
+                    ProviderVersion = typedData.ProviderVersion;
+                    TimerResolution = typedData.TimerResolution;
                 }
                 else
                 {
@@ -59,6 +122,21 @@ namespace ETWAnalyzer.Extractors
                     NativeTraceHeaderEvent64 typedData = Marshal.PtrToStructure<NativeTraceHeaderEvent64>(pointer);
                     Marshal.FreeHGlobal(pointer);
                     rawBootTime = typedData.BootTime;
+
+                    BufferSize = typedData.BufferSize;
+                    BuffersLost = typedData.BuffersLost;
+                    BuffersWritten = typedData.BuffersWritten;
+                    EventsLost = typedData.EventsLost;
+                    LogFileMode = (LogFileModeEnum)typedData.LogFileMode;
+                    LogFileName = typedData.LogFileName;
+                    LoggerName = typedData.LoggerName;
+                    MajorVersion = typedData.MajorVersion;
+                    MinorVersion = typedData.MinorVersion;
+                    SubVersion = typedData.SubVersion;
+                    SubMinorVersion = typedData.SubMinorVersion;
+                    MaximumFileSizeMB = typedData.MaximumFileSize;
+                    ProviderVersion = typedData.ProviderVersion;
+                    TimerResolution = typedData.TimerResolution;
                 }
 
                 // See https://docs.microsoft.com/en-us/windows/win32/api/evntrace/ns-evntrace-trace_logfile_header:
@@ -66,6 +144,8 @@ namespace ETWAnalyzer.Extractors
                 // contrary).
                 DateTime epoch = new DateTime(1601, 1, 1, 0, 0, 0, DateTimeKind.Utc);
                 BootTimeUTC = epoch.AddTicks(rawBootTime);
+
+
 
                 e.Cancel();
             });

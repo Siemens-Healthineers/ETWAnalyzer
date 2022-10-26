@@ -46,6 +46,7 @@ Normally you would want to use all builtin extractors which include
 | File| Open/Close/Read/Write summary of all accessed files per process. The ETL file must contain *FILEIO* data.|
 | Module| Dump all loaded modules with file path and version. *LOADER* data must be present in trace. |
 | PMC      | Extract CPU cache misses, branch mispredictions. This reads low level CPU performance data. Additionally LBR (Last Branch Record) traces are processed to estimate call counts without the need to instrument any code. The ETL file must have enabled PMC tracing in counting mode or LBR (Last Branch Record) tracing. To enable see [PMC Help](https://github.com/Siemens-Healthineers/ETWAnalyzer/blob/main/ETWAnalyzer/Documentation/DumpPMCCommand.md). |
+| DNS      | Extract DNS requests and their timing. *Microsoft-Windows-DNS-Client* provider needs to be enabled along with *PROC_THREAD*. |
 
 ### Example
 
@@ -147,6 +148,7 @@ The currently supported dump commands are
 - [TestRun](ETWAnalyzer/Documentation/DumpTestRunCommand.md)
 - [PMC](ETWAnalyzer/Documentation/DumpPMCCommand.md)
 - [LBR](ETWAnalyzer/Documentation/DumpLBRCommand.md)
+- [Dns](ETWAnalyzer/Documentation/DumpDNSCommand.md)
 
 which all support -filedir and an extensive command line help what you can dump from the extracted data. 
 

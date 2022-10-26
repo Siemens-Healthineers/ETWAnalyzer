@@ -39,7 +39,7 @@ namespace ETWAnalyzer.EventDump
 
             if( IsCSVEnabled)
             {
-                OpenCSVWithHeader("CSVOptions", "Directory", "FileName", "Date", "Test Case", "Test Time in ms", "Baseline", "Mark Time", "Time Diff To Zero in s", "Mark Message");
+                OpenCSVWithHeader("CSVOptions", "Directory", "FileName", "Date", "Test Case", "Test Time in ms", "BaseLine", "Mark Time", "Time Diff To Zero in s", "Mark Message");
 
                 foreach (var markEvent in data)
                 {
@@ -61,7 +61,7 @@ namespace ETWAnalyzer.EventDump
         {
             foreach (var match in data.GroupBy(x => x.File).OrderBy(x => x.Key.PerformedAt))
             {
-                Console.WriteLine($"{Path.GetFileNameWithoutExtension(match.Key.FileName)} {GetDateTimeString(match.Key.PerformedAt)} {match.First().BaseLine}");
+                PrintFileName(match.Key.FileName, null, match.Key.PerformedAt, match.First().BaseLine);
                 foreach (var mark in match.Where(x => MinMaxMarkDiffTime.IsWithin(x.DiffToZeroS)).OrderBy(x => x.Mark.Time) ) 
                 {
                     string diff = $"{mark.DiffToZeroS:F3} s";
