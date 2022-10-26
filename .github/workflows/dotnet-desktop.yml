@@ -107,8 +107,6 @@ jobs:
           env:
             Solution_Name: ./tests
 
-        # upload the test artifacts generated above to github page
-        - name: upload test artifacts
           uses: actions/upload-artifact@v3
           with:
             name: testresults
