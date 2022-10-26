@@ -87,19 +87,23 @@ jobs:
           run: |
             dotnet test -p:ParallelizeTestCollections=false --logger GitHubActions --verbosity detailed --collect:"XPlat Code Coverage"
         
+        # install dotnet ReportGenerator
         - name: Install ReportGenerator
           if: always()
           run: dotnet tool install --global dotnet-reportgenerator-globaltool
 
+        # generate reports using ReportGenerator into dir: coveragereport/**.html
         - name: Generate test coverage report with ReportGenerator
           if: always()
           run: reportgenerator "-reports:**/TestResults/**/coverage.cobertura.xml" "-targetdir:coveragereport" -reporttypes:html
 
+        # upload the test artifacts generated above to github page
         - name: upload test artifacts
           uses: actions/upload-artifact@v3
           with:
             name: testresults
-            path: index.html
+            path: /**/coveragereport/*.html
+            retention-days: 90
           if: always()
 
         # Restore the application to populate the obj folder with RuntimeIdentifiers
