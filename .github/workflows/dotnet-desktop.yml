@@ -97,12 +97,22 @@ jobs:
           if: always()
           run: reportgenerator "-reports:**/TestResults/**/coverage.cobertura.xml" "-targetdir:coveragereport" -reporttypes:html
 
+        - name: Create report directoryTests
+          run: mkdir tests; mkdir tests/reportCodeCoverage
+
+        - name: Copy files from directory ./coveragereport to report
+          run: cp coveragereport/* tests/reportCodeCoverage
+
+        - name: Upload as Artifact of Successful Test Results Reports + Code Coverage
+          env:
+            Solution_Name: ./tests
+
         # upload the test artifacts generated above to github page
         - name: upload test artifacts
           uses: actions/upload-artifact@v3
           with:
             name: testresults
-            path: path/**/coveragereport/*.html
+            path: ${{ env. Solution_Name }}
             retention-days: 90
           if: always()
 
