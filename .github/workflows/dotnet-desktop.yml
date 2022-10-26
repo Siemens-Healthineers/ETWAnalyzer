@@ -86,7 +86,7 @@ jobs:
         - name: Execute unit tests
           run: |
             dotnet add package coverlet.collector --version 3.1.2
-            dotnet test -p:ParallelizeTestCollections=false --logger GitHubActions --verbosity detailed --collect:"XPlat Code Coverage"
+            dotnet test -p:ParallelizeTestCollections=false --logger GitHubActions --verbosity detailed --collect:"XPlat Code Coverage" --settings **/runsettings.xml
         
         - name: Install ReportGenerator
           if: success()
