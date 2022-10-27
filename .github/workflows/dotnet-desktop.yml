@@ -95,7 +95,7 @@ jobs:
         # generate reports using ReportGenerator into dir: coveragereport/**.html
         - name: Generate test coverage report with ReportGenerator
           if: always()
-          run: reportgenerator "-reports:**/TestResults/**/coverage.cobertura.xml" "-targetdir:coveragereport" "-reporttypes:html;HtmlInline" "-sourcedirs:**/ETWAnalyzer/" "-assemblyfilters:+ETWAnalyzer"
+          run: reportgenerator "-reports:**/TestResults/**/coverage.cobertura.xml" "-targetdir:coveragereport" -reporttypes:html "-assemblyfilters:+ETWAnalyzer"
 
         - name: Create report directoryTests
           run: mkdir tests; mkdir tests/reportCodeCoverage
