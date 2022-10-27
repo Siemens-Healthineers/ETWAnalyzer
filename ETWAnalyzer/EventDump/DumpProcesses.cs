@@ -63,6 +63,11 @@ namespace ETWAnalyzer.EventDump
 
         private void Print(List<MatchData> data)
         {
+            if( data.Count == 0) // nothing to print and Max would throw otherwise for max column calculation
+            {
+                return;
+            }
+
             string currentSourceFile = null;
 
             if (SortOrder == DumpCommand.SortOrders.Time)
