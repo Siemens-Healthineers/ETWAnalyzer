@@ -85,7 +85,7 @@ jobs:
         # Execute all unit tests in the solution
         - name: Execute unit tests
           run: |
-            dotnet test -p:ParallelizeTestCollections=false --logger "GitHubActions" --verbosity detailed --collect:"XPlat Code Coverage" --logger trx
+            dotnet test -p:ParallelizeTestCollections=false --logger "GitHubActions;annotations.titleFormat=$test;annotations.messageFormat=$error\n$trace" --verbosity detailed --collect:"XPlat Code Coverage" --logger trx
         
         # install dotnet ReportGenerator
         - name: Install ReportGenerator
@@ -105,7 +105,7 @@ jobs:
 
         - name: Upload as Artifact of Successful Test Results Reports + Code Coverage
           env:
-            Solution_Name: ./ETWAnalyzer
+            Solution_Name: ./ETWAnalyzer_
 
           uses: actions/upload-artifact@v3
           with:
