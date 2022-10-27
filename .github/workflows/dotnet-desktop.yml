@@ -85,7 +85,7 @@ jobs:
         # Execute all unit tests in the solution
         - name: Execute unit tests
           run: |
-            dotnet test -p:ParallelizeTestCollections=false --logger GitHubActions --verbosity detailed --collect:"XPlat Code Coverage" --logger trx
+            dotnet test -p:ParallelizeTestCollections=false --logger GitHubActions --verbosity detailed --collect:"XPlat Code Coverage" --results-directory ./TestResults --logger trx
         
         # install dotnet ReportGenerator
         - name: Install ReportGenerator
@@ -95,7 +95,7 @@ jobs:
         # generate reports using ReportGenerator into dir: coveragereport/**.html
         - name: Generate test coverage report with ReportGenerator
           if: always()
-          run: reportgenerator "-reports:**/TestResults/**/coverage.cobertura.xml" "-targetdir:coveragereport" -reporttypes:html
+          run: reportgenerator "-reports:**/TestResults/**/coverage.cobertura.xml" "-targetdir:coveragereport" -reporttypes:HtmlInline
 
         - name: Create report directoryTests
           run: mkdir tests; mkdir tests/reportCodeCoverage
