@@ -99,6 +99,11 @@ namespace ETWAnalyzer.Extract
         public DateTimeOffset BootTime { get; set; }
 
         /// <summary>
+        /// Detailed ETW Trace settings
+        /// </summary>
+        public TraceHeader TraceHeader { get; set; }
+
+        /// <summary>
         /// Extracted ETW Marker events
         /// </summary>
         public List<ETWMark> ETWMarks { get; set; } 

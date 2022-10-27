@@ -44,7 +44,7 @@ namespace ETWAnalyzer.Commands
         "                         -ModuleFilter  filter     Print only version information for module. Multiple filters are separated by ;. Wildcards are * and ?. Exclusion filters start with !" + Environment.NewLine;
         static readonly string ProcessHelpString =
         "   Process  -filedir/fd x.etl/.json [-recursive] [-csv xxx.csv] [-NoCSVSeparator] [-TimeFmt s,Local,LocalTime,UTC,UTCTime,Here,HereTime] [-ProcessName/pn xxx.exe(pid)] [-CmdLine *xxx*] [-Crash] " + Environment.NewLine +
-        "            [-ZeroTime/zt Marker/First/Last/ProcessStart filter] [-ZeroProcessName/zpn filter]" + Environment.NewLine +
+        "            [-ShowUser] [-ZeroTime/zt Marker/First/Last/ProcessStart filter] [-ZeroProcessName/zpn filter]" + Environment.NewLine +
         "            [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-MinMax xx-yy] [-ShowFileOnLine] [-ShowAllProcesses] [-NoCmdLine] [-Clip] [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd] [-MinMaxMsTestTimes xx-yy ...]" + Environment.NewLine +
         "            [-ShowFullFileName/-sffn]" + Environment.NewLine + 
         "                         Print process name, pid, command line, start/stop time return code and parent process id" + Environment.NewLine +
@@ -77,6 +77,7 @@ namespace ETWAnalyzer.Commands
         "                                                   -1 Processes which have exited during the trace but have been potentially also started." + Environment.NewLine +
         "                                                    2 Processes which have been started but not stopped during the trace. " + Environment.NewLine +
         "                                                   -2 Processes which are stopped but not started during the trace." + Environment.NewLine +
+        "                         -ShowUser                  Show user name und which the process was started. If extraction is done on a different machine the user sids are displayed." + Environment.NewLine +
         "                         -SortBy[Time / Default]    Sort processes by start time or group by process and then sort by start time (default)." + Environment.NewLine +
         "                         -PlainProcessNames         Default is to use pretty process names based on rename rules in Configuration\\ProcessRenameRules.xml. If you do not want this use this flag." + Environment.NewLine +
         "                         -NoCmdLine                 Omit process command line string in output. Default is to print the full exe with command line." + Environment.NewLine +
@@ -286,9 +287,10 @@ namespace ETWAnalyzer.Commands
         "                         -Methods *Func1*;xxx.dll!FullMethodName   Dump one or more methods from all or selected processes. When omitted only process total method call is printed to give an overview." + Environment.NewLine;
 
         static readonly string DnsHelpString =
-        "  Dns -filedir/fd Extract\\ or xxx.json [-ShowAdapter] [-ShowReturnCode] [-TopN dd nn] [-SortBy Time/Count] [-DnsQueryFilter xxx] [-MinMaxTotalTimeMs min [max]] [-MinMaxTimeMs min [max]] [-recursive] " + Environment.NewLine +
+        "  Dns -filedir/fd Extract\\ or xxx.json [-DnsQueryFilter xxx] [-Details] [-ShowAdapter] [-ShowReturnCode] [-TopN dd nn] [-SortBy Time/Count] [-MinMaxTotalTimeMs min [max]] [-MinMaxTimeMs min [max]] [-recursive] [-TimeFmt s,Local,LocalTime,UTC,UTCTime,Here,HereTime]" + Environment.NewLine +
         "       [-csv xxx.csv] [-NoCSVSeparator] [-NoCmdLine] [-Clip] [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd] [-MinMaxMsTestTimes xx-yy ...] [-ProcessName/pn xxx.exe(pid)] [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-CmdLine substring]" + Environment.NewLine +
-        "                         Print Dns summaries and Dns delay metrics. To see data you need to enable the Microsoft-Windows-DNS-Client ETW provider" + Environment.NewLine +
+        "                         Print Dns summary and delay metrics. To see data you need to enable the Microsoft-Windows-DNS-Client ETW provider" + Environment.NewLine +
+        "                         -Details                   Display time, duration, process, resolved IP of every Dns request." + Environment.NewLine +
         "                         -ShowAdapter               Show which network adapters were used to query Dns." + Environment.NewLine +
         "                         -ShowReturnCode            Show Dns API Win32 return code/s. Success and InvalidParameter are not shown." + Environment.NewLine +
         "                         -TopN dd nn                Show only the queries with dd highest Dns time/count. Optional nn skips the first nn lines." + Environment.NewLine +
@@ -436,7 +438,10 @@ namespace ETWAnalyzer.Commands
         "[green]Show Dns latency for Firefox browser process omitting command line but with queried network adapters. If more than one network adapter was queried it could be that the first adapter query timed out.[/green]" + Environment.NewLine +
         " ETWAnalyzer -fd xx.json -dump Dns -ShowAdapter -NoCmdLine -pn firefox" + Environment.NewLine +
         "[green]Count all Dns queries to *google* domains which were slower than 20ms.[/green]" + Environment.NewLine +
-        " ETWAnalyzer -fd xx.json -dump Dns -DnsQueryFilter *google* -SortBy Count -MinMaxTimeMs 20" + Environment.NewLine;
+        " ETWAnalyzer -fd xx.json -dump Dns -DnsQueryFilter *google* -SortBy Count -MinMaxTimeMs 20" + Environment.NewLine + 
+        "[green]Show every DNS query by time, process and returned IPs which were slower than 20ms. Query time is printed in WPA trace time. Overlapping (async) Dns query durations are only counted once for the sum in Total s column.[/green]" + Environment.NewLine +
+        " ETWAnalyzer -fd xx.json -dump Dns -Details -MinMaxTimeMs 20 -TimeFmt s" + Environment.NewLine;
+
 
 
 
@@ -617,6 +622,7 @@ namespace ETWAnalyzer.Commands
         public bool ShowAllProcesses { get; private set; }
         public bool ShowFileOnLine { get; private set; }
         public bool Crash { get; private set; }
+        public bool ShowUser { get; private set; }
 
         // Dump CPU specific Flags
         public KeyValuePair<string, Func<string, bool>> StackTagFilter { get; private set; }
@@ -670,9 +676,11 @@ namespace ETWAnalyzer.Commands
         public bool ShowAllFiles { get; private set; }
         public int Min { get; private set; }
         public int Max { get; private set; }
-        public bool ShowDetails { get; private set; }
         public Extract.FileIO.FileIOStatistics.FileOperation FileOperation { get; private set; }
-        
+
+
+        // Shared by -dump File and Dns 
+        public bool ShowDetails { get; private set; }
 
         // Dump ThreadPool specific Flags
         public bool NoCmdLine { get; private set; }
@@ -781,6 +789,9 @@ namespace ETWAnalyzer.Commands
                         break;
                     case "-crash":
                         Crash = true;
+                        break;
+                    case "-showuser":
+                        ShowUser = true;
                         break;
                     case "-details":
                         ShowDetails = true;
@@ -1337,6 +1348,7 @@ namespace ETWAnalyzer.Commands
                             ShowFileOnLine = ShowFileOnLine,
                             ShowAllProcesses = ShowAllProcesses,
                             Crash = Crash,
+                            ShowUser = ShowUser,
                             ZeroTimeMode = ZeroTimeMode,
                             ZeroTimeFilter = ZeroTimeFilter,
                             ZeroTimeProcessNameFilter = ZeroTimeProcessNameFilter,
@@ -1684,6 +1696,7 @@ namespace ETWAnalyzer.Commands
                             NoCmdLine = NoCmdLine,
                             TopN = TopN,
                             SortOrder = SortOrder,
+                            ShowDetails = ShowDetails,
                             ShowAdapter = ShowAdapter,
                             ShowReturnCode = ShowReturnCode,
                             DnsQueryFilter = DnsQueryFilter,

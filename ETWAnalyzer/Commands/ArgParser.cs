@@ -35,6 +35,7 @@ abstract class ArgParser : ICommand
     internal const string PerThreadArg = "-perthread";
     internal const string AllExceptionsArgs = "-allexceptions";
     internal const string UnzipOperationArg = "-unzipoperation";
+    
 
 
 

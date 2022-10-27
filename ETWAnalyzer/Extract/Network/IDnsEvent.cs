@@ -46,6 +46,11 @@ namespace ETWAnalyzer.Extract.Network
         bool TimedOut { get; }
 
         /// <summary>
+        /// Contains the servers which did time out separated by ;
+        /// </summary>
+        string TimedOutServer { get; }
+
+        /// <summary>
         /// Used network adapter names for the query. This can be interesting if e.g. a network is first tried which has no route 
         /// to the queried host which will then time out.
         /// </summary>

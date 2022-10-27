@@ -58,6 +58,12 @@ namespace ETWAnalyzer.Extract
         /// </summary>
         public DateTimeOffset EndTime { get; set; }
 
+        /// <summary>
+        /// User name or SID.
+        /// During extraction we try to resolve the user names, but it can fail if extraction is done on a different machine. We then store the SID as fallback.
+        /// </summary>
+        public string Identity { get; set; }
+
         string myProcessNamePretty;
 
         /// <summary>
