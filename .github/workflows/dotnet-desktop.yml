@@ -95,7 +95,7 @@ jobs:
         # generate reports using ReportGenerator into dir: coveragereport/**.html
         - name: Generate test coverage report with ReportGenerator
           if: always()
-          run: reportgenerator "-reports:**/TestResults/**/coverage.cobertura.xml" "-targetdir:coveragereport" -reporttypes:HtmlInline
+          run: reportgenerator "-reports:**/TestResults/**/coverage.cobertura.xml" "-targetdir:coveragereport" "-reporttypes:html;HtmlInline" "sourcedirs:**/ETWAnalyzer/"
 
         - name: Create report directoryTests
           run: mkdir tests; mkdir tests/reportCodeCoverage
@@ -113,7 +113,7 @@ jobs:
             path: ${{ env. Solution_Name }}
             retention-days: 90
           if: always()
-
+          
         # Restore the application to populate the obj folder with RuntimeIdentifiers
         - name: Restore the application
           run: msbuild $env:Solution_Name /t:Restore /p:Configuration=$env:Configuration
