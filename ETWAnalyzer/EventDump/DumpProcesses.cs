@@ -381,7 +381,6 @@ namespace ETWAnalyzer.EventDump
         {
             bool lret =
             (process.ProcessName != null) &&
-            (process.ProcessName != "conhost.exe") &&
             (ProcessNameFilter(process.GetProcessName(UsePrettyProcessName)) ||        // filter by process name like cmd.exe and with pid like cmd.exe(100)
              ProcessNameFilter(process.GetProcessWithId(UsePrettyProcessName))
             ) &&
