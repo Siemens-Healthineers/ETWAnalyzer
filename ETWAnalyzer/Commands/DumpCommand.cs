@@ -45,7 +45,7 @@ namespace ETWAnalyzer.Commands
         static readonly string ProcessHelpString =
         "   Process  -filedir/fd x.etl/.json [-recursive] [-csv xxx.csv] [-NoCSVSeparator] [-TimeFmt s,Local,LocalTime,UTC,UTCTime,Here,HereTime] [-ProcessName/pn xxx.exe(pid)] [-CmdLine *xxx*] [-Crash] " + Environment.NewLine +
         "            [-ShowUser] [-ZeroTime/zt Marker/First/Last/ProcessStart filter] [-ZeroProcessName/zpn filter]" + Environment.NewLine +
-        "            [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-MinMax xx-yy] [-ShowFileOnLine] [-ShowAllProcesses] [-NoCmdLine] [-Clip] [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd] [-MinMaxMsTestTimes xx-yy ...]" + Environment.NewLine +
+        "            [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-MinMaxStart xx-yy] [-ShowFileOnLine] [-ShowAllProcesses] [-NoCmdLine] [-Clip] [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd] [-MinMaxMsTestTimes xx-yy ...]" + Environment.NewLine +
         "            [-ShowFullFileName/-sffn]" + Environment.NewLine + 
         "                         Print process name, pid, command line, start/stop time return code and parent process id" + Environment.NewLine +
         "                         Default: The processes are grouped by exe sorted by name and then sorted by time to allow easy checking of recurring process starts." + Environment.NewLine +
@@ -86,6 +86,7 @@ namespace ETWAnalyzer.Commands
         "                         -Merge                     Merge all selected Json files to calculate process lifetime across all passed Json files. This also limits the display to only started/ended processes per file." + Environment.NewLine +
         "                         -ShowAllProcesses          When -Merge is used already running processes are only printed once. If you want to know if they were still running use this flag." + Environment.NewLine +
         "                         -MinMaxDuration minS [maxS] Filter for process duration in seconds." + Environment.NewLine +
+        "                         -MinMaxStart minS [maxS]   Select processes which did start after minS seconds." + Environment.NewLine +
         "                         -ShowFileOnLine            Show etl file name on each printed line." + Environment.NewLine +
         "                         -Crash                     Show potentially crashed processes with unusual return codes, or did trigger Windows Error Reporting." + Environment.NewLine +
         "                         For other options [-TestsPerRun] [-SkipNTests] [-TestRunIndex] [-TestRunCount] [-MinMaxMsTestTimes]" + Environment.NewLine +
@@ -626,6 +627,7 @@ namespace ETWAnalyzer.Commands
         public bool ShowFileOnLine { get; private set; }
         public bool Crash { get; private set; }
         public bool ShowUser { get; private set; }
+        public MinMaxRange<double> MinMaxStart { get; private set; } = new MinMaxRange<double>();
 
         // Dump CPU specific Flags
         public KeyValuePair<string, Func<string, bool>> StackTagFilter { get; private set; }
@@ -1012,6 +1014,12 @@ namespace ETWAnalyzer.Commands
                         Tuple<double, double> minMaxTotalTimeMsDouble = minTotalTimeMs.GetMinMaxDouble(maxTotalTimeMs);
                         MinMaxTotalTimeMs = new MinMaxRange<double>(minMaxTotalTimeMsDouble.Item1, minMaxTotalTimeMsDouble.Item2);
                         break;
+                    case "-minmaxstart":
+                        string minStart = GetNextNonArg("-minmaxstart");
+                        string maxStart = GetNextNonArg("-minmaxstart", false); //optional
+                        Tuple<double, double> minmaxStartDouble = minStart.GetMinMaxDouble(maxStart);
+                        MinMaxStart = new MinMaxRange<double>(minmaxStartDouble.Item1, minmaxStartDouble.Item2);
+                        break;
                     case "-minmaxmstesttimes":
                         string minMaxTestTime = GetNextNonArg("-minmaxmstesttimes");
                         do
@@ -1352,6 +1360,7 @@ namespace ETWAnalyzer.Commands
                             ZeroTimeMode = ZeroTimeMode,
                             ZeroTimeFilter = ZeroTimeFilter,
                             ZeroTimeProcessNameFilter = ZeroTimeProcessNameFilter,
+                            MinMaxStart = MinMaxStart,
                         };
                         break;
                     case DumpCommands.CPU:
