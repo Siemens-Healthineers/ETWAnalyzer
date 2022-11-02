@@ -272,4 +272,4 @@ ETWAnalyzer/3rdParty/ReadMeOSS.html
 ETWAnalyzer/Documentation/Contributing.html
 
 # Avoid Logs from runsettings
-*.txt
+**/*.txt
