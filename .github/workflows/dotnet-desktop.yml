@@ -85,7 +85,7 @@ jobs:
         # Execute all unit tests in the solution
         - name: Execute unit tests
           run: |
-            dotnet test -p:ParallelizeTestCollections=false --logger GitHubActions --verbosity detailed --collect:"XPlat Code Coverage" --settings Test.runsettings --results-directory ./TestResults --logger trx 
+            dotnet test -p:ParallelizeTestCollections=false --logger GitHubActions --verbosity detailed --collect:"XPlat Code Coverage" --settings Test.runsettings --diag:log.txt --results-directory ./TestResults --logger trx 
         
         # install dotnet ReportGenerator
         - name: Install ReportGenerator
@@ -97,6 +97,7 @@ jobs:
           if: always()
           run: |
             pwd
+            cd "D:\a\ETWAnalyzer\ETWAnalyzer"
             reportgenerator "-reports:**/TestResults/**/coverage.cobertura.xml" "-targetdir:coveragereport" -reporttypes:html
 
         - name: Create report directoryTests
