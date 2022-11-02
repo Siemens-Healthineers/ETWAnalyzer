@@ -66,7 +66,7 @@ namespace ETWAnalyzer_uTest
             rowData.TimeInSec = now;
             c1.Exceptions.Add(c1, rowData);
 
-            Assert.Equal(3, c1.Exceptions.Count);
+            Assert.Equal(2, c1.Exceptions.Count);
 
             var exceptions = c1.Exceptions.Exceptions;
 
