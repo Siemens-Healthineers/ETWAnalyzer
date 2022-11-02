@@ -63,6 +63,11 @@ namespace ETWAnalyzer.EventDump
 
         private void Print(List<MatchData> data)
         {
+            if( data.Count == 0) // nothing to print and Max would throw otherwise for max column calculation
+            {
+                return;
+            }
+
             string currentSourceFile = null;
 
             if (SortOrder == DumpCommand.SortOrders.Time)
@@ -376,7 +381,6 @@ namespace ETWAnalyzer.EventDump
         {
             bool lret =
             (process.ProcessName != null) &&
-            (process.ProcessName != "conhost.exe") &&
             (ProcessNameFilter(process.GetProcessName(UsePrettyProcessName)) ||        // filter by process name like cmd.exe and with pid like cmd.exe(100)
              ProcessNameFilter(process.GetProcessWithId(UsePrettyProcessName))
             ) &&
