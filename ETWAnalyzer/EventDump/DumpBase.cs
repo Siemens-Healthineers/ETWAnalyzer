@@ -248,8 +248,9 @@ namespace ETWAnalyzer.EventDump
         /// Print version string from module definition
         /// </summary>
         /// <param name="def"></param>
+        /// <param name="addDirectory">Print also directory of module</param>
         /// <returns>Module definition string.</returns>
-        protected string GetModuleString(ModuleDefinition def)
+        protected string GetModuleString(ModuleDefinition def, bool addDirectory=false)
         {
             string versionStr = def.FileVersionStr;
             string version = def.Fileversion?.ToString();
@@ -287,6 +288,10 @@ namespace ETWAnalyzer.EventDump
             if (!String.IsNullOrEmpty(def.Description?.Trim()))
             {
                 lret += $" Description: {def.Description.Trim()}";
+            }
+            if( addDirectory)
+            {
+                lret += $" {def.ModulePath}";
             }
 
             return lret;
