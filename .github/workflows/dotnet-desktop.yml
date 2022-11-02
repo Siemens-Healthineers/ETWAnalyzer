@@ -85,9 +85,7 @@ jobs:
         # Execute all unit tests in the solution
         - name: Execute unit tests
           run: |
-            pwd
-            dotnet test -p:ParallelizeTestCollections=false --logger GitHubActions --verbosity detailed --collect:"XPlat Code Coverage" --results-directory ./TestResults --logger trx --settings Test.runsettings
-            pwd
+            dotnet test -p:ParallelizeTestCollections=false --logger GitHubActions --verbosity detailed --collect:"XPlat Code Coverage" --settings Test.runsettings --results-directory ./TestResults --logger trx 
         
         # install dotnet ReportGenerator
         - name: Install ReportGenerator
