@@ -21,9 +21,10 @@ bld/
 [Bb]in/
 [Oo]bj/
 [Ll]og/
+
 # TestResults & coveragereport are from tests by ci; yaml run cmds
-**/TestResults/
-**/coveragereport/
+**/*TestResults/
+**/*coveragereport/
 
 # Visual Studio 2015 cache/options directory
 .vs/
@@ -273,3 +274,4 @@ ETWAnalyzer/Documentation/Contributing.html
 
 # Avoid Logs from runsettings
 **/*.txt
+**/*log
