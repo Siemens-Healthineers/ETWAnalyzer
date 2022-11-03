@@ -3,8 +3,10 @@
 
 using ETWAnalyzer.EventDump;
 using ETWAnalyzer.Extract;
+using ETWAnalyzer.Helper;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -19,6 +21,7 @@ namespace ETWAnalyzer_uTest.EventDump
         [Fact]
         public void ZeroPoint_ProcessEnd_Shifts_Time_Correctly()
         {
+            using ITempOutput tempDir = TempDir.Create();
             DumpCPUMethod processEndDump = new DumpCPUMethod()
             {
                 ZeroTimeMode = ETWAnalyzer.Commands.DumpCommand.ZeroTimeModes.ProcessEnd,
@@ -26,7 +29,7 @@ namespace ETWAnalyzer_uTest.EventDump
                 MethodFilter = new KeyValuePair<string, Func<string, bool>>("SomeMethod", p => true),
             };
 
-            processEndDump.myPreloadedTests = new Lazy<SingleTest>[] { new Lazy<SingleTest>(CreateSingleTest) };
+            processEndDump.myPreloadedTests = new Lazy<SingleTest>[] { new Lazy<SingleTest>(Create(tempDir.Name)) };
 
             List<DumpCPUMethod.MatchData> matchData = processEndDump.ExecuteInternal();
             Assert.Single(matchData);
@@ -40,6 +43,7 @@ namespace ETWAnalyzer_uTest.EventDump
         [Fact]
         public void ZeroPoint_ProcessStart_Shifts_Time_Correctly()
         {
+            using ITempOutput tempDir = TempDir.Create();
             DumpCPUMethod processStart = new DumpCPUMethod()
             {
                 ZeroTimeMode = ETWAnalyzer.Commands.DumpCommand.ZeroTimeModes.ProcessStart,
@@ -47,7 +51,7 @@ namespace ETWAnalyzer_uTest.EventDump
                 MethodFilter = new KeyValuePair<string, Func<string, bool>>("SomeMethod", p => true),
             };
 
-            processStart.myPreloadedTests = new Lazy<SingleTest>[] { new Lazy<SingleTest>(CreateSingleTest) };
+            processStart.myPreloadedTests = new Lazy<SingleTest>[] { new Lazy<SingleTest>(Create(tempDir.Name)) };
 
             List<DumpCPUMethod.MatchData> matchData = processStart.ExecuteInternal();
             Assert.Single(matchData);
@@ -61,6 +65,7 @@ namespace ETWAnalyzer_uTest.EventDump
         [Fact]
         public void ZeroPoint_MethodLast_Shifts_Time_Correctly()
         {
+            using ITempOutput tempDir = TempDir.Create();
             DumpCPUMethod dumpLast = new DumpCPUMethod()
             {
                 ZeroTimeMode = ETWAnalyzer.Commands.DumpCommand.ZeroTimeModes.Last,
@@ -69,7 +74,7 @@ namespace ETWAnalyzer_uTest.EventDump
                 ZeroTimeFilter = new KeyValuePair<string, Func<string,bool>>(DummyMethod, p => p == DummyMethod),
             };
 
-            dumpLast.myPreloadedTests = new Lazy<SingleTest>[] { new Lazy<SingleTest>(CreateSingleTest) };
+            dumpLast.myPreloadedTests = new Lazy<SingleTest>[] { new Lazy<SingleTest>(Create(tempDir.Name)) };
 
             List<DumpCPUMethod.MatchData> matchData = dumpLast.ExecuteInternal();
             Assert.Single(matchData);
@@ -83,6 +88,7 @@ namespace ETWAnalyzer_uTest.EventDump
         [Fact]
         public void ZeroPoint_MethodFirst_Shifts_Time_Correctly()
         {
+            using ITempOutput tempDir = TempDir.Create();
             DumpCPUMethod dumpFirst = new DumpCPUMethod()
             {
                 ZeroTimeMode = ETWAnalyzer.Commands.DumpCommand.ZeroTimeModes.First,
@@ -91,7 +97,7 @@ namespace ETWAnalyzer_uTest.EventDump
                 ZeroTimeFilter = new KeyValuePair<string, Func<string, bool>>(DummyMethod, p => p == DummyMethod),
             };
 
-            dumpFirst.myPreloadedTests = new Lazy<SingleTest>[] { new Lazy<SingleTest>(CreateSingleTest) };
+            dumpFirst.myPreloadedTests = new Lazy<SingleTest>[] { new Lazy<SingleTest>(Create(tempDir.Name)) };
 
             List<DumpCPUMethod.MatchData> matchData = dumpFirst.ExecuteInternal();
             Assert.Single(matchData);
@@ -105,6 +111,7 @@ namespace ETWAnalyzer_uTest.EventDump
         [Fact]
         public void Unshifted_Methods_Have_Right_Time()
         {
+            using ITempOutput tempDir = TempDir.Create();
             DumpCPUMethod dumpFirst = new DumpCPUMethod()
             {
                 ZeroTimeMode = ETWAnalyzer.Commands.DumpCommand.ZeroTimeModes.None,
@@ -112,7 +119,7 @@ namespace ETWAnalyzer_uTest.EventDump
                 MethodFilter = new KeyValuePair<string, Func<string, bool>>(DummyMethod, p => p == DummyMethod),
             };
 
-            dumpFirst.myPreloadedTests = new Lazy<SingleTest>[] { new Lazy<SingleTest>(CreateSingleTest) };
+            dumpFirst.myPreloadedTests = new Lazy<SingleTest>[] { new Lazy<SingleTest>(Create(tempDir.Name)) };
 
             List<DumpCPUMethod.MatchData> matchData = dumpFirst.ExecuteInternal();
             Assert.Single(matchData);
@@ -124,10 +131,19 @@ namespace ETWAnalyzer_uTest.EventDump
         }
 
 
+        /// <summary>
+        /// Create delegate which captures context
+        /// </summary>
+        /// <param name="directory"></param>
+        /// <returns>Func which Lazy expects</returns>
+        Func<SingleTest> Create(string directory) => () => CreateSingleTest(directory);
 
-        SingleTest CreateSingleTest()
+        SingleTest CreateSingleTest(string directory)
         {
-            TestDataFile file = new TestDataFile("Test", "test.etl", new DateTime(2000, 1, 1), 5000, 100, "TestMachine", "None", true);
+            string fileName = Path.Combine(directory, "test.json");
+            File.WriteAllText(fileName, "Hi world"); // create file
+
+            TestDataFile file = new TestDataFile("Test", fileName, new DateTime(2000, 1, 1), 5000, 100, "TestMachine", "None", true);
             DateTimeOffset TenClock = new DateTimeOffset(2000, 1, 1, 10, 0, 0, TimeSpan.Zero); // start at 10:00:00
             var extract = new ETWExtract()
             {

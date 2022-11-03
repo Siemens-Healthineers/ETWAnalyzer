@@ -143,7 +143,7 @@
     </PackageReference>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.3.2" />
     <PackageReference Include="Microsoft.Windows.EventTracing.Processing.All">
-      <Version>1.11.104-preview</Version>
+      <Version>1.11.108</Version>
     </PackageReference>
     <PackageReference Include="Newtonsoft.Json">
       <Version>13.0.1</Version>
