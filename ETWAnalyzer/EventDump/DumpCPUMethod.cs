@@ -554,8 +554,7 @@ namespace ETWAnalyzer.EventDump
             return printed;
         }
 
-       
-        private void ProcessPerMethodMatches(List<MatchData> matches, List<MatchData> printed)
+        internal void ProcessPerMethodMatches(List<MatchData> matches, List<MatchData> printed)
         {
             string threadCountHeader = null;
             if (ThreadCount)
@@ -588,26 +587,7 @@ namespace ETWAnalyzer.EventDump
 
             // order files by test time (default) or by totals if enabled
             List<IGrouping<string,MatchData>> byFileOrdered = matches.GroupBy(GetFileGroupName)
-                                                .OrderBy(x =>
-                                                {
-                                                    MatchData data = x.First();
-                                                    decimal lret = data.PerformedAt.Ticks; // default is sort by file time
-                                                    if ( ShowTotal != TotalModes.None ) // when totals are printed we sort cross file by file totals to show the highest total
-                                                    {
-                                                        FileTotals ftotal = fileTotals[GetFileGroupName(data)];
-                                                        lret = SortOrder switch
-                                                        {
-                                                            SortOrders.CPU => ftotal.CPUMs,
-                                                            SortOrders.Wait => ftotal.WaitMs,
-                                                            SortOrders.Ready => ftotal.ReadyMs,
-                                                            SortOrders.CPUWait => ftotal.GetTotal(SortOrders.CPUWait),
-                                                            SortOrders.CPUWaitReady => ftotal.GetTotal(SortOrders.CPUWaitReady),
-                                                            SortOrders.TestTime => data.PerformedAt.Ticks,
-                                                            _ => ftotal.GetTotal(SortOrders.CPUWait),
-                                                        };
-                                                    }
-                                                    return lret; 
-                                                }).ToList();
+                                                .OrderBy(CreateFileSorter(fileTotals)).ToList();
 
             foreach (var fileGroup in byFileOrdered)
             {
@@ -617,30 +597,7 @@ namespace ETWAnalyzer.EventDump
                 // then take the TopN processes and reverse the list so that we display on console
                 // the process with highest CPU or sort order criteria as last so we do not need to scroll upwards in the output in the optimal scenario
                 IGrouping<ProcessKey, MatchData>[] topNProcessesBySortOrder = fileGroup.GroupBy(x => x.ProcessKey)
-                    .OrderByDescending(x =>
-                     {
-                         decimal lret = 0.0M;
-
-                         // since we cut during totals already TopN ... we can get dictionary misses which are for the sort order not relevant anyway because
-                         // they do not contribute to totals calculation.
-                         if (fileProcessTotals.TryGetValue(GetFileGroupName(firstFileGroup), out Dictionary<ProcessKey, ProcessTotals> processDict) )
-                         {
-                             if (processDict.TryGetValue(x.Key, out ProcessTotals totals))
-                             {
-                                 lret = SortOrder switch
-                                 {
-                                     SortOrders.CPU => totals.CPUMs,
-                                     SortOrders.Wait => totals.WaitMs,
-                                     SortOrders.Ready => totals.ReadyMs,
-                                     SortOrders.CPUWait => totals.GetTotal(SortOrders.CPUWait),
-                                     SortOrders.CPUWaitReady => totals.GetTotal(SortOrders.CPUWaitReady),
-                                     _ => totals.CPUMs,
-                                 };
-                             }
-                         }
-
-                         return lret;
-                     })
+                    .OrderByDescending(CreateProcessSorter(GetFileGroupName(firstFileGroup), fileProcessTotals))
                     .Take(TopN.TakeN)
                     .Reverse()
                     .ToArray();
@@ -673,7 +630,7 @@ namespace ETWAnalyzer.EventDump
                     MatchData firstProcessGroup = processGroup.First();
 
                     // when we display all we show the highest CPU last in console (ascending) 
-                    MatchData[] sorted = processGroup.SortAscendingGetTopNLast(SortByValue, SortByValueStatePreparer, TopNMethods);
+                    MatchData[] sorted = processGroup.SortAscendingGetTopNLast(SortBySortOrder, SortByValueStatePreparer, TopNMethods);
 
                     if (String.IsNullOrEmpty(CSVFile) && !ShowDetailsOnMethodLine)
                     {
@@ -825,7 +782,7 @@ namespace ETWAnalyzer.EventDump
         /// <summary>
         /// Used by total calculation
         /// </summary>
-        class FileTotals
+        internal class FileTotals
         {
             public decimal CPUMs = 0;
             public decimal WaitMs = 0;
@@ -851,7 +808,7 @@ namespace ETWAnalyzer.EventDump
             }
         }
 
-        class ProcessTotals : FileTotals
+        internal class ProcessTotals : FileTotals
         {
             
         }
@@ -861,7 +818,7 @@ namespace ETWAnalyzer.EventDump
         /// </summary>
         /// <param name="matches"></param>
         /// <returns>Dictionary of file name as key and value is the total per file sum</returns>
-        (Dictionary<string, FileTotals>, Dictionary<string,Dictionary<ProcessKey, ProcessTotals>>) GetFileAndProcessTotals(List<MatchData> matches)
+        internal (Dictionary<string, FileTotals>, Dictionary<string,Dictionary<ProcessKey, ProcessTotals>>) GetFileAndProcessTotals(List<MatchData> matches)
         {
             Dictionary<string, FileTotals> fileTotals = new();
             Dictionary<string, Dictionary<ProcessKey, ProcessTotals>> fileProcessTotals = new();
@@ -871,11 +828,11 @@ namespace ETWAnalyzer.EventDump
                 // order processes by CPU (default) or sort oder criteria ascending 
                 // then take the TopN processes and reverse the list so that we display on console
                 // the process with highest CPU or sort order criteria as last so we do not need to scroll upwards in the output in the optimal scenario
-                IGrouping<ProcessKey, MatchData>[] topNProcessesBySortCriteria = fileGroup.GroupBy(x => x.ProcessKey).OrderByDescending(x => x.Sum(SortByValue)).Take(TopN.TakeN).Reverse().ToArray();
+                IGrouping<ProcessKey, MatchData>[] topNProcessesBySortCriteria = fileGroup.GroupBy(x => x.ProcessKey).OrderByDescending(x => x.Sum(SortBySortOrder)).Take(TopN.TakeN).Reverse().ToArray();
 
                 // calculate totals at file level, but respect -topn -topnmethod filters for total calculation
 
-                MatchData[] filteredSubItems = topNProcessesBySortCriteria.SelectMany(x => x.SortAscendingGetTopNLast(SortByValue, SortByValueStatePreparer, TopNMethods)).ToArray();
+                MatchData[] filteredSubItems = topNProcessesBySortCriteria.SelectMany(x => x.SortAscendingGetTopNLast(SortBySortOrder, SortByValueStatePreparer, TopNMethods)).ToArray();
                 FileTotals total = new FileTotals
                 {
                     CPUMs = filteredSubItems.Sum(x => x.CPUMs),
@@ -1000,7 +957,12 @@ namespace ETWAnalyzer.EventDump
             myMaxCPUSortData = max.CPUMs;
         }
 
-        double SortByValue(MatchData data)
+        /// <summary>
+        /// Used for totals calculation to cut off the -topn processes which after 
+        /// </summary>
+        /// <param name="data"></param>
+        /// <returns></returns>
+        internal double SortBySortOrder(MatchData data)
         {
             return SortOrder switch
             {
@@ -1016,6 +978,70 @@ namespace ETWAnalyzer.EventDump
                 SortOrders.First => data.FirstCallTime.Ticks,
                 SortOrders.Last => data.LastCallTime.Ticks,
                 _ => data.CPUMs,  // by default sort by CPU
+            };
+        }
+
+        /// <summary>
+        /// Sort files by time (default), or when Total mode is enabled by per file totals which 
+        /// can be configured with -SortBy clause by which total the files are sorted.
+        /// </summary>
+        /// <param name="fileTotals">Precalculated file totals</param>
+        /// <returns>Delegate which is used for sorting</returns>
+        internal Func<IGrouping<string, MatchData>, decimal> CreateFileSorter(Dictionary<string, FileTotals> fileTotals)
+        {
+            return x =>
+            {
+                MatchData data = x.First();
+                decimal lret = data.PerformedAt.Ticks; // default is sort by file time
+                if (ShowTotal != TotalModes.None) // when totals are printed we sort cross file by file totals to show the highest total
+                {
+                    FileTotals ftotal = fileTotals[GetFileGroupName(data)];
+                    lret = SortOrder switch
+                    {
+                        SortOrders.CPU => ftotal.CPUMs,
+                        SortOrders.Wait => ftotal.WaitMs,
+                        SortOrders.Ready => ftotal.ReadyMs,
+                        SortOrders.CPUWait => ftotal.GetTotal(SortOrders.CPUWait),
+                        SortOrders.CPUWaitReady => ftotal.GetTotal(SortOrders.CPUWaitReady),
+                        SortOrders.TestTime => data.PerformedAt.Ticks,
+                        _ => ftotal.GetTotal(SortOrders.CPUWait),
+                    };
+                }
+                return lret;
+            };
+        }
+
+        /// <summary>
+        /// Sort processes inside one file by total CPU (default) or sort order given by -SortBy
+        /// </summary>
+        /// <param name="fileGroupName">Input file name</param>
+        /// <param name="fileProcessTotals">Process totals per input file where fileGroupName is used to look up totals.</param>
+        /// <returns>Delegate which is used for sorting.</returns>
+        internal Func<IGrouping<ProcessKey, MatchData>, decimal> CreateProcessSorter(string fileGroupName, Dictionary<string, Dictionary<ProcessKey, ProcessTotals>> fileProcessTotals)
+        {
+            return x =>
+            {
+                decimal lret = 0.0M;
+
+                // since we cut during totals already TopN ... we can get dictionary misses which are for the sort order not relevant anyway because
+                // they do not contribute to totals calculation.
+                if (fileProcessTotals.TryGetValue(fileGroupName, out Dictionary<ProcessKey, ProcessTotals> processDict))
+                {
+                    if (processDict.TryGetValue(x.Key, out ProcessTotals totals))
+                    {
+                        lret = SortOrder switch
+                        {
+                            SortOrders.CPU => totals.CPUMs,
+                            SortOrders.Wait => totals.WaitMs,
+                            SortOrders.Ready => totals.ReadyMs,
+                            SortOrders.CPUWait => totals.GetTotal(SortOrders.CPUWait),
+                            SortOrders.CPUWaitReady => totals.GetTotal(SortOrders.CPUWaitReady),
+                            _ => totals.CPUMs,
+                        };
+                    }
+                }
+
+                return lret;
             };
         }
 

@@ -188,5 +188,91 @@ namespace ETWAnalyzer_uTest.EventDump
 
             return t;
         }
+
+        [Fact]
+        public void FileSorting_AndTotalCalculation()
+        {
+            ETWProcess cmdProcess = new ETWProcess
+            {
+                ProcessID = 1234,
+                ProcessName = "cmd.exe",
+                CmdLine = "hi",
+            };
+            ProcessKey cmdProcessKey = cmdProcess.ToProcessKey();
+
+            ETWProcess cmdProcess2 = new ETWProcess
+            {
+                ProcessID = 2222,
+                ProcessName = "2222.exe",
+                CmdLine = "hi",
+            };
+            ProcessKey cmdProcssKey2 = cmdProcess2.ToProcessKey();
+
+            List<DumpCPUMethod.MatchData> data = new List<DumpCPUMethod.MatchData>
+            {
+                new DumpCPUMethod.MatchData
+                {
+                    CPUMs = 1,
+                    WaitMs = 100,
+                    ReadyMs = 50,
+                    Method = "Wait100MsMethod_1msCPU",
+                    Process = cmdProcess,
+                    ProcessKey = cmdProcessKey,
+                    SourceFile = "File1.json"
+                },
+                new DumpCPUMethod.MatchData
+                {
+                    CPUMs = 5,
+                    WaitMs = 200,
+                    ReadyMs = 100,
+                    Method = "Wait200MsMethod_5msCPU",
+                    Process = cmdProcess,
+                    ProcessKey = cmdProcessKey,
+                    SourceFile = "File1.json"
+                },
+                new DumpCPUMethod.MatchData
+                {
+                    CPUMs = 15000,
+                    WaitMs = 900,
+                    ReadyMs = 40,
+                    Method = "Wait900MsMethod_15000msCPU",
+                    Process = cmdProcess2,
+                    ProcessKey = cmdProcssKey2,
+                    SourceFile = "File2.json"
+                },
+                new DumpCPUMethod.MatchData
+                {
+                    CPUMs = 1000,
+                    WaitMs = 5000,
+                    ReadyMs = 100,
+                    Method = "Wait500MsMethod_1000msCPU",
+                    Process = cmdProcess2,
+                    ProcessKey = cmdProcssKey2,
+                    SourceFile = "File2.json"
+                }
+            };
+
+            DumpCPUMethod dumper = new();
+
+            var (fileTotals, processTotals) = dumper.GetFileAndProcessTotals(data);
+            // Todo
+            // Assert if file and process totals are correct
+            Assert.Equal(1, fileTotals["File1.json"].WaitMs);
+            Assert.Equal(1, fileTotals["File1.json"].CPUMs);
+            Assert.Equal(1, fileTotals["File1.json"].ReadyMs);
+
+            Func<IGrouping<string, DumpCPUMethod.MatchData>, decimal> sorter = dumper.CreateFileSorter(fileTotals);
+
+            List<IGrouping<string, DumpCPUMethod.MatchData>> fileGroups = data.GroupBy(x => x.SourceFile).OrderBy(sorter).ToList();
+            // Todo
+            // Assert if files are sorted by current sort order (CPU)
+
+            // Todo: Add tests for sort order wait and ready times
+            dumper.SortOrder = ETWAnalyzer.Commands.DumpCommand.SortOrders.Wait;
+            dumper.SortOrder = ETWAnalyzer.Commands.DumpCommand.SortOrders.Ready;
+
+
+
+        }
     }
 }
