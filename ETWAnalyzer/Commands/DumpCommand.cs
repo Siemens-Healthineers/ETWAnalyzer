@@ -1181,6 +1181,12 @@ namespace ETWAnalyzer.Commands
                     case "dns":
                         myCommand = DumpCommands.Dns;
                         break;
+                    case "-help":
+                        delayedThrower = () =>
+                        {
+                            throw new NotSupportedException(HelpArg);
+                        };
+                        break;
                     default:
                         // parse all command line arguments and throw exception for last found wrong argument to enable context sensitive help
                         delayedThrower = () =>

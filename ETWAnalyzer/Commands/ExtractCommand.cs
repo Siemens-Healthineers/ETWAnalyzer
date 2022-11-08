@@ -276,7 +276,7 @@ namespace ETWAnalyzer.Commands
                 switch (arg?.ToLowerInvariant())
                 {
                     case CommandFactory.ExtractCommand:    // -extract xxxx
-                        myProcessingActionList = GetArgList(ExtractArg);
+                        myProcessingActionList = GetArgList(ExtractArg, false);
                         break;
                     case FileOrDirectoryArg:
                     case FileOrDirectoryAlias:
@@ -355,6 +355,8 @@ namespace ETWAnalyzer.Commands
                     case DebugArg:    // -debug
                         Program.DebugOutput = true;
                         break;
+                    case HelpArg:
+                        throw new InvalidOperationException(HelpArg);
                     default: throw new NotSupportedException($"Invalid Argument: {arg}");
                 }
             }
