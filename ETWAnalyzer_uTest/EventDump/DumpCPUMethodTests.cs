@@ -205,11 +205,12 @@ namespace ETWAnalyzer_uTest.EventDump
             ProcessName = "2222.exe",
             CmdLine = "hi",
         };
-        static readonly  ProcessKey myCmdProcssKey2 = myCmdProcess2.ToProcessKey();
+        static readonly  ProcessKey myCmdProcessKey2 = myCmdProcess2.ToProcessKey();
 
 
         const string File1 = "File1.json";
         const string File2 = "File2.json";
+        const string File3 = "File3.json";
 
         List<DumpCPUMethod.MatchData> CreateTestData()
         {
@@ -244,7 +245,7 @@ namespace ETWAnalyzer_uTest.EventDump
                     ReadyMs = 40,
                     Method = "Wait900MsMethod_15000msCPU",
                     Process = myCmdProcess2,
-                    ProcessKey = myCmdProcssKey2,
+                    ProcessKey = myCmdProcessKey2,
                     SourceFile = File2
                 },
                 new DumpCPUMethod.MatchData
@@ -254,8 +255,29 @@ namespace ETWAnalyzer_uTest.EventDump
                     ReadyMs = 100,
                     Method = "Wait500MsMethod_1000msCPU",
                     Process = myCmdProcess2,
-                    ProcessKey = myCmdProcssKey2,
+                    ProcessKey = myCmdProcessKey2,
                     SourceFile = File2
+
+                },
+                new DumpCPUMethod.MatchData
+                {
+                    CPUMs = 1,
+                    WaitMs = 1,
+                    ReadyMs = 1,
+                    Method = "Wait1MsMethod_1msCPU",
+                    Process = myCmdProcess,
+                    ProcessKey = myCmdProcessKey,
+                    SourceFile = File3
+                },
+                new DumpCPUMethod.MatchData
+                {
+                    CPUMs = 1,
+                    WaitMs = 1,
+                    ReadyMs = 5000,
+                    Method = "Wait1MsMethod_1msCPU",
+                    Process = myCmdProcess2,
+                    ProcessKey = myCmdProcessKey2,
+                    SourceFile = File3
 
                 },
             };
@@ -276,6 +298,7 @@ namespace ETWAnalyzer_uTest.EventDump
             List<IGrouping<string, DumpCPUMethod.MatchData>> fileGroups = data.GroupBy(x => x.SourceFile).OrderBy(sorter).ToList();
             Assert.Equal(File1, fileGroups[0].Key);
             Assert.Equal(File2, fileGroups[1].Key);
+            Assert.Equal(File3, fileGroups[2].Key);
         }
 
         [Fact]
@@ -290,8 +313,14 @@ namespace ETWAnalyzer_uTest.EventDump
             Func<IGrouping<string, DumpCPUMethod.MatchData>, decimal> sorter = dumper.CreateFileSorter(fileTotals);
 
             List<IGrouping<string, DumpCPUMethod.MatchData>> fileGroups = data.GroupBy(x => x.SourceFile).OrderBy(sorter).ToList();
+            Assert.Equal(3, fileTotals.Count);
             Assert.Equal(File1, fileGroups[0].Key);
             Assert.Equal(File2, fileGroups[1].Key);
+            Assert.Equal(File3, fileGroups[2].Key);
+
+            Assert.Equal(6, fileTotals[File1].CPUMs);
+            Assert.Equal(16000, fileTotals[File2].CPUMs);
+            Assert.Equal(2, fileTotals[File3].CPUMs);
 
         }
 
@@ -308,6 +337,10 @@ namespace ETWAnalyzer_uTest.EventDump
             List<IGrouping<string, DumpCPUMethod.MatchData>> fileGroups = data.GroupBy(x => x.SourceFile).OrderBy(sorter).ToList();
             Assert.Equal(File1, fileGroups[0].Key);
             Assert.Equal(File2, fileGroups[1].Key);
+
+            Assert.Equal(300, fileTotals[File1].WaitMs);
+            Assert.Equal(5900, fileTotals[File2].WaitMs);
+            Assert.Equal(2, fileTotals[File3].WaitMs);
         }
 
         [Fact]
@@ -323,6 +356,9 @@ namespace ETWAnalyzer_uTest.EventDump
             List<IGrouping<string, DumpCPUMethod.MatchData>> fileGroups = data.GroupBy(x => x.SourceFile).OrderBy(sorter).ToList();
             Assert.Equal(File1, fileGroups[0].Key);
             Assert.Equal(File2, fileGroups[1].Key);
+            Assert.Equal(150, fileTotals[File1].ReadyMs);
+            Assert.Equal(140, fileTotals[File2].ReadyMs);
+            Assert.Equal(5001, fileTotals[File3].ReadyMs);
         }
 
         [Fact]
@@ -340,6 +376,9 @@ namespace ETWAnalyzer_uTest.EventDump
             List<IGrouping<string, DumpCPUMethod.MatchData>> fileGroups = data.GroupBy(x => x.SourceFile).OrderBy(sorter).ToList();
             Assert.Equal(File1, fileGroups[0].Key);
             Assert.Equal(File2, fileGroups[1].Key);
+            Assert.Equal(6, fileTotals[File1].CPUMs);
+            Assert.Equal(16000, fileTotals[File2].CPUMs);
+            Assert.Equal(1, fileTotals[File3].CPUMs);
         }
 
 
@@ -358,6 +397,9 @@ namespace ETWAnalyzer_uTest.EventDump
             List<IGrouping<string, DumpCPUMethod.MatchData>> fileGroups = data.GroupBy(x => x.SourceFile).OrderBy(sorter).ToList();
             Assert.Equal(File1, fileGroups[0].Key);
             Assert.Equal(File2, fileGroups[1].Key);
+            Assert.Equal(6, fileTotals[File1].CPUMs);
+            Assert.Equal(16000, fileTotals[File2].CPUMs);
+            Assert.Equal(1, fileTotals[File3].CPUMs);
         }
 
         [Fact]
@@ -375,6 +417,9 @@ namespace ETWAnalyzer_uTest.EventDump
             List<IGrouping<string, DumpCPUMethod.MatchData>> fileGroups = data.GroupBy(x => x.SourceFile).OrderBy(sorter).ToList();
             Assert.Equal(File1, fileGroups[0].Key);
             Assert.Equal(File2, fileGroups[1].Key);
+            Assert.Equal(150, fileTotals[File1].ReadyMs);
+            Assert.Equal(140, fileTotals[File2].ReadyMs);
+            Assert.Equal(5000, fileTotals[File3].ReadyMs);
         }
 
 
@@ -394,6 +439,9 @@ namespace ETWAnalyzer_uTest.EventDump
             List<IGrouping<string, DumpCPUMethod.MatchData>> fileGroups = data.GroupBy(x => x.SourceFile).OrderBy(sorter).ToList();
             Assert.Equal(File1, fileGroups[0].Key);
             Assert.Equal(File2, fileGroups[1].Key);
+            Assert.Equal(300, fileTotals[File1].WaitMs);
+            Assert.Equal(5900, fileTotals[File2].WaitMs);
+            Assert.Equal(1, fileTotals[File3].WaitMs);
         }
 
         [Fact]
@@ -415,7 +463,9 @@ namespace ETWAnalyzer_uTest.EventDump
             Assert.Equal(16000, fileTotals[File2].CPUMs);
             Assert.Equal(140, fileTotals[File2].ReadyMs);
 
-
+            Assert.Equal(2, fileTotals[File3].WaitMs);
+            Assert.Equal(2, fileTotals[File3].CPUMs);
+            Assert.Equal(5001, fileTotals[File3].ReadyMs);
         }
 
         [Fact]
@@ -438,6 +488,8 @@ namespace ETWAnalyzer_uTest.EventDump
             Assert.Equal(5900, fileTotals[File2].WaitMs);
             Assert.Equal(16000, fileTotals[File2].CPUMs);
             Assert.Equal(140, fileTotals[File2].ReadyMs);
+            
+            Assert.Equal(1, fileTotals[File3].WaitMs);
         }
 
         [Fact]
@@ -460,6 +512,8 @@ namespace ETWAnalyzer_uTest.EventDump
             Assert.Equal(5900, fileTotals[File2].WaitMs);
             Assert.Equal(16000, fileTotals[File2].CPUMs);
             Assert.Equal(140, fileTotals[File2].ReadyMs);
+            
+            Assert.Equal(5000, fileTotals[File3].ReadyMs);
         }
     }
 }
