@@ -23,7 +23,7 @@
     <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
     <PackageProjectUrl>https://github.com/Siemens-Healthineers/ETWAnalyzer</PackageProjectUrl>
     <PackageReadmeFile>ProgramaticAccess.md</PackageReadmeFile>
-    <Version>2.5.0.0</Version>
+    <Version>2.5.2.0</Version>
     <Platforms>x64</Platforms>
   </PropertyGroup>
   <PropertyGroup Condition="'$(TargetFramework)' == 'net6.0-windows'">
@@ -101,27 +101,27 @@
     <None Include="App.config" />
     <Content Include="Configuration\default.stacktags">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <PackageCopyToOutput>true</PackageCopyToOutput>
+      <pack>false</pack>
     </Content>
     <Content Include="Configuration\DllToBuildMap.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <PackageCopyToOutput>true</PackageCopyToOutput>
+	  <pack>false</pack>
     </Content>
     <Content Include="Configuration\WellKnownDrivers.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <PackageCopyToOutput>true</PackageCopyToOutput>
+	  <pack>false</pack>
     </Content>
     <Content Include="Configuration\GCAndJit.stacktags">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <PackageCopyToOutput>true</PackageCopyToOutput>
+	  <pack>false</pack>
     </Content>
     <Content Include="Configuration\RequiredPdbs.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <PackageCopyToOutput>true</PackageCopyToOutput>
+	  <pack>false</pack>
     </Content>
     <Content Include="Configuration\Special.stacktags">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <PackageCopyToOutput>true</PackageCopyToOutput>
+	  <pack>false</pack>
     </Content>
     <Content Include="3rdParty\7-Zip\7z.exe">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -137,7 +137,7 @@
     </Content>
     <Content Include="Configuration\TestRunConfiguration.xml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <PackageCopyToOutput>true</PackageCopyToOutput>
+	  <pack>false</pack>
     </Content>
     <None Include="Documentation\ProgramaticAccess.md">
       <Pack>True</Pack>
@@ -167,11 +167,11 @@
     <Content Include="Configuration\ExceptionFilters.xml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <SubType>Designer</SubType>
-      <PackageCopyToOutput>true</PackageCopyToOutput>
+	  <pack>false</pack>
     </Content>
     <Content Include="Configuration\ProcessRenameRules.xml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <PackageCopyToOutput>true</PackageCopyToOutput>
+	  <pack>false</pack>
     </Content>
   
 </ItemGroup>
