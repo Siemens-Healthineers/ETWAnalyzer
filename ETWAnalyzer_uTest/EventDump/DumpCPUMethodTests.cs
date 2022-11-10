@@ -11,6 +11,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Xunit;
+using static ETWAnalyzer.Commands.DumpCommand;
 
 namespace ETWAnalyzer_uTest.EventDump
 {
@@ -253,7 +254,7 @@ namespace ETWAnalyzer_uTest.EventDump
                     CPUMs = 1000,
                     WaitMs = 5000,
                     ReadyMs = 100,
-                    Method = "Wait500MsMethod_1000msCPU",
+                    Method = "Wait5000MsMethod_1000msCPU",
                     Process = myCmdProcess2,
                     ProcessKey = myCmdProcessKey2,
                     SourceFile = File2
@@ -306,7 +307,9 @@ namespace ETWAnalyzer_uTest.EventDump
         {
 
             DumpCPUMethod dumper = new();
-            dumper.SortOrder = ETWAnalyzer.Commands.DumpCommand.SortOrders.CPU;
+            dumper.SortOrder = SortOrders.CPU;
+            dumper.ShowTotal = TotalModes.Process;
+
             var data = CreateTestData();
 
             var (fileTotals, processTotals) = dumper.GetFileAndProcessTotals(data);
@@ -314,9 +317,9 @@ namespace ETWAnalyzer_uTest.EventDump
 
             List<IGrouping<string, DumpCPUMethod.MatchData>> fileGroups = data.GroupBy(x => x.SourceFile).OrderBy(sorter).ToList();
             Assert.Equal(3, fileTotals.Count);
-            Assert.Equal(File1, fileGroups[0].Key);
-            Assert.Equal(File2, fileGroups[1].Key);
-            Assert.Equal(File3, fileGroups[2].Key);
+            Assert.Equal(File3, fileGroups[0].Key);
+            Assert.Equal(File1, fileGroups[1].Key);
+            Assert.Equal(File2, fileGroups[2].Key);
 
             Assert.Equal(6, fileTotals[File1].CPUMs);
             Assert.Equal(16000, fileTotals[File2].CPUMs);
@@ -328,15 +331,17 @@ namespace ETWAnalyzer_uTest.EventDump
         public void File_TotalSortOrder_Wait()
         {
             DumpCPUMethod dumper = new();
-            dumper.SortOrder = ETWAnalyzer.Commands.DumpCommand.SortOrders.Wait;
+            dumper.SortOrder = SortOrders.Wait;
+            dumper.ShowTotal = TotalModes.Process;
             var data = CreateTestData();
 
             var (fileTotals, processTotals) = dumper.GetFileAndProcessTotals(data);
             Func<IGrouping<string, DumpCPUMethod.MatchData>, decimal> sorter = dumper.CreateFileSorter(fileTotals);
 
             List<IGrouping<string, DumpCPUMethod.MatchData>> fileGroups = data.GroupBy(x => x.SourceFile).OrderBy(sorter).ToList();
-            Assert.Equal(File1, fileGroups[0].Key);
-            Assert.Equal(File2, fileGroups[1].Key);
+            Assert.Equal(File3, fileGroups[0].Key);
+            Assert.Equal(File1, fileGroups[1].Key);
+            Assert.Equal(File2, fileGroups[2].Key);
 
             Assert.Equal(300, fileTotals[File1].WaitMs);
             Assert.Equal(5900, fileTotals[File2].WaitMs);
@@ -347,15 +352,18 @@ namespace ETWAnalyzer_uTest.EventDump
         public void File_TotalSortOrder_Ready()
         {
             DumpCPUMethod dumper = new();
-            dumper.SortOrder = ETWAnalyzer.Commands.DumpCommand.SortOrders.Ready;
+            dumper.SortOrder = SortOrders.Ready;
+            dumper.ShowTotal = TotalModes.Process;
             var data = CreateTestData();
 
             var (fileTotals, processTotals) = dumper.GetFileAndProcessTotals(data);
             Func<IGrouping<string, DumpCPUMethod.MatchData>, decimal> sorter = dumper.CreateFileSorter(fileTotals);
 
             List<IGrouping<string, DumpCPUMethod.MatchData>> fileGroups = data.GroupBy(x => x.SourceFile).OrderBy(sorter).ToList();
-            Assert.Equal(File1, fileGroups[0].Key);
-            Assert.Equal(File2, fileGroups[1].Key);
+            Assert.Equal(File2, fileGroups[0].Key);
+            Assert.Equal(File1, fileGroups[1].Key);
+            Assert.Equal(File3, fileGroups[2].Key);
+
             Assert.Equal(150, fileTotals[File1].ReadyMs);
             Assert.Equal(140, fileTotals[File2].ReadyMs);
             Assert.Equal(5001, fileTotals[File3].ReadyMs);
@@ -365,7 +373,8 @@ namespace ETWAnalyzer_uTest.EventDump
         public void File_TotalSortOrder_TopN1_Default()
         {
             DumpCPUMethod dumper = new();
-            dumper.SortOrder = ETWAnalyzer.Commands.DumpCommand.SortOrders.Default;
+            dumper.SortOrder = SortOrders.Default;
+            dumper.ShowTotal = TotalModes.Process;
             dumper.TopN = new ETWAnalyzer.Infrastructure.SkipTakeRange(1, null);
 
             var data = CreateTestData();
@@ -374,8 +383,10 @@ namespace ETWAnalyzer_uTest.EventDump
             Func<IGrouping<string, DumpCPUMethod.MatchData>, decimal> sorter = dumper.CreateFileSorter(fileTotals);
 
             List<IGrouping<string, DumpCPUMethod.MatchData>> fileGroups = data.GroupBy(x => x.SourceFile).OrderBy(sorter).ToList();
-            Assert.Equal(File1, fileGroups[0].Key);
-            Assert.Equal(File2, fileGroups[1].Key);
+            Assert.Equal(File3, fileGroups[0].Key);
+            Assert.Equal(File1, fileGroups[1].Key);
+            Assert.Equal(File2, fileGroups[2].Key);
+
             Assert.Equal(6, fileTotals[File1].CPUMs);
             Assert.Equal(16000, fileTotals[File2].CPUMs);
             Assert.Equal(1, fileTotals[File3].CPUMs);
@@ -386,7 +397,8 @@ namespace ETWAnalyzer_uTest.EventDump
         public void File_TotalSortOrder_TopN1_CPU()
         {
             DumpCPUMethod dumper = new();
-            dumper.SortOrder = ETWAnalyzer.Commands.DumpCommand.SortOrders.CPU;
+            dumper.SortOrder = SortOrders.CPU;
+            dumper.ShowTotal = TotalModes.Process;
             dumper.TopN = new ETWAnalyzer.Infrastructure.SkipTakeRange(1, null);
 
             var data = CreateTestData();
@@ -395,8 +407,10 @@ namespace ETWAnalyzer_uTest.EventDump
             Func<IGrouping<string, DumpCPUMethod.MatchData>, decimal> sorter = dumper.CreateFileSorter(fileTotals);
 
             List<IGrouping<string, DumpCPUMethod.MatchData>> fileGroups = data.GroupBy(x => x.SourceFile).OrderBy(sorter).ToList();
-            Assert.Equal(File1, fileGroups[0].Key);
-            Assert.Equal(File2, fileGroups[1].Key);
+            Assert.Equal(File3, fileGroups[0].Key);
+            Assert.Equal(File1, fileGroups[1].Key);
+            Assert.Equal(File2, fileGroups[2].Key);
+
             Assert.Equal(6, fileTotals[File1].CPUMs);
             Assert.Equal(16000, fileTotals[File2].CPUMs);
             Assert.Equal(1, fileTotals[File3].CPUMs);
@@ -406,7 +420,8 @@ namespace ETWAnalyzer_uTest.EventDump
         public void File_TotalSortOrder_TopN1_Ready()
         {
             DumpCPUMethod dumper = new();
-            dumper.SortOrder = ETWAnalyzer.Commands.DumpCommand.SortOrders.Ready;
+            dumper.SortOrder = SortOrders.Ready;
+            dumper.ShowTotal = TotalModes.Process;
             dumper.TopN = new ETWAnalyzer.Infrastructure.SkipTakeRange(1, null);
 
             var data = CreateTestData();
@@ -415,8 +430,10 @@ namespace ETWAnalyzer_uTest.EventDump
             Func<IGrouping<string, DumpCPUMethod.MatchData>, decimal> sorter = dumper.CreateFileSorter(fileTotals);
 
             List<IGrouping<string, DumpCPUMethod.MatchData>> fileGroups = data.GroupBy(x => x.SourceFile).OrderBy(sorter).ToList();
-            Assert.Equal(File1, fileGroups[0].Key);
-            Assert.Equal(File2, fileGroups[1].Key);
+            Assert.Equal(File2, fileGroups[0].Key);
+            Assert.Equal(File1, fileGroups[1].Key);
+            Assert.Equal(File3, fileGroups[2].Key);
+
             Assert.Equal(150, fileTotals[File1].ReadyMs);
             Assert.Equal(140, fileTotals[File2].ReadyMs);
             Assert.Equal(5000, fileTotals[File3].ReadyMs);
@@ -428,7 +445,9 @@ namespace ETWAnalyzer_uTest.EventDump
         {
 
             DumpCPUMethod dumper = new();
-            dumper.SortOrder = ETWAnalyzer.Commands.DumpCommand.SortOrders.Wait;
+            dumper.SortOrder = SortOrders.Wait;
+            dumper.ShowTotal = TotalModes.Process;
+
             dumper.TopN = new ETWAnalyzer.Infrastructure.SkipTakeRange(1, null);
 
             var data = CreateTestData();
@@ -437,8 +456,10 @@ namespace ETWAnalyzer_uTest.EventDump
             Func<IGrouping<string, DumpCPUMethod.MatchData>, decimal> sorter = dumper.CreateFileSorter(fileTotals);
 
             List<IGrouping<string, DumpCPUMethod.MatchData>> fileGroups = data.GroupBy(x => x.SourceFile).OrderBy(sorter).ToList();
-            Assert.Equal(File1, fileGroups[0].Key);
-            Assert.Equal(File2, fileGroups[1].Key);
+            Assert.Equal(File3, fileGroups[0].Key);
+            Assert.Equal(File1, fileGroups[1].Key);
+            Assert.Equal(File2, fileGroups[2].Key);
+
             Assert.Equal(300, fileTotals[File1].WaitMs);
             Assert.Equal(5900, fileTotals[File2].WaitMs);
             Assert.Equal(1, fileTotals[File3].WaitMs);
@@ -473,7 +494,9 @@ namespace ETWAnalyzer_uTest.EventDump
         {
 
             DumpCPUMethod dumper = new();
-            dumper.SortOrder = ETWAnalyzer.Commands.DumpCommand.SortOrders.Wait;
+            dumper.SortOrder = SortOrders.Wait;
+            dumper.ShowTotal = TotalModes.Process;
+
             dumper.TopN = new ETWAnalyzer.Infrastructure.SkipTakeRange(1, null);
 
             var data = CreateTestData();
@@ -491,7 +514,8 @@ namespace ETWAnalyzer_uTest.EventDump
         {
 
             DumpCPUMethod dumper = new();
-            dumper.SortOrder = ETWAnalyzer.Commands.DumpCommand.SortOrders.Ready;
+            dumper.ShowTotal = TotalModes.Process;
+            dumper.SortOrder = SortOrders.Ready;
             dumper.TopN = new ETWAnalyzer.Infrastructure.SkipTakeRange(1, null);
 
             var data = CreateTestData();
