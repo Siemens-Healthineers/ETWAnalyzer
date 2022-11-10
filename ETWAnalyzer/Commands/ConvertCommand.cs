@@ -110,6 +110,8 @@ namespace ETWAnalyzer.Commands
                     case NoColorArg:
                         ColorConsole.EnableColor = false;
                         break;
+                    case HelpArg:
+                        throw new InvalidOperationException(HelpArg);
                     default:
                         throw new NotSupportedException($"The argument {curArg} was not recognized as valid argument");
                 }

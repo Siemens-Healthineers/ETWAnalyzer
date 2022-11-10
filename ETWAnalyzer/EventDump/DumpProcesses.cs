@@ -33,6 +33,7 @@ namespace ETWAnalyzer.EventDump
         public bool NoCmdLine { get; internal set; }
         public MinMaxRange<double> MinMaxDurationS { get; internal set; } = new MinMaxRange<double>();
         public bool ShowUser { get; set; }
+        public MinMaxRange<double> MinMaxStart { get; internal set; } = new MinMaxRange<double>();
 
         const string WerFault = "WerFault.exe";
 
@@ -63,6 +64,11 @@ namespace ETWAnalyzer.EventDump
 
         private void Print(List<MatchData> data)
         {
+            if( data.Count == 0) // nothing to print and Max would throw otherwise for max column calculation
+            {
+                return;
+            }
+
             string currentSourceFile = null;
 
             if (SortOrder == DumpCommand.SortOrders.Time)
@@ -243,6 +249,11 @@ namespace ETWAnalyzer.EventDump
                     string cmdLine = String.IsNullOrEmpty(process.CmdLine) ? process.GetProcessName(UsePrettyProcessName) : process.GetProcessName(UsePrettyProcessName) + " " + process.CommandLineNoExe;
 
                     double zeroS = GetZeroTimeInS(json.Extract);
+                    if( !MinMaxStart.IsWithin( (process.StartTime-json.Extract.SessionStart).TotalSeconds-zeroS) )
+                    {
+                        continue; // process start time is outside of range
+                    }
+
                     lret.Add(new MatchData
                     {
                         CmdLine = String.Intern(cmdLine),
@@ -291,7 +302,7 @@ namespace ETWAnalyzer.EventDump
                 {
                     string cmdLine = String.IsNullOrEmpty(process.CommandLine) ? process.ImageName : process.CommandLine;
                     string ret = process.ExitCode.HasValue ? process.ExitCode.Value.ToString(CultureInfo.InvariantCulture) : "";
-                    lret.Add(new MatchData
+                    var data = new MatchData
                     {
                         CmdLine = String.Intern(cmdLine),
                         ProcessWithPid = String.Intern($"{process.ImageName}({process.Id})"),
@@ -311,7 +322,13 @@ namespace ETWAnalyzer.EventDump
                         EndTime = process.ExitTime.HasValue ? process.ExitTime.Value.DateTimeOffset : (DateTimeOffset?)null,
                         LifeTime = (process.CreateTime != null && process.ExitTime != null) ? (process.ExitTime.Value.DateTimeOffset - process.CreateTime.Value.DateTimeOffset) : null,
                         SessionStart = meta?.StartTime ?? DateTimeOffset.MinValue,
-                });
+                    };
+
+                    if (MinMaxStart.IsWithin((data.StartTime.GetValueOrDefault() - data.SessionStart).TotalSeconds)) // we do not support zerotime filtering for etl files
+                    {
+                        lret.Add(data);
+                    }
+
                 }
             }
 
@@ -376,7 +393,6 @@ namespace ETWAnalyzer.EventDump
         {
             bool lret =
             (process.ProcessName != null) &&
-            (process.ProcessName != "conhost.exe") &&
             (ProcessNameFilter(process.GetProcessName(UsePrettyProcessName)) ||        // filter by process name like cmd.exe and with pid like cmd.exe(100)
              ProcessNameFilter(process.GetProcessWithId(UsePrettyProcessName))
             ) &&

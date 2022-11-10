@@ -22,6 +22,10 @@ bld/
 [Oo]bj/
 [Ll]og/
 
+# TestResults & coveragereport are from tests by ci; yaml run cmds
+**/*TestResults/
+**/*coveragereport/
+
 # Visual Studio 2015 cache/options directory
 .vs/
 # Uncomment if you have tasks that create the project's static files in wwwroot
@@ -267,3 +271,7 @@ __pycache__/
 ReadMe.html
 ETWAnalyzer/3rdParty/ReadMeOSS.html
 ETWAnalyzer/Documentation/Contributing.html
+
+# Avoid Logs from runsettings
+**/*.txt
+**/*log

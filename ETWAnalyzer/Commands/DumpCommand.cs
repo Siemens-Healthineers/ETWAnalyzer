@@ -45,7 +45,7 @@ namespace ETWAnalyzer.Commands
         static readonly string ProcessHelpString =
         "   Process  -filedir/fd x.etl/.json [-recursive] [-csv xxx.csv] [-NoCSVSeparator] [-TimeFmt s,Local,LocalTime,UTC,UTCTime,Here,HereTime] [-ProcessName/pn xxx.exe(pid)] [-CmdLine *xxx*] [-Crash] " + Environment.NewLine +
         "            [-ShowUser] [-ZeroTime/zt Marker/First/Last/ProcessStart filter] [-ZeroProcessName/zpn filter]" + Environment.NewLine +
-        "            [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-MinMax xx-yy] [-ShowFileOnLine] [-ShowAllProcesses] [-NoCmdLine] [-Clip] [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd] [-MinMaxMsTestTimes xx-yy ...]" + Environment.NewLine +
+        "            [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-MinMaxStart xx-yy] [-ShowFileOnLine] [-ShowAllProcesses] [-NoCmdLine] [-Clip] [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd] [-MinMaxMsTestTimes xx-yy ...]" + Environment.NewLine +
         "            [-ShowFullFileName/-sffn]" + Environment.NewLine + 
         "                         Print process name, pid, command line, start/stop time return code and parent process id" + Environment.NewLine +
         "                         Default: The processes are grouped by exe sorted by name and then sorted by time to allow easy checking of recurring process starts." + Environment.NewLine +
@@ -86,6 +86,7 @@ namespace ETWAnalyzer.Commands
         "                         -Merge                     Merge all selected Json files to calculate process lifetime across all passed Json files. This also limits the display to only started/ended processes per file." + Environment.NewLine +
         "                         -ShowAllProcesses          When -Merge is used already running processes are only printed once. If you want to know if they were still running use this flag." + Environment.NewLine +
         "                         -MinMaxDuration minS [maxS] Filter for process duration in seconds." + Environment.NewLine +
+        "                         -MinMaxStart minS [maxS]   Select processes which did start after minS seconds." + Environment.NewLine +
         "                         -ShowFileOnLine            Show etl file name on each printed line." + Environment.NewLine +
         "                         -Crash                     Show potentially crashed processes with unusual return codes, or did trigger Windows Error Reporting." + Environment.NewLine +
         "                         For other options [-TestsPerRun] [-SkipNTests] [-TestRunIndex] [-TestRunCount] [-MinMaxMsTestTimes]" + Environment.NewLine +
@@ -111,7 +112,7 @@ namespace ETWAnalyzer.Commands
         "                         -PrintFiles                Print input Json files paths into output" + Environment.NewLine;
         static readonly string CPUHelpString =
         "   CPU      -filedir/fd Extract\\ or xxx.json [-recursive] [-csv xxx.csv] [-NoCSVSeparator] [-ProcessFmt timefmt] [-Methods method1;method2...] [-FirstLastDuration/fld [firsttimefmt] [lasttimefmt]]" + Environment.NewLine +
-        "            [-ThreadCount] [-SortBy [CPU/Wait/Ready/StackDepth/First/Last] [-StackTags tag1;tag2] [-CutMethod xx-yy] [-ShowOnMethod] [-ShowModuleInfo [Driver]] [-NoCmdLine] [-Clip]" + Environment.NewLine +
+        "            [-ThreadCount] [-SortBy [CPU/Wait/CPUWait/CPUWaitReady/StackDepth/First/Last/TestTime] [-StackTags tag1;tag2] [-CutMethod xx-yy] [-ShowOnMethod] [-ShowModuleInfo [Driver]] [-NoCmdLine] [-Clip]" + Environment.NewLine +
         "            [-ShowTotal Total, Process, Method] [-topn dd nn] [-topNMethods dd nn] [-ZeroTime/zt Marker/First/Last/ProcessStart filter] [-ZeroProcessName/zpn filter] " + Environment.NewLine +
         "            [-includeDll] [-includeArgs] [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd] [-MinMaxMsTestTimes xx-yy ...] [-ProcessName/pn xxx.exe(pid)] [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-CmdLine substring]" + Environment.NewLine +
         "            [-ShowFullFileName/-sffn]" + Environment.NewLine +
@@ -121,13 +122,13 @@ namespace ETWAnalyzer.Commands
         "                         Wait  is the method inclusive time a method was waiting for a blocking OS call e.g. ReadFile, OpenFile, ... to return. It is the sum of all threads, but overlapping times of multiple threads are counted only once." + Environment.NewLine +
         "                         Ready is the method inclusive time the thread was waiting for a CPU to become free due to CPU over subscription. It is the sum of all threads, but overlapping times of multiple threads are counted only once." + Environment.NewLine +
         "                         -ShowTotal xxx             Print totals of all selected methods/stacktags. xxx can be Process, Method or Total. " + Environment.NewLine +
-        "                                                    Total:   Print only file name and totals." + Environment.NewLine +
-        "                                                    Process: Print file and process totals." + Environment.NewLine +
+        "                                                    Total:   Print only file name and totals. Files are sorted by highest totals." + Environment.NewLine +
+        "                                                    Process: Print file and process totals. Processes are sorted by highest totals inside a file." + Environment.NewLine +
         "                                                    Method:  Print additionally the selected methods which were used for total calculation." + Environment.NewLine +
         "                                                    Warning: The input values are method are method inclusive times summed across all threads in a process." + Environment.NewLine +
         "                                                             You should filter for specific independent methods/stacktags which are not already included to get meaningful results." + Environment.NewLine +
         "                         -ShowOnMethod              Display process name besides method name without the command line. This allows to see trends in CPU changes over time for a specific method in console output better." + Environment.NewLine +
-        "                         -ShowModuleInfo/smi [Driver] Show dll version of each matching method until another dll is show in the printed list. When Driver is specified only module infos of well" + Environment.NewLine +
+        "                         -ShowModuleInfo/smi [Driver] Show exe version or show dll version of each matching method until another dll is show in the printed list. When Driver is specified only module infos of well" + Environment.NewLine +
         "                                                    known AV and Filter drivers are printed (or written to CSV output). This helps to identify which AV solution is running on that machine." + Environment.NewLine +
         "                         -MinMaxFirst minS [maxS]   Include methods/stacktags which match the first occurrence in [min, max] in seconds. You can shift time with -ZeroTime. " + Environment.NewLine +
         "                                                    E.g. \"-MinMaxFirst 0 -ZeroTime First Click\" will show all methods after Click." + Environment.NewLine +
@@ -150,8 +151,9 @@ namespace ETWAnalyzer.Commands
         "                         -topNMethods dd nn         Include dd most expensive methods/stacktags which consume most CPU in trace. Optional nn skips the first nn lines." + Environment.NewLine +
         "                         -ThreadCount               Show # of unique threads that did execute that method." + Environment.NewLine +
         "                         -ProcessFmt timefmt        Add besides process name start/stop time and duration. See -TimeFmt for available options." + Environment.NewLine +
-        "                         -SortBy [CPU/Wait/StackDepth/First/Last] Default method sort order is CPU consumption. Wait sorts by wait time, First/Last sorts by first/last occurrence of method/stacktags." + Environment.NewLine +
+        "                         -SortBy [CPU/Wait/CPUWait/CPUWaitReady/StackDepth/First/Last/TestTime] Default method sort order is CPU consumption. Wait sorts by wait time, First/Last sorts by first/last occurrence of method/stacktags." + Environment.NewLine +
         "                                                    StackDepth shows hottest methods which consume most CPU but are deepest in the call stack." + Environment.NewLine +
+        "                                                    TestTime can be used to force sort order of files by test time when -ShowTotal is used. When totals are enabled the files are sorted by highest totals."  + Environment.NewLine + 
         "                         -MinMaxReadyMs xx-yy or xx Only include methods (stacktags have no recorded ready times) with a minimum ready time of [xx, yy] ms." + Environment.NewLine +
         "                         -MinMaxCpuMs xx-yy or xx   Only include methods/stacktags with a minimum CPU consumption of [xx,yy] ms." + Environment.NewLine +
         "                         -MinMaxWaitMs xx-yy or xx  Only include methods/stacktags with a minimum wait time of [xx,yy] ms." + Environment.NewLine +
@@ -236,7 +238,7 @@ namespace ETWAnalyzer.Commands
         "                                                    Possible values are " + String.Join(",", Enum.GetNames(typeof(Extract.FileIO.FileIOStatistics.FileOperation)).Where(x => x != "Invalid")) + Environment.NewLine +
         "                                                    Warning: Other columns than the filtered one can be misleading. " + Environment.NewLine +
         "                                                    E.g. if you filter for open, only the files which were opened are showing up in read/write metrics. IO for already opened files is suppressed!" + Environment.NewLine +
-        "                         -SortBy order              Console Output Only. Valid values are: ReadSize,WriteSize,ReadTime,WriteTime,TotalSize and TotalTime (= Open+Close+Read+Write). Default is TotalTime." + Environment.NewLine +
+        "                         -SortBy order              Console Output Only. Valid values are: Count (Open+Close+Read+Write+SetSecurity),ReadSize,WriteSize,ReadTime,WriteTime,TotalSize and TotalTime (= Open+Close+Read+Write). Default is TotalTime." + Environment.NewLine +
         "                         -TopN dd nn                Select top dd files based on current sort order." + Environment.NewLine +
         "                         -MinMax xx-yy              Console Output Only. Filter for rows which have > xx and < yy. The -FileOperation, -SortBy values define on which values it filters." + Environment.NewLine +
         "                                                    You can define filters for time,size,length,count of open/close/read/write/setsecurity operations." + Environment.NewLine +
@@ -486,6 +488,9 @@ namespace ETWAnalyzer.Commands
             CPU,
             Wait,
             Ready,
+            CPUWaitReady,
+            CPUWait,
+            TestTime,
             StackDepth,
             Commit,
             WorkingSet,
@@ -623,6 +628,7 @@ namespace ETWAnalyzer.Commands
         public bool ShowFileOnLine { get; private set; }
         public bool Crash { get; private set; }
         public bool ShowUser { get; private set; }
+        public MinMaxRange<double> MinMaxStart { get; private set; } = new MinMaxRange<double>();
 
         // Dump CPU specific Flags
         public KeyValuePair<string, Func<string, bool>> StackTagFilter { get; private set; }
@@ -1012,6 +1018,12 @@ namespace ETWAnalyzer.Commands
                         Tuple<double, double> minMaxTotalTimeMsDouble = minTotalTimeMs.GetMinMaxDouble(maxTotalTimeMs);
                         MinMaxTotalTimeMs = new MinMaxRange<double>(minMaxTotalTimeMsDouble.Item1, minMaxTotalTimeMsDouble.Item2);
                         break;
+                    case "-minmaxstart":
+                        string minStart = GetNextNonArg("-minmaxstart");
+                        string maxStart = GetNextNonArg("-minmaxstart", false); //optional
+                        Tuple<double, double> minmaxStartDouble = minStart.GetMinMaxDouble(maxStart);
+                        MinMaxStart = new MinMaxRange<double>(minmaxStartDouble.Item1, minmaxStartDouble.Item2);
+                        break;
                     case "-minmaxmstesttimes":
                         string minMaxTestTime = GetNextNonArg("-minmaxmstesttimes");
                         do
@@ -1172,6 +1184,12 @@ namespace ETWAnalyzer.Commands
                         break;
                     case "dns":
                         myCommand = DumpCommands.Dns;
+                        break;
+                    case "-help":
+                        delayedThrower = () =>
+                        {
+                            throw new NotSupportedException(HelpArg);
+                        };
                         break;
                     default:
                         // parse all command line arguments and throw exception for last found wrong argument to enable context sensitive help
@@ -1352,6 +1370,7 @@ namespace ETWAnalyzer.Commands
                             ZeroTimeMode = ZeroTimeMode,
                             ZeroTimeFilter = ZeroTimeFilter,
                             ZeroTimeProcessNameFilter = ZeroTimeProcessNameFilter,
+                            MinMaxStart = MinMaxStart,
                         };
                         break;
                     case DumpCommands.CPU:

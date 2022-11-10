@@ -76,7 +76,12 @@ namespace ETWAnalyzer
                 {
                     ColorConsole.WriteEmbeddedColorLine(Program.myProgram.CurrentCommand.Help);
                 }
-                ColorConsole.WriteLine(Environment.NewLine + $"Error: {ex.Message} Check {Logger.Instance.LogFolder}\\ETWAnalyzer_Trace.log for full details, or use -debug switch to get full output.", ConsoleColor.Red);
+
+                if (ex.Message != ArgParser.HelpArg) // .e.g -dump cpu -help is not an error
+                {
+                    ColorConsole.WriteLine(Environment.NewLine + $"Error: {ex.Message} Check {Logger.Instance.LogFolder}\\ETWAnalyzer_Trace.log for full details, or use -debug switch to get full output.", ConsoleColor.Red);
+                }
+
                 if (Program.DebugOutput)
                 {
                     Console.WriteLine(ex);

@@ -71,7 +71,7 @@ namespace ETWAnalyzer.EventDump
         public bool NoCmdLine { get; internal set; }
 
         /// <summary>
-        /// Show module file name and version
+        /// Show module file name and version. In cpu total mode also exe version.
         /// </summary>
         public bool ShowModuleInfo { get; internal set; }
 
@@ -490,11 +490,12 @@ namespace ETWAnalyzer.EventDump
                     ProcessKey = process.ToProcessKey(),
                     SourceFile = file.JsonExtractFileWhenPresent,
                     Process = process,
+                    Module = ShowModuleInfo ? file.Extract.Modules.Modules.Where(x => x.Processes.Contains(process)).Where(x => x.ModuleName.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)).FirstOrDefault() : null,
                 });
 
-                if(!IsCSVEnabled && !Merge && !(ShowTotal == TotalModes.Total) )
+                if (!IsCSVEnabled && !Merge && !(ShowTotal == TotalModes.Total) )
                 {
-                    PrintCPUTotal(cpu.Value, process, Path.GetFileNameWithoutExtension(file.FileName), file.Extract.SessionStart);
+                    PrintCPUTotal(cpu.Value, process, Path.GetFileNameWithoutExtension(file.FileName), file.Extract.SessionStart, matches[matches.Count-1].Module);
                 }
             }
         }
@@ -514,20 +515,26 @@ namespace ETWAnalyzer.EventDump
             }
         }
 
-        void PrintCPUTotal(long cpu, ETWProcess process, string  sourceFile, DateTimeOffset sessionStart)
+        void PrintCPUTotal(long cpu, ETWProcess process, string  sourceFile, DateTimeOffset sessionStart, ModuleDefinition exeModule)
         {
             string fileName = this.Merge ? $" {sourceFile}" : "";
 
             string cpuStr = cpu.ToString("N0");
 
+            string moduleInfo = "";
+            if(exeModule != null)
+            {
+                moduleInfo = GetModuleString(exeModule, true);
+            }
+
             if (NoCmdLine)
             {
-                ColorConsole.WriteEmbeddedColorLine($"\t[Green]{cpuStr,CPUTotal_CPUColumnWidth} ms[/Green] [yellow]{process.GetProcessWithId(UsePrettyProcessName),CPUTotal_ProcessNameWidth}{GetProcessTags(process, sessionStart)}[/yellow]{fileName}");
+                ColorConsole.WriteEmbeddedColorLine($"\t[Green]{cpuStr,CPUTotal_CPUColumnWidth} ms[/Green] [yellow]{process.GetProcessWithId(UsePrettyProcessName),CPUTotal_ProcessNameWidth}{GetProcessTags(process, sessionStart)}[/yellow]{fileName} [red]{moduleInfo}[/red]");
             }
             else
             {
                 ColorConsole.WriteEmbeddedColorLine($"\t[Green]{cpuStr,CPUTotal_CPUColumnWidth} ms[/Green] [yellow]{process.GetProcessWithId(UsePrettyProcessName),CPUTotal_ProcessNameWidth}{GetProcessTags(process, sessionStart)}[/yellow] {process.CommandLineNoExe}", ConsoleColor.DarkCyan, true);
-                Console.WriteLine($" {fileName}");
+                ColorConsole.WriteEmbeddedColorLine($" {fileName} [red]{moduleInfo}[/red]");
             }
         }
 
@@ -547,8 +554,7 @@ namespace ETWAnalyzer.EventDump
             return printed;
         }
 
-
-        private void ProcessPerMethodMatches(List<MatchData> matches, List<MatchData> printed)
+        internal void ProcessPerMethodMatches(List<MatchData> matches, List<MatchData> printed)
         {
             string threadCountHeader = null;
             if (ThreadCount)
@@ -570,36 +576,48 @@ namespace ETWAnalyzer.EventDump
             // Show header only when we do not print totals or no per method totals
             if (!IsCSVEnabled && (ShowTotal == TotalModes.None || ShowTotal == TotalModes.Method))
             {
-                ColorConsole.WriteEmbeddedColorLine($"[green]{cpuHeader}[/green][yellow]{waitHeader}[/yellow]{readyHeader}{threadCountHeader}{firstlastDurationHeader}Method");
+                ColorConsole.WriteEmbeddedColorLine($"[green]{cpuHeader}[/green][yellow]{waitHeader}[/yellow][red]{readyHeader}[/red]{threadCountHeader}{firstlastDurationHeader}Method");
             }
 
-            long overallCPUTotal = 0;
-            long overallWaitTotal = 0;
+            decimal overallCPUTotal = 0;
+            decimal overallWaitTotal = 0;
 
-            foreach (var timeGroup in matches.GroupBy(x => $"{x.PerformedAt} {Path.GetFileNameWithoutExtension(x.SourceFile)}"))
+            (Dictionary<string, FileTotals> fileTotals, 
+             Dictionary<string, Dictionary<ProcessKey,ProcessTotals>> fileProcessTotals ) = GetFileAndProcessTotals(matches);
+
+            // order files by test time (default) or by totals if enabled
+            List<IGrouping<string,MatchData>> byFileOrdered = matches.GroupBy(GetFileGroupName)
+                                                .OrderBy(CreateFileSorter(fileTotals)).ToList();
+
+            foreach (var fileGroup in byFileOrdered)
             {
-                // order processes by CPU ascending by their total CPU
+                MatchData firstFileGroup = fileGroup.First();
+
+                // order processes by CPU (default) or sort oder criteria ascending 
                 // then take the TopN processes and reverse the list so that we display on console
-                // the process with highest CPU as last so we do not need to scroll upwards in the output in the optimal scenario
-                IGrouping<ProcessKey, MatchData>[] subGroup = timeGroup.GroupBy(x => x.ProcessKey).OrderByDescending(x => x.Sum(x => x.CPUMs)).Take(TopN.TakeN).Reverse().ToArray();
+                // the process with highest CPU or sort order criteria as last so we do not need to scroll upwards in the output in the optimal scenario
+                IGrouping<ProcessKey, MatchData>[] topNProcessesBySortOrder = fileGroup.GroupBy(x => x.ProcessKey)
+                    .OrderByDescending(CreateProcessSorter(GetFileGroupName(firstFileGroup), fileProcessTotals))
+                    .Take(TopN.TakeN)
+                    .Reverse()
+                    .ToArray();
 
-                if (!IsCSVEnabled)
+                string fileTotalString = null;
+                int totalWidth = 12;
+
+                if (!IsCSVEnabled && ShowTotal != TotalModes.None)
                 {
-                    ColorConsole.Write($"{timeGroup.Key}", ConsoleColor.Cyan);
-
-                    // calculate totals at file level, but respect -topn -topnmethod filters for total calculation
-                    if (ShowTotal != TotalModes.None)
-                    {
-                        MatchData[] filteredSubItems = subGroup.SelectMany(x => x.SortAscendingGetTopNLast(SortByValue, SortByValueStatePreparer, TopNMethods)).ToArray();
-                        long fileCPUTotal = filteredSubItems.Sum(x => x.CPUMs);
-                        long fileWaitTotal = filteredSubItems.Sum(x => x.WaitMs);
-                        overallCPUTotal += fileCPUTotal;
-                        overallWaitTotal += fileWaitTotal;
-                        string total = $" [green]CPU {fileCPUTotal} ms[/green] Wait [yellow]{fileWaitTotal} ms[/yellow] [magenta]Total {fileCPUTotal + fileWaitTotal} ms[/magenta]";
-                        ColorConsole.WriteEmbeddedColorLine(total, null, true);
-                    }
-                    ColorConsole.WriteLine($" {timeGroup.First().BaseLine}");
+                    FileTotals total = fileTotals[GetFileGroupName(firstFileGroup)];
+                    overallCPUTotal += total.CPUMs;
+                    overallWaitTotal += total.WaitMs;
+                   
+                    fileTotalString = $" [green]CPU {"N0".WidthFormat(total.CPUMs, totalWidth)} ms[/green] " +
+                                      (waitHeader == null ? ""  : $"[yellow]Wait {"N0".WidthFormat(total.WaitMs, totalWidth)} ms[/yellow] ")+
+                                      (readyHeader == null ? "" : $"[red]Ready: {"N0".WidthFormat(total.ReadyMs, totalWidth)} ms[/red] ") +
+                                      ( (waitHeader == null && readyHeader == null ) ? "" : $"[magenta]Total {"N0".WidthFormat(total.GetTotal(SortOrder), totalWidth)} ms[/magenta] ");
                 }
+
+                PrintFileName(firstFileGroup.SourceFile, fileTotalString, firstFileGroup.PerformedAt, firstFileGroup.BaseLine);
 
                 if (ShowTotal == TotalModes.Total)
                 {
@@ -607,27 +625,29 @@ namespace ETWAnalyzer.EventDump
                     continue;
                 }
 
-
-                foreach (var processGroup in subGroup)
+                foreach (var processGroup in topNProcessesBySortOrder)
                 {
-                    
+                    MatchData firstProcessGroup = processGroup.First();
+
                     // when we display all we show the highest CPU last in console (ascending) 
-                    MatchData[] sorted = processGroup.SortAscendingGetTopNLast(SortByValue, SortByValueStatePreparer, TopNMethods);
+                    MatchData[] sorted = processGroup.SortAscendingGetTopNLast(SortBySortOrder, SortByValueStatePreparer, TopNMethods);
 
                     if (String.IsNullOrEmpty(CSVFile) && !ShowDetailsOnMethodLine)
                     {
-                        long cpuTotal = sorted.Sum(x => x.CPUMs);
-                        long waitTotal = sorted.Sum(x => x.WaitMs);
+                        string processTotalString = "";
+                        if(ShowTotal == TotalModes.Process || ShowTotal == TotalModes.Method)
+                        {
+                            ProcessTotals processTotals = fileProcessTotals[GetFileGroupName(firstFileGroup)][firstProcessGroup.ProcessKey];
+                            processTotalString = $"[green]CPU {"N0".WidthFormat(processTotals.CPUMs, totalWidth)} ms[/green] "+
+                                                 (waitHeader == null ? "" :  $"[yellow]Wait: {"N0".WidthFormat(processTotals.WaitMs, totalWidth)} ms[/yellow] ")+
+                                                 (readyHeader == null ? "" : $"[red]Ready: {"N0".WidthFormat(processTotals.ReadyMs, totalWidth)} ms[/red] ")+
+                                                 ((waitHeader == null && readyHeader == null) ? "" : $"[magenta]Total: {"N0".WidthFormat(processTotals.GetTotal(SortOrder), totalWidth)} ms[/magenta] ");
+                        }
 
-                        string totals = (ShowTotal == TotalModes.Process || ShowTotal == TotalModes.Method) ?
-                                            $" [green]CPU {cpuTotal} ms[/green] [yellow]Wait: {waitTotal} ms[/yellow][magenta] Total: {cpuTotal + waitTotal} ms[/magenta]"
-                                            : "";
-
-                        string cmdLine = NoCmdLine ? "" : processGroup.First().Process.CommandLineNoExe;
+                        string cmdLine = NoCmdLine ? "" : firstProcessGroup.Process.CommandLineNoExe;
                         MatchData current = processGroup.First();
-                        ETWProcess process = processGroup.First().Process;
-                        ColorConsole.WriteEmbeddedColorLine($"   [grey]{process.GetProcessWithId(UsePrettyProcessName)}{GetProcessTags(process, current.SessionStart.AddSeconds(current.ZeroTimeS))}[/grey]{totals} {cmdLine}", ConsoleColor.DarkCyan, false);
-
+                        ETWProcess process = current.Process;
+                        ColorConsole.WriteEmbeddedColorLine($"   {processTotalString}[grey]{process.GetProcessWithId(UsePrettyProcessName)}{GetProcessTags(process, current.SessionStart.AddSeconds(current.ZeroTimeS))}[/grey] {cmdLine}", ConsoleColor.DarkCyan, false);
                     }
 
                     if (ShowTotal == TotalModes.Process)
@@ -659,7 +679,7 @@ namespace ETWAnalyzer.EventDump
                                 process = " " + match.ProcessAndPid;
                             }
 
-                            ColorConsole.WriteEmbeddedColorLine($"  [Green]{cpuFormatter(match)}[/Green] [yellow]{waitFormatter(match)}[/yellow]{readyFormatter(match)}{threadCount}{firstLastFormatter(match)}{match.Method}[darkyellow]{process}[/darkyellow] ", null, true);
+                            ColorConsole.WriteEmbeddedColorLine($"  [Green]{cpuFormatter(match)}[/Green] [yellow]{waitFormatter(match)}[/yellow][red]{readyFormatter(match)}[/red]{threadCount}{firstLastFormatter(match)}{match.Method}[darkyellow]{process}[/darkyellow] ", null, true);
 
                             if (ShowModuleInfo)
                             {
@@ -690,7 +710,10 @@ namespace ETWAnalyzer.EventDump
 
             if (ShowTotal != TotalModes.None && !IsCSVEnabled)
             {
-                ColorConsole.WriteEmbeddedColorLine($"[magenta]Total {overallCPUTotal + overallWaitTotal:N0} ms[/magenta] [green]CPU {overallCPUTotal:N0} ms[/green] [yellow]Wait {overallWaitTotal:N0} ms[/yellow]");
+                string crossFileTotal =  (overallWaitTotal == 0 ? "Total " : $"[magenta]Total {overallCPUTotal + overallWaitTotal:N0} ms[/magenta] ") +
+                                                                       $"[green]CPU {overallCPUTotal:N0} ms[/green] " +
+                                         (overallWaitTotal == 0 ? "" : $"[yellow]Wait {overallWaitTotal:N0} ms[/yellow]");
+                ColorConsole.WriteEmbeddedColorLine(crossFileTotal);
             }
         }
 
@@ -742,7 +765,7 @@ namespace ETWAnalyzer.EventDump
             cpuHeader = "         CPU ms ";
             cpuFormatter = (data) => "N0".WidthFormat(data.CPUMs, 10) +" ms";
 
-            if ( matches.Any(x => (x.HasCSwitchData.HasValue && x.HasCSwitchData.Value)  || x.WaitMs != 0 ) )
+            if ( matches.Any(x => x.HasCSwitchData.GetValueOrDefault() || x.WaitMs != 0 ) )
             {
                 waitHeader  = "      Wait ms";
                 waitFormatter = (data) =>  " " + "N0".WidthFormat(data.WaitMs, 9) + " ms ";
@@ -755,6 +778,100 @@ namespace ETWAnalyzer.EventDump
                 readyFormatter = (data) => "N0".WidthFormat(data.ReadyMs, 6) + " ms ";
             }
         }
+
+        /// <summary>
+        /// Used by total calculation
+        /// </summary>
+        internal class FileTotals
+        {
+            public decimal CPUMs = 0;
+            public decimal WaitMs = 0;
+            public decimal ReadyMs = 0;
+
+            /// <summary>
+            /// Sum of CPU+Wait+Ready
+            /// </summary>
+            private decimal CPUWaitReadyMs => CPUMs + WaitMs + ReadyMs;
+
+            /// <summary>
+            /// Sum of CPU+Wait
+            /// </summary>
+            private decimal CPUWaitMs => CPUMs + WaitMs;
+
+            public decimal GetTotal(SortOrders order)
+            {
+                return order switch
+                {
+                    SortOrders.CPUWaitReady => CPUWaitReadyMs,
+                    _ => CPUWaitMs
+                };
+            }
+        }
+
+        internal class ProcessTotals : FileTotals
+        {
+            
+        }
+
+        /// <summary>
+        /// Calculate file and process totals which are later needed to sort by various totals
+        /// </summary>
+        /// <param name="matches"></param>
+        /// <returns>Dictionary of file name as key and value is the total per file sum</returns>
+        internal (Dictionary<string, FileTotals>, Dictionary<string,Dictionary<ProcessKey, ProcessTotals>>) GetFileAndProcessTotals(List<MatchData> matches)
+        {
+            Dictionary<string, FileTotals> fileTotals = new();
+            Dictionary<string, Dictionary<ProcessKey, ProcessTotals>> fileProcessTotals = new();
+
+            foreach (IGrouping<string, MatchData> fileGroup in matches.GroupBy(GetFileGroupName))
+            {
+                // order processes by CPU (default) or sort oder criteria ascending 
+                // then take the TopN processes and reverse the list so that we display on console
+                // the process with highest CPU or sort order criteria as last so we do not need to scroll upwards in the output in the optimal scenario
+                IGrouping<ProcessKey, MatchData>[] topNProcessesBySortCriteria = fileGroup.GroupBy(x => x.ProcessKey).OrderByDescending(x => x.Sum(SortBySortOrder)).Take(TopN.TakeN).Reverse().ToArray();
+
+                // calculate totals at file level, but respect -topn -topnmethod filters for total calculation
+
+                MatchData[] filteredSubItems = topNProcessesBySortCriteria.SelectMany(x => x.SortAscendingGetTopNLast(SortBySortOrder, SortByValueStatePreparer, TopNMethods)).ToArray();
+                FileTotals total = new FileTotals
+                {
+                    CPUMs = filteredSubItems.Sum(x => x.CPUMs),
+                    WaitMs = filteredSubItems.Sum(x => x.WaitMs),
+                    ReadyMs = filteredSubItems.Sum(x => x.ReadyMs),
+                };
+
+                foreach(MatchData data in filteredSubItems)
+                {
+                    if( !fileProcessTotals.TryGetValue(GetFileGroupName(data), out Dictionary<ProcessKey, ProcessTotals> processDict) )
+                    {
+                        processDict = new();
+                        fileProcessTotals.Add(GetFileGroupName(data), processDict);
+                    }
+
+                    if ( !processDict.TryGetValue(data.ProcessKey, out ProcessTotals processTotals))
+                    {
+                        processTotals = new();
+                        processDict[data.ProcessKey] = processTotals;
+                    }
+
+                    processTotals.CPUMs += data.CPUMs;
+                    processTotals.WaitMs += data.WaitMs;
+                    processTotals.ReadyMs += data.ReadyMs;
+                }
+                    
+
+                fileTotals.Add(GetFileGroupName(fileGroup.First()), total);
+            }
+
+            return (fileTotals, fileProcessTotals);
+        }
+
+        /// <summary>
+        /// Get input file name for grouping
+        /// </summary>
+        /// <param name="data"></param>
+        /// <returns>key for file grouping</returns>
+        string GetFileGroupName(MatchData data) => data.SourceFile;
 
         private void ProcessPerMethodCSVLine(MatchData match, float firstLastDurationS)
         {
@@ -815,7 +932,7 @@ namespace ETWAnalyzer.EventDump
 
                     long diff = group.ETWMaxBy(x => x.PerformedAt).CPUMs - cpu;
 
-                    PrintCPUTotal(cpu, subgroup.First().Process, String.Join(" ", subgroup.Select(x => Path.GetFileNameWithoutExtension(x.SourceFile)).ToHashSet()) + $" Diff: {diff:N0} ms ", subgroup.First().SessionStart);
+                    PrintCPUTotal(cpu, subgroup.First().Process, String.Join(" ", subgroup.Select(x => Path.GetFileNameWithoutExtension(x.SourceFile)).ToHashSet()) + $" Diff: {diff:N0} ms ", subgroup.First().SessionStart, subgroup.FirstOrDefault().Module);
                 }
             }
         }
@@ -840,13 +957,20 @@ namespace ETWAnalyzer.EventDump
             myMaxCPUSortData = max.CPUMs;
         }
 
-        double SortByValue(MatchData data)
+        /// <summary>
+        /// Used for totals calculation to cut off the -topn processes which after 
+        /// </summary>
+        /// <param name="data"></param>
+        /// <returns></returns>
+        internal double SortBySortOrder(MatchData data)
         {
             return SortOrder switch
             {
                 SortOrders.Wait => data.WaitMs,
                 SortOrders.CPU => data.CPUMs,
                 SortOrders.Ready => data.ReadyMs,
+                SortOrders.CPUWait => data.CPUMs+data.WaitMs,
+                SortOrders.CPUWaitReady => data.CPUMs+data.WaitMs+data.ReadyMs,
                 // We normalize CPU consumption with the stack depth. The depth starts from 0 which is the method which consumes CPU.
                 // Upwards in the stack we must reduce the weight of CPU to get an approximate ordering of the methods which consume most CPU.
                 // This can be viewed as a special kind of distance metric in the 2D-space of Time vs StackDepth
@@ -854,6 +978,70 @@ namespace ETWAnalyzer.EventDump
                 SortOrders.First => data.FirstCallTime.Ticks,
                 SortOrders.Last => data.LastCallTime.Ticks,
                 _ => data.CPUMs,  // by default sort by CPU
+            };
+        }
+
+        /// <summary>
+        /// Sort files by time (default), or when Total mode is enabled by per file totals which 
+        /// can be configured with -SortBy clause by which total the files are sorted.
+        /// </summary>
+        /// <param name="fileTotals">Precalculated file totals</param>
+        /// <returns>Delegate which is used for sorting</returns>
+        internal Func<IGrouping<string, MatchData>, decimal> CreateFileSorter(Dictionary<string, FileTotals> fileTotals)
+        {
+            return x =>
+            {
+                MatchData data = x.First();
+                decimal lret = data.PerformedAt.Ticks; // default is sort by file time
+                if (ShowTotal != TotalModes.None) // when totals are printed we sort cross file by file totals to show the highest total
+                {
+                    FileTotals ftotal = fileTotals[GetFileGroupName(data)];
+                    lret = SortOrder switch
+                    {
+                        SortOrders.CPU => ftotal.CPUMs,
+                        SortOrders.Wait => ftotal.WaitMs,
+                        SortOrders.Ready => ftotal.ReadyMs,
+                        SortOrders.CPUWait => ftotal.GetTotal(SortOrders.CPUWait),
+                        SortOrders.CPUWaitReady => ftotal.GetTotal(SortOrders.CPUWaitReady),
+                        SortOrders.TestTime => data.PerformedAt.Ticks,
+                        _ => ftotal.GetTotal(SortOrders.CPUWait),
+                    };
+                }
+                return lret;
+            };
+        }
+
+        /// <summary>
+        /// Sort processes inside one file by total CPU (default) or sort order given by -SortBy
+        /// </summary>
+        /// <param name="fileGroupName">Input file name</param>
+        /// <param name="fileProcessTotals">Process totals per input file where fileGroupName is used to look up totals.</param>
+        /// <returns>Delegate which is used for sorting.</returns>
+        internal Func<IGrouping<ProcessKey, MatchData>, decimal> CreateProcessSorter(string fileGroupName, Dictionary<string, Dictionary<ProcessKey, ProcessTotals>> fileProcessTotals)
+        {
+            return x =>
+            {
+                decimal lret = 0.0M;
+
+                // since we cut during totals already TopN ... we can get dictionary misses which are for the sort order not relevant anyway because
+                // they do not contribute to totals calculation.
+                if (fileProcessTotals.TryGetValue(fileGroupName, out Dictionary<ProcessKey, ProcessTotals> processDict))
+                {
+                    if (processDict.TryGetValue(x.Key, out ProcessTotals totals))
+                    {
+                        lret = SortOrder switch
+                        {
+                            SortOrders.CPU => totals.CPUMs,
+                            SortOrders.Wait => totals.WaitMs,
+                            SortOrders.Ready => totals.ReadyMs,
+                            SortOrders.CPUWait => totals.GetTotal(SortOrders.CPUWait),
+                            SortOrders.CPUWaitReady => totals.GetTotal(SortOrders.CPUWaitReady),
+                            _ => totals.CPUMs,
+                        };
+                    }
+                }
+
+                return lret;
             };
         }
 

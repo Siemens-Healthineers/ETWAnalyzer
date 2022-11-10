@@ -136,9 +136,10 @@ abstract class ArgParser : ICommand
     /// Get argument list for current command line parameter.
     /// </summary>
     /// <param name="parent">current argument</param>
+    /// <param name="bThrow">When true throw on empty list</param>
     /// <returns>List of parsed arguments</returns>
     /// <remarks>Throws InvalidDataExcption if no arguments were found.</remarks>
-    protected List<string> GetArgList(string parent)
+    protected List<string> GetArgList(string parent, bool bThrow = true)
     {
         List<string> args = new();
         string nextArg = null;
@@ -149,7 +150,10 @@ abstract class ArgParser : ICommand
 
         if (args.Count == 0)
         {
-            throw new InvalidDataException($"Input argument {parent} needs at least one option.");
+            if (bThrow)
+            {
+                throw new InvalidDataException($"Input argument {parent} needs at least one option.");
+            }
         }
         return args;
     }
