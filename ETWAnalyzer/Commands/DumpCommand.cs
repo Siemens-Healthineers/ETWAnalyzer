@@ -194,7 +194,7 @@ namespace ETWAnalyzer.Commands
        $"                         -MaxMessage dd             Limit exception message to first dd characters. By default the first {MaxMessageLength} characters are printed. Use -MaxMessage 0 to show full text." + Environment.NewLine +
         "                         -CutStack dd-yy            Remove the first dd lines of the stack. To display all stack frames use \"-CutStack 0-\". Print yy lines or all if -yy is omitted." + Environment.NewLine +
         "                                                    E.g. -CutStack -50 will display the first 50 lines of a stack trace." + Environment.NewLine +
-        "                         -IsByTime                  Filters exceptions according to different time formats like -s -Local -LocalTime -UTC -UTCTime -Here -HereTime." + Environment.NewLine +
+        "                         -SortBy [Time / Default]   Sorts exceptions by time or use default grouping." + Environment.NewLine +
         "                         For other options [-ZeroTime ..] [-recursive] [-csv] [-NoCSVSeparator] [-TimeFmt] [-NoCmdLine] [-TestsPerRun] [-SkipNTests] [-TestRunIndex] [-TestRunCount] [-MinMaxMsTestTimes] [-ProcessName/pn] " + Environment.NewLine +
         "                         [-NewProcess] [-CmdLine] [-ShowFullFileName] refer to help of TestRun, Process and CPU (-ProcessFmt).  Run \'EtwAnalyzer -help dump\' to get more infos." + Environment.NewLine;
 
@@ -620,7 +620,6 @@ namespace ETWAnalyzer.Commands
         public const int MaxMessageLength = 500;
         public int MaxMessage { get; private set;  }  = MaxMessageLength;
         public MinMaxRange<double> MinMaxExTimeS { get; private set; } = new MinMaxRange<double>();
-        public bool IsByTime { get; private set; }
 
         // Dump Process specific Flags
         public bool ShowAllProcesses { get; private set; }
@@ -869,9 +868,6 @@ namespace ETWAnalyzer.Commands
                         break;
                     case "-filterexceptions":
                         FilterExceptions = true;
-                        break;
-                    case "-isbytime":
-                        IsByTime = true;
                         break;
                     case "-modulefilter":
                         ModuleFilter =      Matcher.CreateMatcher(GetNextNonArg("-modulefilter"));
@@ -1529,7 +1525,7 @@ namespace ETWAnalyzer.Commands
                             ZeroTimeMode = ZeroTimeMode,
                             ZeroTimeFilter = ZeroTimeFilter,
                             ZeroTimeProcessNameFilter = ZeroTimeProcessNameFilter,
-                            IsByTime = IsByTime,
+                            SortOrder = SortOrder,
                         };
                         break;
                     case DumpCommands.Memory:

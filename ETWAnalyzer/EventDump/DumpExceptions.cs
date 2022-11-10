@@ -33,7 +33,7 @@ namespace ETWAnalyzer.EventDump
         public bool NoCmdLine { get; internal set; }
         public MinMaxRange<double> MinMaxExTimeS { get; internal set; }
         public int MaxMessage { get; internal set; } = DumpCommand.MaxMessageLength;
-
+        public DumpCommand.SortOrders SortOrder { get; internal set; }
 
         public class MatchData
         {
@@ -100,7 +100,6 @@ namespace ETWAnalyzer.EventDump
         /// </summary>
         const int ExceptionMaxMessageLength = 500;
 
-        public bool IsByTime = true;
 
 
         public override List<MatchData> ExecuteInternal()
@@ -200,7 +199,7 @@ namespace ETWAnalyzer.EventDump
             {
                 PrintFileName(byFile.Key, null, byFile.First().PerformedAt, byFile.First().BaseLine);
                 
-                if (IsByTime)
+                if (SortOrder == DumpCommand.SortOrders.Time)
                 {
                     PrintByTime(byFile);
                 }
