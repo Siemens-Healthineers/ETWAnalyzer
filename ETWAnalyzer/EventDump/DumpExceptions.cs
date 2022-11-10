@@ -9,8 +9,10 @@ using ETWAnalyzer.Extract.Exceptions;
 using ETWAnalyzer.Extractors;
 using ETWAnalyzer.Infrastructure;
 using ETWAnalyzer.ProcessTools;
+using Microsoft.Diagnostics.Tracing.Parsers.FrameworkEventSource;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -24,7 +26,6 @@ namespace ETWAnalyzer.EventDump
         public KeyValuePair<string, Func<string, bool>> MessageFilter { get; internal set; }
         public KeyValuePair<string, Func<string, bool>> StackFilter { get; internal set; }
 
-        public bool FilterExceptions { get; internal set; }
         public bool ShowStack { get; internal set; }
 
         public int CutStackMin { get; internal set; }
@@ -94,12 +95,13 @@ namespace ETWAnalyzer.EventDump
             public string BaseLine { get; internal set; }
         }
 
-        readonly ExceptionFilters myFilters = ExceptionExtractor.ExceptionFilters();
-
         /// <summary>
         /// Messages with longer strings are truncated at console output.
         /// </summary>
         const int ExceptionMaxMessageLength = 500;
+
+        public bool IsByTime = true;
+
 
         public override List<MatchData> ExecuteInternal()
         {
@@ -167,8 +169,7 @@ namespace ETWAnalyzer.EventDump
                     MessageFilter.Value(arg.Message) &&
                     TypeFilter.Value(arg.Type) && 
                     StackFilter.Value(arg.Stack) &&
-                    MinMaxExTimeS.IsWithin( (arg.Time - file.Extract.SessionStart).TotalSeconds - zeroTimeS) && 
-                    (FilterExceptions ? myFilters.IsRelevantException(arg.Process.ProcessWithID, arg.Type, arg.Message, arg.Stack) : true);
+                    MinMaxExTimeS.IsWithin( (arg.Time - file.Extract.SessionStart).TotalSeconds - zeroTimeS); 
             };
 
             foreach (var ex in file.Extract.Exceptions.Exceptions.Where(IsMatchingException))
@@ -192,7 +193,6 @@ namespace ETWAnalyzer.EventDump
             }
         }
 
-        public bool IsByTime = true;
 
         private void PrintMatches(List<MatchData> matches)
         {
@@ -203,7 +203,6 @@ namespace ETWAnalyzer.EventDump
                 if (IsByTime)
                 {
                     PrintByTime(byFile);
-
                 }
                 else
                 {
@@ -211,12 +210,10 @@ namespace ETWAnalyzer.EventDump
                 }
             }
         }
-
-
-        private void  PrintByTime(IGrouping<string, MatchData> byFile)
+        
+        private void PrintByTime(IGrouping<string, MatchData> byFile)
         {
             List<MatchData> matches = new List<MatchData>();
-
             string timeHeader = "Time";
             int timeWidth = TimeFormatOption switch
             {
@@ -229,18 +226,100 @@ namespace ETWAnalyzer.EventDump
                 TimeFormats.HereTime => 12,
                 _ => 100,
             };
-            const int expTypeWidth = 32;
+            const int expTypeWidth = 60;
             string excheader = "Exception Type";
-            const int processWidth = 40;
+            const int processWidth = 60;
             string processheader = "Process";
             const int expmsgWidth = 90;
             string expmsgheader = "Exception Message";
             ColorConsole.WriteEmbeddedColorLine($"{timeHeader.WithWidth(timeWidth)}[magenta]{processheader.WithWidth(processWidth)}[/magenta] [green]{excheader.WithWidth(expTypeWidth)}[/green] {expmsgheader.WithWidth(expmsgWidth)}");
 
+            string previousExceptionType = null;
+            string previousProcess = null;
+            string previousMessage = null;
+
             foreach (var item in byFile.OrderBy(match => match.TimeStamp))
             {
                 string timeStr = GetDateTimeString(item.TimeStamp, item.SessionStart, TimeFormatOption).WithWidth(timeWidth);
-                ColorConsole.WriteEmbeddedColorLine($"{timeStr} [magenta]{item.Process.GetProcessWithId(UsePrettyProcessName),processWidth}[/magenta] [green]{item.Type}[/green] {item.Message}");
+                string currentProcess = item.Process.GetProcessWithId(UsePrettyProcessName);
+                string currentMessage = item.Message;
+                string currentExceptiontype = item.Type;
+                string tobePrintedMsg = currentMessage;
+                string tobePrinted = currentProcess;
+                string tobePrintedType = currentExceptiontype;
+                string tobePrintedProcess = currentProcess;
+
+                if (currentProcess == previousProcess)
+                {
+                    tobePrinted = "...";
+                } 
+                string replacedProcess = replaceToCurrentProcess(item.Process.GetProcessWithId(UsePrettyProcessName));
+                previousProcess = currentProcess;
+
+                if (currentMessage == previousMessage)
+                {
+                    tobePrintedMsg = "...";
+                }
+                string replacedMsg = replaceToCurrentMsg(item.Message);
+                previousMessage = currentMessage;
+
+                if (currentExceptiontype == previousExceptionType)
+                {
+                    tobePrintedType = "...";
+                }
+                string replacedType = replaceToCurrentType(item.Type);
+                previousExceptionType = currentExceptiontype;
+
+                if ((replacedType != "...") || (tobePrinted != "..."))
+                {
+                    replacedProcess = tobePrintedProcess;
+                }
+                else
+                {
+                    replacedProcess = "...";
+                }
+
+                ColorConsole.WriteEmbeddedColorLine($"{timeStr} [magenta]{replacedProcess,processWidth}[/magenta] [green]{replacedType,expTypeWidth}[/green] {replacedMsg,expmsgWidth}");
+
+            }
+        }
+        string myPreviousProcess = null;
+        string replaceToCurrentProcess(string currentProcess)
+        {
+            if (currentProcess == myPreviousProcess)
+            {
+                return "...";
+            }
+            else
+            {
+                myPreviousProcess = currentProcess;
+                return currentProcess;
+            }
+        }
+        string myPreviousMsg = null;
+        string replaceToCurrentMsg(string currentMsg)
+        {
+            if (currentMsg == myPreviousMsg)
+            {
+                return "...";
+            }
+            else
+            {
+                myPreviousMsg = currentMsg;
+                return currentMsg;
+            }
+        }
+        string myPreviousType = null;
+        string replaceToCurrentType(string currentType)
+        {
+            if (currentType == myPreviousType)
+            {
+                return "...";
+            }
+            else
+            {
+                myPreviousType = currentType;
+                return currentType;
             }
         }
 
@@ -279,11 +358,9 @@ namespace ETWAnalyzer.EventDump
                                     {
                                         ColorConsole.WriteLine($"\t\t\t{GetDateTimeString(data.TimeStamp, data.SessionStart, TimeFormatOption)} {GetDateTimeString(data.TimeStamp, data.SessionStart, TimeFormats.s)}");
                                     }
-
                                 }
                             }
                         }
-
                     }
                 }
             }
