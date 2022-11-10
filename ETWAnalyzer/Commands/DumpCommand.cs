@@ -176,7 +176,7 @@ namespace ETWAnalyzer.Commands
         "                         For other options [-recursive] [-csv] [-NoCSVSeparator] [-TimeFmt] [-NoCmdLine] [-TestsPerRun] [-SkipNTests] [-TestRunIndex] [-TestRunCount] [-MinMaxMsTestTimes] [-ProcessName/pn] [-NewProcess] [-CmdLine]" + Environment.NewLine +
         "                         [-ShowFullFileName] refer to help of TestRun, Process and CPU (-ProcessFmt). Run \'EtwAnalyzer -help dump\' to get more infos." + Environment.NewLine;
         static readonly string ExceptionHelpString =
-        "  Exception -filedir/fd Extract\\ or xxx.json [-FilterExceptions] [-Type xxx] [-Message xxx] [-Showstack] [-MaxMessage dd] [-CutStack dd-yy] [-Stackfilter xxx] [-recursive] [-csv xxx.csv] [-NoCSVSeparator] " + Environment.NewLine +
+        "  Exception -filedir/fd Extract\\ or xxx.json [-Type xxx] [-Message xxx] [-Showstack] [-MaxMessage dd] [-CutStack dd-yy] [-Stackfilter xxx] [-recursive] [-csv xxx.csv] [-NoCSVSeparator] " + Environment.NewLine +
         "                           [-TimeFmt s,Local,LocalTime,UTC,UTCTime,Here,HereTime] [-ProcessFmt timefmt] [-NoCmdLine] [-Clip] [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd] [-MinMaxMsTestTimes xx-yy ...]" + Environment.NewLine +
         "                           [-MinMaxExTime minS [maxS]] [-ZeroTime/zt Marker/First/Last/ProcessStart filter] [-ZeroProcessName/zpn filter]" + Environment.NewLine +
         "                           [-ProcessName/pn xxx.exe(pid)] [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-CmdLine substring]" + Environment.NewLine +
@@ -194,8 +194,7 @@ namespace ETWAnalyzer.Commands
        $"                         -MaxMessage dd             Limit exception message to first dd characters. By default the first {MaxMessageLength} characters are printed. Use -MaxMessage 0 to show full text." + Environment.NewLine +
         "                         -CutStack dd-yy            Remove the first dd lines of the stack. To display all stack frames use \"-CutStack 0-\". Print yy lines or all if -yy is omitted." + Environment.NewLine +
         "                                                    E.g. -CutStack -50 will display the first 50 lines of a stack trace." + Environment.NewLine +
-        "                         -FilterExceptions          Filter exceptions away which are normally harmless. The filter file is located in Configuration\\ExceptionFilters.xml." + Environment.NewLine +
-        "                                                    You need this only when you have used during -extract Exception -allExceptions where the same filter will be applied during extraction already." + Environment.NewLine +
+        "                         -SortBy [Time / Default]   Sorts exceptions by time or use default grouping." + Environment.NewLine +
         "                         For other options [-ZeroTime ..] [-recursive] [-csv] [-NoCSVSeparator] [-TimeFmt] [-NoCmdLine] [-TestsPerRun] [-SkipNTests] [-TestRunIndex] [-TestRunCount] [-MinMaxMsTestTimes] [-ProcessName/pn] " + Environment.NewLine +
         "                         [-NewProcess] [-CmdLine] [-ShowFullFileName] refer to help of TestRun, Process and CPU (-ProcessFmt).  Run \'EtwAnalyzer -help dump\' to get more infos." + Environment.NewLine;
 
@@ -1513,7 +1512,7 @@ namespace ETWAnalyzer.Commands
                             NewProcessFilter = NewProcess,
                             UsePrettyProcessName = UsePrettyProcessName,
 
-                            FilterExceptions = FilterExceptions,
+                            
                             TypeFilter = TypeFilter,
                             MessageFilter = MessageFilter,
                             StackFilter = StackFilter,
@@ -1526,6 +1525,7 @@ namespace ETWAnalyzer.Commands
                             ZeroTimeMode = ZeroTimeMode,
                             ZeroTimeFilter = ZeroTimeFilter,
                             ZeroTimeProcessNameFilter = ZeroTimeProcessNameFilter,
+                            SortOrder = SortOrder,
                         };
                         break;
                     case DumpCommands.Memory:
