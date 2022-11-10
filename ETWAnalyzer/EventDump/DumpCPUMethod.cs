@@ -840,7 +840,9 @@ namespace ETWAnalyzer.EventDump
                     ReadyMs = filteredSubItems.Sum(x => x.ReadyMs),
                 };
 
-                foreach(MatchData data in filteredSubItems)
+                fileTotals.Add(fileGroup.Key, total);
+
+                foreach (MatchData data in filteredSubItems)
                 {
                     if( !fileProcessTotals.TryGetValue(GetFileGroupName(data), out Dictionary<ProcessKey, ProcessTotals> processDict) )
                     {
@@ -860,7 +862,7 @@ namespace ETWAnalyzer.EventDump
                 }
                     
 
-                fileTotals.Add(GetFileGroupName(fileGroup.First()), total);
+                
             }
 
             return (fileTotals, fileProcessTotals);
