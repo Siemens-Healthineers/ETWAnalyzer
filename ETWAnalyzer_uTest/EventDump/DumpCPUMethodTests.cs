@@ -475,8 +475,7 @@ namespace ETWAnalyzer_uTest.EventDump
             var data = CreateTestData();
 
             var (fileTotals, processTotals) = dumper.GetFileAndProcessTotals(data);
-            // Todo
-            // Assert if file and process totals are correct
+
             Assert.Equal(300, fileTotals[File1].WaitMs);
             Assert.Equal(6, fileTotals[File1].CPUMs);
             Assert.Equal(150, fileTotals[File1].ReadyMs);
@@ -519,8 +518,7 @@ namespace ETWAnalyzer_uTest.EventDump
             var data = CreateTestData();
 
             var (fileTotals, processTotals) = dumper.GetFileAndProcessTotals(data);
-            // Todo
-            // Assert if file and process totals are correct
+
             Assert.Equal(300, fileTotals[File1].WaitMs);
             Assert.Equal(5900, fileTotals[File2].WaitMs);
             Assert.Equal(1, fileTotals[File3].WaitMs);
@@ -545,8 +543,7 @@ namespace ETWAnalyzer_uTest.EventDump
             var data = CreateTestData();
 
             var (fileTotals, processTotals) = dumper.GetFileAndProcessTotals(data);
-            // Todo
-            // Assert if file and process totals are correct
+
             Assert.Equal(150, fileTotals[File1].ReadyMs);
             Assert.Equal(140, fileTotals[File2].ReadyMs);
             Assert.Equal(5000, fileTotals[File3].ReadyMs);
