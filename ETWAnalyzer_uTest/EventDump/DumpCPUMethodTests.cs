@@ -470,6 +470,7 @@ namespace ETWAnalyzer_uTest.EventDump
         {
            
             DumpCPUMethod dumper = new();
+            dumper.ShowTotal = TotalModes.Process;
 
             var data = CreateTestData();
 
@@ -487,6 +488,22 @@ namespace ETWAnalyzer_uTest.EventDump
             Assert.Equal(2, fileTotals[File3].WaitMs);
             Assert.Equal(2, fileTotals[File3].CPUMs);
             Assert.Equal(5001, fileTotals[File3].ReadyMs);
+
+            Assert.Equal(6, processTotals[File1][myCmdProcess].CPUMs);
+            Assert.Equal(300, processTotals[File1][myCmdProcess].WaitMs);
+            Assert.Equal(150, processTotals[File1][myCmdProcess].ReadyMs);
+
+            Assert.Equal(16000, processTotals[File2][myCmdProcess2].CPUMs);
+            Assert.Equal(5900, processTotals[File2][myCmdProcess2].WaitMs);
+            Assert.Equal(140, processTotals[File2][myCmdProcess2].ReadyMs);
+
+            Assert.Equal(1, processTotals[File3][myCmdProcess].CPUMs);
+            Assert.Equal(1, processTotals[File3][myCmdProcess].WaitMs);
+            Assert.Equal(1, processTotals[File3][myCmdProcess].ReadyMs);
+
+            Assert.Equal(1, processTotals[File3][myCmdProcess2].CPUMs);
+            Assert.Equal(1, processTotals[File3][myCmdProcess2].WaitMs);
+            Assert.Equal(5000, processTotals[File3][myCmdProcess2].ReadyMs);
         }
 
         [Fact]
@@ -507,6 +524,13 @@ namespace ETWAnalyzer_uTest.EventDump
             Assert.Equal(300, fileTotals[File1].WaitMs);
             Assert.Equal(5900, fileTotals[File2].WaitMs);
             Assert.Equal(1, fileTotals[File3].WaitMs);
+
+            Assert.Equal(300, processTotals[File1][myCmdProcess].WaitMs);
+
+            Assert.Equal(5900, processTotals[File2][myCmdProcess2].WaitMs);
+
+            Assert.Equal(1, processTotals[File3][myCmdProcess].WaitMs);
+
         }
 
         [Fact]
