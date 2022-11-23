@@ -55,16 +55,18 @@ The following command extracts everything, using Microsoft symbols from a single
 ![](ETWAnalyzer/Documentation/Images/ExtractionCommand.png "Extract Command")
 The option -AllCPU will include also methods with < 10 ms CPU or Wait time which are normally not relevant for performance regression issues to keep the file size as small as possible. 
 
-There is extracted example data located at [Test Data](https://github.com/Siemens-Healthineers/ETWAnalyzer/blob/main/ETWAnalyzer_uTest/TestData/CallupAdhocWarmReadingCT_3117msFO9DE01T0162PC.20200717-124447.json) which you can query at your own. Can you find the performance bug?
-Download the data to a directory and try
-- *cd DownloadDir*
-- *ETWAnalyzer -dump CPU -topN 5*
-- *ETWAnalyzer -dump CPU -topN 1 -methods* *
-- *ETWAnalyzer -dump CPU -topN 1 -methods* * *-sortby stackdepth -MinMaxCPUMs 1000*
-- *ETWAnalyzer -dump CPU -topN 1 -methods* * *-sortby stackdepth -MinMaxCPUMs 1000 -includedll*
-- *ETWAnalyzer -dump CPU -topN 1 -methods* * *-sortby stackdepth -MinMaxCPUMs 1000 -includedll -threadcount*
-- *ETWAnalyzer -dump CPU -topN 1 -methods* * *-sortby stackdepth -MinMaxCPUMs 1000 -FirstLastDuration s s*
-- *ETWAnalyzer -dump Stats -Properties SessionDurations*
+There is extracted example data located at [Test Data](https://github.com/Siemens-Healthineers/ETWAnalyzer/blob/main/ETWAnalyzer_uTest/TestData/CallupAdhocWarmReadingCT_3117msFO9DE01T0162PC.20200717-124447.json) which you can query at your own. Can you find the performance bug? The curl command downloads the test data from Github. Then you can start working with the data.
+```
+curl https://raw.githubusercontent.com/Siemens-Healthineers/ETWAnalyzer/main/ETWAnalyzer_uTest/TestData/CallupAdhocWarmReadingCT_3117msFO9DE01T0162PC.20200717-124447.json > c:\Temp\ETWAnalzyerTest.json
+set f=-filedir c:\Temp\ETWAnalzyerTest.json
+ETWAnalyzer %f% -dump CPU -topN 5
+ETWAnalyzer %f% -dump CPU -topN 1 -methods *
+ETWAnalyzer %f% -dump CPU -topN 1 -methods * -sortby stackdepth -MinMaxCPUMs 1000
+ETWAnalyzer %f% -dump CPU -topN 1 -methods * -sortby stackdepth -MinMaxCPUMs 1000 -includedll
+ETWAnalyzer %f% -dump CPU -topN 1 -methods * -sortby stackdepth -MinMaxCPUMs 1000 -includedll -threadcount
+ETWAnalyzer %f% -dump CPU -topN 1 -methods * -sortby stackdepth -MinMaxCPUMs 1000 -FirstLastDuration s s
+ETWAnalyzer %f% -dump Stats -Properties SessionDurations
+```
 
 This shows a Microsoft Bug at work while some serialization performance test was executed.
 
