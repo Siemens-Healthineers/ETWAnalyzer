@@ -216,6 +216,7 @@ namespace ETWAnalyzer.EventDump
                     totalPerProcessFileOpenCloseTimeInus += fileEvent.FileOpenTimeInus + fileEvent.FileCloseTimeInus;
                     totalPerProcessFileWriteCount += fileEvent.FileWriteCount;
                     totalPerProcessFileOpenCount += fileEvent.FileOpenCount;
+
                     totalPerProcessFileCloseCount += fileEvent.FileCloseCount;
                     totalPerProcessFileRenameCount += fileEvent.FileRenameCount;
                     totalPerProcessFileDeleteCount += fileEvent.FileDeleteCount;
