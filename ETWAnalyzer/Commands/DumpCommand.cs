@@ -1548,6 +1548,7 @@ namespace ETWAnalyzer.Commands
                             CommandLineFilter = CmdLineFilter,
                             NewProcessFilter = NewProcess,
                             UsePrettyProcessName = UsePrettyProcessName,
+                            ShowModuleInfo = ShowModuleInfo,
 
                             TopN = TopN,
                             SortOrder = SortOrder,
