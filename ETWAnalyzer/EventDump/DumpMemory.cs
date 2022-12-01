@@ -319,7 +319,7 @@ namespace ETWAnalyzer.EventDump
                     processCount ++;
                     ColorConsole.WriteEmbeddedColorLine($"[darkcyan]{GetDateTimeString(m.SessionEnd, m.SessionStart, TimeFormatOption)}[/darkcyan] [{GetColor(m.DiffMb)}]Diff: {m.DiffMb,4}[/{GetColor(m.DiffMb)}] [{GetColorTotal(m.CommitedMiB)}]Commit {m.CommitedMiB,4} MiB[/{GetColorTotal(m.CommitedMiB)}] [{GetColorTotal(m.WorkingSetMiB)}]WorkingSet {m.WorkingSetMiB,4} MiB[/{GetColorTotal(m.WorkingSetMiB)}] [{GetColorTotal(m.SharedCommitInMiB)}]Shared Commit: {m.SharedCommitInMiB,4} MiB [/{GetColorTotal(m.SharedCommitInMiB)}] ", null, true);
                     ColorConsole.WriteLine($"{m.Process} {(NoCmdLine ? "" : m.CmdLine)}", ConsoleColor.Magenta);
-                    ColorConsole.WriteLine($"{m.Module}", ConsoleColor.Red);
+                    ColorConsole.WriteLine($"{m.Module} {(NoCmdLine ? "" : m.CmdLine)}", ConsoleColor.Red);
                 }
                 ColorConsole.WriteEmbeddedColorLine($"[cyan]Memory Total per File:[/cyan] [{GetTrendColor(totalDiff)}]TotalDiff: {totalDiff} [/{GetTrendColor(totalDiff)}] [{GetColorTotal(totalCommitedMem)}] TotalCommitedMem: {totalCommitedMem} MiB [/{GetColorTotal(totalCommitedMem)}] [Darkyellow] Number of Involved Processes: {processCount} [/Darkyellow]");
             }
