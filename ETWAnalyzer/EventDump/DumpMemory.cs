@@ -248,10 +248,11 @@ namespace ETWAnalyzer.EventDump
 
         private void WriteToCSV(List<Match> matches)
         {
-            OpenCSVWithHeader("CSVOptions", "Time", "Process", "ProcessName", "Commit MiB", "Shared CommitMiB", "Working Set MiB", "Cmd Line", "Baseline", "TestCase", "TestDurationInMs", "SourceJsonFile", "Machine");
+            OpenCSVWithHeader("CSVOptions", "Time", "Process", "ProcessName", "Commit MiB", "Shared CommitMiB", "Working Set MiB", "Cmd Line", "Baseline", "TestCase", "TestDurationInMs", "SourceJsonFile", "Machine", "Module Version");
             foreach (var match in matches)
             {
-                WriteCSVLine(CSVOptions, base.GetDateTimeString(match.SessionEnd, match.SessionStart, TimeFormatOption), match.Process, match.ProcessName, match.CommitedMiB, match.SharedCommitInMiB, match.WorkingSetMiB, match.CmdLine, match.Baseline, match.TestCase, match.TestDurationInMs, match.SourceFile, match.Machine);
+                string moduleString = match.Module == null ? "" : GetModuleString(match.Module, true);
+                WriteCSVLine(CSVOptions, base.GetDateTimeString(match.SessionEnd, match.SessionStart, TimeFormatOption), match.Process, match.ProcessName, match.CommitedMiB, match.SharedCommitInMiB, match.WorkingSetMiB, match.CmdLine, match.Baseline, match.TestCase, match.TestDurationInMs, match.SourceFile, match.Machine, moduleString);
             }
         }
 

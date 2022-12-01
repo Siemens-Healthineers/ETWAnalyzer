@@ -941,11 +941,12 @@ namespace ETWAnalyzer.EventDump
 
         private void WriteCSVProcessTotal(List<MatchData> matches)
         {
-            OpenCSVWithHeader("CSVOptions", "Test Case", "Date", "Test Time in ms", "CPU ms", "Baseline", "Process", "Process Name", "Start Time", "Command Line", "SourceFile", "SourceDirectory", "IsNewProcess");
+            OpenCSVWithHeader("CSVOptions", "Test Case", "Date", "Test Time in ms", "CPU ms", "Baseline", "Process", "Process Name", "Start Time", "Command Line", "SourceFile", "SourceDirectory", "IsNewProcess", "Module Version");
             foreach (var match in matches.OrderBy(x => x.PerformedAt).ThenByDescending(x => x.CPUMs))
             {
+                string moduleString = match.Module == null ? "" : GetModuleString(match.Module, true);
                 WriteCSVLine(CSVOptions, match.TestName, match.PerformedAt, match.DurationInMs, match.CPUMs, match.BaseLine, match.ProcessAndPid, match.Process.GetProcessName(UsePrettyProcessName), match.Process.StartTime, match.Process.CmdLine, 
-                    Path.GetFileNameWithoutExtension(match.SourceFile), Path.GetDirectoryName(match.SourceFile), (match.Process.IsNew ? 1 : 0));
+                    Path.GetFileNameWithoutExtension(match.SourceFile), Path.GetDirectoryName(match.SourceFile), (match.Process.IsNew ? 1 : 0), moduleString);
             }
         }
 
