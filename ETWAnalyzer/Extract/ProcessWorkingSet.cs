@@ -12,12 +12,12 @@ using System.Threading.Tasks;
 namespace ETWAnalyzer.Extract
 {
     /// <summary>
-    /// When the ETW trace contains sampled workingsetdata 
+    /// When the ETW trace contains sampled workingset data 
     /// </summary>
     public class ProcessWorkingSet
     {
         /// <summary>
-        /// 
+        /// Working Set in MiB = bytes/(1024*1024) rounded to next bigger MiB when greater x.5
         /// </summary>
         public ulong WorkingSetInMiB
         {
@@ -25,7 +25,7 @@ namespace ETWAnalyzer.Extract
         }
 
         /// <summary>
-        /// 
+        /// Committed memory in MiB  = bytes/(1024*1024) rounded to next bigger MiB when greater x.5
         /// </summary>
         public ulong CommitInMiB
         {
@@ -33,7 +33,7 @@ namespace ETWAnalyzer.Extract
         }
 
         /// <summary>
-        /// 
+        /// Process private working set in MiB = bytes/(1024*1024) rounded to next bigger MiB when greater x.5
         /// </summary>
         public ulong WorkingsetPrivateInMiB
         {
@@ -42,6 +42,7 @@ namespace ETWAnalyzer.Extract
 
         /// <summary>
         /// This is the size of file mapping data e.g. Page file or other file mapped data
+        /// in MiB = bytes/(1024*1024) rounded to next bigger MiB when greater x.5
         /// </summary>
         public ulong SharedCommitSizeInMiB
         {
@@ -49,7 +50,7 @@ namespace ETWAnalyzer.Extract
         }
 
         /// <summary>
-        /// 
+        /// Process for which the data was gathered.
         /// </summary>
         public ProcessKey Process
         {
@@ -57,7 +58,7 @@ namespace ETWAnalyzer.Extract
         }
 
         /// <summary>
-        /// 
+        /// Potentially needed by some serializer to create an empty object
         /// </summary>
         public ProcessWorkingSet()
         {
@@ -76,10 +77,13 @@ namespace ETWAnalyzer.Extract
                 createTime = process.CreateTime.Value.DateTimeOffset;
             }
             Process = new ProcessKey(process.ImageName, process.Id, createTime);
-            WorkingSetInMiB = (ulong) workingset.TotalMebibytes;
-            WorkingsetPrivateInMiB = (ulong)workingsetPrivate.TotalMebibytes;
-            CommitInMiB = (ulong)commit.TotalMebibytes;
-            SharedCommitSizeInMiB = (ulong)sharedCommitSize.TotalMebibytes;
+
+            // round x.5 to next number to reduce the error
+            WorkingSetInMiB =        (ulong) Math.Round(workingset.TotalMebibytes,        0, MidpointRounding.AwayFromZero);
+            WorkingsetPrivateInMiB = (ulong) Math.Round(workingsetPrivate.TotalMebibytes, 0, MidpointRounding.AwayFromZero);
+            CommitInMiB =            (ulong) Math.Round(commit.TotalMebibytes,            0, MidpointRounding.AwayFromZero);
+            SharedCommitSizeInMiB =  (ulong) Math.Round(sharedCommitSize.TotalMebibytes,  0, MidpointRounding.AwayFromZero);
+
         }
 
         /// <summary>

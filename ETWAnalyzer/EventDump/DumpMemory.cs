@@ -144,7 +144,7 @@ namespace ETWAnalyzer.EventDump
 
         bool MemoryFilter(ProcessWorkingSet set)
         {
-            return set.WorkingSetInMiB > (ulong)MinWorkingSetMB;
+            return set.WorkingSetInMiB >= (ulong)MinWorkingSetMB;
         }
 
         double SortByValue(Match data)

@@ -240,7 +240,33 @@ namespace ETWAnalyzer_iTest
             Assert.Equal("System.IO.FileNotFoundException", singleException.Type);
             Assert.Single(singleException.Times);
             Assert.Single(singleException.Processes);
-                
+
+            // Check Memory Data
+            Assert.Equal(17120, extractedServer.MemorySizeMB);
+            Assert.Equal(14019uL, extractedServer.MemoryUsage.MachineCommitStartMiB);
+            Assert.Equal(14001uL, extractedServer.MemoryUsage.MachineCommitEndMiB);
+           
+            Assert.Equal(-18, extractedServer.MemoryUsage.MachineCommitDiffMiB);
+
+            Assert.Equal(9661uL, extractedServer.MemoryUsage.MachineActiveStartMiB);
+            Assert.Equal(9531uL, extractedServer.MemoryUsage.MachineActiveEndMiB);
+            
+            Assert.Equal(254, extractedServer.MemoryUsage.WorkingSetsAtStart.Count);
+
+            // processes are sorted by Commit descending
+            ProcessWorkingSet highestStart = extractedServer.MemoryUsage.WorkingSetsAtStart[0];
+            Assert.Equal(401uL, highestStart.WorkingSetInMiB);
+            Assert.Equal(529uL, highestStart.CommitInMiB);
+            Assert.Equal(327uL, highestStart.WorkingsetPrivateInMiB);
+            Assert.Equal(2uL, highestStart.SharedCommitSizeInMiB);
+
+            Assert.Equal(256, extractedServer.MemoryUsage.WorkingSetsAtEnd.Count);
+            // processes are sorted by Commit descending
+            ProcessWorkingSet highestEnd = extractedServer.MemoryUsage.WorkingSetsAtEnd[0];
+            Assert.Equal(407uL, highestEnd.WorkingSetInMiB);
+            Assert.Equal(529uL, highestEnd.CommitInMiB);
+            Assert.Equal(332uL, highestEnd.WorkingsetPrivateInMiB);
+            Assert.Equal(2uL, highestEnd.SharedCommitSizeInMiB);
         }
 
         [Fact]
