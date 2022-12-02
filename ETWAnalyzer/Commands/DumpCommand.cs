@@ -288,12 +288,14 @@ namespace ETWAnalyzer.Commands
         "                         -Methods *Func1*;xxx.dll!FullMethodName   Dump one or more methods from all or selected processes. When omitted only process total method call is printed to give an overview." + Environment.NewLine;
 
         static readonly string DnsHelpString =
-        "  Dns -filedir/fd Extract\\ or xxx.json [-DnsQueryFilter xxx] [-Details] [-ShowAdapter] [-ShowReturnCode] [-TopN dd nn] [-SortBy Time/Count] [-MinMaxTotalTimeMs min [max]] [-MinMaxTimeMs min [max]] [-recursive] [-TimeFmt s,Local,LocalTime,UTC,UTCTime,Here,HereTime]" + Environment.NewLine +
-        "       [-csv xxx.csv] [-NoCSVSeparator] [-NoCmdLine] [-Clip] [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd] [-MinMaxMsTestTimes xx-yy ...] [-ProcessName/pn xxx.exe(pid)] [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-CmdLine substring]" + Environment.NewLine +
+        "  Dns -filedir/fd Extract\\ or xxx.json [-DnsQueryFilter xxx] [-Details] [-ShowProcess] [-ShowAdapter] [-ShowReturnCode] [-TopN dd nn] [-SortBy Time/Count] [-MinMaxTotalTimeMs min [max]] [-MinMaxTimeMs min [max]] [-recursive] " + Environment.NewLine +
+        "       [-TimeFmt s,Local,LocalTime,UTC,UTCTime,Here,HereTime] [-csv xxx.csv] [-NoCSVSeparator] [-NoCmdLine] [-Clip] [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd] [-MinMaxMsTestTimes xx-yy ...] [-ProcessName/pn xxx.exe(pid)] " + Environment.NewLine +
+        "       [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-CmdLine substring]" + Environment.NewLine + 
         "                         Print Dns summary and delay metrics. To see data you need to enable the Microsoft-Windows-DNS-Client ETW provider" + Environment.NewLine +
         "                         -Details                   Display time, duration, process, resolved IP of every Dns request." + Environment.NewLine +
         "                         -ShowAdapter               Show which network adapters were used to query Dns." + Environment.NewLine +
         "                         -ShowReturnCode            Show Dns API Win32 return code/s. Success and InvalidParameter are not shown." + Environment.NewLine +
+        "                         -ShowProcess               Show for each Dns query the calling process/es in the lines above." + Environment.NewLine + 
         "                         -TopN dd nn                Show only the queries with dd highest Dns time/count. Optional nn skips the first nn lines." + Environment.NewLine +
         "                         -SortBy [Time/Count]       Default sort order is total Dns query time. The other option is to sort Dns queries by count." + Environment.NewLine +
         "                         -MinMaxTotalTimeMs min [max] Filter displayed list of all summed query times by total Dns query time in ms." + Environment.NewLine +
@@ -708,6 +710,7 @@ namespace ETWAnalyzer.Commands
         public KeyValuePair<string, Func<string, bool>> DnsQueryFilter { get; private set; } = new KeyValuePair<string, Func<string, bool>>(null, _ => true);
         public MinMaxRange<double> MinMaxTimeMs { get; private set; } = new MinMaxRange<double>();
         public MinMaxRange<double> MinMaxTotalTimeMs { get; private set; } = new MinMaxRange<double>();
+        public bool ShowProcess { get; set; }
 
         /// <summary>
         /// Ctor
@@ -938,6 +941,9 @@ namespace ETWAnalyzer.Commands
                         string showTotal = GetNextNonArg("-showtotal");
                         ParseEnum<TotalModes>("ShowTotal values", showTotal,
                                              () => { ShowTotal = (TotalModes)Enum.Parse(typeof(TotalModes), showTotal, true); });
+                        break;
+                    case "-showprocess":
+                        ShowProcess = true;
                         break;
                     case "-cutmethod":
                         string cutmethod = GetNextNonArg("-cutmethod");
@@ -1716,6 +1722,7 @@ namespace ETWAnalyzer.Commands
                             DnsQueryFilter = DnsQueryFilter,
                             MinMaxTimeMs = MinMaxTimeMs,
                             MinMaxTotalTimeMs = MinMaxTotalTimeMs,
+                            ShowProcess = ShowProcess,
                         };
                         break;
                     case DumpCommands.None:

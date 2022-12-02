@@ -38,6 +38,7 @@ namespace ETWAnalyzer.EventDump
         public bool ShowDetails { get; set; }
 
         public KeyValuePair<string, Func<string, bool>> DnsQueryFilter { get; internal set; } = new KeyValuePair<string, Func<string, bool>>(null, x => true);
+        public bool ShowProcess { get; internal set; }
 
         List<MatchData> myUTestData = null;
 
@@ -127,7 +128,7 @@ namespace ETWAnalyzer.EventDump
                         continue;
                     }
 
-                    if (!ShowDetails) // when -Details is set we already show every query with process name
+                    if (!ShowDetails && ShowProcess) // when -Details is set we already show every query with process name
                     {
                         if (previous == null || !previous.SequenceEqual(data.GroupProcesses))
                         {
