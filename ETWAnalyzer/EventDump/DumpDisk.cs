@@ -140,6 +140,7 @@ namespace ETWAnalyzer.EventDump
                         // This is not really visible 
                         if (group.Processes.Count > 5)
                         {
+                            ColorConsole.WriteEmbeddedColorLine($"Many processes({group.Processes.Count}) accessed the file/s. Cannot attribute to a specific process. Use WPA to get detailed metrics.");
                             continue;
                         }
 
