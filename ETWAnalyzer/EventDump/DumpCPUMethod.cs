@@ -14,6 +14,7 @@ using System.IO;
 using System.Linq;
 using static ETWAnalyzer.Commands.DumpCommand;
 using ETWAnalyzer.TraceProcessorHelpers;
+using System.Text.RegularExpressions;
 
 namespace ETWAnalyzer.EventDump
 {
@@ -941,12 +942,18 @@ namespace ETWAnalyzer.EventDump
 
         private void WriteCSVProcessTotal(List<MatchData> matches)
         {
-            OpenCSVWithHeader("CSVOptions", "Test Case", "Date", "Test Time in ms", "CPU ms", "Baseline", "Process", "Process Name", "Start Time", "Command Line", "SourceFile", "SourceDirectory", "IsNewProcess", "Module Version");
+            OpenCSVWithHeader("CSVOptions", "Test Case", "Date", "Test Time in ms", "CPU ms", "Baseline", "Process", "Process Name", "Start Time", "Command Line", "SourceFile", "SourceDirectory", "IsNewProcess", "FileVersion", "VersionString", "ProductVersion", "Name", "Description", "ExecutableDirectory"  );
             foreach (var match in matches.OrderBy(x => x.PerformedAt).ThenByDescending(x => x.CPUMs))
             {
-                string moduleString = match.Module == null ? "" : GetModuleString(match.Module, true);
+                string fileVersion = (match.Module != null) ? match.Module.Fileversion?.ToString().Trim() : "";
+                string versionString = (match.Module != null) ? match.Module.FileVersionStr?.Trim() : "";
+                string productVersion = (match.Module != null) ? match.Module.ProductVersionStr?.Trim() : "";
+                string name = (match.Module != null) ? match.Module.ProductName?.Trim() : "";
+                string description = (match.Module != null) ? match.Module.Description?.Trim() : "";
+                string directory = (match.Module != null) ? match.Module.ModulePath : "";
                 WriteCSVLine(CSVOptions, match.TestName, match.PerformedAt, match.DurationInMs, match.CPUMs, match.BaseLine, match.ProcessAndPid, match.Process.GetProcessName(UsePrettyProcessName), match.Process.StartTime, match.Process.CmdLine, 
-                    Path.GetFileNameWithoutExtension(match.SourceFile), Path.GetDirectoryName(match.SourceFile), (match.Process.IsNew ? 1 : 0), moduleString);
+                    Path.GetFileNameWithoutExtension(match.SourceFile), Path.GetDirectoryName(match.SourceFile), (match.Process.IsNew ? 1 : 0),
+                    fileVersion, versionString, productVersion, name, description, directory);
             }
         }
 

@@ -17,6 +17,7 @@ using static ETWAnalyzer.Commands.DumpCommand;
 using ETWAnalyzer.Extract.Modules;
 using System.Collections;
 using System.Reflection;
+using System.Text.RegularExpressions;
 
 namespace ETWAnalyzer.EventDump
 {
@@ -248,11 +249,18 @@ namespace ETWAnalyzer.EventDump
 
         private void WriteToCSV(List<Match> matches)
         {
-            OpenCSVWithHeader("CSVOptions", "Time", "Process", "ProcessName", "Commit MiB", "Shared CommitMiB", "Working Set MiB", "Cmd Line", "Baseline", "TestCase", "TestDurationInMs", "SourceJsonFile", "Machine", "Module Version");
+            OpenCSVWithHeader("CSVOptions", "Time", "Process", "ProcessName", "Commit MiB", "Shared CommitMiB", "Working Set MiB", "Cmd Line", "Baseline", "TestCase", "TestDurationInMs", "SourceJsonFile", "Machine", "FileVersion", "VersionString", "ProductVersion", "Name", "Description", "ExecutableDirectory");
             foreach (var match in matches)
             {
-                string moduleString = match.Module == null ? "" : GetModuleString(match.Module, true);
-                WriteCSVLine(CSVOptions, base.GetDateTimeString(match.SessionEnd, match.SessionStart, TimeFormatOption), match.Process, match.ProcessName, match.CommitedMiB, match.SharedCommitInMiB, match.WorkingSetMiB, match.CmdLine, match.Baseline, match.TestCase, match.TestDurationInMs, match.SourceFile, match.Machine, moduleString);
+                string fileVersion = (match.Module != null)? match.Module.Fileversion?.ToString().Trim() : "";
+                string versionString = (match.Module != null) ? match.Module.FileVersionStr?.Trim() : "";
+                string productVersion = (match.Module != null) ? match.Module.ProductVersionStr?.Trim() : "";
+                string name = (match.Module != null) ? match.Module.ProductName?.Trim() : "";
+                string description = (match.Module != null) ? match.Module.Description?.Trim() : "";
+                string directory = (match.Module != null) ? match.Module.ModulePath : "";
+                WriteCSVLine(CSVOptions, base.GetDateTimeString(match.SessionEnd, match.SessionStart, TimeFormatOption), match.Process, match.ProcessName, 
+                    match.CommitedMiB, match.SharedCommitInMiB, match.WorkingSetMiB, match.CmdLine, match.Baseline, match.TestCase, match.TestDurationInMs, match.SourceFile, match.Machine,
+                    fileVersion, versionString, productVersion, name, description, directory);
             }
         }
 
@@ -318,9 +326,10 @@ namespace ETWAnalyzer.EventDump
                     totalDiff += m.DiffMb;
                     totalCommitedMem += m.CommitedMiB;
                     processCount ++;
+                    string moduleInfo = m.Module != null ? GetModuleString(m.Module, true) : "";
                     ColorConsole.WriteEmbeddedColorLine($"[darkcyan]{GetDateTimeString(m.SessionEnd, m.SessionStart, TimeFormatOption)}[/darkcyan] [{GetColor(m.DiffMb)}]Diff: {m.DiffMb,4}[/{GetColor(m.DiffMb)}] [{GetColorTotal(m.CommitedMiB)}]Commit {m.CommitedMiB,4} MiB[/{GetColorTotal(m.CommitedMiB)}] [{GetColorTotal(m.WorkingSetMiB)}]WorkingSet {m.WorkingSetMiB,4} MiB[/{GetColorTotal(m.WorkingSetMiB)}] [{GetColorTotal(m.SharedCommitInMiB)}]Shared Commit: {m.SharedCommitInMiB,4} MiB [/{GetColorTotal(m.SharedCommitInMiB)}] ", null, true);
-                    ColorConsole.WriteLine($"{m.Process} {(NoCmdLine ? "" : m.CmdLine)}", ConsoleColor.Magenta);
-                    ColorConsole.WriteLine($"{m.Module} {(NoCmdLine ? "" : m.CmdLine)}", ConsoleColor.Red);
+                    ColorConsole.WriteEmbeddedColorLine($"[yellow]{m.Process}[/yellow] {(NoCmdLine ? "" : m.CmdLine)} ", ConsoleColor.DarkCyan, true);
+                    ColorConsole.WriteEmbeddedColorLine($"[red]{moduleInfo}[/red]");
                 }
                 ColorConsole.WriteEmbeddedColorLine($"[cyan]Memory Total per File:[/cyan] [{GetTrendColor(totalDiff)}]TotalDiff: {totalDiff} [/{GetTrendColor(totalDiff)}] [{GetColorTotal(totalCommitedMem)}] TotalCommitedMem: {totalCommitedMem} MiB [/{GetColorTotal(totalCommitedMem)}] [Darkyellow] Number of Involved Processes: {processCount} [/Darkyellow]");
             }

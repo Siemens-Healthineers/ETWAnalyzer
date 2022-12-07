@@ -264,7 +264,7 @@ namespace ETWAnalyzer.EventDump
                 }
                 else
                 {
-                    lret = $"FileVersion: {version?.Trim()}, VersionString: {versionStr?.Trim()}";
+                    lret = $"FileVersion: {version?.Trim()}, VersionString: {versionStr?.Trim()},";
                 }
             }
 
@@ -277,21 +277,21 @@ namespace ETWAnalyzer.EventDump
                     {
                         lret += " ";
                     }
-                    lret += $"ProductVersion: {def.ProductVersionStr.Trim()}";
+                    lret += $"ProductVersion: {def.ProductVersionStr.Trim()},";
                 }
             }
 
             if (!String.IsNullOrEmpty(def.ProductName))
             {
-                lret += $" Name: {def.ProductName.Trim()}";
+                lret += $" Name: {def.ProductName.Trim()},";
             }
             if (!String.IsNullOrEmpty(def.Description?.Trim()))
             {
-                lret += $" Description: {def.Description.Trim()}";
+                lret += $" Description: {def.Description.Trim()},";
             }
             if( addDirectory)
             {
-                lret += $" {def.ModulePath}";
+                lret += $" Directory: {def.ModulePath}";
             }
 
             return lret;
