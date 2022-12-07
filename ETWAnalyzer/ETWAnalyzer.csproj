@@ -76,13 +76,13 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.Diagnostics.Tracing.TraceEvent">
-      <Version>3.0.1</Version>
+      <Version>3.0.6</Version>
     </PackageReference>
     <PackageReference Include="Microsoft.Windows.EventTracing.Processing.All">
-      <Version>1.11.108</Version>
+      <Version>1.11.109</Version>
     </PackageReference>
     <PackageReference Include="Newtonsoft.Json">
-      <Version>13.0.1</Version>
+      <Version>13.0.2</Version>
     </PackageReference>
     <PackageReference Include="System.Configuration.ConfigurationManager" Version="5.0.0" />
   </ItemGroup>
@@ -175,6 +175,9 @@
     </Content>
   
 </ItemGroup>
+  <ItemGroup>
+    <Reference Include="System.Net.Http" />
+  </ItemGroup>
   <ItemGroup>
     <Compile Update="Settings.Designer.cs">
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
