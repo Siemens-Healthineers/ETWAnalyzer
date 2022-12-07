@@ -618,7 +618,7 @@ namespace ETWAnalyzer.EventDump
                     };
                     break;
                 default:
-                    throw new InvalidOperationException($"There should be a sort order. By default SortOrders.Size == SortOrders.Default = 0 so we should never get here.");
+                    throw new InvalidOperationException($"There should be a sort order. SortOrder was: {SortOrder}. By default SortOrders.Size == SortOrders.Default = 0 so we should never get here.");
             }
 
             return lret;
