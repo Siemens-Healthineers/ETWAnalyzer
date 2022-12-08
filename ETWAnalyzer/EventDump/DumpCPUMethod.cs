@@ -14,6 +14,7 @@ using System.IO;
 using System.Linq;
 using static ETWAnalyzer.Commands.DumpCommand;
 using ETWAnalyzer.TraceProcessorHelpers;
+using System.Text.RegularExpressions;
 
 namespace ETWAnalyzer.EventDump
 {
@@ -941,11 +942,18 @@ namespace ETWAnalyzer.EventDump
 
         private void WriteCSVProcessTotal(List<MatchData> matches)
         {
-            OpenCSVWithHeader("CSVOptions", "Test Case", "Date", "Test Time in ms", "CPU ms", "Baseline", "Process", "Process Name", "Start Time", "Command Line", "SourceFile", "SourceDirectory", "IsNewProcess");
+            OpenCSVWithHeader("CSVOptions", "Test Case", "Date", "Test Time in ms", "CPU ms", "Baseline", "Process", "Process Name", "Start Time", "Command Line", "SourceFile", "SourceDirectory", "IsNewProcess", "FileVersion", "VersionString", "ProductVersion", "ProductName", "Description", "ExecutableDirectory"  );
             foreach (var match in matches.OrderBy(x => x.PerformedAt).ThenByDescending(x => x.CPUMs))
             {
+                string fileVersion = match.Module?.Fileversion?.ToString()?.Trim() ?? "";
+                string versionString = match.Module?.FileVersionStr?.Trim() ?? "";
+                string productVersion = match.Module?.ProductVersionStr?.Trim() ?? "";
+                string productName = match.Module?.ProductName?.Trim() ?? "";
+                string description = match.Module?.Description?.Trim() ?? "";
+                string directory = match.Module?.ModulePath ?? "";
                 WriteCSVLine(CSVOptions, match.TestName, match.PerformedAt, match.DurationInMs, match.CPUMs, match.BaseLine, match.ProcessAndPid, match.Process.GetProcessName(UsePrettyProcessName), match.Process.StartTime, match.Process.CmdLine, 
-                    Path.GetFileNameWithoutExtension(match.SourceFile), Path.GetDirectoryName(match.SourceFile), (match.Process.IsNew ? 1 : 0));
+                    Path.GetFileNameWithoutExtension(match.SourceFile), Path.GetDirectoryName(match.SourceFile), (match.Process.IsNew ? 1 : 0),
+                    fileVersion, versionString, productVersion, productName, description, directory);
             }
         }
 

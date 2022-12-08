@@ -14,12 +14,20 @@ using ETWAnalyzer.ProcessTools;
 using ETWAnalyzer.Infrastructure;
 using ETWAnalyzer.Commands;
 using static ETWAnalyzer.Commands.DumpCommand;
+using ETWAnalyzer.Extract.Modules;
 using System.Collections;
+using System.Reflection;
+using System.Text.RegularExpressions;
 
 namespace ETWAnalyzer.EventDump
 {
     class DumpMemory : DumpFileDirBase<DumpMemory.Match>
     {
+        /// <summary>
+        /// Show module file name and version. In cpu total mode also exe version.
+        /// </summary>
+        public bool ShowModuleInfo { get; internal set; }
+
         /// <summary>
         /// Dump all processes which have N top processes
         /// </summary>
@@ -59,7 +67,7 @@ namespace ETWAnalyzer.EventDump
             public long DiffMb;
             public string SourceFile;
             public string Baseline;
-
+            public ModuleDefinition Module { get; internal set; }
             public DateTimeOffset SessionStart { get; internal set; }
         }
 
@@ -197,6 +205,7 @@ namespace ETWAnalyzer.EventDump
                                 TestDurationInMs = (uint)file.DurationInMs,
                                 Machine = file.MachineName,
                                 SessionStart = file.Extract.SessionStart,
+                                Module = ShowModuleInfo ? file.Extract.Modules.Modules.Where(x => x.Processes.Contains(process)).Where(x => x.ModuleName.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)).FirstOrDefault() : null,
                             }); 
                         }
 
@@ -240,10 +249,18 @@ namespace ETWAnalyzer.EventDump
 
         private void WriteToCSV(List<Match> matches)
         {
-            OpenCSVWithHeader("CSVOptions", "Time", "Process", "ProcessName", "Commit MiB", "Shared CommitMiB", "Working Set MiB", "Cmd Line", "Baseline", "TestCase", "TestDurationInMs", "SourceJsonFile", "Machine");
+            OpenCSVWithHeader("CSVOptions", "Time", "Process", "ProcessName", "Commit MiB", "Shared CommitMiB", "Working Set MiB", "Cmd Line", "Baseline", "TestCase", "TestDurationInMs", "SourceJsonFile", "Machine", "FileVersion", "VersionString", "ProductVersion", "ProductName", "Description", "ExecutableDirectory");
             foreach (var match in matches)
             {
-                WriteCSVLine(CSVOptions, base.GetDateTimeString(match.SessionEnd, match.SessionStart, TimeFormatOption), match.Process, match.ProcessName, match.CommitedMiB, match.SharedCommitInMiB, match.WorkingSetMiB, match.CmdLine, match.Baseline, match.TestCase, match.TestDurationInMs, match.SourceFile, match.Machine);
+                string fileVersion = match.Module?.Fileversion?.ToString()?.Trim() ?? "";
+                string versionString = match.Module?.FileVersionStr?.Trim() ?? "";
+                string productVersion = match.Module?.ProductVersionStr?.Trim() ?? "";
+                string productName = match.Module?.ProductName?.Trim() ?? "";
+                string description = match.Module?.Description?.Trim() ?? "";
+                string directory = match.Module?.ModulePath ?? "";
+                WriteCSVLine(CSVOptions, base.GetDateTimeString(match.SessionEnd, match.SessionStart, TimeFormatOption), match.Process, match.ProcessName, 
+                    match.CommitedMiB, match.SharedCommitInMiB, match.WorkingSetMiB, match.CmdLine, match.Baseline, match.TestCase, match.TestDurationInMs, match.SourceFile, match.Machine,
+                    fileVersion, versionString, productVersion, productName, description, directory);
             }
         }
 
@@ -309,12 +326,12 @@ namespace ETWAnalyzer.EventDump
                     totalDiff += m.DiffMb;
                     totalCommitedMem += m.CommitedMiB;
                     processCount ++;
-
+                    string moduleInfo = m.Module != null ? GetModuleString(m.Module, true) : "";
                     ColorConsole.WriteEmbeddedColorLine($"[darkcyan]{GetDateTimeString(m.SessionEnd, m.SessionStart, TimeFormatOption)}[/darkcyan] [{GetColor(m.DiffMb)}]Diff: {m.DiffMb,4}[/{GetColor(m.DiffMb)}] [{GetColorTotal(m.CommitedMiB)}]Commit {m.CommitedMiB,4} MiB[/{GetColorTotal(m.CommitedMiB)}] [{GetColorTotal(m.WorkingSetMiB)}]WorkingSet {m.WorkingSetMiB,4} MiB[/{GetColorTotal(m.WorkingSetMiB)}] [{GetColorTotal(m.SharedCommitInMiB)}]Shared Commit: {m.SharedCommitInMiB,4} MiB [/{GetColorTotal(m.SharedCommitInMiB)}] ", null, true);
-                    ColorConsole.WriteLine($"{m.Process} {(NoCmdLine ? "" : m.CmdLine)}", ConsoleColor.Magenta);
-
+                    ColorConsole.WriteEmbeddedColorLine($"[yellow]{m.Process}[/yellow] {(NoCmdLine ? "" : m.CmdLine)} ", ConsoleColor.DarkCyan, true);
+                    ColorConsole.WriteEmbeddedColorLine($"[red]{moduleInfo}[/red]");
                 }
-                ColorConsole.WriteEmbeddedColorLine($"[red]Memory Total per File:[/red] [{GetTrendColor(totalDiff)}]TotalDiff: {totalDiff} [/{GetTrendColor(totalDiff)}] [{GetColorTotal(totalCommitedMem)}] TotalCommitedMem: {totalCommitedMem} MiB [/{GetColorTotal(totalCommitedMem)}] [Darkyellow] Number of Involved Processes: {processCount} [/Darkyellow]");
+                ColorConsole.WriteEmbeddedColorLine($"[cyan]Memory Total per File:[/cyan] [{GetTrendColor(totalDiff)}]TotalDiff: {totalDiff} [/{GetTrendColor(totalDiff)}] [{GetColorTotal(totalCommitedMem)}] TotalCommitedMem: {totalCommitedMem} MiB [/{GetColorTotal(totalCommitedMem)}] [Darkyellow] Number of Involved Processes: {processCount} [/Darkyellow]");
             }
         }
     }
