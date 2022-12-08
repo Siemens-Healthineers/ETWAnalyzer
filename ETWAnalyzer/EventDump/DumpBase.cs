@@ -283,7 +283,7 @@ namespace ETWAnalyzer.EventDump
 
             if (!String.IsNullOrEmpty(def.ProductName))
             {
-                lret += $" Name: {def.ProductName.Trim()},";
+                lret += $" ProductName: {def.ProductName.Trim()},";
             }
             if (!String.IsNullOrEmpty(def.Description?.Trim()))
             {
