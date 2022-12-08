@@ -249,18 +249,18 @@ namespace ETWAnalyzer.EventDump
 
         private void WriteToCSV(List<Match> matches)
         {
-            OpenCSVWithHeader("CSVOptions", "Time", "Process", "ProcessName", "Commit MiB", "Shared CommitMiB", "Working Set MiB", "Cmd Line", "Baseline", "TestCase", "TestDurationInMs", "SourceJsonFile", "Machine", "FileVersion", "VersionString", "ProductVersion", "Name", "Description", "ExecutableDirectory");
+            OpenCSVWithHeader("CSVOptions", "Time", "Process", "ProcessName", "Commit MiB", "Shared CommitMiB", "Working Set MiB", "Cmd Line", "Baseline", "TestCase", "TestDurationInMs", "SourceJsonFile", "Machine", "FileVersion", "VersionString", "ProductVersion", "ProductName", "Description", "ExecutableDirectory");
             foreach (var match in matches)
             {
-                string fileVersion = (match.Module != null)? match.Module.Fileversion?.ToString().Trim() : "";
-                string versionString = (match.Module != null) ? match.Module.FileVersionStr?.Trim() : "";
-                string productVersion = (match.Module != null) ? match.Module.ProductVersionStr?.Trim() : "";
-                string name = (match.Module != null) ? match.Module.ProductName?.Trim() : "";
-                string description = (match.Module != null) ? match.Module.Description?.Trim() : "";
-                string directory = (match.Module != null) ? match.Module.ModulePath : "";
+                string fileVersion = match.Module?.Fileversion?.ToString()?.Trim() ?? "";
+                string versionString = match.Module?.FileVersionStr?.Trim() ?? "";
+                string productVersion = match.Module?.ProductVersionStr?.Trim() ?? "";
+                string productName = match.Module?.ProductName?.Trim() ?? "";
+                string description = match.Module?.Description?.Trim() ?? "";
+                string directory = match.Module?.ModulePath ?? "";
                 WriteCSVLine(CSVOptions, base.GetDateTimeString(match.SessionEnd, match.SessionStart, TimeFormatOption), match.Process, match.ProcessName, 
                     match.CommitedMiB, match.SharedCommitInMiB, match.WorkingSetMiB, match.CmdLine, match.Baseline, match.TestCase, match.TestDurationInMs, match.SourceFile, match.Machine,
-                    fileVersion, versionString, productVersion, name, description, directory);
+                    fileVersion, versionString, productVersion, productName, description, directory);
             }
         }
 
