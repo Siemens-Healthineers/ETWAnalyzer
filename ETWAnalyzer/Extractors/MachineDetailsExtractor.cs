@@ -3,6 +3,7 @@
 
 using ETWAnalyzer.Configuration;
 using ETWAnalyzer.Extract;
+using ETWAnalyzer.Extract.Disk;
 using Microsoft.Diagnostics.Tracing.Etlx;
 using Microsoft.Diagnostics.Tracing.Parsers.Symbol;
 using Microsoft.Windows.EventTracing;
@@ -72,6 +73,7 @@ namespace ETWAnalyzer.Extractors
             // Asked at https://stackoverflow.com/questions/61996791/expose-boottime-in-traceprocessor
             //results.BootTimeMachine = 
 
+            results.ComputerName = meta?.Name ?? "";
             results.Model = meta?.Model ?? "";
             results.AdDomain = meta?.DomainName ?? "";
             results.IsDomainJoined = meta?.IsDomainJoined ?? false;
@@ -104,8 +106,60 @@ namespace ETWAnalyzer.Extractors
             ExtractDisplayInformation(meta, results);
             ExtractRunningProcesses(myProcesses.Result, results);
             ExtractBuildVersions(myProcesses.Result, results);
+            ExtractDiskInfo(meta.Disks, results);
 
             ExtractMarks(results);
+        }
+
+        private void ExtractDiskInfo(IReadOnlyList<IDisk> disks, ETWExtract extract)
+        {
+            if( disks == null )
+            {
+                return;
+            }
+
+            extract.Disk = new DiskIOData();
+            DiskLayout currentDisk = new DiskLayout();
+
+            foreach(IDisk disk in disks)
+            {
+                currentDisk.Type = disk.Type switch
+                {
+                    null => DiskTypes.Unknown,
+                    DiskType.HDD => DiskTypes.HDD,
+                    DiskType.SSD => DiskTypes.SSD,
+                    _ => DiskTypes.Unknown,
+                };
+
+                currentDisk.TracksPerCylinder = disk.TracksPerCylinder;
+                currentDisk.SectorsPerTrack = disk.SectorsPerTrack;
+                currentDisk.CapacityGiB =  disk.Capacity.TotalGibibytes;
+                currentDisk.CylinderCount = disk.CylinderCount;
+                currentDisk.SectorSizeBytes = disk.SectorSize.Bytes;
+                currentDisk.Model = disk.Model;
+                currentDisk.IsWriteCachingEnabled = disk.IsWriteCachingEnabled;
+
+                DiskPartition currentPartition = new();
+
+                foreach (var partition in disk.Partitions)
+                {
+                    if( !partition.HasData )
+                    {
+                        continue;
+                    }
+
+                    currentPartition.FileSystem = (FileSystemFormat) partition.FileSystem;
+                    currentPartition.Drive = partition.DriveLetter.ToString();
+                    currentPartition.FreeSizeGiB = partition.FreeCapacity.TotalGibibytes;
+                    currentPartition.TotalSizeGiB = partition.UsedCapacity.TotalGibibytes;
+                    currentDisk.Partitions.Add(currentPartition);
+                    currentPartition = new DiskPartition();
+                }
+
+                extract.Disk.DiskInformation.Add(currentDisk);
+
+                currentDisk = new DiskLayout();
+            }
         }
 
         private void ExtractDisplayInformation(ISystemMetadata system, ETWExtract results)

@@ -1,6 +1,8 @@
 ﻿//// SPDX-FileCopyrightText:  © 2022 Siemens Healthcare GmbH
 //// SPDX-License-Identifier:   MIT
 
+using System.Collections.Generic;
+
 namespace ETWAnalyzer.Extract.Disk
 {
 
@@ -33,5 +35,10 @@ namespace ETWAnalyzer.Extract.Disk
         /// Total Disk Write Time in microseconds (us = 10^(-6)s) 
         /// </summary>
         ulong TotalDiskWriteTimeTimeInus { get; }
+
+        /// <summary>
+        /// Contains data about disk layout, partitions and drive letters
+        /// </summary>
+        public IReadOnlyList<IDiskLayout> DiskInformation { get; }
     }
 }
