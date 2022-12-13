@@ -483,11 +483,11 @@ namespace ETWAnalyzer_uTest
             Assert.Equal("D", first.Partitions[0].Drive);
             Assert.Equal(ETWAnalyzer.Extract.Disk.FileSystemFormat.Ntfs, first.Partitions[0].FileSystem);
             Assert.Equal(133.44259262084960937141792768m, first.Partitions[0].FreeSizeGiB);
-            Assert.Equal(1729.5710754394531249535721800m, first.Partitions[0].TotalSizeGiB);
+            Assert.Equal(1863.0136680603027343249901077m, first.Partitions[0].TotalSizeGiB);
 
             Assert.Equal("Samsung SSD 840 EVO 250GB", second.Model);
             Assert.Equal("C", second.Partitions[0].Drive);
-            Assert.Equal(181.76391983032226562012081193m, second.Partitions[0].TotalSizeGiB);
+            Assert.Equal(221.50683212280273436905397125m, second.Partitions[0].TotalSizeGiB);
 
             Assert.Equal("Generic STORAGE DEVICE USB Device", third.Model);
 

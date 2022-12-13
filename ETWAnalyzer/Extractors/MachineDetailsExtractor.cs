@@ -151,7 +151,7 @@ namespace ETWAnalyzer.Extractors
                     currentPartition.FileSystem = (FileSystemFormat) partition.FileSystem;
                     currentPartition.Drive = partition.DriveLetter.ToString();
                     currentPartition.FreeSizeGiB = partition.FreeCapacity.TotalGibibytes;
-                    currentPartition.TotalSizeGiB = partition.UsedCapacity.TotalGibibytes;
+                    currentPartition.TotalSizeGiB = partition.UsedCapacity.TotalGibibytes + partition.FreeCapacity.TotalGibibytes;
                     currentDisk.Partitions.Add(currentPartition);
                     currentPartition = new DiskPartition();
                 }
