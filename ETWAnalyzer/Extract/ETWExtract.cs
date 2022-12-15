@@ -32,6 +32,11 @@ namespace ETWAnalyzer.Extract
         public string UsedExtractOptions { get; set; }
 
         /// <summary>
+        /// Computer Name
+        /// </summary>
+        public string ComputerName { get; set; }
+
+        /// <summary>
         /// OS Name
         /// </summary>
         public string OSName { get; set; }

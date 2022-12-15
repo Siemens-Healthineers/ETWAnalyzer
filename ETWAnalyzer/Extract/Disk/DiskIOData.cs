@@ -1,6 +1,7 @@
 ﻿//// SPDX-FileCopyrightText:  © 2022 Siemens Healthcare GmbH
 //// SPDX-License-Identifier:   MIT
 
+using Microsoft.Windows.EventTracing;
 using Microsoft.Windows.EventTracing.Disk;
 using Microsoft.Windows.EventTracing.Processes;
 using System;
@@ -22,6 +23,19 @@ namespace ETWAnalyzer.Extract.Disk
     /// </summary>
     public class DiskIOData : IDiskIOData
     {
+        /// <summary>
+        /// Contains data about disk layout, partitions and drive letters
+        /// </summary>
+        public List<DiskLayout> DiskInformation { get; set; } = new();
+
+        /// <summary>
+        /// Contains data about disk layout, partitions and drive letters
+        /// </summary>
+        IReadOnlyList<IDiskLayout> IDiskIOData.DiskInformation
+        {
+            get { return DiskInformation; }
+        }
+
         /// <summary>
         /// Dictionary where Key is Drive (C,D, ...) or Disk Id if Drive was not present e.g. for Flush operations
         /// Value is PathData which contains a the file name as key and then a nested dictionary for disk io access type

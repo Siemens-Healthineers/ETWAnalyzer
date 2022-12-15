@@ -111,6 +111,11 @@ namespace ETWAnalyzer.Extract
         string Model { get; }
 
         /// <summary>
+        /// Computer Name
+        /// </summary>
+        string ComputerName { get; }
+
+        /// <summary>
         /// Build version of all module vectors. 
         /// </summary>
         ModuleVersion[] ModuleVersions { get; }

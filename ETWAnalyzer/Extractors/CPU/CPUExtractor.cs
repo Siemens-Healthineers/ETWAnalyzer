@@ -73,24 +73,32 @@ namespace ETWAnalyzer.Extractors.CPU
             // inspired by https://github.com/microsoft/eventtracing-processing-samples/blob/master/GetCpuSampleDuration/Program.cs
             Dictionary<ProcessKey, Dictionary<string, CpuData>> methodSamplesPerProcess = new();
             StackPrinter printer = new(StackFormat.DllAndMethod);
-            foreach (ICpuSample sample in mySamplingData.Result.Samples)
+            bool hasSamplesWithStacks = false;
+
+            if (mySamplingData.HasResult)
             {
-                if (sample?.Process?.ImageName == null)
+                foreach (ICpuSample sample in mySamplingData.Result.Samples)
                 {
-                    continue;
-                }
+                    if (sample?.Process?.ImageName == null)
+                    {
+                        continue;
+                    }
 
-                var process = new ProcessKey(sample.Process.ImageName, sample.Process.Id, sample.Process.CreateTime.HasValue ? sample.Process.CreateTime.Value.DateTimeOffset : default(DateTimeOffset));
+                    if (hasSamplesWithStacks == false)
+                    {
+                        hasSamplesWithStacks = sample.Stack != null;
+                    }
 
-                AddTotalCPU(process, sample, myPerProcessCPU);
-                AddPerMethodAndProcessCPU(process, sample, methodSamplesPerProcess, printer);
-                if (myTimelineExtractor != null)
-                {
-                    myTimelineExtractor.AddSample(process, sample);
+                    var process = new ProcessKey(sample.Process.ImageName, sample.Process.Id, sample.Process.CreateTime.HasValue ? sample.Process.CreateTime.Value.DateTimeOffset : default(DateTimeOffset));
+
+                    AddTotalCPU(process, sample, myPerProcessCPU);
+                    AddPerMethodAndProcessCPU(process, sample, methodSamplesPerProcess, printer);
+                    if (myTimelineExtractor != null)
+                    {
+                        myTimelineExtractor.AddSample(process, sample);
+                    }
                 }
             }
-
-            bool hasCpuSamples = mySamplingData.HasResult && mySamplingData.Result.Samples.Count > 0;
 
             // When we have context switch data recorded we can also calculate the thread wait time stacktags
             if (myCpuSchedlingData.HasResult)
@@ -109,7 +117,7 @@ namespace ETWAnalyzer.Extractors.CPU
 
                     var process = new ProcessKey(slice.Process.ImageName, slice.Process.Id, slice.Process.CreateTime.HasValue ? slice.Process.CreateTime.Value.DateTimeOffset : default(DateTimeOffset));
 
-                    AddPerMethodAndProcessWaits(process, slice, methodSamplesPerProcess, printer, hasCpuSamples);
+                    AddPerMethodAndProcessWaits(process, slice, methodSamplesPerProcess, printer, hasSamplesWithStacks);
                 }
             }
 
@@ -123,7 +131,7 @@ namespace ETWAnalyzer.Extractors.CPU
             CPUPerProcessMethodList inclusiveSamplesPerMethod = new()
             {
                 ContainsAllCPUData = ExtractAllCPUData,
-                HasCPUSamplingData = hasCpuSamples,
+                HasCPUSamplingData = hasSamplesWithStacks,
                 HasCSwitchData = myCpuSchedlingData.HasResult && myCpuSchedlingData.Result?.ContextSwitches?.Count > 0,
             };
 

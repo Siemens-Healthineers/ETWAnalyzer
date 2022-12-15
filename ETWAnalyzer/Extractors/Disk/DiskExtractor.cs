@@ -37,7 +37,7 @@ namespace ETWAnalyzer.Extractors
                 return;
             }
 
-            DiskIOData data = new DiskIOData();
+            DiskIOData data = results.Disk ?? new DiskIOData();
 
             foreach (IDiskActivity diskActivity in myDiskIO.Result.Activity)
             {

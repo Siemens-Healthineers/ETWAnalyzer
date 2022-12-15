@@ -189,7 +189,7 @@ namespace ETWAnalyzer_uTest
                 {
                     Count = 1,
                     Cleanups = 2,
-                    Durationus = 100,                    
+                    Durationus = 100,
                 }
             };
             FileIOStatistics stat2 = new()
@@ -305,7 +305,7 @@ namespace ETWAnalyzer_uTest
 
             FileIOStatistics stat1 = new();
 
-            stat1.Add( new FileIOStatistics
+            stat1.Add(new FileIOStatistics
             {
                 Read = new FileOffsetOperation
                 {
@@ -365,8 +365,8 @@ namespace ETWAnalyzer_uTest
                 ProcessID = 100
             });
             extract.FileIO = new FileIOData();
-            extract.FileIO.Add(extract, 100, DateTimeOffset.MinValue, File1,  stat1);
-            extract.FileIO.Add(extract, 100, DateTimeOffset.MinValue, File2,  stat2);
+            extract.FileIO.Add(extract, 100, DateTimeOffset.MinValue, File1, stat1);
+            extract.FileIO.Add(extract, 100, DateTimeOffset.MinValue, File2, stat2);
 
             MemoryStream stream = new();
             ExtractSerializer.Serialize(stream, extract);
@@ -404,7 +404,7 @@ namespace ETWAnalyzer_uTest
             Assert.Equal(stat2.Write.AccessedBytes, second.Stats.Write.AccessedBytes);
             Assert.Equal(stat2.Write.Durationus, second.Stats.Write.Durationus);
             Assert.Equal(stat2.Write.MaxFilePosition, second.Stats.Write.MaxFilePosition);
-            
+
 
 
 
@@ -456,5 +456,42 @@ namespace ETWAnalyzer_uTest
 
             Assert.Equal(391, svcHostReadDurationus);
         }
+
+        [Fact]
+        public void Disk_Layout_Matches_With_WPA()
+        {
+            IETWExtract iextract = (IETWExtract) myExtract;
+
+            Assert.Equal(3, iextract.Disk.DiskInformation.Count);
+
+            var disks = iextract.Disk.DiskInformation;
+            var first = disks[0];
+            var second = disks[1];
+            var third = disks[2];
+            
+            Assert.Equal(1863.0142521858215331531150920m, first.CapacityGiB);
+            Assert.Equal(243201, first.CylinderCount);
+            Assert.True(first.IsWriteCachingEnabled);
+            Assert.Equal("ST2000DM001-1CH164", first.Model);
+            Assert.Equal(512, first.SectorSizeBytes);
+            Assert.Equal(63, first.SectorsPerTrack);
+            Assert.Equal(255, first.TracksPerCylinder);
+            Assert.Equal(ETWAnalyzer.Extract.Disk.DiskTypes.Unknown, first.Type);
+
+
+            Assert.Single(first.Partitions);
+            Assert.Equal("D", first.Partitions[0].Drive);
+            Assert.Equal(ETWAnalyzer.Extract.Disk.FileSystemFormat.Ntfs, first.Partitions[0].FileSystem);
+            Assert.Equal(133.44259262084960937141792768m, first.Partitions[0].FreeSizeGiB);
+            Assert.Equal(1863.0136680603027343249901077m, first.Partitions[0].TotalSizeGiB);
+
+            Assert.Equal("Samsung SSD 840 EVO 250GB", second.Model);
+            Assert.Equal("C", second.Partitions[0].Drive);
+            Assert.Equal(221.50683212280273436905397125m, second.Partitions[0].TotalSizeGiB);
+
+            Assert.Equal("Generic STORAGE DEVICE USB Device", third.Model);
+
+        }
+
     }
 }

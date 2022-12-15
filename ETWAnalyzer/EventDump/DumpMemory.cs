@@ -247,7 +247,7 @@ namespace ETWAnalyzer.EventDump
             }
         }
 
-        private void WriteToCSV(List<Match> matches)
+        internal void WriteToCSV(List<Match> matches)
         {
             OpenCSVWithHeader(Col_CSVOptions, Col_Time, Col_Process, Col_ProcessName, "Commit MiB", "Shared CommitMiB", "Working Set MiB", 
                 Col_CommandLine, Col_Baseline, Col_TestCase, Col_TestTimeinms, Col_SourceJsonFile, "Machine", 
