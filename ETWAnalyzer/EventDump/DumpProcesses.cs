@@ -374,7 +374,7 @@ namespace ETWAnalyzer.EventDump
 
         private void WriteToCSV(List<MatchData> rowData)
         {
-            OpenCSVWithHeader("CSVOptions", "TestCase", "TestDate", "ProcessName", "ProcessName(pid)", "Parent ProcessId", "Return Code", "NewProcess", "Start Time", "End Time", "LifeTime in minutes", "User", "Command Line", "BaseLine", "SourceFile");
+            OpenCSVWithHeader(Col_CSVOptions, Col_TestCase, "TestDate", Col_ProcessName, "ProcessName(pid)", "Parent ProcessId", "Return Code", "NewProcess", "Start Time", "End Time", "LifeTime in minutes", "User", Col_CommandLine, Col_Baseline, "SourceFile");
             foreach (var data in rowData)
             {
                 WriteCSVLine(CSVOptions, data.TestCase, data.PerformedAt, data.ProcessName, data.ProcessWithPid, data.ParentProcessId, ETWProcess.GetReturnString(data.ReturnCode, out bool bCrash), Convert.ToInt32(data.IsNewProcess),

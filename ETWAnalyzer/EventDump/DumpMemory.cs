@@ -249,7 +249,10 @@ namespace ETWAnalyzer.EventDump
 
         internal void WriteToCSV(List<Match> matches)
         {
-            OpenCSVWithHeader("CSVOptions", "Time", "Process", "ProcessName", "Commit MiB", "Shared CommitMiB", "Working Set MiB", "Cmd Line", "Baseline", "TestCase", "TestDurationInMs", "SourceJsonFile", "Machine", "FileVersion", "VersionString", "ProductVersion", "ProductName", "Description", "ExecutableDirectory");
+            OpenCSVWithHeader(Col_CSVOptions, Col_Time, Col_Process, Col_ProcessName, "Commit MiB", "Shared CommitMiB", "Working Set MiB", 
+                Col_CommandLine, Col_Baseline, Col_TestCase, Col_TestTimeinms, Col_SourceJsonFile, "Machine", 
+                Col_FileVersion, Col_VersionString, Col_ProductVersion, Col_ProductName, Col_Description, Col_Directory);
+
             foreach (var match in matches)
             {
                 string fileVersion = match.Module?.Fileversion?.ToString()?.Trim() ?? "";

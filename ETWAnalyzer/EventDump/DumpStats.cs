@@ -276,7 +276,7 @@ namespace ETWAnalyzer
                 if (!myHeaderWritten)
                 {
                     myHeaderWritten = true;
-                    OpenCSVWithHeader("CSVOptions", "TestCase", "TestDate", "DurationMs", "SourceFile", "Machine", "SourceETLFileName", "BaseLine", "UsedExtractOptions", "OSName", "OSBuild", "OSVersion", "MemorySizeMB", "NumberOfProcessors", "CPUSpeedMHz", "SessionStart", "SessionEnd", "BootTime", "Model",
+                    OpenCSVWithHeader(Col_CSVOptions, Col_TestCase, "TestDate", Col_TestTimeinms, "SourceFile", Col_Machine, "SourceETLFileName", Col_Baseline, "UsedExtractOptions", "OSName", "OSBuild", "OSVersion", "MemorySizeMB", "NumberOfProcessors", "CPUSpeedMHz", "SessionStart", "SessionEnd", "BootTime", "Model",
                                       "AdDomain", "IsDomainJoined", "DisplaysHorizontalResolution", "DisplaysVerticalResolution", "DisplayNames", "MainModuleVersion", "DisplaysMemoryMiB");
                 }
 

@@ -94,8 +94,8 @@ namespace ETWAnalyzer.EventDump
 
             if (IsCSVEnabled)
             {
-                OpenCSVWithHeader("CSVOptions", "Date", "InputDirectory", "InputFileName", "Test Case", "Test Time in ms", "Baseline", "ProcessName", "Process", "Start Time", "Command Line", 
-                                  "File Directory", "File Name",
+                OpenCSVWithHeader(Col_CSVOptions, Col_Date, "InputDirectory", Col_SourceJsonFile, Col_TestCase, Col_TestTimeinms, Col_Baseline, Col_ProcessName, Col_Process, Col_StartTime, Col_CommandLine, 
+                                  "File Directory", Col_FileName,
                                   "Open Count", "Open Duration us", "Open Status",
                                   "Close Count", "Close Duration us",
                                   "Read Count", "Read Duration us", "Read Accessed Bytes", "Read MaxFilePosition",

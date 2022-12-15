@@ -142,7 +142,7 @@ namespace ETWAnalyzer.EventDump
 
         private void WriteToCSVFile(List<MatchData> matches)
         {
-            OpenCSVWithHeader("CSVOptions", "Time", "Exception Type", "Message", "Process", "Process Name", "Start Time", "Command Line", "StackTrace", "TestCase", "BaseLine", "PerformedAt", "SourceFile");
+            OpenCSVWithHeader(Col_CSVOptions, Col_Time, "Exception Type", "Message", Col_Process, Col_ProcessName, Col_StartTime, Col_CommandLine, "StackTrace", Col_TestCase, Col_Baseline, "PerformedAt", Col_SourceJsonFile);
             foreach(var match in matches)
             {
                 WriteCSVLine(CSVOptions, GetDateTimeString(match.TimeStamp, match.SessionStart, TimeFormatOption), match.Type, match.Message, match.Process.GetProcessWithId(UsePrettyProcessName), 
