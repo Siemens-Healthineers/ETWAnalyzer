@@ -240,7 +240,7 @@ namespace ETWAnalyzer.EventDump
 
                     if (IsPerProcess && bPrintOnce && !IsTotalMode)
                     {
-                        ColorConsole.WriteLine($"{group.Key.GetProcessWithId(UsePrettyProcessName)}{GetProcessTags(group.Key, group.First().SessionStart)} {(NoCmdLine ? "" : group.Key.CmdLine)}", ConsoleColor.Yellow);
+                        ColorConsole.WriteEmbeddedColorLine($"[grey]{group.Key.GetProcessWithId(UsePrettyProcessName)}{GetProcessTags(group.Key, group.First().SessionStart)}[/grey] {(NoCmdLine ? "" : group.Key.CmdLine)}", ConsoleColor.DarkCyan);
                         bPrintOnce = false;
                     }
 
@@ -279,7 +279,7 @@ namespace ETWAnalyzer.EventDump
                     string fileWriteKB = $"{totalPerProcessFileWriteSizeInBytes / KB:N0}";
                     string fileWriteTimeS = $"{totalPerProcessFileWriteTimeInus / Million:F5}";
                     string fileOpenCloseTimeS = $"{totalPerProcessFileOpenCloseTimeInus/ Million:F5}";
-                    string fileTotalTimeS = $"{(totalPerProcessFileReadTimeInus + totalPerProcessFileWriteTimeInus + totalPerProcessFileOpenCloseTimeInus) / Million}:F5";
+                    string fileTotalTimeS = $"{(totalPerProcessFileReadTimeInus + totalPerProcessFileWriteTimeInus + totalPerProcessFileOpenCloseTimeInus) / Million:F5}";
 
                     if (ShowDetails)
                     {
