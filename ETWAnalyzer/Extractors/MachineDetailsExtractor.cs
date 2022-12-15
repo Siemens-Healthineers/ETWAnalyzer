@@ -221,23 +221,28 @@ namespace ETWAnalyzer.Extractors
                 return null;
             }
 
-            // major, minor, build, and revision
-            Version v = new(fileVersion.Split(new char[] { ' ' })[0]);
-            int buildYear = GetHundredThousandDigitsAsNumber(v.Build);
-            int buildMonth = GetLastTwoDigits(v.Build);
-            int buildDay = GetHundredThousandDigitsAsNumber(v.Revision);
-
-            if (v.Major >= 0 && v.Major < 20 &&   // We start with version 1 and expect as long as this software is alive no more than 20 versions
-                buildYear >= 0 && buildYear < 40 &&  // As year we expect > 2000 as start year and no more than 2040.
-                buildMonth <= 12 &&   // Day and Month must be valid values
-                buildDay <= 31)
+            try
             {
-                return new DateTimeFileVersion
+                // major, minor, build, and revision
+                Version v = new(fileVersion.Split(new char[] { ' ' })[0]);
+                int buildYear = GetHundredThousandDigitsAsNumber(v.Build);
+                int buildMonth = GetLastTwoDigits(v.Build);
+                int buildDay = GetHundredThousandDigitsAsNumber(v.Revision);
+
+                if (v.Major >= 0 && v.Major < 20 &&   // We start with version 1 and expect as long as this software is alive no more than 20 versions
+                    buildYear >= 0 && buildYear < 40 &&  // As year we expect > 2000 as start year and no more than 2040.
+                    buildMonth <= 12 &&   // Day and Month must be valid values
+                    buildDay <= 31)
                 {
-                    FileName = fileVersionTraceData.OriginalFileName.Replace(".ni.", "."),
-                    FileVersion = fileVersionTraceData.FileVersionNumber,
-                };
+                    return new DateTimeFileVersion
+                    {
+                        FileName = fileVersionTraceData.OriginalFileName.Replace(".ni.", "."),
+                        FileVersion = fileVersionTraceData.FileVersionNumber,
+                    };
+                }
             }
+            catch (Exception)
+            { }
 
             return null;
         }
