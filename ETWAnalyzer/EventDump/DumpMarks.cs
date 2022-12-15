@@ -39,7 +39,7 @@ namespace ETWAnalyzer.EventDump
 
             if( IsCSVEnabled)
             {
-                OpenCSVWithHeader("CSVOptions", "Directory", "FileName", "Date", "Test Case", "Test Time in ms", "BaseLine", "Mark Time", "Time Diff To Zero in s", "Mark Message");
+                OpenCSVWithHeader(Col_CSVOptions, "Directory", Col_FileName, Col_Date, Col_TestCase, Col_TestTimeinms, Col_Baseline, "Mark Time", "Time Diff To Zero in s", "Mark Message");
 
                 foreach (var markEvent in data)
                 {

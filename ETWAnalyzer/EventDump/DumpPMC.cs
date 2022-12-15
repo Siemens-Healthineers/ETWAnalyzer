@@ -76,8 +76,8 @@ namespace ETWAnalyzer.EventDump
 
             if (IsCSVEnabled)
             {
-                OpenCSVWithHeader("CSVOptions", "Directory", "FileName", "Date", "Test Case", "Test Time in ms", "BaseLine", "Process", "ProcessName", 
-                                  "Instructions", "Cycles", "CPI", "CacheMisses", "LLCReferences", "% Cache Misses", "Branches", "BranchMispreditions", "% BranchMispredictions", "Command Line");
+                OpenCSVWithHeader(Col_CSVOptions, "Directory", Col_FileName, Col_Date, Col_TestCase, Col_TestTimeinms, Col_Baseline, Col_Process, Col_ProcessName, 
+                                  "Instructions", "Cycles", "CPI", "CacheMisses", "LLCReferences", "% Cache Misses", "Branches", "BranchMispreditions", "% BranchMispredictions", Col_CommandLine);
 
                 foreach( var pmcEvent in data )
                 {

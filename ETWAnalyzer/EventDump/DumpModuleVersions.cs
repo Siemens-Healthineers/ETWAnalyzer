@@ -43,11 +43,11 @@ namespace ETWAnalyzer.EventDump
                 {
                     if (IsDllMode)
                     {
-                        OpenCSVWithHeader("CSVOptions", "TestName", "TestDuration ms", "Machine", "TestDate", "Process", "DllName", "Dll Path", "Versions", "SourceFile");
+                        OpenCSVWithHeader(Col_CSVOptions, Col_TestCase, Col_TestTimeinms, Col_Machine, "TestDate", Col_Process, "DllName", "Dll Path", "Versions", "SourceFile");
                     }
                     else
                     {
-                        OpenCSVWithHeader("CSVOptions", "TestName", "TestDuration ms", "Machine", "TestDate", "Main Version", "Module", "Module Version", "ModuleBuildDate", "BuildDate(MainModule - Module) in days", "SourceFile");
+                        OpenCSVWithHeader(Col_CSVOptions, Col_TestCase, Col_TestTimeinms, Col_Machine, "TestDate", "Main Version", "Module", "Module Version", "ModuleBuildDate", "BuildDate(MainModule - Module) in days", "SourceFile");
                     }
                     
                     myNeedToWriteHeader = false;
