@@ -251,7 +251,7 @@ namespace ETWAnalyzer_iTest
             Assert.Equal(9661uL, extractedServer.MemoryUsage.MachineActiveStartMiB);
             Assert.Equal(9531uL, extractedServer.MemoryUsage.MachineActiveEndMiB);
             
-            Assert.Equal(254, extractedServer.MemoryUsage.WorkingSetsAtStart.Count);
+            Assert.Equal(257, extractedServer.MemoryUsage.WorkingSetsAtStart.Count);
 
             // processes are sorted by Commit descending
             ProcessWorkingSet highestStart = extractedServer.MemoryUsage.WorkingSetsAtStart[0];
@@ -260,7 +260,7 @@ namespace ETWAnalyzer_iTest
             Assert.Equal(327uL, highestStart.WorkingsetPrivateInMiB);
             Assert.Equal(2uL, highestStart.SharedCommitSizeInMiB);
 
-            Assert.Equal(256, extractedServer.MemoryUsage.WorkingSetsAtEnd.Count);
+            Assert.Equal(259, extractedServer.MemoryUsage.WorkingSetsAtEnd.Count);
             // processes are sorted by Commit descending
             ProcessWorkingSet highestEnd = extractedServer.MemoryUsage.WorkingSetsAtEnd[0];
             Assert.Equal(407uL, highestEnd.WorkingSetInMiB);

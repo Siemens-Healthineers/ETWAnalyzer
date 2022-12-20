@@ -4,10 +4,6 @@
 using Microsoft.Windows.EventTracing;
 using Microsoft.Windows.EventTracing.Processes;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ETWAnalyzer.Extract
 {
@@ -65,25 +61,63 @@ namespace ETWAnalyzer.Extract
 
         }
 
-        internal ProcessWorkingSet(IProcess process, DataSize commit, DataSize workingset, DataSize workingsetPrivate, DataSize sharedCommitSize)
+        /// <summary>
+        /// Needed to convert an IProcess to a ProcessKey in ctor
+        /// </summary>
+        /// <param name="process"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException"></exception>
+        static ProcessKey CheckProcess(IProcess process)
         {
-            if( process == null )
+            if (process == null)
             {
                 throw new ArgumentNullException(nameof(process));
             }
             DateTimeOffset createTime = default;
-            if( process.CreateTime.HasValue )
+            if (process.CreateTime.HasValue)
             {
                 createTime = process.CreateTime.Value.DateTimeOffset;
             }
-            Process = new ProcessKey(process.ImageName, process.Id, createTime);
+            ProcessKey key = new ProcessKey(process.ImageName, process.Id, createTime);
+            return key;
+        }
+
+        /// <summary>
+        /// Create a new instance
+        /// </summary>
+        /// <param name="process"></param>
+        /// <param name="commit"></param>
+        /// <param name="workingset"></param>
+        /// <param name="workingsetPrivate"></param>
+        /// <param name="sharedCommitSize"></param>
+        internal ProcessWorkingSet(IProcess process, DataSize commit, DataSize workingset, DataSize workingsetPrivate, DataSize sharedCommitSize)
+                        :this(CheckProcess(process),          commit,          workingset,          workingsetPrivate,          sharedCommitSize)
+        {
+        }
+
+        /// <summary>
+        /// Create a new instance
+        /// </summary>
+        /// <param name="process"></param>
+        /// <param name="commit"></param>
+        /// <param name="workingset"></param>
+        /// <param name="workingsetPrivate"></param>
+        /// <param name="sharedCommitSize"></param>
+        /// <exception cref="ArgumentNullException">When process is null</exception>
+        internal ProcessWorkingSet(ProcessKey process, DataSize commit, DataSize workingset, DataSize workingsetPrivate, DataSize sharedCommitSize)
+        {
+            if (process == null)
+            {
+                throw new ArgumentNullException(nameof(process));
+            }
+
+            Process = process;
 
             // round x.5 to next number to reduce the error
-            WorkingSetInMiB =        (ulong) Math.Round(workingset.TotalMebibytes,        0, MidpointRounding.AwayFromZero);
-            WorkingsetPrivateInMiB = (ulong) Math.Round(workingsetPrivate.TotalMebibytes, 0, MidpointRounding.AwayFromZero);
-            CommitInMiB =            (ulong) Math.Round(commit.TotalMebibytes,            0, MidpointRounding.AwayFromZero);
-            SharedCommitSizeInMiB =  (ulong) Math.Round(sharedCommitSize.TotalMebibytes,  0, MidpointRounding.AwayFromZero);
-
+            WorkingSetInMiB = (ulong)Math.Round(workingset.TotalMebibytes, 0, MidpointRounding.AwayFromZero);
+            WorkingsetPrivateInMiB = (ulong)Math.Round(workingsetPrivate.TotalMebibytes, 0, MidpointRounding.AwayFromZero);
+            CommitInMiB = (ulong)Math.Round(commit.TotalMebibytes, 0, MidpointRounding.AwayFromZero);
+            SharedCommitSizeInMiB = (ulong)Math.Round(sharedCommitSize.TotalMebibytes, 0, MidpointRounding.AwayFromZero);
         }
 
         /// <summary>
