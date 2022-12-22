@@ -264,7 +264,7 @@ namespace ETWAnalyzer.Extract
         /// <returns></returns>
         public bool Equals(ETWProcess other)
         {
-            if (other == null)
+            if (other == null || ProcessName == null)
             {
                 return false;
             }
