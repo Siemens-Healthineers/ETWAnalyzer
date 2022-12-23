@@ -374,6 +374,8 @@ namespace ETWAnalyzer.EventDump
             }
 
 
+            lret = lret.OrderBy(x=>x.PerformedAt).ThenBy(x=>x.StartTime).ThenBy(x=>x.EndTime).ToList();
+
             return lret;
         }
 
