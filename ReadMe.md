@@ -75,7 +75,7 @@ After extraction from a > 600 MB input file a small ca. 6 MB file in the output 
 
 ![alt text](ETWAnalyzer/Documentation/Images/ExtractedDataFiles.png "Extracted Data Files")
 
-ETWanalyzer will query all files in the current directory if you do not use -filedir/-fd xxx.  
+ETWAnalyzer will query all files in the current directory if you do not use -filedir/-fd xxx.  
 The first query would be to check on which machine with how much memory, CPU and Windows version it was running. 
 
 ![alt text](ETWAnalyzer/Documentation/Images/DumpStatsCommand.png "Dump Stats")
