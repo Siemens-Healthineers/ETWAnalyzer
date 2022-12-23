@@ -344,7 +344,8 @@ namespace ETWAnalyzer.EventDump
         List<MatchData> GetCrashedProcesses(List<MatchData> data)
         {
             List<MatchData> lret = data.Where(x => ETWProcess.IsPossibleCrash(x.ReturnCode)).ToList();
-            foreach (var werDumpCall in data.Where(x => x.ProcessName == WerFault && x.CmdLine.Contains(" -p ")))
+            int lastPid = 0;
+            foreach(MatchData werDumpCall in data.Where(x => x.ProcessName == WerFault && x.CmdLine.Contains(" -p ")).OrderBy( x=>x.StartTime ) )
             {
                 int start = werDumpCall.CmdLine.IndexOf(" -p ");
                 if (start > -1)
@@ -363,7 +364,11 @@ namespace ETWAnalyzer.EventDump
                             }
                         }
 
-                        lret.Add(werDumpCall);
+                        if (lastPid != crashPid) // only show the first WerDump call. Normally WerFault is called two times. 
+                        {
+                            lret.Add(werDumpCall);
+                        }
+                        lastPid = crashPid;
                     }
                 }
             }

@@ -264,13 +264,13 @@ namespace ETWAnalyzer.Extract
         /// <returns></returns>
         public bool Equals(ETWProcess other)
         {
-            if (other == null || ProcessName == null)
+            if (other == null )
             {
                 return false;
             }
 
             // Intern process name and command line to make string comparisons much faster by comparing references
-            if(String.IsInterned(ProcessName) == null)
+            if( (ProcessName != null) && String.IsInterned(ProcessName) == null)
             {
                 CmdLine = String.Intern(CmdLine ?? "");
                 ProcessName = String.Intern(ProcessName);
