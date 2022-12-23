@@ -3771,6 +3771,16 @@ namespace ETWAnalyzer.Extract
         IO_REPARSE_DATA_INVALID = 0xC0000278,
 
         /// <summary>
+        /// An application-internal exception has occurred.
+        /// </summary>
+        STATUS_STOWED_EXCEPTION = 0xC000027B,
+
+        /// <summary>
+        /// An application-internal exception has occurred.
+        /// </summary>
+        STATUS_CONTEXT_STOWED_EXCEPTION = 0xC000027C,
+
+        /// <summary>
         /// The layered file system driver for this I/O tag did not handle it when needed.
         /// </summary>
         IO_REPARSE_TAG_NOT_HANDLED = 0xC0000279,
