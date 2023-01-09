@@ -54,7 +54,7 @@ namespace ETWAnalyzer.Commands
          "  ThreadPool: Extract relevant data from .NET Runtime ThreadPool if available. ThreadingKeyword 0x10000 needs to be set for the Microsoft-Windows-DotNETRuntime ETW Provider during recording." + Environment.NewLine +
          "              Json Nodes: ThreadPool-PerProcessThreadPoolStarvations" + Environment.NewLine +
          "  PMC       : Extract Performance Monitoring Counters and Last Branch Record CPU traces. You need to enable PMC/LBR ETW Tracing during the recording to get data." + Environment.NewLine +
-        "   DNS       : Extract DNS Queries. You need to enable ETW provider Microsoft-Windows-DNS-Client" + Environment.NewLine + 
+         "  DNS       : Extract DNS Queries. You need to enable ETW provider Microsoft-Windows-DNS-Client" + Environment.NewLine + 
          " -NoOverwrite         By default existing Json files are overwritten during a new extraction run. If you want to extract from a large directory only the missing extraction files you can use this option" + Environment.NewLine +
          "                      This way you can have the same extract command line in a script after a profiling run to extract only the newly added profiling data." + Environment.NewLine +
         "  -recursive           Test data is searched recursively below -filedir" + Environment.NewLine +
@@ -63,8 +63,9 @@ namespace ETWAnalyzer.Commands
          " -pthreads dd         Percentage of threads to use during extract. Default is 75% of all cores  with a cap at 5 parallel extractions. " + Environment.NewLine + 
          "                      This can already utilize 100% of all cores because some operations are multithreaded like symbol transcoding." + Environment.NewLine +
          " -nthreads dd         Absolute number of threads/processes used during extract." + Environment.NewLine +
-         " -symServer [NtSymbolPath, MS, Google or syngo]  Load pdbs from remote symbol server which is stored in the ETWAnalyzer.dll/exe.config file." + Environment.NewLine +
+         " -symServer [NtSymbolPath, MS, Google, syngo or your own symbol server]  Load pdbs from remote symbol server which is stored in the ETWAnalyzer.dll/exe.config file." + Environment.NewLine +
          "                      With NtSymbolPath the contents of the environment variable _NT_SYMBOL_PATH are used." + Environment.NewLine +
+         "                      When using a custom remote symbol server use this form with a local folder: E.g. SRV*C:\\Symbols*https://msdl.microsoft.com/download/symbols" + Environment.NewLine + 
         $"                      The config file {ConfigFiles.RequiredPDBs} declares which pdbs" + Environment.NewLine + 
          "                      must have been successfully loaded during extraction. Otherwise a warning is printed due to symbol loading errors." + Environment.NewLine +
          " -keepTemp            If you want to analyze the ETL files more than once from compressed files you can use this option to keep the uncompressed ETL files in the output folder. " + Environment.NewLine +
@@ -74,7 +75,7 @@ namespace ETWAnalyzer.Commands
          " -symFolder xxx       Default is C:\\Symbols. Path to a short directory name in which links are created from the unzipped ETL files to prevent symbol loading issues due to MAX_PATH limitations." + Environment.NewLine +
          " -child               Force single threaded in-process extraction" + Environment.NewLine +
          " -recursive           Search below -filedir directory recursively for data to extract." + Environment.NewLine +
-         " -outdir xxxx         By default the extracted data will be put into the folder \"Extract\" besides the input file. You can override the output folder with that switch." + Environment.NewLine +
+        $" -outdir xxxx         By default the extracted data will be put into the folder \"{Program.ExtractFolder}\" besides the input file. You can override the output folder with that switch." + Environment.NewLine +
          " -tempdir xxxx        If input data needs to be unzipped you can enter here an alternate path to e.g. prevent extraction on slow network shares. " + Environment.NewLine + 
         $" -unzipoperation \"cmd\" Execute command after a compressed zip archive was uncompressed. The variables {ETLFileNameVariable} and {ETLFileDirVariable} are expanded. " + Environment.NewLine +
         $"                      You can use ' to escape an exe with spaces. E.g. -unzipoperation \"'C:\\Program Files\\Relogger.exe' {ETLFileNameVariable}\"" + Environment.NewLine + 
@@ -349,6 +350,9 @@ namespace ETWAnalyzer.Commands
                     case SymFolderArg: // -symFolder
                         Symbols.SymbolFolder = GetNextNonArg(SymFolderArg);
                         break;
+                    case SymCacheFolderArg: // -symcache
+                        Symbols.SymCacheFolder = GetNextNonArg(SymCacheFolderArg);
+                        break;
                     case NoColorArg:
                         ColorConsole.EnableColor = false;
                         break;
@@ -408,6 +412,11 @@ namespace ETWAnalyzer.Commands
                     else
                     {
                         extractors.Add(myExtractorFactory[enumActionExtract]());
+
+                        if (enumActionExtract == ExtractionOptions.CPU) // with failed pdb lookup support we also need module information to be able to later resolve missing symbols
+                        {
+                            extractors.Add(myExtractorFactory[ExtractionOptions.Module]());
+                        }
                     }
                 }
 
@@ -445,14 +454,14 @@ namespace ETWAnalyzer.Commands
             string symbolServerName = "";
             ParseEnum<SymbolServers>("SymServer", symbolServer, () =>
             {
-                SymbolServers symServerEnum = (SymbolServers)Enum.Parse(typeof(SymbolServers), symbolServer, true);
+                Enum.TryParse<SymbolServers>(symbolServer, true, out SymbolServers symServerEnum);
                 symbolServerName = symServerEnum switch
                 {
                     SymbolServers.MS => Settings.Default.SymbolServerMS,
                     SymbolServers.Syngo => Settings.Default.SymbolServerSyngo,
                     SymbolServers.Google => Settings.Default.SymbolServerGoogle,
                     SymbolServers.NtSymbolPath => SymbolPaths.GetRemoteSymbolServerFromNTSymbolPath(),
-                    _ => throw new NotSupportedException($"Symbol server {symServerEnum} is not yet defined. Please fix code. This is a programming error."),
+                    _ => symbolServer,
                 };
             }, SymbolServers.None);
 

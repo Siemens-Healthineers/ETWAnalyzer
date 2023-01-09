@@ -1,0 +1,137 @@
+﻿//// SPDX-FileCopyrightText:  © 2023 Siemens Healthcare GmbH
+//// SPDX-License-Identifier:   MIT
+
+
+using ETWAnalyzer.Configuration;
+using ETWAnalyzer.Extract;
+using ETWAnalyzer.Extractors;
+using ETWAnalyzer.LoadSymbol;
+using ETWAnalyzer.ProcessTools;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+
+namespace ETWAnalyzer.Commands
+{
+    internal class LoadSymbolCommand : ArgParser
+    {
+        internal static readonly string HelpString =
+           "ETWAnalyzer -LoadSymbol -filedir/-fd  xxx.json [-symServer NtSymbolPath, MS, Google or syngo] [-symFolder xxxx] [-outdir xxxx] [-debug]" + Environment.NewLine +
+           "     This supports the use case to extract the data on a machine with no symbols and transfer the json files to another machine." + Environment.NewLine + 
+          $"     You can then lookup the method names with this command which will put the resolved Json files into a {Program.ExtractFolder} subfolder."  + Environment.NewLine + 
+           "     The extracted Json files are much smaller than the original ETL files which allows you to mass record ETW data, extract on the recording machines and send the small json files for analysis to HQ." + Environment.NewLine +
+         " -symFolder xxxx      Default is C:\\Symbols. Path to a short directory name in which links are created from the unzipped ETL files to prevent symbol loading issues due to MAX_PATH limitations." + Environment.NewLine +
+         " -symServer [NtSymbolPath, MS, Google, syngo or your own symbol server]  Load pdbs from remote symbol server which is stored in the ETWAnalyzer.dll/exe.config file." + Environment.NewLine +
+         "                      With NtSymbolPath the contents of the environment variable _NT_SYMBOL_PATH are used." + Environment.NewLine +
+         "                      When using a custom remote symbol server use this form with a local folder: E.g. SRV*C:\\Symbols*https://msdl.microsoft.com/download/symbols" + Environment.NewLine +
+        $"                      The config file {ConfigFiles.RequiredPDBs} declares which pdbs" + Environment.NewLine +
+         "                      must have been successfully loaded during extraction. Otherwise a warning is printed due to symbol loading errors." + Environment.NewLine +
+        $" -outdir xxxx         By default the extracted data will be put into the folder \"{Program.ExtractFolder}\" besides the input file. You can override the output folder with that switch." + Environment.NewLine +
+         " -debug               Print a lot diagnostics messages during symbol lookup to console" + Environment.NewLine + 
+         "[yellow]Examples[/yellow]" + Environment.NewLine +
+        $"[green]Resolve missing symbols fron a json file. The rewritten file json will be in the subfolder {Program.ExtractFolder} with the same file name.[/green]" + Environment.NewLine +
+         " ETWAnalyzer -extract All -fd xxxx.etl" + Environment.NewLine +
+         " ETWAnalyzer -LoadSymbol -fd xxx.json -symServer MS " + Environment.NewLine +
+           "" ;
+
+
+        /// <summary>
+        /// ETL file name query
+        /// </summary>
+        string myFileDirQuery;
+        private bool myDebugOutputToConsole;
+
+        /// <summary>
+        /// Input File List
+        /// </summary>
+        TestDataFile[] myInputJsonFiles;
+
+        public OutDir OutDir { get; private set; } = new OutDir();
+
+        public LoadSymbolCommand(string[] args): base(args) 
+        { }
+
+        public override string Help => HelpString;
+
+        public override void Parse()
+        {
+            while (myInputArguments.Count > 0)
+            {
+                string curArg = myInputArguments.Dequeue();
+                switch (curArg?.ToLowerInvariant())
+                {
+                    case CommandFactory.LoadSymbolArg:
+                        break;
+                    case OutDirArg:
+                        string outDir = GetNextNonArg(OutDirArg);
+                        OutDir.OutputDirectory = ArgParser.CheckIfFileOrDirectoryExistsAndExtension(outDir);
+                        OutDir.IsDefault = false;
+                        break;
+                    case FileOrDirectoryArg:
+                    case FileOrDirectoryAlias:
+                        myFileDirQuery = GetNextNonArg(FileOrDirectoryArg);
+                        break;
+                    case SymbolServerArg: // -symserver
+                        Symbols.RemoteSymbolServer = ExtractCommand.ParseSymbolServer(GetNextNonArg(SymbolServerArg));
+                        break;
+                    case SymFolderArg: // -symFolder
+                        Symbols.SymbolFolder = GetNextNonArg(SymFolderArg);
+                        break;
+                    case SymCacheFolderArg: // -symcache
+                        Symbols.SymCacheFolder = GetNextNonArg(SymCacheFolderArg);
+                        break;
+                    case DebugArg:    // -debug 
+                        myDebugOutputToConsole = true;
+                        Program.DebugOutput = true;
+                        break;
+                    case NoColorArg:
+                        ColorConsole.EnableColor = false;
+                        break;
+                    case HelpArg:
+                        throw new InvalidOperationException(HelpArg);
+                    default:
+                        throw new NotSupportedException($"The argument {curArg} was not recognized as valid argument");
+                }
+            }
+
+            if (myFileDirQuery == null)
+            {
+                throw new NotSupportedException($"You need to enter {FileOrDirectoryArg} with an existing input file.");
+            }
+
+            TestRunData runData = new(myFileDirQuery, SearchOption.TopDirectoryOnly);
+            IReadOnlyList<TestDataFile> filesToAnalyze = runData.AllFiles;
+            myInputJsonFiles = filesToAnalyze.Where(file => file.JsonExtractFileWhenPresent != null)
+                                            .ToArray();
+
+            if (myInputJsonFiles.Length == 0)
+            {
+                throw new NotSupportedException($"No input json files found.");
+            }
+        }
+
+        public override void Run()
+        {
+            TextWriter dbgOutputWriter = myDebugOutputToConsole ? Console.Out : new StringWriter();
+            using Microsoft.Diagnostics.Symbols.SymbolReader reader = new(dbgOutputWriter, Symbols.GetCombinedSymbolPath(""))
+            {
+                SecurityCheck = (x) => true,
+            };
+
+            using SymbolLoader loader = new SymbolLoader(reader);
+            ExtractSerializer ser = new ExtractSerializer();
+
+            for(int i=0;i<myInputJsonFiles.Length;i++)
+            {
+                TestDataFile jsonFile = myInputJsonFiles[i];
+                ColorConsole.WriteEmbeddedColorLine($"Processing file {i+1}/{myInputJsonFiles.Length} {jsonFile.JsonExtractFileWhenPresent}");
+                loader.LoadSymbols(jsonFile.Extract);
+                string outdir = OutDir.OutputDirectory ?? Path.Combine(Path.GetDirectoryName(jsonFile.JsonExtractFileWhenPresent), Program.ExtractFolder);
+                Directory.CreateDirectory(outdir);
+                string outputFile = Path.Combine(outdir, Path.GetFileName(jsonFile.JsonExtractFileWhenPresent));
+                ser.Serialize(outputFile, (ETWExtract) jsonFile.Extract);
+            }
+        }
+    }
+}

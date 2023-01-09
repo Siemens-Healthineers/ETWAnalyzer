@@ -18,6 +18,7 @@ namespace ETWAnalyzer.Commands
         internal const string ExtractCommand = "-extract";
         internal const string ConvertArg = "-convert";
         internal const string AnalyzeArg = "-analyze";
+        internal const string LoadSymbolArg = "-loadsymbol";
 
         /// <summary>
         /// Create a command 
@@ -43,6 +44,9 @@ namespace ETWAnalyzer.Commands
                         break;
                     case AnalyzeArg:
                         lret = new AnalyzeCommand(args);
+                        break;
+                    case LoadSymbolArg:
+                        lret = new LoadSymbolCommand(args);
                         break;
                     default:
                         break;

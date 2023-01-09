@@ -36,9 +36,9 @@ namespace ETWAnalyzer_uTest.Extract
             };
 
             ModuleContainer container = new();
-            container.Add(extract, (ETWProcessIndex) 0, "C:\\Windows\\1.dll", "File Version of 1.dll", "Product Version of 1.dll", "Product Name of 1.dll", new Version(1, 0, 100, 1), "Description of 1.dll");
-            container.Add(extract, (ETWProcessIndex) 1, "C:\\Windows\\1.dll", "File Version of 1.dll", "Product Version of 1.dll", "Product Name of 1.dll", new Version(1, 0, 100, 1), "Description of 1.dll");
-            container.Add(extract, (ETWProcessIndex) 1, "C:\\Windows\\2.dll", "File Version of 2.dll", "Product Version of 2.dll", "Product Name of 2.dll", new Version(1, 0, 100, 1), "Description of 2.dll");
+            container.Add(extract, (ETWProcessIndex) 0, (PdbIndex) 0, "C:\\Windows\\1.dll", "File Version of 1.dll", "Product Version of 1.dll", "Product Name of 1.dll", new Version(1, 0, 100, 1), "Description of 1.dll");
+            container.Add(extract, (ETWProcessIndex) 1, (PdbIndex) 0, "C:\\Windows\\1.dll", "File Version of 1.dll", "Product Version of 1.dll", "Product Name of 1.dll", new Version(1, 0, 100, 1), "Description of 1.dll");
+            container.Add(extract, (ETWProcessIndex) 1, PdbIndex.Invalid, "C:\\Windows\\2.dll", "File Version of 2.dll", "Product Version of 2.dll", "Product Name of 2.dll", new Version(1, 0, 100, 1), "Description of 2.dll");
 
             extract.Modules = container;
 
@@ -63,10 +63,13 @@ namespace ETWAnalyzer_uTest.Extract
             ModuleDefinition m0 = dcontainer.Modules[0];
             ModuleDefinition m1 = dcontainer.Modules[1];
 
+           
             
             Assert.Equal("2.dll", m1.ModuleName);
+            Assert.Null(m1.PdbIdx);
 
             Assert.Equal("1.dll", m0.ModuleName);
+            Assert.Equal((PdbIndex) 0, m0.PdbIdx.Value);
             Assert.Equal("C:\\Windows", m0.ModulePath);
             Assert.Equal("File Version of 1.dll", m0.FileVersionStr);
             Assert.Equal("Product Version of 1.dll", m0.ProductVersionStr);

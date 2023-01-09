@@ -31,7 +31,7 @@ namespace ETWAnalyzer.Extract
         public List<MethodCost> Costs
         {
             get;                     // After deserializing the data we get back objects
-            private set;
+            internal set;
         } = new List<MethodCost>();
 
 

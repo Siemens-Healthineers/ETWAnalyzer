@@ -32,8 +32,9 @@ namespace ETWAnalyzer.Commands
             "  -perthread           By default all threads are merged. If used then the profiling data per thread is extracted." + Environment.NewLine + 
             "  -debug               Print exception on console if a command has an error." +Environment.NewLine +
             "  -nocolor             Do not colorize output on shells with different color schemes. Writing console output is also much faster if it is not colorized." + Environment.NewLine +
-            "  -symServer [NtSymbolPath, MS, Google or syngo]  Load pdbs from remote symbol server which is stored in the ETWAnalyzer.dll/exe.config file." + Environment.NewLine + 
-            "                       With NtSymbolPath the contents of the environment variable _NT_SYMBOL_PATH are used."
+            "  -symServer [NtSymbolPath, MS, Google, syngo or your own symbol server]  Load pdbs from remote symbol server which is stored in the ETWAnalyzer.dll/exe.config file." + Environment.NewLine +
+            "                       With NtSymbolPath the contents of the environment variable _NT_SYMBOL_PATH are used." + Environment.NewLine +
+            "                       When using a custom remote symbol server use this form with a local folder: E.g. SRV*C:\\Symbols*https://msdl.microsoft.com/download/symbols"
            ;
 
         /// <summary>
