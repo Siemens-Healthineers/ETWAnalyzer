@@ -84,7 +84,10 @@ jobs:
 
         # Start Profilng
         - name: Start Profiling 
-          run: wpr -start CPU 
+          run: |
+                curl raw.githubusercontent.com/Alois-xx/FileWriter/master/MultiProfile.wprp > MultiProfile.wprp
+                wpr -start MultiProfile.wprp!CSwitch -start MultiProfile.wprp!File
+                
         # Execute all unit tests in the solution
         - name: Execute unit tests
           run: |
@@ -95,7 +98,7 @@ jobs:
           run: |
             mkdir ProfilingData
             wpr -stop ProfilingData/DotnetTest.etl -skipPdbGen
-            ..\bin\Debug\net6.0-windows\win-x64\ETWAnalyzer -extract all -fd ProfilingData/DotnetTest.etl
+            .\bin\Debug\net6.0-windows\win-x64\ETWAnalyzer -extract all -fd ProfilingData/DotnetTest.etl
 
 
         - name: Upload Profiling Data
