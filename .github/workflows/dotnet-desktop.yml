@@ -117,14 +117,23 @@ jobs:
         - name: Stop Profiling
           run: |
             mkdir ProfilingData
+            mkdir Extract
             wpr -stop ProfilingData/DotnetTest.etl -skipPdbGen
-            .\bin\Debug\net6.0-windows\win-x64\ETWAnalyzer -extract all -fd ProfilingData/DotnetTest.etl
+            .\bin\Debug\net6.0-windows\win-x64\ETWAnalyzer -extract all -fd ProfilingData/DotnetTest.etl -outdir Extract
             
         - name: Upload Profiling Data
           uses: actions/upload-artifact@v3
           with:
             name: ProfilingData
             path: ProfilingData
+            retention-days: 90
+          if: always()
+
+        - name: Upload Profiling Extract Data
+          uses: actions/upload-artifact@v3
+          with:
+            name: Extract
+            path: Extract
             retention-days: 90
           if: always()
 
