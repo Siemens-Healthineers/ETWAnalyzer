@@ -86,7 +86,7 @@ jobs:
         - name: Start Profiling 
           run: |
                 curl https://raw.githubusercontent.com/Alois-xx/FileWriter/master/MultiProfile.wprp > MultiProfile.wprp
-                PowerShell -NoProfile -ExecutionPolicy Bypass -Command "$var=(Get-Content -path MultiProfile.wprp -Raw); $repl=$var.Replace('Strict=\"true\"',''); Set-Content -Value $repl -Path MultiProfile_NoStrict.wprp;"
+                PowerShell -NoProfile -ExecutionPolicy Bypass -Command '$var=(Get-Content -path MultiProfile.wprp -Raw); $repl=$var.Replace('Strict=\"true\"',''); Set-Content -Value $repl -Path MultiProfile_NoStrict.wprp;'
                 wpr -start MultiProfile_NoStrict.wprp!CSwitch -start MultiProfile_NoStrict.wprp!File
                 
         # Execute all unit tests in the solution
