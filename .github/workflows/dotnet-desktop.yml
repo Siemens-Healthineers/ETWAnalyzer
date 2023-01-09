@@ -102,7 +102,7 @@ jobs:
           uses: actions/upload-artifact@v3
           with:
             name: ProfilingData
-            path: ${{ ProfilingData }}
+            path: ProfilingData
             retention-days: 90
           if: always()
 
