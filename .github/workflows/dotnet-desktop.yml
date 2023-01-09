@@ -82,14 +82,30 @@ jobs:
         - name: Get .NET Information
           run: dotnet --info
 
+        # Start Profilng
+        - name: Start Profiling 
+          run: wpr -start CPU 
         # Execute all unit tests in the solution
         - name: Execute unit tests
           run: |
-            wpr -start CPU 
-            dotnet test /nodeReuse:false -m:1 -p:ParallelizeTestCollections=false /p:CopyLocalLockFileAssemblies=true --logger GitHubActions --verbosity detailed --settings Test.runsettings --diag:log.txt --collect:"XPlat Code Coverage" --results-directory ./TestResults --logger trx
-            dir TestResults
-            wpr -stop TestResults/DotNetTest.etl -skipPdbGen     
+            dotnet test /nodeReuse:false -m:1 -p:ParallelizeTestCollections=false /p:CopyLocalLockFileAssemblies=true --logger GitHubActions --verbosity detailed --settings Test.runsettings --diag:log.txt --collect:"XPlat Code Coverage" --results-directory ./ults --logger trx
         
+        # Stop Profiling
+        - name: Stop Profiling
+          run: |
+            mkdir ProfilingData
+            wpr -stop ProfilingData/DotnetTest.etl -skipPdbGen
+            ..\bin\Debug\net6.0-windows\win-x64\ETWAnalyzer -extract all -fd ProfilingData/DotnetTest.etl
+
+
+        - name: Upload Profiling Data
+          uses: actions/upload-artifact@v3
+          with:
+            name: ProfilingData
+            path: ${{ ProfilingData }}
+            retention-days: 90
+          if: always()
+
         # install dotnet ReportGenerator
         - name: Install ReportGenerator
           if: always()
