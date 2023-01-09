@@ -84,8 +84,6 @@ namespace ETWAnalyzer.LoadSymbol
         {
             ETWExtract baseExtract = (ETWExtract)extract;
 
-            Dictionary<ETWProcess, List<IPdbIdentifier>> processToUnresolved = new();
-
             if (extract?.Modules?.UnresolvedPdbs?.Count == null || extract.Modules.UnresolvedPdbs.Count == 0)
             {
                 Console.WriteLine("No unresolved modules found. Cannot resolve.");
@@ -93,29 +91,10 @@ namespace ETWAnalyzer.LoadSymbol
             }
 
             IReadOnlyList<IPdbIdentifier> unresolved = extract.Modules.UnresolvedPdbs;
-
-            foreach (var module in extract.Modules.Modules)
-            {
-                if (module.PdbIdx != null)
-                {
-                    foreach (var proc in module.Processes)
-                    {
-                        if (!processToUnresolved.TryGetValue(proc, out List<IPdbIdentifier> missing))
-                        {
-                            missing = new List<IPdbIdentifier>();
-                            processToUnresolved.Add(proc, missing);
-                        }
-
-                        missing.Add(unresolved[(int)module.PdbIdx]);
-                    }
-                }
-            }
-
             ETWProcess kernelProcess = extract.Processes.Where(x => x.ProcessName == "System").First();
 
             HashSet<string> noDebugInfo = new();
             HashSet<IPdbIdentifier> newUnresolved = new();
-
             HashSet<string> resolvedMethods = new();
 
             foreach (var proc in extract.CPU.PerProcessMethodCostsInclusive.MethodStatsPerProcess)

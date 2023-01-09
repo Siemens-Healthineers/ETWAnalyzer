@@ -1,4 +1,7 @@
-﻿using Newtonsoft.Json;
+﻿//// SPDX-FileCopyrightText:  © 2023 Siemens Healthcare GmbH
+//// SPDX-License-Identifier:   MIT
+
+using Newtonsoft.Json;
 using System;
 
 namespace ETWAnalyzer.Extract.Modules
