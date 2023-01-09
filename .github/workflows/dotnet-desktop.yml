@@ -85,7 +85,7 @@ jobs:
         # Start Profilng
         - name: Start Profiling 
           run: |
-                curl raw.githubusercontent.com/Alois-xx/FileWriter/master/MultiProfile.wprp > MultiProfile.wprp
+                curl https://raw.githubusercontent.com/Alois-xx/FileWriter/master/MultiProfile.wprp > MultiProfile.wprp
                 wpr -start MultiProfile.wprp!CSwitch -start MultiProfile.wprp!File
                 
         # Execute all unit tests in the solution
