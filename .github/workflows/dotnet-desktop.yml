@@ -72,7 +72,7 @@ jobs:
         - name: Start Profiling 
           run: |
                 curl https://raw.githubusercontent.com/Alois-xx/FileWriter/master/MultiProfile.wprp > MultiProfile.wprp
-                powerShell -NoProfile -ExecutionPolicy Bypass -File ${{github.workspace}}\..\BuildScripts\RemoveStrict.ps1 -InputFile  MultiProfile.wprp
+                powerShell -NoProfile -ExecutionPolicy Bypass ${{github.workspace}}\..\BuildScripts\RemoveStrict.ps1 -InputFile MultiProfile.wprp
                 wpr -start MultiProfile.wprp!CSwitch -start MultiProfile.wprp!File
                 
         # Install the .NET Core workload
