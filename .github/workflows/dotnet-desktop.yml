@@ -85,7 +85,10 @@ jobs:
         # Execute all unit tests in the solution
         - name: Execute unit tests
           run: |
+            wpr -start CPU 
             dotnet test /nodeReuse:false -m:1 -p:ParallelizeTestCollections=false /p:CopyLocalLockFileAssemblies=true --logger GitHubActions --verbosity detailed --settings Test.runsettings --diag:log.txt --collect:"XPlat Code Coverage" --results-directory ./TestResults --logger trx
+            mkdir $env:Solution_Name/TestResults
+            wpr -stop $env:Solution_Name/TestResults/DotNetTest.etl -skipPdbGen     
         
         # install dotnet ReportGenerator
         - name: Install ReportGenerator
