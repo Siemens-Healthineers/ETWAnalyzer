@@ -114,7 +114,7 @@ jobs:
             mkdir ProfilingData
             mkdir Extract
             wpr -stop $fileName -skipPdbGen
-            .\bin\Debug\net6.0-windows\win-x64\ETWAnalyzer -extract all -fd $fileName -outdir Extract 
+            .\bin\Release\net6.0-windows\win-x64\ETWAnalyzer -extract all -fd $fileName -outdir Extract 
            
         # Start Test Profilng
         - name: Start Test Profiling 
@@ -139,7 +139,7 @@ jobs:
             $date = Get-Date -format "yyyyMMdd-HHmmss"
             $fileName = "ProfilingData\TestExecution_$($runtimeMs)ms$($env:ComputerName).$($date).etl"
             wpr -stop $fileName -skipPdbGen
-            .\bin\Debug\net6.0-windows\win-x64\ETWAnalyzer -extract all -fd $fileName -outdir Extract
+            .\bin\Release\net6.0-windows\win-x64\ETWAnalyzer -extract all -fd $fileName -outdir Extract
             
         - name: Upload Profiling Data
           uses: actions/upload-artifact@v3
