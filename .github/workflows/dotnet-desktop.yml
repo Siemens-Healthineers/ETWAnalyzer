@@ -124,7 +124,9 @@ jobs:
         - name: Stop Profiling
           run: |
             $stopTime = [System.Diagnostics.Stopwatch]::GetTimestamp()
-            $startTime = [System.Int64]::Parse({{ env.ProfilingStartTime }})
+            $startStr = {{ env.ProfilingStartTime }}
+            echo StartStr $startStr
+            $startTime = [System.Int64]::Parse($startStr)
             $runtimeMs = [System.TimeSpan]::FromTicks($stopTime-$startTime).TotalMilliseconds.ToString("F0")
             $date = Get-Date -format "yyyyMMdd-HHmmss"
             $fileName = "ProfilingData\BuildProfiling_$($runtimeMs)ms$($env:ComputerName).$(date).etl"
