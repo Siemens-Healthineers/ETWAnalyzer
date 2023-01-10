@@ -234,6 +234,7 @@ namespace ETWAnalyzer_iTest
             File.Copy(TestData.ServerEtlFile, pathName);
 
             Program.MainCore(new string[] { "-extract", "CPU", "-filedir", tmp.Name, "-outdir", tmp.Name, 
+                "-NoOverwrite",
                 "-symFolder", Path.Combine(tmp.Name, "symfolder"),
                 "-symcache",  Path.Combine(tmp.Name, "symcache") });
 
@@ -244,6 +245,7 @@ namespace ETWAnalyzer_iTest
             Directory.CreateDirectory(outDir);
             Program.MainCore(new string[] { "-LoadSymbol", "-fd", unresolvedJson,
                                             "-outdir", outDir,
+                                            "-NoOverwrite",
                                             "-symFolder", Path.Combine(tmp.Name, "symfolder"),
                                             "-symcache",  Path.Combine(tmp.Name, "symcache") });
 
@@ -297,6 +299,7 @@ namespace ETWAnalyzer_iTest
                 Directory.CreateDirectory(outDir2);
                 Program.MainCore(new string[] { "-LoadSymbol", "-fd", resolvedJson,
                                             "-outdir", outDir2,
+                                            "-NoOverwrite",
                                             "-symserver", $"SRV*{Path.Combine(tmp.Name, "MSSymbols")}*https://msdl.microsoft.com/download/symbols"
                                           });
 
