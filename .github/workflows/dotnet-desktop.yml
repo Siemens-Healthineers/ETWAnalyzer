@@ -73,7 +73,7 @@ jobs:
           run: |
                 curl https://raw.githubusercontent.com/Alois-xx/FileWriter/master/MultiProfile.wprp > MultiProfile.wprp
                 powerShell -NoProfile -ExecutionPolicy Bypass ${{github.workspace}}\BuildScripts\RemoveStrict.ps1 -InputFile MultiProfile.wprp
-                wpr -start MultiProfile.wprp!CSwitch -start MultiProfile.wprp!File
+                wpr -start MultiProfile.wprp!CSwitch -start MultiProfile.wprp!File -filemode
                 
         # Install the .NET Core workload
         - name: Install .NET Core
