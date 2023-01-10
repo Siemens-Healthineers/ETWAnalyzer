@@ -62,17 +62,17 @@ jobs:
             Solution_Name: ETWAnalyzer.sln
 
         steps:
-        - name: GetStartTime
-          run: |
-            $startTime = [System.Diagnostics.Stopwatch]::GetTimestamp()
-            "ProfilingStartTime=$startTime" >> $env:GITHUB_ENV
-          shell: powershell
-          
        
         - name: Checkout
           uses: actions/checkout@v3
           with:
             fetch-depth: 0
+
+        - name: GetStartTime
+          run: |
+            $startTime = [System.Diagnostics.Stopwatch]::GetTimestamp()
+            "ProfilingStartTime=$startTime" >> $env:GITHUB_ENV
+          shell: powershell
 
         # Start Profilng
         - name: Start Profiling 
