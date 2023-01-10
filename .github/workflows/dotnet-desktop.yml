@@ -62,7 +62,9 @@ jobs:
             Solution_Name: ETWAnalyzer.sln
 
         steps:
-        
+        - name: FileName
+          run: powershell -Command "& { $date = Get-Date -format "yyyyMMdd-HHmmss"; $ComputerName = $env:computername; $fileName = \"BuildProfiling_0ms$($env:ComputerName).$date\"; echo $filename; }"
+          
         - name: Checkout
           uses: actions/checkout@v3
           with:
