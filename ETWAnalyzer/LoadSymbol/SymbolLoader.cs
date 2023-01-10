@@ -26,6 +26,11 @@ namespace ETWAnalyzer.LoadSymbol
         /// </summary>
         SymbolReader myReader;
 
+        /// <summary>
+        /// Keep list of unresolvable pdbs which are not tried to resolve from symbol server again
+        /// </summary>
+        HashSet<IPdbIdentifier> myCouldNotLoadFromSymbolServerPdbs = new();
+
         // some methods are prefixed with ? chars. Remove them
         static char[] SymbolStartChars = new char[] { '?' };
 
@@ -37,7 +42,7 @@ namespace ETWAnalyzer.LoadSymbol
         /// <summary>
         /// Create a new symbol loader which can resolve method names from extracted data
         /// </summary>
-        /// <param name="reader">TraceEvent symbol readder inswtance</param>
+        /// <param name="reader">TraceEvent symbol reader instance</param>
         /// <exception cref="ArgumentNullException">if reader is null</exception>
         public SymbolLoader(SymbolReader reader)
         {
@@ -49,6 +54,7 @@ namespace ETWAnalyzer.LoadSymbol
             myReader = reader;
         }
 
+
         /// <summary>
         /// Try to lookup cached pdb
         /// </summary>
@@ -57,6 +63,11 @@ namespace ETWAnalyzer.LoadSymbol
         SymbolModule GetPdb(IPdbIdentifier pdbId)
         {
             SymbolModule lret = null;
+
+            if( myCouldNotLoadFromSymbolServerPdbs.Contains(pdbId) )  // do not try to load pdb from symbol server again
+            {
+                return lret;
+            }
 
             // will download pdb from symbol server if configured correctly
             string localPdbPath = myReader.FindSymbolFilePath(pdbId.Name, pdbId.Id, pdbId.Age);
@@ -69,6 +80,10 @@ namespace ETWAnalyzer.LoadSymbol
                 }
                 
                 lret = module;
+            }
+            else
+            {
+                myCouldNotLoadFromSymbolServerPdbs.Add(pdbId);
             }
 
             return lret;

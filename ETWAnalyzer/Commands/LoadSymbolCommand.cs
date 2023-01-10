@@ -17,20 +17,20 @@ namespace ETWAnalyzer.Commands
     internal class LoadSymbolCommand : ArgParser
     {
         internal static readonly string HelpString =
-           "ETWAnalyzer -LoadSymbol -filedir/-fd  xxx.json [-symServer NtSymbolPath, MS, Google or syngo] [-symFolder xxxx] [-outdir xxxx] [-debug]" + Environment.NewLine +
+           "ETWAnalyzer -LoadSymbol -filedir/-fd  xxx.json [-SymServer NtSymbolPath, MS, Google or syngo] [-SymFolder xxxx] [-NoOverwrite] [-OutDir xxxx] [-debug]" + Environment.NewLine +
            "     This supports the use case to extract the data on a machine with no symbols and transfer the json files to another machine." + Environment.NewLine + 
-          $"     You can then lookup the method names with this command which will put the resolved Json files into a {Program.ExtractFolder} subfolder."  + Environment.NewLine + 
            "     The extracted Json files are much smaller than the original ETL files which allows you to mass record ETW data, extract on the recording machines and send the small json files for analysis to HQ." + Environment.NewLine +
-         " -symFolder xxxx      Default is C:\\Symbols. Path to a short directory name in which links are created from the unzipped ETL files to prevent symbol loading issues due to MAX_PATH limitations." + Environment.NewLine +
-         " -symServer [NtSymbolPath, MS, Google, syngo or your own symbol server]  Load pdbs from remote symbol server which is stored in the ETWAnalyzer.dll/exe.config file." + Environment.NewLine +
+         " -SymFolder xxxx      Default is C:\\Symbols. Path to a short directory name in which links are created from the unzipped ETL files to prevent symbol loading issues due to MAX_PATH limitations." + Environment.NewLine +
+         " -SymServer [NtSymbolPath, MS, Google, syngo or your own symbol server]  Load pdbs from remote symbol server which is stored in the ETWAnalyzer.dll/exe.config file." + Environment.NewLine +
          "                      With NtSymbolPath the contents of the environment variable _NT_SYMBOL_PATH are used." + Environment.NewLine +
          "                      When using a custom remote symbol server use this form with a local folder: E.g. SRV*C:\\Symbols*https://msdl.microsoft.com/download/symbols" + Environment.NewLine +
         $"                      The config file {ConfigFiles.RequiredPDBs} declares which pdbs" + Environment.NewLine +
          "                      must have been successfully loaded during extraction. Otherwise a warning is printed due to symbol loading errors." + Environment.NewLine +
-        $" -outdir xxxx         By default the extracted data will be put into the folder \"{Program.ExtractFolder}\" besides the input file. You can override the output folder with that switch." + Environment.NewLine +
+         " -NoOverwrite         By default the input json files will be overwritten." + Environment.NewLine +
+        $" -OutDir xxxx         When -NoverWrite is used the extracted data will be put into the folder \"{Program.ExtractFolder}\" besides the input file. You can override the output folder with that switch." + Environment.NewLine +
          " -debug               Print a lot diagnostics messages during symbol lookup to console" + Environment.NewLine + 
          "[yellow]Examples[/yellow]" + Environment.NewLine +
-        $"[green]Resolve missing symbols fron a json file. The rewritten file json will be in the subfolder {Program.ExtractFolder} with the same file name.[/green]" + Environment.NewLine +
+        $"[green]Resolve missing symbols from a json file. The input file/s will be overwritten.[/green]" + Environment.NewLine +
          " ETWAnalyzer -extract All -fd xxxx.etl" + Environment.NewLine +
          " ETWAnalyzer -LoadSymbol -fd xxx.json -symServer MS " + Environment.NewLine +
            "" ;
@@ -43,6 +43,11 @@ namespace ETWAnalyzer.Commands
         private bool myDebugOutputToConsole;
 
         /// <summary>
+        /// -NoOverwrite flat status
+        /// </summary>
+        public bool NoOverwrite { get; set; }
+
+        /// <summary>
         /// Input File List
         /// </summary>
         TestDataFile[] myInputJsonFiles;
@@ -53,6 +58,11 @@ namespace ETWAnalyzer.Commands
         { }
 
         public override string Help => HelpString;
+
+        /// <summary>
+        /// Command line switch
+        /// </summary>
+        public const string NoOverwriteFlag = "-nooverwrite";
 
         public override void Parse()
         {
@@ -74,6 +84,9 @@ namespace ETWAnalyzer.Commands
                         break;
                     case SymbolServerArg: // -symserver
                         Symbols.RemoteSymbolServer = ExtractCommand.ParseSymbolServer(GetNextNonArg(SymbolServerArg));
+                        break;
+                    case NoOverwriteFlag:
+                        NoOverwrite = true;
                         break;
                     case SymFolderArg: // -symFolder
                         Symbols.SymbolFolder = GetNextNonArg(SymFolderArg);
@@ -129,7 +142,13 @@ namespace ETWAnalyzer.Commands
                 loader.LoadSymbols(jsonFile.Extract);
                 string outdir = OutDir.OutputDirectory ?? Path.Combine(Path.GetDirectoryName(jsonFile.JsonExtractFileWhenPresent), Program.ExtractFolder);
                 Directory.CreateDirectory(outdir);
-                string outputFile = Path.Combine(outdir, Path.GetFileName(jsonFile.JsonExtractFileWhenPresent));
+
+                string outputFile = jsonFile.JsonExtractFileWhenPresent;
+
+                if (NoOverwrite)
+                {
+                    outputFile = Path.Combine(outdir, Path.GetFileName(jsonFile.JsonExtractFileWhenPresent));
+                }
                 ser.Serialize(outputFile, (ETWExtract) jsonFile.Extract);
             }
         }
