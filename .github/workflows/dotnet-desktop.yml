@@ -62,7 +62,7 @@ jobs:
             Solution_Name: ETWAnalyzer.sln
 
         steps:
-        - name: FileName
+        - name: SetProfilingFileName
           run: |
             $date = Get-Date -format "yyyyMMdd-HHmmss"
             $ComputerName = $env:computername; 
@@ -71,10 +71,7 @@ jobs:
             "ProfilingBaseName=$fileName" >> $env:GITHUB_ENV
           shell: powershell
           
-        - name: UseFileName
-          run: |
-            Write-Output "${{ env.ProfilingBaseName }}"
-        
+       
         - name: Checkout
           uses: actions/checkout@v3
           with:
@@ -131,8 +128,8 @@ jobs:
           run: |
             mkdir ProfilingData
             mkdir Extract
-            wpr -stop ProfilingData/DotnetTest.etl -skipPdbGen
-            .\bin\Debug\net6.0-windows\win-x64\ETWAnalyzer -extract all -fd ProfilingData/DotnetTest.etl -outdir Extract
+            wpr -stop ProfilingData/${{ env.ProfilingBaseName }}.etl -skipPdbGen
+            .\bin\Debug\net6.0-windows\win-x64\ETWAnalyzer -extract all -fd ProfilingData -outdir Extract
             
         - name: Upload Profiling Data
           uses: actions/upload-artifact@v3
