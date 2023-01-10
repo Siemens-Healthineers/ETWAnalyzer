@@ -16,11 +16,13 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
 using System.Security.Policy;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
+using Xunit.Abstractions;
 using static ETWAnalyzer.Extract.CPUPerProcessMethodList;
 
 namespace ETWAnalyzer_iTest
@@ -30,6 +32,15 @@ namespace ETWAnalyzer_iTest
     /// </summary>
     public class ProgramTestsLong
     {
+
+        private ITestOutputHelper myWriter;
+
+        public ProgramTestsLong(ITestOutputHelper myWriter)
+        {
+            this.myWriter = myWriter;
+        }
+
+
         [Fact]
         public void Can_Extract_FullDetail_From_Zip()
         {
@@ -172,9 +183,8 @@ namespace ETWAnalyzer_iTest
 
             try
             {
-                var myRequest = (HttpWebRequest)WebRequest.Create(msSymbolServer);
-
-                var response = (HttpWebResponse)myRequest.GetResponse();
+                var client = new HttpClient();
+                var response = client.GetAsync(msSymbolServer).Result;
 
                 if (response.StatusCode == HttpStatusCode.OK)
                 {
@@ -187,16 +197,17 @@ namespace ETWAnalyzer_iTest
                 {
                     //  well, at least it returned...
                     Debug.Write(string.Format("{0} Returned, but with status: {1}",
-                        msSymbolServer, response.StatusDescription));
+                        msSymbolServer, response.StatusCode));
                 }
 
+                myWriter.WriteLine("Symbol server is reachable");
                 return true;
             }
             catch (Exception ex)
             {
                 //  not available at all, for some reason
                 Debug.Write(string.Format("{0} unavailable: {1}", msSymbolServer, ex.Message));
-
+                myWriter.WriteLine("Symbol server is not reachable. Test runs only partially.");
                 return false;
             }
 
