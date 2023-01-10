@@ -95,45 +95,48 @@ jobs:
         - name: Get .NET Information
           run: dotnet --info
 
-
-                
-        # Execute all unit tests in the solution
-        - name: Execute unit tests
-          run: |
-            dotnet test /nodeReuse:false -m:1 -p:ParallelizeTestCollections=false /p:CopyLocalLockFileAssemblies=true --logger GitHubActions --verbosity detailed --settings Test.runsettings --diag:log.txt --collect:"XPlat Code Coverage" --results-directory ./ults --logger trx
-        
-        # install dotnet ReportGenerator
-        #- name: Install ReportGenerator
-        #  if: always()
-        #  run: dotnet tool install --global dotnet-reportgenerator-globaltool
-
-        # generate reports using ReportGenerator into dir: coveragereport/**.html
-        #- name: Generate test coverage report with ReportGenerator
-        #  if: always()
-        #  run: |
-        #    pwd
-        #    reportgenerator "-reports:**/TestResults/**/coverage.cobertura.xml" "-targetdir:coveragereport" -reporttypes:html
-
-        #- name: Create report directoryTests
-        #  run: |
-        #    pwd
-        #   mkdir tests
-        #    mkdir tests/reportCodeCoverage
+        - name: Build Release
+          run: dotnet build -c Release
 
         # Stop Profiling
         - name: Stop Profiling
           run: |
             $stopTime = [System.Diagnostics.Stopwatch]::GetTimestamp()
-            $startStr = {{ env.ProfilingStartTime }}
+            $startStr = ${{ env.ProfilingStartTime }}
             echo StartStr $startStr
             $startTime = [System.Int64]::Parse($startStr)
             $runtimeMs = [System.TimeSpan]::FromTicks($stopTime-$startTime).TotalMilliseconds.ToString("F0")
             $date = Get-Date -format "yyyyMMdd-HHmmss"
-            $fileName = "ProfilingData\BuildProfiling_$($runtimeMs)ms$($env:ComputerName).$(date).etl"
+            $fileName = "ProfilingData\BuildProfiling_$($runtimeMs)ms$($env:ComputerName).$($date).etl"
             mkdir ProfilingData
             mkdir Extract
             wpr -stop $fileName -skipPdbGen
-            .\bin\Debug\net6.0-windows\win-x64\ETWAnalyzer -extract all -fd ProfilingData\$fileName -outdir Extract
+            .\bin\Release\net6.0-windows\win-x64\ETWAnalyzer -extract all -fd $fileName -outdir Extract 
+           
+        # Start Test Profilng
+        - name: Start Test Profiling 
+          run: |
+               $startTime = [System.Diagnostics.Stopwatch]::GetTimestamp()
+               "ProfilingStartTime=$startTime" >> $env:GITHUB_ENV
+               wpr -start MultiProfile.wprp!CSwitch -start MultiProfile.wprp!File -filemode
+               
+        # Execute all unit tests in the solution
+        - name: Execute unit tests
+          run: |
+            dotnet test /nodeReuse:false -m:1 -p:ParallelizeTestCollections=false /p:CopyLocalLockFileAssemblies=true --logger GitHubActions --verbosity detailed --settings Test.runsettings --diag:log.txt --collect:"XPlat Code Coverage" --results-directory ./ults --logger trx
+        
+        # Stop Profiling
+        - name: Stop Test Profiling
+          run: |
+            $stopTime = [System.Diagnostics.Stopwatch]::GetTimestamp()
+            $startStr = ${{ env.ProfilingStartTime }}
+            echo StartStr $startStr
+            $startTime = [System.Int64]::Parse($startStr)
+            $runtimeMs = [System.TimeSpan]::FromTicks($stopTime-$startTime).TotalMilliseconds.ToString("F0")
+            $date = Get-Date -format "yyyyMMdd-HHmmss"
+            $fileName = "ProfilingData\TestExecution_$($runtimeMs)ms$($env:ComputerName).$($date).etl"
+            wpr -stop $fileName -skipPdbGen
+            .\bin\Release\net6.0-windows\win-x64\ETWAnalyzer -extract all -fd $fileName -outdir Extract
             
         - name: Upload Profiling Data
           uses: actions/upload-artifact@v3
@@ -151,11 +154,6 @@ jobs:
             retention-days: 90
           if: always()
 
-
-
-        #- name: Copy files from directory ./coveragereport to report
-        #  run: cp coveragereport/* tests/reportCodeCoverage
-
         - name: Upload as Artifact of Successful Test Results Reports + Code Coverage
           env:
             Solution_Name: ./tests
@@ -167,8 +165,4 @@ jobs:
             retention-days: 90
           if: always()
           
-        # Restore the application to populate the obj folder with RuntimeIdentifiers
-        - name: Restore the application
-          run: msbuild $env:Solution_Name /t:Restore /p:Configuration=$env:Configuration
-          env:
-            Configuration: ${{ matrix.configuration }}
+
