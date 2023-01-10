@@ -102,6 +102,22 @@ jobs:
           run: |
             dotnet test /nodeReuse:false -m:1 -p:ParallelizeTestCollections=false /p:CopyLocalLockFileAssemblies=true --logger GitHubActions --verbosity detailed --settings Test.runsettings --diag:log.txt --collect:"XPlat Code Coverage" --results-directory ./ults --logger trx
         
+        # Stop Profiling
+        - name: Stop Profiling
+          run: |
+            $stopTime = [System.Diagnostics.Stopwatch]::GetTimestamp()
+            $startStr = ${{ env.ProfilingStartTime }}
+            echo StartStr $startStr
+            $startTime = [System.Int64]::Parse($startStr)
+            $runtimeMs = [System.TimeSpan]::FromTicks($stopTime-$startTime).TotalMilliseconds.ToString("F0")
+            $date = Get-Date -format "yyyyMMdd-HHmmss"
+            $fileName = "ProfilingData\BuildProfiling_$($runtimeMs)ms$($env:ComputerName).$(date).etl"
+            mkdir ProfilingData
+            mkdir Extract
+            wpr -stop $fileName -skipPdbGen
+            .\bin\Debug\net6.0-windows\win-x64\ETWAnalyzer -extract all -fd ProfilingData\$fileName -outdir Extract
+
+
         # install dotnet ReportGenerator
         #- name: Install ReportGenerator
         #  if: always()
@@ -120,20 +136,6 @@ jobs:
         #   mkdir tests
         #    mkdir tests/reportCodeCoverage
 
-        # Stop Profiling
-        - name: Stop Profiling
-          run: |
-            $stopTime = [System.Diagnostics.Stopwatch]::GetTimestamp()
-            $startStr = {{ env.ProfilingStartTime }}
-            echo StartStr $startStr
-            $startTime = [System.Int64]::Parse($startStr)
-            $runtimeMs = [System.TimeSpan]::FromTicks($stopTime-$startTime).TotalMilliseconds.ToString("F0")
-            $date = Get-Date -format "yyyyMMdd-HHmmss"
-            $fileName = "ProfilingData\BuildProfiling_$($runtimeMs)ms$($env:ComputerName).$(date).etl"
-            mkdir ProfilingData
-            mkdir Extract
-            wpr -stop $fileName -skipPdbGen
-            .\bin\Debug\net6.0-windows\win-x64\ETWAnalyzer -extract all -fd ProfilingData\$fileName -outdir Extract
             
         - name: Upload Profiling Data
           uses: actions/upload-artifact@v3
