@@ -62,13 +62,10 @@ jobs:
             Solution_Name: ETWAnalyzer.sln
 
         steps:
-        - name: SetProfilingFileName
+        - name: GetStartTime
           run: |
-            $date = Get-Date -format "yyyyMMdd-HHmmss"
-            $ComputerName = $env:computername; 
-            $fileName = "BuildProfiling_0ms$($env:ComputerName).$date"
-            echo $filename
-            "ProfilingBaseName=$fileName" >> $env:GITHUB_ENV
+            $startTime = [System.Diagnostics.Stopwatch]::GetTimestamp()
+            "ProfilingStartTime=$startTime" >> $env:GITHUB_ENV
           shell: powershell
           
        
@@ -126,10 +123,15 @@ jobs:
         # Stop Profiling
         - name: Stop Profiling
           run: |
+            $stopTime = [System.Diagnostics.Stopwatch]::GetTimestamp()
+            $startTime = [System.Int64]::Parse({{ env.ProfilingStartTime }})
+            $runtimeMs = [System.TimeSpan]::FromTicks($stopTime-$startTime).TotalMilliseconds.ToString("F0")
+            $date = Get-Date -format "yyyyMMdd-HHmmss"
+            $fileName = "ProfilingData\BuildProfiling_$($runtimeMs)ms$($env:ComputerName).$(date).etl"
             mkdir ProfilingData
             mkdir Extract
-            wpr -stop ProfilingData/${{ env.ProfilingBaseName }}.etl -skipPdbGen
-            .\bin\Debug\net6.0-windows\win-x64\ETWAnalyzer -extract all -fd ProfilingData -outdir Extract
+            wpr -stop $fileName -skipPdbGen
+            .\bin\Debug\net6.0-windows\win-x64\ETWAnalyzer -extract all -fd ProfilingData\$fileName -outdir Extract
             
         - name: Upload Profiling Data
           uses: actions/upload-artifact@v3
