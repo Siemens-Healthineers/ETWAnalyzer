@@ -95,13 +95,6 @@ jobs:
         - name: Get .NET Information
           run: dotnet --info
 
-
-                
-        # Execute all unit tests in the solution
-        - name: Execute unit tests
-          run: |
-            dotnet test /nodeReuse:false -m:1 -p:ParallelizeTestCollections=false /p:CopyLocalLockFileAssemblies=true --logger GitHubActions --verbosity detailed --settings Test.runsettings --diag:log.txt --collect:"XPlat Code Coverage" --results-directory ./ults --logger trx
-        
         # Stop Profiling
         - name: Stop Profiling
           run: |
@@ -111,11 +104,18 @@ jobs:
             $startTime = [System.Int64]::Parse($startStr)
             $runtimeMs = [System.TimeSpan]::FromTicks($stopTime-$startTime).TotalMilliseconds.ToString("F0")
             $date = Get-Date -format "yyyyMMdd-HHmmss"
-            $fileName = "ProfilingData\BuildProfiling_$($runtimeMs)ms$($env:ComputerName).$(date).etl"
+            $fileName = "ProfilingData\BuildProfiling_$($runtimeMs)ms$($env:ComputerName).$($date).etl"
             mkdir ProfilingData
             mkdir Extract
             wpr -stop $fileName -skipPdbGen
-            .\bin\Debug\net6.0-windows\win-x64\ETWAnalyzer -extract all -fd ProfilingData\$fileName -outdir Extract
+            .\bin\Debug\net6.0-windows\win-x64\ETWAnalyzer -extract all -fd $fileName -outdir Extract
+                
+        # Execute all unit tests in the solution
+        - name: Execute unit tests
+          run: |
+            dotnet test /nodeReuse:false -m:1 -p:ParallelizeTestCollections=false /p:CopyLocalLockFileAssemblies=true --logger GitHubActions --verbosity detailed --settings Test.runsettings --diag:log.txt --collect:"XPlat Code Coverage" --results-directory ./ults --logger trx
+        
+
 
 
         # install dotnet ReportGenerator
