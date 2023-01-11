@@ -261,13 +261,13 @@ namespace ETWAnalyzer.LoadSymbol
 #endif
 
                         // Merge resolved method which can contain several samples
-                        existing.FirstOccurenceInSecond = Math.Min(existing.FirstOccurenceInSecond, cost.FirstOccurenceInSecond);
-                        existing.LastOccurenceInSecond = Math.Max(existing.LastOccurenceInSecond, cost.LastOccurenceInSecond);
-                        existing.DepthFromBottom = Math.Max(existing.DepthFromBottom, cost.DepthFromBottom);
-                        existing.ReadyMs += cost.ReadyMs;
-                        existing.CPUMs += cost.CPUMs;
-                        existing.WaitMs += cost.WaitMs;
-                        existing.Threads += cost.Threads;
+                        existing.FirstOccurenceInSecond = Math.Min(existing.FirstOccurenceInSecond, cost.FirstOccurenceInSecond);  // This is exact
+                        existing.LastOccurenceInSecond = Math.Max(existing.LastOccurenceInSecond, cost.LastOccurenceInSecond);     // This is exact
+                        existing.DepthFromBottom = Math.Max(existing.DepthFromBottom, cost.DepthFromBottom);                       // Should work reasonably well
+                        existing.ReadyMs += cost.ReadyMs;  // Sum across all threads. May resolve much higher Ready times because we sum overlapping time ranges with this which is prevented during normal lookup.
+                        existing.CPUMs += cost.CPUMs;      // This is exact
+                        existing.WaitMs += cost.WaitMs;    // Sum across all threads. May resolve much higher thread times because we sum overlapping time ranges with this which is prevented during normal lookup.
+                        existing.Threads += cost.Threads;  // May overestimate thread count if multiple entries per method are present we can get multiples of the actual thread count.
                     }
                     else
                     {
