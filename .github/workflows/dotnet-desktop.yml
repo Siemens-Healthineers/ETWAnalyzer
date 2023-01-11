@@ -74,11 +74,20 @@ jobs:
             "ProfilingStartTime=$startTime" >> $env:GITHUB_ENV
           shell: powershell
 
+        # Download custom wpr Profile
+        - name: Download and patch custom recording profile
+          run: |
+                curl https://raw.githubusercontent.com/Alois-xx/FileWriter/master/MultiProfile.wprp > MultiProfile.wprp
+                # We need to remove the Strict="true" attribute in profile because in Azure some CPU counters 
+                # are already monitored and wpr will complain even if we do not use a CPU counter recording profile. This is a bug in wpr.
+                $var=(Get-Content -path MultiProfile.wprp -Raw);
+                $replaced=$var.Replace('Strict="true"','');
+                Write-Host $replaced
+                Set-Content -Value $replaced -Path MultiProfile.wprp
+
         # Start Profilng
         - name: Start Profiling 
           run: |
-                curl https://raw.githubusercontent.com/Alois-xx/FileWriter/master/MultiProfile.wprp > MultiProfile.wprp
-                powerShell -NoProfile -ExecutionPolicy Bypass ${{github.workspace}}\BuildScripts\RemoveStrict.ps1 -InputFile MultiProfile.wprp
                 wpr -start MultiProfile.wprp!CSwitch -start MultiProfile.wprp!File -filemode
                 
         # Install the .NET Core workload
