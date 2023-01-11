@@ -89,26 +89,38 @@ namespace ETWAnalyzer.Extractors
             List<string> outputFiles = new();
 
             // overwrite any previous result in case we use a new extractor with changed functionality
-            
-            if (extract.FileIO != null)
-            {
-                using var fileIOStream = GetOutputStreamFor(outputFile, FileIOPostFix, outputFiles);
-                Serialize<FileIOData>(fileIOStream, extract.FileIO);
-                extract.FileIO = null;
+            { 
+                if (extract.FileIO != null)
+                {
+                    using var fileIOStream = GetOutputStreamFor(outputFile, FileIOPostFix, outputFiles);
+                    Serialize<FileIOData>(fileIOStream, extract.FileIO);
+                    extract.FileIO = null;
+                }
+                if (extract.Modules != null)
+                {
+                    using var moduleStream = GetOutputStreamFor(outputFile, ModulesPostFix, outputFiles);
+                    Serialize<ModuleContainer>(moduleStream, extract.Modules);
+                    extract.Modules = null;
+                }
+
+                // After all externalized data was removed serialize data to main extract file.
+
+                using var mainfileStream = GetOutputStreamFor(outputFile, null, outputFiles);
+                Serialize<ETWExtract>(mainfileStream, extract);
+
+                outputFiles.Reverse(); // first file is the main file which is printed to console 
             }
-            if( extract.Modules != null)
+
+            // Set the Modify DateTime of extract to ETW session start so we can later easily sort tests by file time
+            DateTime fileTime = extract.SessionStart.LocalDateTime;
+            if (fileTime.Year > 1 )
             {
-                using var moduleStream = GetOutputStreamFor(outputFile, ModulesPostFix, outputFiles);
-                Serialize<ModuleContainer>(moduleStream, extract.Modules);
-                extract.Modules = null;
+                foreach (var file in outputFiles)
+                {
+                    File.SetLastWriteTime(file, fileTime);
+                }
             }
 
-            // After all externalized data was removed serialize data to main extract file.
-
-            using var mainfileStream = GetOutputStreamFor(outputFile, null, outputFiles);
-            Serialize<ETWExtract>(mainfileStream, extract);
-
-            outputFiles.Reverse(); // first file is the main file which is printed to console 
             return outputFiles;
         }
 

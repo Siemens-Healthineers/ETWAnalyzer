@@ -4,6 +4,7 @@
 using ETWAnalyzer;
 using ETWAnalyzer.Extract;
 using ETWAnalyzer.Extract.Exceptions;
+using ETWAnalyzer.Extract.Modules;
 using ETWAnalyzer.Extractors;
 using ETWAnalyzer.Helper;
 using ETWAnalyzer_iTest;
@@ -11,12 +12,17 @@ using ETWAnalyzer_uTest;
 using ETWAnalyzer_uTest.TestInfrastructure;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net;
+using System.Net.Http;
+using System.Security.Policy;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
+using Xunit.Abstractions;
 using static ETWAnalyzer.Extract.CPUPerProcessMethodList;
 
 namespace ETWAnalyzer_iTest
@@ -26,11 +32,15 @@ namespace ETWAnalyzer_iTest
     /// </summary>
     public class ProgramTestsLong
     {
-        string GetExtractFile(ITempOutput outDir, string inputFile)
+
+        private ITestOutputHelper myWriter;
+
+        public ProgramTestsLong(ITestOutputHelper myWriter)
         {
-            string outFile = Path.Combine(outDir.Name, Path.GetFileNameWithoutExtension(inputFile) + ".json");
-            return outFile;
+            this.myWriter = myWriter;
         }
+
+
         [Fact]
         public void Can_Extract_FullDetail_From_Zip()
         {
@@ -46,11 +56,11 @@ namespace ETWAnalyzer_iTest
 
             // Check Folder
             DirectoryInfo directoryInfo = new(tmp.Name);
-            Assert.Equal(2, directoryInfo.GetFiles().Length);
+            Assert.Equal(3, directoryInfo.GetFiles().Length);
 
             // Check JsonFiles
             string[] extractJsonFiles =  Directory.GetFiles(Path.GetDirectoryName(outFile), "*"+TestRun.ExtractExtension);
-            Assert.Single(extractJsonFiles);
+            Assert.Equal(2, extractJsonFiles.Length);
             Assert.Contains(outFile, extractJsonFiles);
         }
         [Fact]
@@ -69,12 +79,12 @@ namespace ETWAnalyzer_iTest
 
             // Check Folder
             DirectoryInfo directoryInfo = new(tmp.Name);
-            Assert.Equal(3,directoryInfo.GetFiles().Length);
+            Assert.Equal(4,directoryInfo.GetFiles().Length);
             Assert.Empty(directoryInfo.GetDirectories());
 
             // Check JsonFiles
             string[] extractJsonFiles = Directory.GetFiles(Path.GetDirectoryName(outFile), "*" + TestRun.ExtractExtension);
-            Assert.Single(extractJsonFiles);
+            Assert.Equal(2, extractJsonFiles.Length);
             Assert.Contains(outFile, extractJsonFiles);
         }
 
@@ -94,13 +104,13 @@ namespace ETWAnalyzer_iTest
 
             // Check Folder
             DirectoryInfo directoryInfo = new(tmp.Name);
-            Assert.Single(directoryInfo.GetFiles());
+            Assert.Equal(2, directoryInfo.GetFiles().Length);
 
             // Check JsonFiles
             directoryInfo = new DirectoryInfo(Path.GetDirectoryName(outFile));
             string[] files = directoryInfo.GetFiles("*.json", SearchOption.AllDirectories).Select(x=>x.FullName).ToArray();
 
-            Assert.Single(files);
+            Assert.Equal(2, files.Length);
             Assert.Contains(Path.Combine(tmp.Name, Path.GetFileNameWithoutExtension(TestData.ServerEtlFile)) + TestRun.ExtractExtension, files);
 
             Assert.True(fileInfo.Exists, $"Output file {outFile} was not created");
@@ -127,11 +137,11 @@ namespace ETWAnalyzer_iTest
 
             // Check Folder
             DirectoryInfo directoryInfo = new(tmp.Name);
-            Assert.Equal(4, directoryInfo.GetFiles().Length);
+            Assert.Equal(6, directoryInfo.GetFiles().Length);
 
             // Check JsonFiles
             directoryInfo = new DirectoryInfo(Path.GetDirectoryName(outFile1));
-            Assert.Equal(2, directoryInfo.GetFiles("*.json").Length);
+            Assert.Equal(4, directoryInfo.GetFiles("*.json").Length);
 
             Assert.True(fileInfo1.Exists, $"Output file {outFile1} was not created");
             Assert.True(fileInfo1.Length > 0, $"File {outFile1} has no content");
@@ -164,6 +174,193 @@ namespace ETWAnalyzer_iTest
             var extractedServer = ExtractSerializer.Deserialize<ETWExtract>(extractStream);
 
             CheckServerExtract(extractedServer, etractServerJson);
+        }
+
+
+        bool IsSymbolServerReachable()
+        {
+            string msSymbolServer = "https://msdl.microsoft.com/download/symbols";
+
+            try
+            {
+                var client = new HttpClient();
+                var response = client.GetAsync(msSymbolServer).Result;
+
+                if (response.StatusCode == HttpStatusCode.OK)
+                {
+                    //  it's at least in some way responsive
+                    //  but may be internally broken
+                    //  as you could find out if you called one of the methods for real
+                    Debug.Write(string.Format("{0} Available", msSymbolServer));
+                }
+                else
+                {
+                    //  well, at least it returned...
+                    Debug.Write(string.Format("{0} Returned, but with status: {1}",
+                        msSymbolServer, response.StatusCode));
+                }
+
+                myWriter.WriteLine("Symbol server is reachable");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                //  not available at all, for some reason
+                Debug.Write(string.Format("{0} unavailable: {1}", msSymbolServer, ex.Message));
+                myWriter.WriteLine("Symbol server is not reachable. Test runs only partially.");
+                return false;
+            }
+
+        }
+
+        /// <summary>
+        /// To speed up symbol loading from symbol server we resolve only symbols for dwmredir
+        /// </summary>
+        /// <param name="extract"></param>
+        ETWExtract RemoveUnresolvedSymbolsExceptForDwmRedir(IETWExtract extract)
+        {
+            var mod = extract.Modules; // touch it to force reading file
+            ETWExtract ex = (ETWExtract)extract;
+            ex.Modules = (ModuleContainer) mod; // set to actual property
+
+            var dwmredir = new PdbIdentifier("dwmredir.pdb", new Guid("f5d79b57-f07c-dd7c-cda3-f706954dd179"), 1);
+
+            int pdbIdx = ex.Modules.UnresolvedPdbs.IndexOf(dwmredir);
+            ex.Modules.UnresolvedPdbs = new List<PdbIdentifier> {  dwmredir };
+
+            foreach(var module in ex.Modules.Modules)
+            {
+                module.PdbIdx = module.PdbIdx == (PdbIndex) pdbIdx ? 0 : null;
+            }
+
+            return ex;
+        }
+
+        [Fact]
+        public void Extract_Without_Symbols_And_Then_Resolve_Symbols()
+        {
+            Program.DebugOutput = false;
+            using var tmp = TempDir.Create();
+            string pathName = Path.Combine(tmp.Name, Path.GetFileName(TestData.ServerEtlFile));
+            File.Copy(TestData.ServerEtlFile, pathName);
+
+            Program.MainCore(new string[] { "-extract", "CPU", "-filedir", tmp.Name, "-outdir", tmp.Name, 
+                "-NoOverwrite",
+                "-symFolder", Path.Combine(tmp.Name, "symfolder"),
+                "-symcache",  Path.Combine(tmp.Name, "symcache") });
+
+            string unresolvedJson = GetExtractFile(tmp, TestData.ServerEtlFile);
+
+            // resolve with cached symbols from empty cache. Should change nothing
+            string outDir = Path.Combine(tmp.Name, "Extract1");
+            Directory.CreateDirectory(outDir);
+            Program.MainCore(new string[] { "-LoadSymbol", "-fd", unresolvedJson,
+                                            "-outdir", outDir,
+                                            "-NoOverwrite",
+                                            "-symFolder", Path.Combine(tmp.Name, "symfolder"),
+                                            "-symcache",  Path.Combine(tmp.Name, "symcache") });
+
+            string resolvedJson = GetExtractFile(outDir, unresolvedJson);
+
+            TestDataFile extract1 = new TestDataFile(unresolvedJson);
+            TestDataFile extract2 = new TestDataFile(resolvedJson);
+
+            // When no symbol server was present an no cached symbols we get so many 
+            // unresolved pdbs
+            var unresolvedPdbs = extract1.Extract.Modules.UnresolvedPdbs.Count;
+            Assert.Equal(1856, unresolvedPdbs);
+            Assert.Equal(3691, extract1.Extract.CPU.PerProcessMethodCostsInclusive.MethodNames.Count);
+
+            // We have 12 unresolved symbols
+            Assert.Contains("dwmredir.dll!dwmredir.dll+0x20BB", extract1.Extract.CPU.PerProcessMethodCostsInclusive.MethodNames);
+            Assert.Contains("dwmredir.dll!dwmredir.dll+0x2702", extract1.Extract.CPU.PerProcessMethodCostsInclusive.MethodNames);
+            Assert.Contains("dwmredir.dll!dwmredir.dll+0x2DC1", extract1.Extract.CPU.PerProcessMethodCostsInclusive.MethodNames);
+            Assert.Contains("dwmredir.dll!dwmredir.dll+0x2E70", extract1.Extract.CPU.PerProcessMethodCostsInclusive.MethodNames);
+            Assert.Contains("dwmredir.dll!dwmredir.dll+0x3FF2", extract1.Extract.CPU.PerProcessMethodCostsInclusive.MethodNames);
+            Assert.Contains("dwmredir.dll!dwmredir.dll+0x586F", extract1.Extract.CPU.PerProcessMethodCostsInclusive.MethodNames);
+            Assert.Contains("dwmredir.dll!dwmredir.dll+0x5975", extract1.Extract.CPU.PerProcessMethodCostsInclusive.MethodNames);
+            Assert.Contains("dwmredir.dll!dwmredir.dll+0x5A12", extract1.Extract.CPU.PerProcessMethodCostsInclusive.MethodNames);
+            Assert.Contains("dwmredir.dll!dwmredir.dll+0x92F9", extract1.Extract.CPU.PerProcessMethodCostsInclusive.MethodNames);
+            Assert.Contains("dwmredir.dll!dwmredir.dll+0xAC77", extract1.Extract.CPU.PerProcessMethodCostsInclusive.MethodNames);
+            Assert.Contains("dwmredir.dll!dwmredir.dll+0xADB3", extract1.Extract.CPU.PerProcessMethodCostsInclusive.MethodNames);
+            Assert.Contains("dwmredir.dll!dwmredir.dll+0xBB69", extract1.Extract.CPU.PerProcessMethodCostsInclusive.MethodNames);
+
+            uint totalddwmRedirCPUMs = 0;
+            foreach (var perProcess in extract1.Extract.CPU.PerProcessMethodCostsInclusive.MethodStatsPerProcess)
+            {
+                foreach (var cost in perProcess.Costs.Where(x=>x.Module== "dwmredir.dll"))
+                {
+                    totalddwmRedirCPUMs += cost.CPUMs;
+                }
+
+            }
+            Assert.Equal(284, (int) totalddwmRedirCPUMs);
+
+
+            if (IsSymbolServerReachable())
+            {
+                // Create a changed file to 
+                ExtractSerializer ser = new ExtractSerializer();
+                ser.Serialize(resolvedJson, RemoveUnresolvedSymbolsExceptForDwmRedir(extract2.Extract));
+
+
+                // resolve a second time with more symbols which should lead some more resolved files
+                // this also checks if our pdb index rewrite was correct or if we did make some errors
+                string outDir2 = Path.Combine(tmp.Name, "Extract2");
+                Directory.CreateDirectory(outDir2);
+                Program.MainCore(new string[] { "-LoadSymbol", "-fd", resolvedJson,
+                                            "-outdir", outDir2,
+                                            "-NoOverwrite",
+                                            "-symserver", $"SRV*{Path.Combine(tmp.Name, "MSSymbols")}*https://msdl.microsoft.com/download/symbols"
+                                          });
+
+                string resolvedJson2 = GetExtractFile(outDir2, unresolvedJson);
+
+
+                TestDataFile extract3 = new TestDataFile(resolvedJson2);
+
+                var pdb2 = extract2.Extract.Modules.UnresolvedPdbs.Count;
+                var unresolvedAfterMSSymbols = extract3.Extract.Modules.UnresolvedPdbs.Count;
+
+                Assert.Equal(0, unresolvedAfterMSSymbols);
+                foreach (var module in extract3.Extract.Modules.Modules)
+                {
+                    // when everything was resolved we must not have any indicies left
+                    Assert.True(module.PdbIdx == null);
+                }
+
+                // we must have 4 methods less because we have resolved the, but all other methods must remain
+                Assert.Equal(3687, extract3.Extract.CPU.PerProcessMethodCostsInclusive.MethodNames.Count);
+
+                // which boil down to 8 resolved methods 
+                Assert.Contains("dwmredir.dll!CPortBase::PortThread", extract3.Extract.CPU.PerProcessMethodCostsInclusive.MethodNames);
+                Assert.Contains("dwmredir.dll!CPortBase::PortThreadInternal", extract3.Extract.CPU.PerProcessMethodCostsInclusive.MethodNames);
+                Assert.Contains("dwmredir.dll!CSessionPort::ProcessCommand", extract3.Extract.CPU.PerProcessMethodCostsInclusive.MethodNames);
+                Assert.Contains("dwmredir.dll!CSessionPort::WaitForMultipleObjects", extract3.Extract.CPU.PerProcessMethodCostsInclusive.MethodNames);
+                Assert.Contains("dwmredir.dll!CWindowManager::AsyncFlush", extract3.Extract.CPU.PerProcessMethodCostsInclusive.MethodNames);
+                Assert.Contains("dwmredir.dll!CWindowManager::CaptureSurfaceBits", extract3.Extract.CPU.PerProcessMethodCostsInclusive.MethodNames);
+                Assert.Contains("dwmredir.dll!CWindowManager::ProcessKernelOnlySyncLpc", extract3.Extract.CPU.PerProcessMethodCostsInclusive.MethodNames);
+                Assert.Contains("dwmredir.dll!CWindowManager::ProcessSyncLpc", extract3.Extract.CPU.PerProcessMethodCostsInclusive.MethodNames);
+
+                foreach (var perprocess in extract3.Extract.CPU.PerProcessMethodCostsInclusive.MethodStatsPerProcess)
+                {
+                    foreach (var cost in perprocess.Costs)
+                    {
+                        Assert.NotNull(cost.Method);
+                    }
+                }
+
+                uint resolvedtotalddwmRedirCPUMs = 0;
+                foreach (var perProcess in extract3.Extract.CPU.PerProcessMethodCostsInclusive.MethodStatsPerProcess)
+                {
+                    foreach (var cost in perProcess.Costs.Where(x => x.Module == "dwmredir.dll"))
+                    {
+                        resolvedtotalddwmRedirCPUMs += cost.CPUMs;
+                    }
+
+                }
+                Assert.Equal(284, (int)resolvedtotalddwmRedirCPUMs);
+            }
         }
 
         DateTimeOffset GetTimeUpToSeconds(DateTimeOffset fullprecisionTime)
@@ -289,11 +486,11 @@ namespace ETWAnalyzer_iTest
 
             // Check Folder
             DirectoryInfo directoryInfo = new(tmp.Name);
-            Assert.Equal(4, directoryInfo.GetFiles().Length);
+            Assert.Equal(6, directoryInfo.GetFiles().Length);
 
             // Check JsonFiles
             string[] jsonExtracts = Directory.GetFiles(Path.GetDirectoryName(outFile1), "*"+TestRun.ExtractExtension);
-            Assert.Equal(2, jsonExtracts.Length);
+            Assert.Equal(4, jsonExtracts.Length);
 
             Assert.Contains(outFile1, jsonExtracts);
             Assert.Contains(outFile2, jsonExtracts);
@@ -323,5 +520,17 @@ namespace ETWAnalyzer_iTest
             Assert.True(fileInfo2.Exists, $"Output file {outFile2} was not created");
             Assert.True(fileInfo2.Length > 0, $"File {outFile2} has no content");
         }
+
+        string GetExtractFile(ITempOutput outDir, string inputFile)
+        {
+            return GetExtractFile(outDir.Name, inputFile);
+        }
+
+        string GetExtractFile(string outDir, string inputFile)
+        {
+            string outFile = Path.Combine(outDir, Path.GetFileNameWithoutExtension(inputFile) + ".json");
+            return outFile;
+        }
+
     }
 }

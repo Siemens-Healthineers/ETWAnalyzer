@@ -62,12 +62,34 @@ jobs:
             Solution_Name: ETWAnalyzer.sln
 
         steps:
-        
+       
         - name: Checkout
           uses: actions/checkout@v3
           with:
             fetch-depth: 0
 
+        - name: GetStartTime
+          run: |
+            $startTime = [System.Diagnostics.Stopwatch]::GetTimestamp()
+            "ProfilingStartTime=$startTime" >> $env:GITHUB_ENV
+          shell: powershell
+
+        # Download custom wpr Profile
+        - name: Download and patch custom recording profile
+          run: |
+                curl https://raw.githubusercontent.com/Alois-xx/FileWriter/master/MultiProfile.wprp > MultiProfile.wprp
+                # We need to remove the Strict="true" attribute in profile because in Azure some CPU counters 
+                # are already monitored and wpr will complain even if we do not use a CPU counter recording profile. This is a bug in wpr.
+                $var=(Get-Content -path MultiProfile.wprp -Raw);
+                $replaced=$var.Replace('Strict="true"','');
+                Write-Host $replaced
+                Set-Content -Value $replaced -Path MultiProfile.wprp
+
+        # Start Profilng
+        - name: Start Profiling 
+          run: |
+                wpr -start MultiProfile.wprp!CSwitch -start MultiProfile.wprp!File -filemode
+                
         # Install the .NET Core workload
         - name: Install .NET Core
           uses: actions/setup-dotnet@v3
@@ -82,30 +104,65 @@ jobs:
         - name: Get .NET Information
           run: dotnet --info
 
+        - name: Build Release
+          run: dotnet build -c Release
+
+        # Stop Profiling
+        - name: Stop Profiling
+          run: |
+            $stopTime = [System.Diagnostics.Stopwatch]::GetTimestamp()
+            $startStr = ${{ env.ProfilingStartTime }}
+            echo StartStr $startStr
+            $startTime = [System.Int64]::Parse($startStr)
+            $runtimeMs = [System.TimeSpan]::FromTicks($stopTime-$startTime).TotalMilliseconds.ToString("F0")
+            $date = Get-Date -format "yyyyMMdd-HHmmss"
+            $fileName = "ProfilingData\BuildProfiling_$($runtimeMs)ms$($env:ComputerName).$($date).etl"
+            mkdir ProfilingData
+            mkdir Extract
+            wpr -stop $fileName -skipPdbGen
+            .\bin\Release\net6.0-windows\win-x64\ETWAnalyzer -extract all -fd $fileName -outdir Extract 
+           
+        # Start Test Profilng
+        - name: Start Test Profiling 
+          run: |
+               $startTime = [System.Diagnostics.Stopwatch]::GetTimestamp()
+               "ProfilingStartTime=$startTime" >> $env:GITHUB_ENV
+               wpr -start MultiProfile.wprp!CSwitch -start MultiProfile.wprp!File -filemode
+               
         # Execute all unit tests in the solution
         - name: Execute unit tests
           run: |
-            dotnet test /nodeReuse:false -m:1 -p:ParallelizeTestCollections=false /p:CopyLocalLockFileAssemblies=true --logger GitHubActions --verbosity detailed --settings Test.runsettings --diag:log.txt --collect:"XPlat Code Coverage" --results-directory ./TestResults --logger trx
+            dotnet test /nodeReuse:false -m:1 -p:ParallelizeTestCollections=false /p:CopyLocalLockFileAssemblies=true --logger GitHubActions --verbosity detailed --settings Test.runsettings --diag:log.txt --collect:"XPlat Code Coverage" --results-directory ./ults --logger trx
         
-        # install dotnet ReportGenerator
-        - name: Install ReportGenerator
-          if: always()
-          run: dotnet tool install --global dotnet-reportgenerator-globaltool
-
-        # generate reports using ReportGenerator into dir: coveragereport/**.html
-        - name: Generate test coverage report with ReportGenerator
-          if: always()
+        # Stop Profiling
+        - name: Stop Test Profiling
           run: |
-            pwd
-            reportgenerator "-reports:**/TestResults/**/coverage.cobertura.xml" "-targetdir:coveragereport" -reporttypes:html
+            $stopTime = [System.Diagnostics.Stopwatch]::GetTimestamp()
+            $startStr = ${{ env.ProfilingStartTime }}
+            echo StartStr $startStr
+            $startTime = [System.Int64]::Parse($startStr)
+            $runtimeMs = [System.TimeSpan]::FromTicks($stopTime-$startTime).TotalMilliseconds.ToString("F0")
+            $date = Get-Date -format "yyyyMMdd-HHmmss"
+            "TestRunTimeMs=$($runtimeMs)ms_$($date)" >> $env:GITHUB_ENV
+            $fileName = "ProfilingData\TestExecution_$($runtimeMs)ms$($env:ComputerName).$($date).etl"
+            wpr -stop $fileName -skipPdbGen
+            .\bin\Release\net6.0-windows\win-x64\ETWAnalyzer -extract all -fd $fileName -outdir Extract
+            
+        - name: Upload Profiling Data
+          uses: actions/upload-artifact@v3
+          with:
+            name: ProfilingData_${{ env.TestRunTimeMs }}
+            path: ProfilingData
+            retention-days: 90
+          if: always()
 
-        - name: Create report directoryTests
-          run: |
-            pwd
-            mkdir tests; mkdir tests/reportCodeCoverage
-
-        - name: Copy files from directory ./coveragereport to report
-          run: cp coveragereport/* tests/reportCodeCoverage
+        - name: Upload Profiling Extract Data
+          uses: actions/upload-artifact@v3
+          with:
+            name: Extract_${{ env.TestRunTimeMs }}
+            path: Extract
+            retention-days: 90
+          if: always()
 
         - name: Upload as Artifact of Successful Test Results Reports + Code Coverage
           env:
@@ -118,8 +175,4 @@ jobs:
             retention-days: 90
           if: always()
           
-        # Restore the application to populate the obj folder with RuntimeIdentifiers
-        - name: Restore the application
-          run: msbuild $env:Solution_Name /t:Restore /p:Configuration=$env:Configuration
-          env:
-            Configuration: ${{ matrix.configuration }}
+

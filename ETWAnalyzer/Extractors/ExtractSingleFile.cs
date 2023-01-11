@@ -6,6 +6,7 @@ using ETWAnalyzer.Commands;
 using ETWAnalyzer.Configuration;
 using ETWAnalyzer.Extract;
 using ETWAnalyzer.Extract.FileIO;
+using ETWAnalyzer.Extract.Modules;
 using ETWAnalyzer.Helper;
 using ETWAnalyzer.TraceProcessorHelpers;
 using Microsoft.Windows.EventTracing;
@@ -209,19 +210,11 @@ namespace ETWAnalyzer.Extractors
                 }
                 else
                 {
-                    // when output directory is explicetly set extract to given folder
+                    // when output directory is explicitly set extract to given folder
                     outputJsonFile = Path.Combine(outputDirectory.OutputDirectory, Path.GetFileNameWithoutExtension(myEtlFile) + ".json");
                 }
 
                 outputFiles = SerializeResults(outputJsonFile, myResults);
-
-                // Set the Modify DateTime of extract to ETW session start so we can later easily sort tests by file time
-                DateTime fileTime = myResults.SessionStart.LocalDateTime;
-                foreach (var file in outputFiles)
-                {
-                    File.SetLastWriteTime(file, fileTime);
-                }
-
             }
             finally
             {
@@ -266,6 +259,16 @@ namespace ETWAnalyzer.Extractors
             {
                 if (!pdb.IsLoaded)
                 {
+                    if( myResults.Modules == null )
+                    {
+                        myResults.Modules = new Extract.Modules.ModuleContainer();
+                    }
+
+                    // Store unresolved pdbs in module data to be later able to resolve symbols
+                    // on a different machine from the extracted data.
+                    var pdbIdentifier = new PdbIdentifier(Path.GetFileName(pdb.Path), pdb.Id, pdb.Age);
+                    myResults.Modules.UnresolvedPdbs.Add(pdbIdentifier);
+
                     Logger.Info($"Pdb load failure: {pdb.Id} {pdb.Path}");
                     string notloadedPDBFileName = Path.GetFileName(pdb.Path).ToLowerInvariant();
                     if (requiredPdbs.Contains(notloadedPDBFileName))
@@ -276,6 +279,14 @@ namespace ETWAnalyzer.Extractors
                     }
                 }
             }
+
+            if( myResults?.Modules != null ) // make json readable and binary search enabled
+            {
+                // The sort uses the default comparer which uses the IComparable interface implementation of PdbIdentifier
+                myResults.Modules.UnresolvedPdbs.Sort();
+            }
+
+            
         }
 
         private void LoadSymbolsWithExplicitSymbolPath(string combinedSymbolPath)

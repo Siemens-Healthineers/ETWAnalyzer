@@ -15,19 +15,19 @@ namespace ETWAnalyzer.Commands
     class HelpCommand : ICommand
     {
         private static readonly string HelpString =
-            $"ETWAnalyzer {FileVersionInfo.GetVersionInfo(Process.GetCurrentProcess().MainModule.FileName).FileVersion}" + Environment.NewLine +
-            " ETWAnalyzer [green]-help[/green] [extract, dump, convert or analyze]  Get further information about the specific sub command" + Environment.NewLine +
-            " ETWAnalyzer [green]-extract[/green] [All or CPU Disk File Module Memory Exception Stacktag ThreadPool PMC Dns] -filedir inEtlOrZip [-outDir xxxxx] [-symServer [MS, syngo or NtSymbolPath] [-keepTemp] [-symFolder bbbb]" + Environment.NewLine +
-            " ETWAnalyzer [green]-dump[/green] [Stats,Process,CPU,Memory,Disk,File,ThreadPool,Exception,Mark,TestRun,Version,PMC,LBR,Dns]" + Environment.NewLine +
-            " ETWAnalyzer [green]-convert[/green] -filedir xx.etl -pid dd [-perthread]" + Environment.NewLine +
-            " ETWAnalyzer [green]-analyze[/green] is WIP" + Environment.NewLine +
-            "  -extract   Extract specific aspects from etl files into json files" + Environment.NewLine +
-            "  -dump      Dump previously extracted data from Json files. Some commands additionally support ETL files (e.g. -dump Process)" + Environment.NewLine +
-            "  -convert   Convert from an ETL File a process to a speedscope json file." + Environment.NewLine +
-            "  -analyze   Analyzes for specifics from the previous extract step" + Environment.NewLine +
+           $"ETWAnalyzer {FileVersionInfo.GetVersionInfo(Process.GetCurrentProcess().MainModule.FileName).FileVersion}" + Environment.NewLine +
+            " ETWAnalyzer [green]-help[/green] [Extract, Dump, Convert or LoadSymbol]  Get further information about the specific sub command" + Environment.NewLine +
+            " ETWAnalyzer [green]-Extract[/green] [All or CPU Disk File Module Memory Exception Stacktag ThreadPool PMC Dns] -filedir inEtlOrZip [-outDir xxxxx] [-symServer [MS, syngo or NtSymbolPath] [-keepTemp] [-symFolder bbbb]" + Environment.NewLine +
+            " ETWAnalyzer [green]-LoadSymbol[/green] -filedir xxx.json -symserver ..." + Environment.NewLine +
+            " ETWAnalyzer [green]-Dump[/green] [Stats,Process,CPU,Memory,Disk,File,ThreadPool,Exception,Mark,TestRun,Version,PMC,LBR,Dns]" + Environment.NewLine +
+            " ETWAnalyzer [green]-Convert[/green] -filedir xx.etl -pid dd [-perthread]" + Environment.NewLine +
+            "  -Extract    Extract specific aspects from etl files into json files" + Environment.NewLine +
+            "  -LoadSymbol Resolve method names from an extracted Json file." + Environment.NewLine +
+            "  -Dump       Dump previously extracted data from Json files. Some commands additionally support ETL files (e.g. -dump Process)" + Environment.NewLine +
+            "  -Convert    Convert from an ETL File a process to a speedscope json file." + Environment.NewLine +
             "[yellow]Examples:[/yellow] " + Environment.NewLine +
             "[green]Get more help on specific option[/green]" + Environment.NewLine +
-            "    ETWAnalyzer -help [extract, dump, or convert]" + Environment.NewLine +
+            "    ETWAnalyzer -help [Extract, Dump, Convert or Loadsymbol]" + Environment.NewLine +
             "[green]Extract data from ETL and store it in Json file in extract folder beneath ETL[/green]" + Environment.NewLine +
             "   ETWAnalyzer -extract All -filedir xxx.etl -symserver  NtSymbolPath" + Environment.NewLine +
             "[green]Dump Process start/stop information to console by reading the Json file which was generated in the previous (extract) step.[/green]" + Environment.NewLine +
@@ -79,6 +79,9 @@ namespace ETWAnalyzer.Commands
                         break;
                     case CommandFactory.ConvertArg:
                         Retriever = () => ConvertCommand.HelpString;
+                        break;
+                    case CommandFactory.LoadSymbolArg:
+                        Retriever = () => LoadSymbolCommand.HelpString;
                         break;
                     case ArgParser.NoColorArg:
                         ColorConsole.EnableColor = false;

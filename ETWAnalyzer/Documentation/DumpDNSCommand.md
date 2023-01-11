@@ -28,7 +28,7 @@ To stop call wpr -stop with the output file name.
 - *wpr -stop c:\temp\Network_DNS.etl*
 
 ## Extraction
-Now you can extract Dns data with *-extract Dns* or *-extract All* if you wan to to see everything.
+Now you can extract Dns data with *-extract Dns* or *-extract All* if you want to see everything.
 - *ETWAnalyzer -extract Dns -fd c:\temp\Network_DNS.etl*
 
 ## Usage

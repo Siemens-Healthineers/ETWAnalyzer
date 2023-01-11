@@ -2,6 +2,9 @@
 
 <Tag Name="">
     <Tag Name="Windows">
+        <Tag Name="Trim Working Set">
+            <Entrypoint Module="ntoskrnl.exe" Method="MiTrimWorkingSet*"/>
+        </Tag>
         <Tag Name="Read Ahead into File System Cache">
             <Entrypoint Module="ntoskrnl.exe" Method="CcPerformReadAhead*"/>
         </Tag>

@@ -116,7 +116,17 @@ namespace ETWAnalyzer_uTest
         {
             using var tmp = TempDir.Create();
             string outFile = Path.Combine(tmp.Name, "out.json");
-            ExtractSingleFile.SerializeResults(outFile, new ETWExtract());
+            var sessionStart = new DateTimeOffset(2000, 1, 1, 1, 1, 1, TimeSpan.Zero);
+            ExtractSingleFile.SerializeResults(outFile, new ETWExtract()
+            {
+                SessionStart = sessionStart
+            });
+
+            var fileInfo = new FileInfo(outFile);
+            // During serialization we set the last write time to the ETW session start time
+            // that way we can simply sort all extracted file by write time to locate the relevant recording
+            Assert.Equal(sessionStart, fileInfo.LastWriteTime);
+
             ExtractSerializer.DeserializeFile(outFile);
         }
 

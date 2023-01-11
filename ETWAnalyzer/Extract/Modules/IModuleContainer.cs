@@ -16,5 +16,10 @@ namespace ETWAnalyzer.Extract.Modules
         /// List of loaded modules which contain also the processes which have them loaded. 
         /// </summary>
         IReadOnlyList<ModuleDefinition> Modules { get; }
+
+        /// <summary>
+        /// List of not resolved pdbs during extraction
+        /// </summary>
+        IReadOnlyList<IPdbIdentifier> UnresolvedPdbs { get; }
     }
 }
