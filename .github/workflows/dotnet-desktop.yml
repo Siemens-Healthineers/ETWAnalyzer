@@ -133,7 +133,7 @@ jobs:
             echo StartStr $startStr
             $startTime = [System.Int64]::Parse($startStr)
             $runtimeMs = [System.TimeSpan]::FromTicks($stopTime-$startTime).TotalMilliseconds.ToString("F0")
-            "TestRunTimeMs=$runtimeMsms_$date" >> $env:GITHUB_ENV
+            "TestRunTimeMs=$($runtimeMs)ms_$($date)" >> $env:GITHUB_ENV
             $date = Get-Date -format "yyyyMMdd-HHmmss"
             $fileName = "ProfilingData\TestExecution_$($runtimeMs)ms$($env:ComputerName).$($date).etl"
             wpr -stop $fileName -skipPdbGen
