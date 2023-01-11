@@ -11,7 +11,7 @@ namespace ETWAnalyzer.Extract.Modules
     public interface IPdbIdentifier
     {
         /// <summary>
-        /// Pdb name without path
+        /// Number of PDB recompilations since PDB was created or completely rebuilt
         /// </summary>
         int Age { get;  }
 
@@ -21,7 +21,7 @@ namespace ETWAnalyzer.Extract.Modules
         Guid Id { get; }
 
         /// <summary>
-        /// Number of PDB recompilations since PDB was created or completely rebuilt
+        /// Pdb name without path
         /// </summary>
         string Name { get;  }
     }
