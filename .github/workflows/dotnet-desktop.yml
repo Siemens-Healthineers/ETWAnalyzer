@@ -154,7 +154,6 @@ jobs:
             name: ProfilingData_${{ env.TestRunTimeMs }}
             path: ProfilingData
             retention-days: 90
-          if: always()
 
         - name: Upload Profiling Extract Data
           uses: actions/upload-artifact@v3
@@ -162,7 +161,6 @@ jobs:
             name: Extract_${{ env.TestRunTimeMs }}
             path: Extract
             retention-days: 90
-          if: always()
 
         - name: Upload as Artifact of Successful Test Results Reports + Code Coverage
           env:
