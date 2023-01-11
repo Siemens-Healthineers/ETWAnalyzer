@@ -2,17 +2,9 @@
 using ETWAnalyzer.Extract;
 using ETWAnalyzer.Extract.Modules;
 using ETWAnalyzer.Helper;
-using Microsoft.Diagnostics.Tracing.StackSources;
 using System;
 using System.Collections.Generic;
-using System.Data;
-using System.Diagnostics;
 using System.IO;
-using System.Linq;
-using System.Net;
-using System.Reflection.PortableExecutable;
-using System.Text;
-using System.Threading.Tasks;
 using Xunit;
 
 namespace ETWAnalyzer_uTest.EventDump
