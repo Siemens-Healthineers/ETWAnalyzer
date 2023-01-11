@@ -66,9 +66,9 @@ namespace ETWAnalyzer.Extract
             get
             {
                 string method = Method;
-                return method.IndexOf(".exe+0x") != -1 ||
-                       method.IndexOf(".dll+0x") != -1 ||
-                       method.IndexOf(".sys+0x") != -1;
+                return method.IndexOf(".exe+0x", StringComparison.Ordinal) != -1 ||
+                       method.IndexOf(".dll+0x", StringComparison.Ordinal) != -1 ||
+                       method.IndexOf(".sys+0x", StringComparison.Ordinal) != -1;
             }
         }
 
