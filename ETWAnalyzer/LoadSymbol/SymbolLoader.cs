@@ -253,10 +253,12 @@ namespace ETWAnalyzer.LoadSymbol
 
                     if (resolvedMethods.Contains(currentMethod) && previous.TryGetValue(currentMethod, out MethodCost existing) )
                     {
+#if DEBUG
                         if(Program.DebugOutput)
                         {
                             Console.WriteLine($"Merge {currentMethod}. Add CPU {cost.CPUMs}/{existing.CPUMs} Wait: {cost.WaitMs}/{existing.WaitMs} Ready: {cost.ReadyMs}/{existing.ReadyMs}");
                         }    
+#endif
 
                         // Merge resolved method which can contain several samples
                         existing.FirstOccurenceInSecond = Math.Min(existing.FirstOccurenceInSecond, cost.FirstOccurenceInSecond);
