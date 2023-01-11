@@ -25,7 +25,7 @@ namespace ETWAnalyzer_uTest.EventDump
                    new ETWProcess { ProcessName = "Test.exe", ProcessID = 100 },
                 };
                 ModuleContainer container = new();
-                container.Add(extract, (ETWProcessIndex)0, "C:\\Windows\\1.dll", "File Version of 1.dll", "Product Version of 1.dll", "Product Name of 1.dll", new Version(1, 0, 100, 1), "Description of 1.dll");
+                container.Add(extract, (ETWProcessIndex)0, (PdbIndex)0, "C:\\Windows\\1.dll", "File Version of 1.dll", "Product Version of 1.dll", "Product Name of 1.dll", new Version(1, 0, 100, 1), "Description of 1.dll");
                 extract.Modules = container;
                 dump.WriteToCSV(new List<DumpMemory.Match>
                 {
