@@ -48,6 +48,13 @@ jobs:
         - name: Upload .NET 4.8 Binaries
           uses: actions/upload-artifact@v3
           with:
-            name: Net6Binaries
+            name: Net48Binaries
             path: ${{ github.workspace }}/bin/Release/ETWAnalyzer_Net48.zip
+            retention-days: 90
+
+        - name: Upload Nuget Package
+          uses: actions/upload-artifact@v3
+          with:
+            name: ETWAnalyzer.nupkg
+            path: ${{ github.workspace }}/bin/Release/ETWAnalyzer*.nupkg
             retention-days: 90
