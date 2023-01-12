@@ -1,10 +1,7 @@
 name: Compile and Upload Binaries
 
 on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+  workflow_dispatch
 
 jobs:
 
