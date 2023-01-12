@@ -1,4 +1,4 @@
-name: .NET Core Desktop
+name: Compile and Upload Binaries
 
 on:
   push:
@@ -39,7 +39,7 @@ jobs:
           run: dotnet --info
 
         - name: Build Release
-          run: ./MakeRelease.cmd
+          run: MakeRelease.cmd
             
         - name: Upload .NET 6 Binaries
           uses: actions/upload-artifact@v3
