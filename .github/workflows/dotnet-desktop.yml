@@ -162,15 +162,4 @@ jobs:
             path: Extract
             retention-days: 90
 
-        - name: Upload as Artifact of Successful Test Results Reports + Code Coverage
-          env:
-            Solution_Name: ./tests
-
-          uses: actions/upload-artifact@v3
-          with:
-            name: testresults
-            path: ${{ env. Solution_Name }}
-            retention-days: 90
-          if: always()
-          
 
