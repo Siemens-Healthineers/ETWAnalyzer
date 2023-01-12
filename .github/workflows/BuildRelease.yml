@@ -37,6 +37,8 @@ jobs:
 
         - name: Build Release
           run: MakeRelease.cmd
+          with:
+            path: ${{ env.Solution_Name }}
             
         - name: Upload .NET 6 Binaries
           uses: actions/upload-artifact@v3
