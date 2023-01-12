@@ -36,20 +36,25 @@ jobs:
           run: dotnet --info
 
         - name: Build Release
-          run: MakeRelease.cmd
-          with:
-            path: ${{ env.Solution_Name }}
+          run: ${{ github.workspace }}\ETWAnalyzer\MakeRelease.cmd
             
         - name: Upload .NET 6 Binaries
           uses: actions/upload-artifact@v3
           with:
             name: Net6Binaries
-            path: ../bin/Release/ETWAnalyzer_Net6.zip
+            path: ${{ github.workspace }}/bin/Release/ETWAnalyzer_Net6.zip
             retention-days: 90
 
         - name: Upload .NET 4.8 Binaries
           uses: actions/upload-artifact@v3
           with:
-            name: Net6Binaries
-            path: ../bin/Release/ETWAnalyzer_Net48.zip
+            name: Net48Binaries
+            path: ${{ github.workspace }}/bin/Release/ETWAnalyzer_Net48.zip
+            retention-days: 90
+
+        - name: Upload Nuget Package
+          uses: actions/upload-artifact@v3
+          with:
+            name: ETWAnalyzer.nupkg
+            path: ${{ github.workspace }}/bin/Release/ETWAnalyzer*.nupkg
             retention-days: 90
