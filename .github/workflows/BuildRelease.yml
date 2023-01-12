@@ -36,7 +36,7 @@ jobs:
           run: dotnet --info
 
         - name: Build Release
-          run: ${{ env.Solution_Name }}\MakeRelease.cmd
+          run: ${GITHUB_WORKSPACE}\ETWAnalyzer\MakeRelease.cmd
             
         - name: Upload .NET 6 Binaries
           uses: actions/upload-artifact@v3
