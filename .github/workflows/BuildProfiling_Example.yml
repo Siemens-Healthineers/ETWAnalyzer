@@ -56,7 +56,9 @@ jobs:
             $startTime = [System.Int64]::Parse($startStr)
             $runtimeMs = [System.TimeSpan]::FromTicks($stopTime-$startTime).TotalMilliseconds.ToString("F0")
             $date = Get-Date -format "yyyyMMdd-HHmmss"
-            
+            # store runtime to generate named artifacts
+             "TestRunTimeMs=$($runtimeMs)ms_$($date)" >> $env:GITHUB_ENV
+             
             # construct file name in format which is understood by ETWAnalyzer to later filter by testcase, test duration, ....
             # In general it is wise to add the timing to the file name so it is easier to verify if you are looking at the fast or slow file ... 
             $fileName = "ProfilingData\Build_$($runtimeMs)ms$($env:ComputerName).$($date).etl"
@@ -71,13 +73,13 @@ jobs:
         - name: Upload Profiling Extract Data
           uses: actions/upload-artifact@v3
           with:
-            name: ExtractedETL
+            name: ExtractedETL_${{ env.TestRunTimeMs }}
             path: Extract
             retention-days: 90
 
         - name: Upload Full Profiling Data
           uses: actions/upload-artifact@v3
           with:
-            name: ProfilingETL
+            name: ProfilingETL_${{ env.TestRunTimeMs }}
             path: ProfilingData
             retention-days: 90
