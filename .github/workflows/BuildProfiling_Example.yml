@@ -63,6 +63,9 @@ jobs:
             # In general it is wise to add the timing to the file name so it is easier to verify if you are looking at the fast or slow file ... 
             $fileName = "ProfilingData\Build_$($runtimeMs)ms$($env:ComputerName).$($date).etl"
             
+            mkdir ProfilingData > $null
+            mkdir Extract > $null
+            
              # Stop Profiling and save ETL file. If you are running .NET (4.8 and before) code you need to remove -skipPdbGen to get native image pdbs 
              # If you want to upload the pdb you need to store also the xxx.etl.NGENPDB folder to be able to resolve symbols for legacy .NET Framework applications
              wpr -stop $fileName -skipPdbGen
