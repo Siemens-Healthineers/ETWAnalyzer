@@ -52,7 +52,7 @@ jobs:
                 Write-Host $replaced
                 Set-Content -Value $replaced -Path MultiProfile.wprp
 
-        # Start Profilng
+        # Start Profiling
         - name: Start Profiling 
           run: |
                 # We record into a file to capture everything.
@@ -60,12 +60,6 @@ jobs:
                 # to split longer parts like build and test into separate files which are extracted separately
                 wpr -start MultiProfile.wprp!CSwitch -start MultiProfile.wprp!File -filemode
                 
-        # Install the .NET Core workload
-        - name: Install .NET Core
-          uses: actions/setup-dotnet@v3
-          with:
-            dotnet-version: 6.0.x
-
         # Add  MSBuild to the PATH: https://github.com/microsoft/setup-msbuild
         - name: Setup MSBuild.exe
           uses: microsoft/setup-msbuild@v1.1
@@ -82,7 +76,6 @@ jobs:
           run: |
             $stopTime = [System.Diagnostics.Stopwatch]::GetTimestamp()
             $startStr = ${{ env.ProfilingStartTime }}
-            echo StartStr $startStr
             $startTime = [System.Int64]::Parse($startStr)
             $runtimeMs = [System.TimeSpan]::FromTicks($stopTime-$startTime).TotalMilliseconds.ToString("F0")
             $date = Get-Date -format "yyyyMMdd-HHmmss"
