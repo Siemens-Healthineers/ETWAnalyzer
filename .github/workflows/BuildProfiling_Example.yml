@@ -48,6 +48,8 @@ jobs:
           run: |
                 curl.exe -L  https://github.com/Siemens-Healthineers/ETWAnalyzer/releases/latest/download/ETWAnalyzer2.5.4.0_Net48.zip --output Analyzer.zip
                 Expand-Archive -Path Analyzer.zip -DestinationPath .
+                pwd
+                ETWAnalyzer
 
 
         - name: Stop Profiling And Extract
