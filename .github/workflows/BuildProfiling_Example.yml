@@ -48,9 +48,6 @@ jobs:
           run: |
                 curl.exe -L  https://github.com/Siemens-Healthineers/ETWAnalyzer/releases/latest/download/ETWAnalyzer2.5.4.0_Net48.zip --output Analyzer.zip
                 Expand-Archive -Path Analyzer.zip -DestinationPath .
-                echo $pwd.Path
-                .\ETWAnalyzer
-
 
         - name: Stop Profiling And Extract
           run: |
@@ -66,7 +63,7 @@ jobs:
             $fileName = "ProfilingData\Build_$($runtimeMs)ms$($env:ComputerName).$($date).etl"
             
             # Extracted Json files are put into a sub folder Extract by default. You can override it with -outdir 
-            ETWAnalyzer -extract all -fd $fileName
+            .\ETWAnalyzer -extract all -fd $fileName
             
         - name: Upload Profiling Extract Data
           uses: actions/upload-artifact@v3
