@@ -72,5 +72,12 @@ jobs:
           uses: actions/upload-artifact@v3
           with:
             name: ExtractedETL
-            path: Extract
+            path: ProfilingData\Extract
+            retention-days: 90
+
+        - name: Upload Full Profiling Data
+          uses: actions/upload-artifact@v3
+          with:
+            name: ProfilingETL
+            path: ProfilingData
             retention-days: 90
