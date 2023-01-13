@@ -53,7 +53,6 @@ jobs:
           run: |
             $stopTime = [System.Diagnostics.Stopwatch]::GetTimestamp()
             $startStr = ${{ env.ProfilingStartTime }}
-            echo StartStr $startStr
             $startTime = [System.Int64]::Parse($startStr)
             $runtimeMs = [System.TimeSpan]::FromTicks($stopTime-$startTime).TotalMilliseconds.ToString("F0")
             $date = Get-Date -format "yyyyMMdd-HHmmss"
@@ -62,6 +61,10 @@ jobs:
             # In general it is wise to add the timing to the file name so it is easier to verify if you are looking at the fast or slow file ... 
             $fileName = "ProfilingData\Build_$($runtimeMs)ms$($env:ComputerName).$($date).etl"
             
+             # Stop Profiling and save ETL file. If you are running .NET (4.8 and before) code you need to remove -skipPdbGen to get native image pdbs 
+             # If you want to upload the pdb you need to store also the xxx.etl.NGENPDB folder to be able to resolve symbols for legacy .NET Framework applications
+             wpr -stop $fileName -skipPdbGen
+             
             # Extracted Json files are put into a sub folder Extract by default. You can override it with -outdir 
             .\ETWAnalyzer -extract all -fd $fileName
             
