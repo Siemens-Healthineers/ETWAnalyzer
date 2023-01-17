@@ -113,7 +113,7 @@ namespace ETWAnalyzer.Commands
         "                         -PrintFiles                Print input Json files paths into output" + Environment.NewLine;
         static readonly string CPUHelpString =
         "   CPU      -filedir/fd Extract\\ or xxx.json [-recursive] [-csv xxx.csv] [-NoCSVSeparator] [-ProcessFmt timefmt] [-Methods method1;method2...] [-FirstLastDuration/fld [firsttimefmt] [lasttimefmt]]" + Environment.NewLine +
-        "            [-ThreadCount] [-SortBy [CPU/Wait/CPUWait/CPUWaitReady/StackDepth/First/Last/TestTime] [-StackTags tag1;tag2] [-CutMethod xx-yy] [-ShowOnMethod] [-ShowModuleInfo [Driver]] [-NoCmdLine] [-Clip]" + Environment.NewLine +
+        "            [-ThreadCount] [-SortBy [CPU/Wait/CPUWait/CPUWaitReady/StackDepth/First/Last/TestTime] [-StackTags tag1;tag2] [-CutMethod xx-yy] [-ShowOnMethod] [-ShowModuleInfo [Driver] or [filter]] [-NoCmdLine] [-Clip]" + Environment.NewLine +
         "            [-ShowTotal Total, Process, Method] [-topn dd nn] [-topNMethods dd nn] [-ZeroTime/zt Marker/First/Last/ProcessStart filter] [-ZeroProcessName/zpn filter] " + Environment.NewLine +
         "            [-includeDll] [-includeArgs] [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd] [-MinMaxMsTestTimes xx-yy ...] [-ProcessName/pn xxx.exe(pid)] [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-CmdLine substring]" + Environment.NewLine +
         "            [-ShowFullFileName/-sffn]" + Environment.NewLine +
@@ -129,8 +129,8 @@ namespace ETWAnalyzer.Commands
         "                                                    Warning: The input values are method inclusive times summed across all threads in a process." + Environment.NewLine +
         "                                                             You should filter for specific independent methods/stacktags which are not already included to get meaningful results." + Environment.NewLine +
         "                         -ShowOnMethod              Display process name besides method name without the command line. This allows to see trends in CPU changes over time for a specific method in console output better." + Environment.NewLine +
-        "                         -ShowModuleInfo/smi [Driver] Show exe version or show dll version of each matching method until another dll is show in the printed list. When Driver is specified only module infos of well" + Environment.NewLine +
-        "                                                    known AV and Filter drivers are printed (or written to CSV output). This helps to identify which AV solution is running on that machine." + Environment.NewLine +
+        "                         -ShowModuleInfo/smi [Driver] or [filter] Show exe version or show dll version of each matching method until another dll is show in the printed list. When Driver is specified only module infos of well" + Environment.NewLine +
+        "                                                    known AV and Filter drivers are printed (or written to CSV output). [filter] e.g. *Defender* will match on parts of module (version, name, directory, description)." + Environment.NewLine + "" +
         "                         -MinMaxFirst minS [maxS]   Include methods/stacktags which match the first occurrence in [min, max] in seconds. You can shift time with -ZeroTime. " + Environment.NewLine +
         "                                                    E.g. \"-MinMaxFirst 0 -ZeroTime First Click\" will show all methods after Click." + Environment.NewLine +
         "                         -MinMaxLast  minS [maxS]   Include methods/stacktags which match the last occurrence in [min max] in seconds." + Environment.NewLine +
@@ -165,7 +165,7 @@ namespace ETWAnalyzer.Commands
         "  Memory    -filedir/fd Extract\\ or xxx.json [-recursive] [-csv xxx.csv] [-NoCSVSeparator] [-TopN dd nn] [-TimeFmt s,Local,LocalTime,UTC,UTCTime,Here,HereTime] [-ProcessFmt timefmt] [-TotalMemory] [-MinDiffMB dd] " + Environment.NewLine +
         "                           [-SortBy Commit/WorkingSet/SharedCommit/Diff] [-GlobalDiffMB dd] [-MinWorkingSetMB dd] [-Clip] [-NoCmdLine] " + Environment.NewLine +
         "                           [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd] [-MinMaxMsTestTimes xx-yy ...] [-ProcessName/pn xxx.exe(pid)] [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-CmdLine substring]" + Environment.NewLine +
-        "                           [-ShowFullFileName/-sffn]" + Environment.NewLine +
+        "                           [-ShowFullFileName/-sffn] [-ShowModuleInfo [Driver] or [filter]]" + Environment.NewLine +
         "                         Print memory (Working Set, Committed Memory) of all or some processes from extracted Json files. To get output -extract Memory, All or Default must have been used during extraction." + Environment.NewLine +
         "                         -SortBy Commit/SharedCommit Sort by Committed/Shared Committed (this is are memory mapped files, or page file allocated file mappings). " + Environment.NewLine + "" +
         "                                 WorkingSet/Diff    Sort by working set or committed memory difference" + Environment.NewLine +
@@ -175,7 +175,7 @@ namespace ETWAnalyzer.Commands
         "                         -MinDiffMB    dd           Include processes which have gained inside one Json file more than xx MB of committed memory." + Environment.NewLine +
         "                         -GlobalDiffMB dd           Same as before but the diff is calculated across all incuded Json files." + Environment.NewLine +
         "                         For other options [-recursive] [-csv] [-NoCSVSeparator] [-TimeFmt] [-NoCmdLine] [-TestsPerRun] [-SkipNTests] [-TestRunIndex] [-TestRunCount] [-MinMaxMsTestTimes] [-ProcessName/pn] [-NewProcess] [-CmdLine]" + Environment.NewLine +
-        "                         [-ShowFullFileName] refer to help of TestRun, Process and CPU (-ProcessFmt). Run \'EtwAnalyzer -help dump\' to get more infos." + Environment.NewLine;
+        "                         [-ShowFullFileName] refer to help of TestRun, Process and CPU (-ProcessFmt, -ShowModuleInfo). Run \'EtwAnalyzer -help dump\' to get more infos." + Environment.NewLine;
         static readonly string ExceptionHelpString =
         "  Exception -filedir/fd Extract\\ or xxx.json [-Type xxx] [-Message xxx] [-Showstack] [-MaxMessage dd] [-CutStack dd-yy] [-Stackfilter xxx] [-recursive] [-csv xxx.csv] [-NoCSVSeparator] " + Environment.NewLine +
         "                           [-TimeFmt s,Local,LocalTime,UTC,UTCTime,Here,HereTime] [-ProcessFmt timefmt] [-NoCmdLine] [-Clip] [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd] [-MinMaxMsTestTimes xx-yy ...]" + Environment.NewLine +
@@ -355,6 +355,10 @@ namespace ETWAnalyzer.Commands
         " ETWAnalyzer -dump CPU -fd xxx.json -topN 2 -topNMethods 50" + Environment.NewLine +
         "[green]Show common Antivirus drivers vendors besides module information for all modules for which no symbols could be resolved. The dll/driver name is then the \"method\" name.[/green]" + Environment.NewLine +
         " ETWAnalyzer -dump CPU -fd xxx.json -methods *.dll*;*.sys* -ShowModuleInfo Driver" + Environment.NewLine +
+        "[green]Show CPU consumption of all executables which match *Trend Micro* in module name, path, product name or description." + Environment.NewLine +
+        " ETWAnalyzer -dump CPU -fd xxx.json -smi \"*Trend Micro*\" " + Environment.NewLine +
+        "[green]Show CPU consumption of *Trend Micro* in module name, path, product name or description at method level" + Environment.NewLine +
+        " ETWAnalyzer -dump CPU -fd xxx.json -smi \"*Trend Micro*\" -methods *" + Environment.NewLine +
         "[green]Show all Import methods but skip file methods. Take only last 35 characters of method and show first last occurrence of method in trace time to relate with WPA timeline.[/green]" + Environment.NewLine +
         " ETWAnalyzer -dump CPU -methods *import*;!*file* -CutMethod -35 -fld s" + Environment.NewLine +
         "[green]Show method timings (first and last occurrence in trace) relative to OnClick[/green]" + Environment.NewLine +
@@ -372,6 +376,8 @@ namespace ETWAnalyzer.Commands
         " ETWAnalyzer -dump Memory -filedir C:\\Extract\\TestRuns -TotalMemory -TestRunIndex 100 -TestRunCount 1" + Environment.NewLine +
         "[green]Trace possible leaks across files with a total memory growth of at least 100 MB. Use -CSV to store data.[/green]" + Environment.NewLine +
         " ETWAnalyzer -dump Memory -filedir C:\\Extract\\TestRuns -GlobalDiffMB 100 -TestRunIndex 100 -TestRunCount 1" + Environment.NewLine +
+        "[green]Print memory consumption of all non Microsoft and Windows processes. You can also search for a given path where the executable is located. [/green]" + Environment.NewLine +
+        " ETWAnalyzer -dump memory -fd C:\\Extract\\TestRuns -smi !*Microsoft*;!*Windows*" + Environment.NewLine + 
         "[green]Print top 5 processes having highest diff (diff can be memory growth or loss).[/green]" + Environment.NewLine +
         " ETWAnalyzer -dump Memory -SortBy Diff -TopN 5" + Environment.NewLine;
 
@@ -659,6 +665,7 @@ namespace ETWAnalyzer.Commands
         public bool ShowDetailsOnMethodLine { get; private set; }
         public bool ShowModuleInfo { get; private set; }
         public bool ShowDriversOnly { get; private set; }
+        public KeyValuePair<string, Func<string, bool>> ShowModuleFilter { get; private set; } = new KeyValuePair<string, Func<string, bool>>(null, _ => true);
 
         public bool ThreadCount { get; private set; }
         public bool FirstLastDuration { get; private set; }
@@ -829,8 +836,12 @@ namespace ETWAnalyzer.Commands
                     case "-showmoduleinfo":
                     case "-smi":
                         ShowModuleInfo = true;
-                        string additionalArg = GetNextNonArg("-showmoduleinfo", false);
-                        ShowDriversOnly =  additionalArg?.ToLower() == "driver" ? true : false;
+                        string showModuleInfoArg = GetNextNonArg("-showmoduleinfo", false);
+                        ShowDriversOnly = showModuleInfoArg?.ToLower() == "driver" ? true : false;
+                        if( !ShowDriversOnly )
+                        {
+                            ShowModuleFilter = new KeyValuePair<string, Func<string, bool>>(showModuleInfoArg, Matcher.CreateMatcher(showModuleInfoArg));
+                        }
                         break;
                     case "-testsperrun":
                         this.TestsPerRun = int.Parse(GetNextNonArg("-testsperrun"), CultureInfo.InvariantCulture);
@@ -1432,6 +1443,7 @@ namespace ETWAnalyzer.Commands
                             ShowTotal = ShowTotal,
                             ShowDetailsOnMethodLine = ShowDetailsOnMethodLine,
                             ShowModuleInfo = ShowModuleInfo,
+                            ShowModuleFilter = ShowModuleFilter,
                             ShowDriversOnly = ShowDriversOnly,
                             ZeroTimeMode = ZeroTimeMode,
                             ZeroTimeFilter = ZeroTimeFilter,
@@ -1570,6 +1582,7 @@ namespace ETWAnalyzer.Commands
                             NewProcessFilter = NewProcess,
                             UsePrettyProcessName = UsePrettyProcessName,
                             ShowModuleInfo = ShowModuleInfo,
+                            ShowModuleFilter = ShowModuleFilter,
 
                             TopN = TopN,
                             SortOrder = SortOrder,
@@ -1578,6 +1591,7 @@ namespace ETWAnalyzer.Commands
                             TotalMemory = TotalMemory,
                             MinWorkingSetMB = MinWorkingSetMB,
                             NoCmdLine = NoCmdLine,
+                           
                         };
                         break;
                     case DumpCommands.ThreadPool:
