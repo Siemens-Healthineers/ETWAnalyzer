@@ -121,8 +121,20 @@ namespace ETWAnalyzer.Extractors
             extract.Disk = new DiskIOData();
             DiskLayout currentDisk = new DiskLayout();
 
+           
+
             foreach(IDisk disk in disks)
             {
+                DiskType? type = null;
+                try
+                {
+                    type = disk.Type;
+                }
+                catch(InvalidOperationException)  // Sometimes it throws InvalidOperationException: The item does not have any data. from Microsoft.Windows.EventTracing.Metadata.UnknownDisk.get_Type()
+                {
+                    continue;
+                }
+
                 currentDisk.Type = disk.Type switch
                 {
                     null => DiskTypes.Unknown,
