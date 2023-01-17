@@ -118,7 +118,11 @@ namespace ETWAnalyzer.Infrastructure
 
         static Func<string,bool> CreateFilter(string singleFilter, MatchingMode mode, bool processMatchMode)
         {
-            string[] parts = singleFilter.Split(new char[] { '*' });
+            if( singleFilter == "*")
+            {
+                return (x) => true;
+            }
+
 #pragma warning disable CS8524 // The switch expression does not handle some values of its input type (it is not exhaustive) involving an unnamed enum value.
             var compMode = mode switch
 #pragma warning restore CS8524 // The switch expression does not handle some values of its input type (it is not exhaustive) involving an unnamed enum value.

@@ -24,11 +24,6 @@ namespace ETWAnalyzer.EventDump
     class DumpMemory : DumpFileDirBase<DumpMemory.Match>
     {
         /// <summary>
-        /// Show module file name and version. In cpu total mode also exe version.
-        /// </summary>
-        public bool ShowModuleInfo { get; internal set; }
-
-        /// <summary>
         /// Dump all processes which have N top processes
         /// </summary>
         public SkipTakeRange TopN { get; internal set; }
@@ -49,7 +44,6 @@ namespace ETWAnalyzer.EventDump
         public int MinWorkingSetMB { get; internal set; }
         public DumpCommand.SortOrders SortOrder { get; internal set; }
         public bool NoCmdLine { get; internal set; }
-
 
         public class Match
         {
@@ -187,6 +181,13 @@ namespace ETWAnalyzer.EventDump
                         DiffMb = (long) mem2.CommitInMiB - (long) mem1.CommitInMiB;
                         if ( Math.Abs(DiffMb) >= MinDiffMB)
                         {
+                            ModuleDefinition processModule = ShowModuleInfo ? file.Extract.Modules.FindModule(process.ProcessName, process) : null;
+
+                            if( !IsMatchingModule(processModule))
+                            {
+                                continue;
+                            }
+
                             matches.Add(new Match
                             {
                                 CmdLine = process.CommandLineNoExe,
@@ -205,7 +206,7 @@ namespace ETWAnalyzer.EventDump
                                 TestDurationInMs = (uint)file.DurationInMs,
                                 Machine = file.MachineName,
                                 SessionStart = file.Extract.SessionStart,
-                                Module = ShowModuleInfo ? file.Extract.Modules.Modules.Where(x => x.Processes.Contains(process)).Where(x => x.ModuleName.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)).FirstOrDefault() : null,
+                                Module = processModule
                             }); 
                         }
 
@@ -225,6 +226,13 @@ namespace ETWAnalyzer.EventDump
                 if( !matches.Any( x=> x.Process == process.GetProcessWithId(UsePrettyProcessName) ) &&
                     mem2.CommitInMiB >= (ulong) MinDiffMB)
                 {
+                    ModuleDefinition processModule = ShowModuleInfo ? file.Extract.Modules.FindModule(process.ProcessName, process) : null;
+
+                    if (!IsMatchingModule(processModule))
+                    {
+                        continue;
+                    }
+
                     matches.Add(new Match
                     {
                         CmdLine = process.CommandLineNoExe,
@@ -242,6 +250,7 @@ namespace ETWAnalyzer.EventDump
                         TestDurationInMs = (uint) file.DurationInMs,
                         Machine = file.MachineName,
                         SessionStart = file.Extract.SessionStart,
+                        Module = processModule
                     });
                 }
             }

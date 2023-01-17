@@ -4,6 +4,7 @@
 using ETWAnalyzer.Analyzers;
 using ETWAnalyzer.Analyzers.Infrastructure;
 using ETWAnalyzer.Extract;
+using ETWAnalyzer.Extract.Modules;
 using ETWAnalyzer.Infrastructure;
 using ETWAnalyzer.ProcessTools;
 using ETWAnalyzer.TraceProcessorHelpers;
@@ -47,6 +48,20 @@ namespace ETWAnalyzer.EventDump
 
         public bool NoCSVSeparator { get; internal set; }
 
+        /// <summary>
+        /// Show module file name and version. In cpu total mode also exe version.
+        /// </summary>
+        public bool ShowModuleInfo { get; internal set; }
+
+        /// <summary>
+        /// Module filter result cache because regular expression matching with many time of the same module will be costly
+        /// </summary>
+        Dictionary<ModuleDefinition, bool> myModuleFilterResult = new();
+
+        /// <summary>
+        /// Argument passed after -smi which filters on all properties of displayed modules
+        /// </summary>
+        public KeyValuePair<string, Func<string, bool>> ShowModuleFilter { get; internal set; }
 
         const char CSVSeparator = ';';
         protected string CSVSepStr = new(CSVSeparator, 1);
@@ -585,6 +600,28 @@ namespace ETWAnalyzer.EventDump
             if( lret )
             {
                 lret = CommandLineFilter(proc.CmdLine);
+            }
+
+            return lret;
+        }
+
+        /// <summary>
+        /// Check if module matches curent -smi filter regular expression.
+        /// </summary>
+        /// <param name="module">Module (can be null)</param>
+        /// <returns>true if module matches, false otherwise</returns>
+        protected internal bool IsMatchingModule(ModuleDefinition module)
+        {
+            if (module == null)
+            {
+                return ShowModuleFilter.Key != null ? false : true; // When we have a filter we omit everything which has no module to get rid of not matching output
+            }
+
+            if (!myModuleFilterResult.TryGetValue(module, out bool lret))
+            {
+                string moduleString = GetModuleString(module, true);
+                lret = ShowModuleFilter.Value.Invoke(moduleString);
+                myModuleFilterResult[module] = lret;
             }
 
             return lret;
