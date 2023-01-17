@@ -130,7 +130,7 @@ namespace ETWAnalyzer.Extractors
                 {
                     type = disk.Type;
                 }
-                catch(InvalidOperationException)  // Sometimes it throws InvalidOperationException: The item does not have any data. from Microsoft.Windows.EventTracing.Metadata.UnknownDisk.get_Type()
+                catch(InvalidOperationException)  // When Disk Rundowndata is missing it can throw: InvalidOperationException: The item does not have any data. from Microsoft.Windows.EventTracing.Metadata.UnknownDisk.get_Type()
                 {
                     continue;
                 }

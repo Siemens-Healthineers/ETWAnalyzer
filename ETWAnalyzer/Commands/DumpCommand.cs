@@ -354,7 +354,7 @@ namespace ETWAnalyzer.Commands
         "[green]Get an overview of the first 50 methods of the two processes consuming most CPU in the trace[/green]" + Environment.NewLine +
         " ETWAnalyzer -dump CPU -fd xxx.json -topN 2 -topNMethods 50" + Environment.NewLine +
         "[green]Show common Antivirus drivers vendors besides module information for all modules for which no symbols could be resolved. The dll/driver name is then the \"method\" name.[/green]" + Environment.NewLine +
-        " ETWAnalyzer -dump CPU -fd xxx.json -methods *.dll;*.sys -ShowModuleInfo Driver" + Environment.NewLine +
+        " ETWAnalyzer -dump CPU -fd xxx.json -methods *.dll*;*.sys* -ShowModuleInfo Driver" + Environment.NewLine +
         "[green]Show all Import methods but skip file methods. Take only last 35 characters of method and show first last occurrence of method in trace time to relate with WPA timeline.[/green]" + Environment.NewLine +
         " ETWAnalyzer -dump CPU -methods *import*;!*file* -CutMethod -35 -fld s" + Environment.NewLine +
         "[green]Show method timings (first and last occurrence in trace) relative to OnClick[/green]" + Environment.NewLine +
