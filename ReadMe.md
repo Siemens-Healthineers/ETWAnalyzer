@@ -29,6 +29,9 @@ You want to contribute, miss specific data, or want to add your specific dump co
 ## Data Generation
 There is a sample .wprp profile located at [MultiProfile.wprp](https://github.com/Alois-xx/FileWriter/blob/master/MultiProfile.wprp) to record ETW data in the way ETWAnalyzer likes best. To generate data in automated regression tests see the other example project [https://github.com/Alois-xx/FileWriter](https://github.com/Alois-xx/FileWriter).
 
+## Use Cases
+ - [Build Profiling At Scale At Github](ETWAnalyzer/Documentation/BuildProfiling.md)
+
 ## Data Extraction
 Data extraction is done for one or a directory of ETL files. Zipped ETL files are extracted. By default 75% of all cores are used.
 Normally you would want to use all builtin extractors which include 
@@ -54,7 +57,7 @@ The following command extracts everything, using Microsoft symbols from a single
 
 ![](ETWAnalyzer/Documentation/Images/ExtractionCommand.png "Extract Command")
 The option -AllCPU will include also methods with < 10 ms CPU or Wait time which are normally not relevant for performance regression issues to keep the file size as small as possible. 
-
+You can also extract small Json files without symbol server access and resolve methods later from the Json files. See [Build Profiling At Scale At Github](ETWAnalyzer/Documentation/BuildProfiling.md) for more details.
 There is extracted example data located at [Test Data](https://github.com/Siemens-Healthineers/ETWAnalyzer/blob/main/ETWAnalyzer_uTest/TestData/CallupAdhocWarmReadingCT_3117msFO9DE01T0162PC.20200717-124447.json) which you can query at your own. Can you find the performance bug? The curl command downloads the test data from Github. Then you can start working with the data.
 ```
 curl https://raw.githubusercontent.com/Siemens-Healthineers/ETWAnalyzer/main/ETWAnalyzer_uTest/TestData/CallupAdhocWarmReadingCT_3117msFO9DE01T0162PC.20200717-124447.json > c:\Temp\ETWAnalzyerTest.json

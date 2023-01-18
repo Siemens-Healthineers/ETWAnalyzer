@@ -60,6 +60,21 @@ namespace ETWAnalyzer.Extract.Modules
         Dictionary<ModuleDefinition, ModuleDefinition> myAddedModules = new();
 
         /// <summary>
+        /// Cache 
+        /// </summary>
+        ILookup<string, ModuleDefinition> myModuleLookup;
+
+        /// <summary>
+        /// System process has this const name (and pid 4 but we do not want to rely on that)
+        /// </summary>
+        const string SystemProcessName = "System";
+
+        /// <summary>
+        /// Resolved modules for a process
+        /// </summary>
+        Dictionary<Tuple<ETWProcess,string>, ModuleDefinition> myModuleCache = new();
+
+        /// <summary>
         /// Add a module to the container
         /// </summary>
         /// <param name="extract"></param>
@@ -84,6 +99,43 @@ namespace ETWAnalyzer.Extract.Modules
                 myAddedModules[mod] = mod; // store in dictionary
                 Modules.Add(mod);
             }
+        }
+
+
+        /// <summary>
+        /// Find Module Definition for a loaded module in a process.
+        /// </summary>
+        /// <param name="moduleName">Module name</param>
+        /// <param name="process">Process in which the module is loaded</param>
+        /// <returns>ModuleDefinition when module could be located or null when it could not be found.</returns>
+        public ModuleDefinition FindModule(string moduleName, ETWProcess process)
+        {
+            ModuleDefinition lret = null;
+
+            var key = Tuple.Create(process, moduleName);
+            if (!myModuleCache.TryGetValue(key, out lret))
+            {
+
+                if (myModuleLookup == null)
+                {
+                    myModuleLookup = Modules.ToLookup(x => x.ModuleName);
+                }
+
+                IEnumerable<ModuleDefinition> candidates = myModuleLookup[moduleName];
+                foreach (ModuleDefinition candidate in candidates)
+                {
+                    var matchingProcess = candidate.Processes.FirstOrDefault(x => x.Equals(process) || x.ProcessName == SystemProcessName);
+                    if (matchingProcess != null)
+                    {
+                        lret = candidate;
+                        break;
+                    }
+                }
+
+                myModuleCache[key] = lret;
+            }
+
+            return lret;
         }
     }
 }
