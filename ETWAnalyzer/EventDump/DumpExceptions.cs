@@ -31,7 +31,6 @@ namespace ETWAnalyzer.EventDump
         /// <summary>
         /// Show module file name and version. In cpu total mode also exe version.
         /// </summary>
-        public bool ShowModuleInfo { get; internal set; }
 
         public class MatchData
         {
@@ -183,6 +182,12 @@ namespace ETWAnalyzer.EventDump
 
             foreach (var ex in file.Extract.Exceptions.Exceptions.Where(IsMatchingException))
             {
+                ModuleDefinition exceptionModule = ShowModuleInfo ? file.Extract.Modules.Modules.Where(x => x.Processes.Contains(ex.Process)).Where(x => x.ModuleName.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)).FirstOrDefault() : null;
+
+                if (!IsMatchingModule(exceptionModule))
+                {
+                    continue;
+                }
                 var data = new MatchData
                 {
                     Message = ex.Message,
@@ -196,7 +201,7 @@ namespace ETWAnalyzer.EventDump
                     BaseLine = file.Extract?.MainModuleVersion?.ToString(),
                     SessionStart = file.Extract.SessionStart,
                     ZeroTimeS = zeroTimeS,
-                    Module = ShowModuleInfo ? file.Extract.Modules.Modules.Where(x => x.Processes.Contains(ex.Process)).Where(x => x.ModuleName.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)).FirstOrDefault() : null,
+                    Module = exceptionModule
                 };
 
                 matches.Add(data);
