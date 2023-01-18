@@ -1518,7 +1518,7 @@ namespace ETWAnalyzer.Commands
                             NewProcessFilter = NewProcess,
                             UsePrettyProcessName = UsePrettyProcessName,
 
-                            
+                            ShowModuleInfo = ShowModuleInfo,
                             TypeFilter = TypeFilter,
                             MessageFilter = MessageFilter,
                             StackFilter = StackFilter,

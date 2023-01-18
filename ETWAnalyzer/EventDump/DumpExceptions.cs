@@ -1,22 +1,15 @@
 ﻿//// SPDX-FileCopyrightText:  © 2022 Siemens Healthcare GmbH
 //// SPDX-License-Identifier:   MIT
 
-using ETWAnalyzer.Analyzers;
-using ETWAnalyzer.Analyzers.Infrastructure;
 using ETWAnalyzer.Commands;
 using ETWAnalyzer.Extract;
 using ETWAnalyzer.Extract.Exceptions;
-using ETWAnalyzer.Extractors;
+using ETWAnalyzer.Extract.Modules;
 using ETWAnalyzer.Infrastructure;
 using ETWAnalyzer.ProcessTools;
-using Microsoft.Diagnostics.Tracing.Parsers.FrameworkEventSource;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ETWAnalyzer.EventDump
 {
@@ -34,6 +27,11 @@ namespace ETWAnalyzer.EventDump
         public MinMaxRange<double> MinMaxExTimeS { get; internal set; }
         public int MaxMessage { get; internal set; } = DumpCommand.MaxMessageLength;
         public DumpCommand.SortOrders SortOrder { get; internal set; }
+
+        /// <summary>
+        /// Show module file name and version. In cpu total mode also exe version.
+        /// </summary>
+        public bool ShowModuleInfo { get; internal set; }
 
         public class MatchData
         {
@@ -93,6 +91,9 @@ namespace ETWAnalyzer.EventDump
             /// Baseline version
             /// </summary>
             public string BaseLine { get; internal set; }
+
+            public ModuleDefinition Module { get; internal set; }
+
         }
 
         /// <summary>
@@ -142,12 +143,21 @@ namespace ETWAnalyzer.EventDump
 
         private void WriteToCSVFile(List<MatchData> matches)
         {
-            OpenCSVWithHeader(Col_CSVOptions, Col_Time, "Exception Type", "Message", Col_Process, Col_ProcessName, Col_StartTime, Col_CommandLine, "StackTrace", Col_TestCase, Col_Baseline, "PerformedAt", Col_SourceJsonFile);
+            OpenCSVWithHeader(Col_CSVOptions, Col_Time, "Exception Type", "Message", Col_Process, Col_ProcessName, Col_StartTime, 
+                Col_CommandLine, "StackTrace", Col_TestCase, Col_Baseline, "PerformedAt", Col_SourceJsonFile, 
+                Col_FileVersion, Col_VersionString, Col_ProductVersion, Col_ProductName, Col_Description, Col_Directory);
             foreach(var match in matches)
             {
+                string fileVersion = match.Module?.Fileversion?.ToString()?.Trim() ?? "";
+                string versionString = match.Module?.FileVersionStr?.Trim() ?? "";
+                string productVersion = match.Module?.ProductVersionStr?.Trim() ?? "";
+                string productName = match.Module?.ProductName?.Trim() ?? "";
+                string description = match.Module?.Description?.Trim() ?? "";
+                string directory = match.Module?.ModulePath ?? "";
                 WriteCSVLine(CSVOptions, GetDateTimeString(match.TimeStamp, match.SessionStart, TimeFormatOption), match.Type, match.Message, match.Process.GetProcessWithId(UsePrettyProcessName), 
                     match.Process.GetProcessName(UsePrettyProcessName), match.Process.StartTime,
-                    match.Process.CmdLine, match.Stack, match.TestCase, match.BaseLine, GetDateTimeString(match.PerformedAt), match.SourceFile);
+                    match.Process.CmdLine, match.Stack, match.TestCase, match.BaseLine, GetDateTimeString(match.PerformedAt), match.SourceFile,
+                    fileVersion, versionString, productVersion, productName, description, directory);
             }
         }
 
@@ -186,6 +196,7 @@ namespace ETWAnalyzer.EventDump
                     BaseLine = file.Extract?.MainModuleVersion?.ToString(),
                     SessionStart = file.Extract.SessionStart,
                     ZeroTimeS = zeroTimeS,
+                    Module = ShowModuleInfo ? file.Extract.Modules.Modules.Where(x => x.Processes.Contains(ex.Process)).Where(x => x.ModuleName.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)).FirstOrDefault() : null,
                 };
 
                 matches.Add(data);
@@ -326,7 +337,10 @@ namespace ETWAnalyzer.EventDump
         {
             foreach (var processExceptions in matches.GroupBy(x => x.Process))
             {
+                ModuleDefinition processModule = processExceptions.First().Module;
+                string moduleInfo = processModule!= null ? GetModuleString(processModule, true) : "";
                 ColorConsole.WriteEmbeddedColorLine($"[magenta]{processExceptions.Key.GetProcessWithId(UsePrettyProcessName)} {processExceptions.Key.StartStopTags}[/magenta] {(NoCmdLine ? String.Empty : processExceptions.Key.CommandLineNoExe)}", ConsoleColor.DarkCyan);
+                ColorConsole.WriteEmbeddedColorLine($"[red]{moduleInfo}[/red]");
                 foreach (var byType in processExceptions.GroupBy(x => x.Type))
                 {
                     ColorConsole.WriteLine($"\t{byType.Key}", ConsoleColor.Green);
