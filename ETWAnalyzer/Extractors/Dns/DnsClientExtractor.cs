@@ -84,7 +84,7 @@ namespace ETWAnalyzer.Extractors.Dns
 
         private bool IsValidDnsEvent(IGenericEvent ev)
         {
-            return ev.ProviderId == DnsClientETWConstants.Guid && ev.Process?.ImageName != null;
+            return ev.ProviderId == DnsClientETWConstants.Guid && ev.Process?.ImageName != null && ev.Fields != null;
         }
 
         /// <summary>
