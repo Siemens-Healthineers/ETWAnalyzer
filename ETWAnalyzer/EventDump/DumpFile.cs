@@ -103,7 +103,8 @@ namespace ETWAnalyzer.EventDump
                                   "SetSecurity Count",
                                   "SetSecurity Times",
                                   "File Delete Count",
-                                  "File Rename Count"
+                                  "File Rename Count",
+                                  "File Open Close Time"
                                   );
 
                 foreach (var fileIO in data)
@@ -120,7 +121,8 @@ namespace ETWAnalyzer.EventDump
                                 stats?.SetSecurity?.Times?.Count,
                                 times,
                                 stats?.Delete?.Count,
-                                stats?.Rename?.Count
+                                stats?.Rename?.Count,
+                                stats?.Open.Durationus + stats?.Close.Durationus
                         );
                 }
             }
@@ -374,6 +376,7 @@ namespace ETWAnalyzer.EventDump
                     long fileDeleteCount = 0;
                     long fileRenameCount = 0;
                     FileIOStatistics stats = null;
+                    long fileOpenCloseTimeInus = 0;
 
                     // calculate aggregates
                     foreach (var match in group)
@@ -396,6 +399,7 @@ namespace ETWAnalyzer.EventDump
                             fileSetSecurityCount += (long)    (stats.SetSecurity?.Times?.Count).GetValueOrDefault();
                             fileDeleteCount += (long)         (stats.Delete?.Count).GetValueOrDefault();
                             fileRenameCount += (long)         (stats.Rename?.Count).GetValueOrDefault();
+                            fileOpenCloseTimeInus += (long)   (stats.Open?.Durationus).GetValueOrDefault() + (stats.Close?.Durationus).GetValueOrDefault();
                         }
                     }
 
@@ -423,6 +427,7 @@ namespace ETWAnalyzer.EventDump
                         SourceFileName = String.Join(" ", group.Select(x => x.SourceFileName).ToHashSet().ToArray()),
                         BaseLine = String.Join(",", group.Select(x => x.BaseLine).ToHashSet()),
                         SessionStart = (group.FirstOrDefault()?.SessionStart).GetValueOrDefault(),
+                        FileOpenCloseTimeInus = fileOpenCloseTimeInus,
                     };
 
                    
@@ -619,6 +624,9 @@ namespace ETWAnalyzer.EventDump
                         _ => data.FileWriteMaxFilePos + data.FileWriteMaxFilePos,
                     };
                     break;
+                case SortOrders.OpenCloseTime:
+                    lret = data.FileOpenCloseTimeInus;
+                    break;
                 default:
                     throw new InvalidOperationException($"There should be a sort order. SortOrder was: {SortOrder}. By default SortOrders.Size == SortOrders.Default = 0 so we should never get here.");
             }
@@ -719,6 +727,7 @@ namespace ETWAnalyzer.EventDump
             public long FileSetSecurityCount { get; internal set; }
             public long FileDeleteCount { get; internal set; }
             public long FileRenameCount { get; internal set; }
+            public long FileOpenCloseTimeInus { get; internal set; }
             public DateTimeOffset SessionStart { get; internal set; }
             public int InputFileCountUsedForGrouping { get; internal set; }
         }

@@ -515,6 +515,7 @@ namespace ETWAnalyzer.Commands
             FlushTime,
             TotalSize,
             TotalTime,
+            OpenCloseTime,
         }
 
         /// <summary>
