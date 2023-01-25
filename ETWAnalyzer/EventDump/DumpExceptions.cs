@@ -182,7 +182,7 @@ namespace ETWAnalyzer.EventDump
 
             foreach (var ex in file.Extract.Exceptions.Exceptions.Where(IsMatchingException))
             {
-                ModuleDefinition exceptionModule = ShowModuleInfo ? file.Extract.Modules.Modules.Where(x => x.Processes.Contains(ex.Process)).Where(x => x.ModuleName.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)).FirstOrDefault() : null;
+                ModuleDefinition exceptionModule = ShowModuleInfo ? file.Extract.Modules.FindModule(ex.Process.ProcessName, ex.Process) : null;
 
                 if (!IsMatchingModule(exceptionModule))
                 {
@@ -344,7 +344,7 @@ namespace ETWAnalyzer.EventDump
             {
                 ModuleDefinition processModule = processExceptions.First().Module;
                 string moduleInfo = processModule!= null ? GetModuleString(processModule, true) : "";
-                ColorConsole.WriteEmbeddedColorLine($"[magenta]{processExceptions.Key.GetProcessWithId(UsePrettyProcessName)} {processExceptions.Key.StartStopTags}[/magenta] {(NoCmdLine ? String.Empty : processExceptions.Key.CommandLineNoExe)}", ConsoleColor.DarkCyan);
+                ColorConsole.WriteEmbeddedColorLine($"[magenta]{processExceptions.Key.GetProcessWithId(UsePrettyProcessName)} {processExceptions.Key.StartStopTags}[/magenta] {(NoCmdLine ? String.Empty : processExceptions.Key.CommandLineNoExe)}", ConsoleColor.DarkCyan, true);
                 ColorConsole.WriteEmbeddedColorLine($"[red]{moduleInfo}[/red]");
                 foreach (var byType in processExceptions.GroupBy(x => x.Type))
                 {

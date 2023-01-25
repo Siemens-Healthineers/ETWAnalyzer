@@ -181,7 +181,7 @@ namespace ETWAnalyzer.Commands
         "                           [-TimeFmt s,Local,LocalTime,UTC,UTCTime,Here,HereTime] [-ProcessFmt timefmt] [-NoCmdLine] [-Clip] [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd] [-MinMaxMsTestTimes xx-yy ...]" + Environment.NewLine +
         "                           [-MinMaxExTime minS [maxS]] [-ZeroTime/zt Marker/First/Last/ProcessStart filter] [-ZeroProcessName/zpn filter]" + Environment.NewLine +
         "                           [-ProcessName/pn xxx.exe(pid)] [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-CmdLine substring]" + Environment.NewLine +
-        "                           [-ShowFullFileName/-sffn] [-ShowModuleInfo [Filter]]" + Environment.NewLine +
+        "                           [-ShowFullFileName/-sffn] [-ShowModuleInfo [filter]]" + Environment.NewLine +
         "                         Print Managed Exceptions from extracted Json file. To get output -extract Exception, All or Default must have been used during extraction." + Environment.NewLine +
         "                         Before each message the number how often that exception was thrown is printed. That number also includes rethrows in finally blocks which leads to higher numbers as one might expect!" + Environment.NewLine +
         "                         When a filter (type,message or stack) is used then the exception throw times are also printed." + Environment.NewLine +
@@ -386,7 +386,7 @@ namespace ETWAnalyzer.Commands
         " ETWAnalyzer -dump Exception -filedir xx.json" + Environment.NewLine +
         "[green]Show all exceptions and their throw times by using a filter which matches all exceptions[/green]" + Environment.NewLine +
         " ETWAnalyzer -dump Exception -filedir xx.json -type *exception*" + Environment.NewLine +
-        "[green]Print dump exception for each process and executable version information (version, ...). [/green]" + Environment.NewLine +
+        "[green]Print exception for each process and executable information. [/green]" + Environment.NewLine +
         " ETWAnalyzer -dump Exception -fd C:\\Extract\\TestRuns -smi" + Environment.NewLine +
         "[green]Show call stack of all SQLiteExceptions of one or all extracted files. Use -ProcessName and/or -CmdLine to focus on specific process/es. Use -CSV to store data.[/green]" + Environment.NewLine +
         " ETWAnalyzer -dump Exception -fd xx.json -type *SQLiteException* -ShowStack" + Environment.NewLine +
