@@ -534,7 +534,7 @@ namespace ETWAnalyzer.EventDump
         /// </summary>
         /// <param name="data"></param>
         /// <returns>Value on which data is summed up per grouping which is then used as sort order inside the grouping</returns>
-        decimal GetSortValue(MatchData data)
+        internal decimal GetSortValue(MatchData data)
         {
             decimal lret = 0M;
 
