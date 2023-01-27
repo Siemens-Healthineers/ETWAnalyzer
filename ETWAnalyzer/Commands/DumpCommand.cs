@@ -238,7 +238,7 @@ namespace ETWAnalyzer.Commands
         "                                                    Possible values are " + String.Join(",", Enum.GetNames(typeof(Extract.FileIO.FileIOStatistics.FileOperation)).Where(x => x != "Invalid")) + Environment.NewLine +
         "                                                    Warning: Other columns than the filtered one can be misleading. " + Environment.NewLine +
         "                                                    E.g. if you filter for open, only the files which were opened are showing up in read/write metrics. IO for already opened files is suppressed!" + Environment.NewLine +
-        "                         -SortBy order              Console Output Only. Valid values are: Count (Open+Close+Read+Write+SetSecurity),ReadSize,WriteSize,ReadTime,WriteTime,TotalSize and TotalTime (= Open+Close+Read+Write). Default is TotalTime." + Environment.NewLine +
+        "                         -SortBy order              Console Output Only. Valid values are: Count (Open+Close+Read+Write+SetSecurity),ReadSize,WriteSize,ReadTime,WriteTime,TotalSize; TotalTime (= Open+Close+Read+Write); OpenCloseTime (= Open+Close).  Default is TotalTime." + Environment.NewLine +
         "                         -TopN dd nn                Select top dd files based on current sort order." + Environment.NewLine +
         "                         -MinMax xx-yy              Console Output Only. Filter for rows which have > xx and < yy. The -FileOperation, -SortBy values define on which values it filters." + Environment.NewLine +
         "                                                    You can define filters for time,size,length,count of open/close/read/write/setsecurity operations." + Environment.NewLine +
