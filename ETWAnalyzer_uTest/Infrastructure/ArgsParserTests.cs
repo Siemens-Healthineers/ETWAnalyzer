@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -38,12 +40,14 @@ namespace ETWAnalyzer_uTest.Infrastructure
         [Fact]
         public void DecimalSeparatorIsValid()
         {
+            Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
             Assert.True(ArgParser.IsNumberChar('.'));
         }
 
         [Fact]
         public void ThousandSeparatorIsValid()
         {
+            Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
             Assert.True(ArgParser.IsNumberChar(','));
         }
 
