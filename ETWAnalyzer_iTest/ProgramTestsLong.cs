@@ -158,7 +158,15 @@ namespace ETWAnalyzer_iTest
             string pathName = Path.Combine(tmp.Name, Path.GetFileName(TestData.ServerEtlFile));
             File.Copy(TestData.ServerEtlFile, pathName);
 
-            Program.MainCore(new string[] { "-extract", "Disk", "CPU", "Memory", "Exception","-filedir", tmp.Name,  "-outdir", tmp.Name });
+
+            string[] extractArgs = new string[] { "-extract", "Disk", "CPU", "Memory", "Exception", "-filedir", tmp.Name, "-outdir", tmp.Name };
+                        
+            if (!TestContext.IsInGithubPipeline()) // when we are executed with symbol server access then use it to resolve method names
+            {
+                extractArgs = extractArgs.Concat(new string[] { "-symserver", "MS" }).ToArray();
+            }
+
+            Program.MainCore(extractArgs);
 
             string etractServerJson = GetExtractFile(tmp, TestData.ServerEtlFile);
             var fileInfo1 = new FileInfo(etractServerJson);
