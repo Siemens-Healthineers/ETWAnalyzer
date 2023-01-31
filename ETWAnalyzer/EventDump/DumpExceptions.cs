@@ -30,12 +30,16 @@ namespace ETWAnalyzer.EventDump
         public bool NoCmdLine { get; internal set; }
         public MinMaxRange<double> MinMaxExTimeS { get; internal set; }
         public int MaxMessage { get; internal set; } = DumpCommand.MaxMessageLength;
+
+
+        /// <summary>
+        /// Currently we only support Time as different sort order. 
+        /// </summary>
         public DumpCommand.SortOrders SortOrder { get; internal set; }
 
         /// <summary>
-        /// Show module file name and version. In cpu total mode also exe version.
+        /// By default time is omitted. When you add -ShowTime exception time is printed.
         /// </summary>
-
         public bool ShowTime { get; internal set; }
 
         string myPreviousProcess = null;
@@ -103,6 +107,9 @@ namespace ETWAnalyzer.EventDump
             /// </summary>
             public string BaseLine { get; internal set; }
 
+            /// <summary>
+            /// Show module file name and version. In cpu total mode also exe version.
+            /// </summary>
             public ModuleDefinition Module { get; internal set; }
 
             public MatchData Clone()
@@ -367,12 +374,13 @@ namespace ETWAnalyzer.EventDump
         {
             foreach (var processExceptions in matches.GroupBy(x => x.Process))
             {
-                ModuleDefinition processModule = processExceptions.First().Module;
+                MatchData matchData = processExceptions.First();
+                ModuleDefinition processModule = matchData.Module;
                 string moduleInfo = processModule != null ? GetModuleString(processModule, true) : "";
 
 
-                ColorConsole.WriteEmbeddedColorLine($"[magenta]{processExceptions.Key.GetProcessWithId(UsePrettyProcessName)} {processExceptions.Key.StartStopTags}[/magenta] {(NoCmdLine ? String.Empty : processExceptions.Key.CommandLineNoExe)}", ConsoleColor.DarkCyan, true);
-                ColorConsole.WriteEmbeddedColorLine($"[red]{moduleInfo}[/red]");
+                ColorConsole.WriteEmbeddedColorLine($"[magenta]{processExceptions.Key.GetProcessWithId(UsePrettyProcessName)} {GetProcessTags(processExceptions.Key, matchData.SessionStart.AddSeconds(matchData.ZeroTimeS))}[/magenta] {(NoCmdLine ? String.Empty : processExceptions.Key.CommandLineNoExe)}", ConsoleColor.DarkCyan, true);
+                ColorConsole.WriteEmbeddedColorLine($"[red] {moduleInfo}[/red]");
 
                 foreach (var byType in processExceptions.GroupBy(x => x.Type))
                 {

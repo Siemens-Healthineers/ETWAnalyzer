@@ -196,7 +196,7 @@ namespace ETWAnalyzer.Commands
         "                         -CutStack dd-yy            Remove the first dd lines of the stack. To display all stack frames use \"-CutStack 0-\". Print yy lines or all if -yy is omitted." + Environment.NewLine +
         "                                                    E.g. -CutStack -50 will display the first 50 lines of a stack trace." + Environment.NewLine +
         "                         -SortBy [Time / Default]   Sorts exceptions by time or use default grouping." + Environment.NewLine +
-        "                         -ShowTime                  Show the time of exception (time format is controlled by -TimeFmt flag). By default no time is printed." +Environment.NewLine +
+        "                         -ShowTime                  Show the time of exception when a -Type filter is active. Time format is controlled by -TimeFmt flag. By default no time is printed." +Environment.NewLine +
         "                         For other options [-ZeroTime ..] [-recursive] [-csv] [-NoCSVSeparator] [-TimeFmt] [-NoCmdLine] [-TestsPerRun] [-SkipNTests] [-TestRunIndex] [-TestRunCount] [-MinMaxMsTestTimes] [-ProcessName/pn] " + Environment.NewLine +
         "                         [-NewProcess] [-CmdLine] [-ShowFullFileName] refer to help of TestRun, Process and CPU (-ProcessFmt, -ShowModuleInfo).  Run \'EtwAnalyzer -help dump\' to get more infos." + Environment.NewLine;
 
@@ -356,9 +356,9 @@ namespace ETWAnalyzer.Commands
         " ETWAnalyzer -dump CPU -fd xxx.json -topN 2 -topNMethods 50" + Environment.NewLine +
         "[green]Show common Antivirus drivers vendors besides module information for all modules for which no symbols could be resolved. The dll/driver name is then the \"method\" name.[/green]" + Environment.NewLine +
         " ETWAnalyzer -dump CPU -fd xxx.json -methods *.dll*;*.sys* -ShowModuleInfo Driver" + Environment.NewLine +
-        "[green]Show CPU consumption of all executables which match *Trend Micro* in module name, path, product name or description." + Environment.NewLine +
+        "[green]Show CPU consumption of all executables which match *Trend Micro* in module name, path, product name or description.[/green]" + Environment.NewLine +
         " ETWAnalyzer -dump CPU -fd xxx.json -smi \"*Trend Micro*\" " + Environment.NewLine +
-        "[green]Show CPU consumption of *Trend Micro* in module name, path, product name or description at method level" + Environment.NewLine +
+        "[green]Show CPU consumption of *Trend Micro* in module name, path, product name or description at method level[/green]" + Environment.NewLine +
         " ETWAnalyzer -dump CPU -fd xxx.json -smi \"*Trend Micro*\" -methods *" + Environment.NewLine +
         "[green]Show all Import methods but skip file methods. Take only last 35 characters of method and show first last occurrence of method in trace time to relate with WPA timeline.[/green]" + Environment.NewLine +
         " ETWAnalyzer -dump CPU -methods *import*;!*file* -CutMethod -35 -fld s" + Environment.NewLine +
@@ -391,8 +391,10 @@ namespace ETWAnalyzer.Commands
         " ETWAnalyzer -dump Exception -fd C:\\Extract\\TestRuns -smi" + Environment.NewLine +
         "[green]Show call stack of all SQLiteExceptions of one or all extracted files. Use -ProcessName and/or -CmdLine to focus on specific process/es. Use -CSV to store data.[/green]" + Environment.NewLine +
         " ETWAnalyzer -dump Exception -fd xx.json -type *SQLiteException* -ShowStack" + Environment.NewLine +
+        "[green]Show call stack of all SQLiteExceptions in time appearance. Use -ProcessName and/or -CmdLine to focus on specific process/es. Use -CSV to store data.[/green]" + Environment.NewLine +
+        " ETWAnalyzer -dump Exception -fd xx.json -type *SQLiteException* -sortBy Time" + Environment.NewLine +
         "[green]Show all exception times of all extracted files in current folder in UTC time. Default is Local time of the customer.[/green]" + Environment.NewLine +
-        " ETWAnalyzer -dump Exception -type * -timefmt utc" + Environment.NewLine +
+        " ETWAnalyzer -dump Exception -type * -ShowTime -timefmt utc" + Environment.NewLine +
         "[green]Dump all TimeoutExceptions after the first occurrence of method ShowShutdownWindow and write them to a CSV file.[/green]" + Environment.NewLine +
         " ETWAnalyzer -dump Exception -Type* timeout* -TimeFmt s -ZeroTime First *ShowShutdownWindow* -MinMaxExTime 0 -CSV Exceptions.csv" + Environment.NewLine +
         "[green]Show stacks of all exceptions of all extracted files in current folder. Print process start/stop/duration besides process name.[/green]" + Environment.NewLine +
@@ -1551,8 +1553,11 @@ namespace ETWAnalyzer.Commands
                             CommandLineFilter = CmdLineFilter,
                             NewProcessFilter = NewProcess,
                             UsePrettyProcessName = UsePrettyProcessName,
+                            SortOrder = SortOrder,
+                            ShowModuleInfo = ShowModuleInfo,
+                            ShowModuleFilter = ShowModuleFilter,
 
-                            FilterExceptions = FilterExceptions,
+                            ShowTime  = ShowTime,
                             TypeFilter = TypeFilter,
                             MessageFilter = MessageFilter,
                             StackFilter = StackFilter,
