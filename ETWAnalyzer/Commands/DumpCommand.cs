@@ -195,6 +195,7 @@ namespace ETWAnalyzer.Commands
         "                         -CutStack dd-yy            Remove the first dd lines of the stack. To display all stack frames use \"-CutStack 0-\". Print yy lines or all if -yy is omitted." + Environment.NewLine +
         "                                                    E.g. -CutStack -50 will display the first 50 lines of a stack trace." + Environment.NewLine +
         "                         -SortBy [Time / Default]   Sorts exceptions by time or use default grouping." + Environment.NewLine +
+        "                         -ShowTime                  Show the time of exception (time format is controlled by -TimeFmt flag). By default no time is printed." +Environment.NewLine +
         "                         For other options [-ZeroTime ..] [-recursive] [-csv] [-NoCSVSeparator] [-TimeFmt] [-NoCmdLine] [-TestsPerRun] [-SkipNTests] [-TestRunIndex] [-TestRunCount] [-MinMaxMsTestTimes] [-ProcessName/pn] " + Environment.NewLine +
         "                         [-NewProcess] [-CmdLine] [-ShowFullFileName] refer to help of TestRun, Process and CPU (-ProcessFmt).  Run \'EtwAnalyzer -help dump\' to get more infos." + Environment.NewLine;
 
@@ -620,6 +621,7 @@ namespace ETWAnalyzer.Commands
         public const int MaxMessageLength = 500;
         public int MaxMessage { get; private set;  }  = MaxMessageLength;
         public MinMaxRange<double> MinMaxExTimeS { get; private set; } = new MinMaxRange<double>();
+        public bool ShowTime { get; private set; }
 
         // Dump Process specific Flags
         public bool ShowAllProcesses { get; private set; }
@@ -683,7 +685,7 @@ namespace ETWAnalyzer.Commands
         public Extract.FileIO.FileIOStatistics.FileOperation FileOperation { get; private set; }
 
 
-        // Shared by -dump File and Dns 
+        // Shared by -dump File and Dns
         public bool ShowDetails { get; private set; }
 
         // Dump ThreadPool specific Flags
@@ -1100,6 +1102,9 @@ namespace ETWAnalyzer.Commands
                     case "-showstack":
                     case "-ss":
                         ShowStack = true;
+                        break;
+                    case "-showtime":
+                        ShowTime = true;
                         break;
                     case "-totalmemory":
                     case "-tm":
@@ -1526,6 +1531,7 @@ namespace ETWAnalyzer.Commands
                             ZeroTimeFilter = ZeroTimeFilter,
                             ZeroTimeProcessNameFilter = ZeroTimeProcessNameFilter,
                             SortOrder = SortOrder,
+                            ShowTime = ShowTime,
                         };
                         break;
                     case DumpCommands.Memory:
