@@ -141,14 +141,14 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.3.2" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.4.0" />
     <PackageReference Include="Microsoft.Windows.EventTracing.Processing.All">
-      <Version>1.11.108</Version>
+      <Version>1.11.109</Version>
     </PackageReference>
     <PackageReference Include="Newtonsoft.Json">
-      <Version>13.0.1</Version>
+      <Version>13.0.2</Version>
     </PackageReference>
-    <PackageReference Include="ReportGenerator" Version="5.1.10" />
+    <PackageReference Include="ReportGenerator" Version="5.1.12" />
     <PackageReference Include="xunit">
       <Version>2.4.2</Version>
     </PackageReference>

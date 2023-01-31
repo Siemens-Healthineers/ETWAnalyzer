@@ -65,8 +65,8 @@ namespace ETWAnalyzer.EventDump
 
             if (IsCSVEnabled)
             {
-                OpenCSVWithHeader("CSVOptions", "Directory", "FileName", "Date", "Test Case", "Test Time in ms", "BaseLine", "Process", "ProcessName",
-                                  "Caller", "MethodName", "Count", "Command Line");
+                OpenCSVWithHeader(Col_CSVOptions, "Directory", Col_FileName, Col_Date, Col_TestCase, Col_TestTimeinms, Col_Baseline, Col_Process, 
+                    Col_ProcessName, "Caller", "MethodName", "Count", Col_CommandLine);
 
                 foreach (var lbrEvent in data)
                 {

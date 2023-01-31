@@ -14,6 +14,7 @@ using System.IO;
 using System.Linq;
 using static ETWAnalyzer.Commands.DumpCommand;
 using ETWAnalyzer.TraceProcessorHelpers;
+using System.Text.RegularExpressions;
 
 namespace ETWAnalyzer.EventDump
 {
@@ -69,11 +70,6 @@ namespace ETWAnalyzer.EventDump
         /// Omit command line in console and if configured in CSV output to reduce CSV size which is one of the largest string per line
         /// </summary>
         public bool NoCmdLine { get; internal set; }
-
-        /// <summary>
-        /// Show module file name and version. In cpu total mode also exe version.
-        /// </summary>
-        public bool ShowModuleInfo { get; internal set; }
 
         /// <summary>
         /// Only show info from Configuration\WellKnownDrivers.json
@@ -145,6 +141,7 @@ namespace ETWAnalyzer.EventDump
         public MinMaxRange<double> MinMaxDurationS { get; internal set; } = new MinMaxRange<double>();
 
         
+
         /// <summary>
         /// State flag for CSV output
         /// </summary>
@@ -367,19 +364,12 @@ namespace ETWAnalyzer.EventDump
                         if (ShowModuleInfo && file.Extract.Modules != null )
                         {
                             driver = Drivers.Default.TryGetDriverForModule(methodCost.Module);
-                            module = file.Extract.Modules.Modules.Where(m => m.ModuleName == methodCost.Module && m.Processes.Any(x => 
-                            {
-                                // device drivers live in the System process we use therefore any process which has it loaded because there can only be one
-                                if (m.ModuleName.EndsWith(".sys", StringComparison.OrdinalIgnoreCase) || m.ModuleName == "ntoskrnl.exe")
-                                {
-                                    return true;
-                                }
-                                else
-                                {
-                                    return x.Equals(process);
-                                }
-                            } 
-                            )).FirstOrDefault();
+                            module = file.Extract.Modules.FindModule(methodCost.Module, process);
+                        }
+
+                        if( !IsMatchingModule(module) ) // filter by module string
+                        {
+                            continue;
                         }
 
                         matches.Add(new MatchData
@@ -474,10 +464,24 @@ namespace ETWAnalyzer.EventDump
             // to scroll back for the highest values
             // Then we skip the first N entries to show only the last TopNSafe results which are the highest values
 
+            Dictionary<ProcessKey, ETWProcess> lookupCache = new();
+
             foreach (var cpu in filtered)
             {
-                ETWProcess process = ProcessExtensions.FindProcessByKey(file, cpu.Key);
 
+                if( !lookupCache.TryGetValue(cpu.Key, out ETWProcess process) )
+                {
+                    process = ProcessExtensions.FindProcessByKey(file, cpu.Key);
+                    lookupCache[cpu.Key] = process;
+                }
+                
+
+                ModuleDefinition module = ShowModuleInfo ? file.Extract.Modules.Modules.Where(x => x.Processes.Contains(process)).Where(x => x.ModuleName.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)).FirstOrDefault() : null;
+
+                if (!IsMatchingModule(module)) // filter by module string
+                {
+                    continue;
+                }
                 matches.Add(new MatchData
                 {
                     TestName = file.TestName,
@@ -490,7 +494,7 @@ namespace ETWAnalyzer.EventDump
                     ProcessKey = process.ToProcessKey(),
                     SourceFile = file.JsonExtractFileWhenPresent,
                     Process = process,
-                    Module = ShowModuleInfo ? file.Extract.Modules.Modules.Where(x => x.Processes.Contains(process)).Where(x => x.ModuleName.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)).FirstOrDefault() : null,
+                    Module = module,
                 });
 
                 if (!IsCSVEnabled && !Merge && !(ShowTotal == TotalModes.Total) )
@@ -840,7 +844,9 @@ namespace ETWAnalyzer.EventDump
                     ReadyMs = filteredSubItems.Sum(x => x.ReadyMs),
                 };
 
-                foreach(MatchData data in filteredSubItems)
+                fileTotals.Add(fileGroup.Key, total);
+
+                foreach (MatchData data in filteredSubItems)
                 {
                     if( !fileProcessTotals.TryGetValue(GetFileGroupName(data), out Dictionary<ProcessKey, ProcessTotals> processDict) )
                     {
@@ -860,7 +866,7 @@ namespace ETWAnalyzer.EventDump
                 }
                     
 
-                fileTotals.Add(GetFileGroupName(fileGroup.First()), total);
+                
             }
 
             return (fileTotals, fileProcessTotals);
@@ -939,11 +945,21 @@ namespace ETWAnalyzer.EventDump
 
         private void WriteCSVProcessTotal(List<MatchData> matches)
         {
-            OpenCSVWithHeader("CSVOptions", "Test Case", "Date", "Test Time in ms", "CPU ms", "Baseline", "Process", "Process Name", "Start Time", "Command Line", "SourceFile", "SourceDirectory", "IsNewProcess");
+            OpenCSVWithHeader(Col_CSVOptions, Col_TestCase, Col_Date, Col_TestTimeinms, "CPU ms", Col_Baseline, Col_Process, Col_ProcessName, 
+                Col_StartTime, Col_CommandLine, Col_SourceJsonFile, "SourceDirectory", "IsNewProcess", 
+                Col_FileVersion, Col_VersionString, Col_ProductVersion, Col_ProductName, Col_Description, Col_Directory);
+
             foreach (var match in matches.OrderBy(x => x.PerformedAt).ThenByDescending(x => x.CPUMs))
             {
+                string fileVersion = match.Module?.Fileversion?.ToString()?.Trim() ?? "";
+                string versionString = match.Module?.FileVersionStr?.Trim() ?? "";
+                string productVersion = match.Module?.ProductVersionStr?.Trim() ?? "";
+                string productName = match.Module?.ProductName?.Trim() ?? "";
+                string description = match.Module?.Description?.Trim() ?? "";
+                string directory = match.Module?.ModulePath ?? "";
                 WriteCSVLine(CSVOptions, match.TestName, match.PerformedAt, match.DurationInMs, match.CPUMs, match.BaseLine, match.ProcessAndPid, match.Process.GetProcessName(UsePrettyProcessName), match.Process.StartTime, match.Process.CmdLine, 
-                    Path.GetFileNameWithoutExtension(match.SourceFile), Path.GetDirectoryName(match.SourceFile), (match.Process.IsNew ? 1 : 0));
+                    Path.GetFileNameWithoutExtension(match.SourceFile), Path.GetDirectoryName(match.SourceFile), (match.Process.IsNew ? 1 : 0),
+                    fileVersion, versionString, productVersion, productName, description, directory);
             }
         }
 
@@ -1044,6 +1060,7 @@ namespace ETWAnalyzer.EventDump
                 return lret;
             };
         }
+
 
         bool IsMethodMatching(MethodCost cost, double zeroDiff)
         {

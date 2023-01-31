@@ -83,8 +83,9 @@ namespace ETWAnalyzer.EventDump
 
             if( IsCSVEnabled )
             {
-                OpenCSVWithHeader("CSVOptions", "Date", "Test Case", "Test Time in ms", "Baseline", "FileName", $"Level{DirectoryLevel}Directory", "DiskTotalTimeIOInus", "DiskReadTimeInus", "DiskWriteTimeInus", "DiskFlushTimeInus", "DiskWrittenBytes", "DiskReadBytes", 
-                    "DiskReadPerf MB/s", "DiskWritePerf MB/s", "Processes", "SourceDirectory", "JsonSourceFile");
+                OpenCSVWithHeader(Col_CSVOptions, Col_Date, Col_TestCase, Col_TestTimeinms, Col_Baseline, Col_FileName, $"Level{DirectoryLevel}Directory", 
+                    "DiskTotalTimeIOInus", "DiskReadTimeInus", "DiskWriteTimeInus", "DiskFlushTimeInus", "DiskWrittenBytes", "DiskReadBytes", 
+                    "DiskReadPerf MB/s", "DiskWritePerf MB/s", "Processes", "SourceDirectory", Col_SourceJsonFile);
 
                 foreach(var diskData in data)
                 {
@@ -140,6 +141,7 @@ namespace ETWAnalyzer.EventDump
                         // This is not really visible 
                         if (group.Processes.Count > 5)
                         {
+                            ColorConsole.WriteEmbeddedColorLine($"Many processes({group.Processes.Count}) accessed the file/s. Cannot attribute to a specific process. Use WPA to get detailed metrics.");
                             continue;
                         }
 

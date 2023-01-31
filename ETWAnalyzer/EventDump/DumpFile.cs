@@ -94,8 +94,8 @@ namespace ETWAnalyzer.EventDump
 
             if (IsCSVEnabled)
             {
-                OpenCSVWithHeader("CSVOptions", "Date", "InputDirectory", "InputFileName", "Test Case", "Test Time in ms", "Baseline", "ProcessName", "Process", "Start Time", "Command Line", 
-                                  "File Directory", "File Name",
+                OpenCSVWithHeader(Col_CSVOptions, Col_Date, "InputDirectory", Col_SourceJsonFile, Col_TestCase, Col_TestTimeinms, Col_Baseline, Col_ProcessName, Col_Process, Col_StartTime, Col_CommandLine, 
+                                  "File Directory", Col_FileName,
                                   "Open Count", "Open Duration us", "Open Status",
                                   "Close Count", "Close Duration us",
                                   "Read Count", "Read Duration us", "Read Accessed Bytes", "Read MaxFilePosition",
@@ -216,6 +216,7 @@ namespace ETWAnalyzer.EventDump
                     totalPerProcessFileOpenCloseTimeInus += fileEvent.FileOpenTimeInus + fileEvent.FileCloseTimeInus;
                     totalPerProcessFileWriteCount += fileEvent.FileWriteCount;
                     totalPerProcessFileOpenCount += fileEvent.FileOpenCount;
+
                     totalPerProcessFileCloseCount += fileEvent.FileCloseCount;
                     totalPerProcessFileRenameCount += fileEvent.FileRenameCount;
                     totalPerProcessFileDeleteCount += fileEvent.FileDeleteCount;
@@ -239,7 +240,7 @@ namespace ETWAnalyzer.EventDump
 
                     if (IsPerProcess && bPrintOnce && !IsTotalMode)
                     {
-                        ColorConsole.WriteLine($"{group.Key.GetProcessWithId(UsePrettyProcessName)}{GetProcessTags(group.Key, group.First().SessionStart)} {(NoCmdLine ? "" : group.Key.CmdLine)}", ConsoleColor.Yellow);
+                        ColorConsole.WriteEmbeddedColorLine($"[grey]{group.Key.GetProcessWithId(UsePrettyProcessName)}{GetProcessTags(group.Key, group.First().SessionStart)}[/grey] {(NoCmdLine ? "" : group.Key.CmdLine)}", ConsoleColor.DarkCyan);
                         bPrintOnce = false;
                     }
 
@@ -274,18 +275,19 @@ namespace ETWAnalyzer.EventDump
                 if( IsPerProcess && (IsPerProcessTotal || IsFileTotalMode) )
                 {
                     string fileReadKB = $"{totalPerProcessFileReadSizeInBytes / KB:N0}";
-                    string fileReadTime = $"{totalPerProcessFileReadTimeInus / Million:F5}";
+                    string fileReadTimeS = $"{totalPerProcessFileReadTimeInus / Million:F5}";
                     string fileWriteKB = $"{totalPerProcessFileWriteSizeInBytes / KB:N0}";
                     string fileWriteTimeS = $"{totalPerProcessFileWriteTimeInus / Million:F5}";
                     string fileOpenCloseTimeS = $"{totalPerProcessFileOpenCloseTimeInus/ Million:F5}";
+                    string fileTotalTimeS = $"{(totalPerProcessFileReadTimeInus + totalPerProcessFileWriteTimeInus + totalPerProcessFileOpenCloseTimeInus) / Million:F5}";
 
                     if (ShowDetails)
                     {
-                        ColorConsole.WriteEmbeddedColorLine($"[red]r {fileReadKB,12} KB {fileReadTime,10} s {totalPerProcessFileReadCount,4}[/red] [magenta]w {fileWriteKB,12} KB {fileWriteTimeS,10} s {totalPerProcessFileWriteCount,4} [/magenta] [yellow] O+C {fileOpenCloseTimeS,10} s Open: {totalPerProcessFileOpenCount,4} Close: {totalPerProcessFileCloseCount,4} SetSecurity: {totalPerProcessFileSetSecurityCount,4} Del: {totalPerProcessFileDeleteCount,3}, Ren: {totalPerProcessFileRenameCount,3}[/yellow] Process Total with {totalPerProcessFileCount} accessed files");
+                        ColorConsole.WriteEmbeddedColorLine($"[red]r {fileReadKB,12} KB {fileReadTimeS,10} s {totalPerProcessFileReadCount,4}[/red] [magenta]w {fileWriteKB,12} KB {fileWriteTimeS,10} s {totalPerProcessFileWriteCount,4} [/magenta] [yellow] O+C {fileOpenCloseTimeS,10} s Open: {totalPerProcessFileOpenCount,4} Close: {totalPerProcessFileCloseCount,4} SetSecurity: {totalPerProcessFileSetSecurityCount,4} Del: {totalPerProcessFileDeleteCount,3}, Ren: {totalPerProcessFileRenameCount,3}[/yellow] [magenta]TotalTime: {fileTotalTimeS} s[/magenta] Process Total with {totalPerProcessFileCount} accessed files");
                     }
                     else
                     {
-                        ColorConsole.WriteEmbeddedColorLine($"[red]r {fileReadKB,12} KB {fileReadTime,10} s {totalPerProcessFileReadCount,4}[/red] [magenta]w {fileWriteKB,12} KB {fileWriteTimeS,10} s {totalPerProcessFileWriteCount,4} [/magenta] [yellow] O+C {fileOpenCloseTimeS,10} s Open: {totalPerProcessFileOpenCount,4} Close: {totalPerProcessFileCloseCount,4}[/yellow] Process Total with {totalPerProcessFileCount} accessed files");
+                        ColorConsole.WriteEmbeddedColorLine($"[red]r {fileReadKB,12} KB {fileReadTimeS,10} s {totalPerProcessFileReadCount,4}[/red] [magenta]w {fileWriteKB,12} KB {fileWriteTimeS,10} s {totalPerProcessFileWriteCount,4} [/magenta] [yellow] O+C {fileOpenCloseTimeS,10} s Open: {totalPerProcessFileOpenCount,4} Close: {totalPerProcessFileCloseCount,4}[/yellow] [magenta]TotalTime: {fileTotalTimeS} s[/magenta] Process Total with {totalPerProcessFileCount} accessed files");
                     }
                 }
 
@@ -307,18 +309,19 @@ namespace ETWAnalyzer.EventDump
             // Show per file totals always
             {
                 string fileReadKB = $"{totalFileReadSizeInBytes / KB:N0}";
-                string fileReadTime = $"{totalFileReadTimeInus / Million:F5}";
+                string fileReadTimeS = $"{totalFileReadTimeInus / Million:F5}";
                 string fileWriteKB = $"{totalFileWriteSizeInBytes / KB:N0}";
                 string fileWriteTimeS = $"{totalFileWriteTimeInus / Million:F5}";
                 string fileOpenCloseTimeS = $"{totalFileOpenCloseTimeInus / Million:F5}";
+                string fileTotalTimeS = $"{(totalFileReadTimeInus + totalFileWriteTimeInus + totalFileOpenCloseTimeInus) / Million:F5}";
 
                 if (ShowDetails)
                 {
-                    ColorConsole.WriteEmbeddedColorLine($"[red]r {fileReadKB,12} KB {fileReadTime,10} s {totalFileReadCount,6}[/red] [magenta]w {fileWriteKB,12} KB {fileWriteTimeS,10} s {totalFileWriteCount,6} [/magenta] [yellow] O+C {fileOpenCloseTimeS,10} s Open: {totalFileOpenCount,6} Close: {totalFileCloseCount,6} SetSecurity: {totalFileSetSecurityCount,6} Del: {totalFileDeleteCount,5}, Ren: {totalFileRenameCount,5}[/yellow] File/s Total with {totalFileCount} accessed file/s. Process Count: {processes.Count}");
+                    ColorConsole.WriteEmbeddedColorLine($"[red]r {fileReadKB,12} KB {fileReadTimeS,10} s {totalFileReadCount,6}[/red] [magenta]w {fileWriteKB,12} KB {fileWriteTimeS,10} s {totalFileWriteCount,6} [/magenta] [yellow] O+C {fileOpenCloseTimeS,10} s Open: {totalFileOpenCount,6} Close: {totalFileCloseCount,6} SetSecurity: {totalFileSetSecurityCount,6} Del: {totalFileDeleteCount,5}, Ren: {totalFileRenameCount,5}[/yellow] [magenta]TotalTime: {fileTotalTimeS} s[/magenta] File/s Total with {totalFileCount} accessed file/s. Process Count: {processes.Count}");
                 }
                 else
                 {
-                    ColorConsole.WriteEmbeddedColorLine($"[red]r {fileReadKB,12} KB {fileReadTime,10} s {totalFileReadCount,6}[/red] [magenta]w {fileWriteKB,12} KB {fileWriteTimeS,10} s {totalFileWriteCount,6} [/magenta] [yellow] O+C {fileOpenCloseTimeS,10} s Open: {totalFileOpenCount,6} Close: {totalFileCloseCount,6}[/yellow] File/s Total with {totalFileCount} accessed file/s. Process Count: {processes.Count}");
+                    ColorConsole.WriteEmbeddedColorLine($"[red]r {fileReadKB,12} KB {fileReadTimeS,10} s {totalFileReadCount,6}[/red] [magenta]w {fileWriteKB,12} KB {fileWriteTimeS,10} s {totalFileWriteCount,6} [/magenta] [yellow] O+C {fileOpenCloseTimeS,10} s Open: {totalFileOpenCount,6} Close: {totalFileCloseCount,6}[/yellow] [magenta]TotalTime: {fileTotalTimeS} s[/magenta] File/s Total with {totalFileCount} accessed file/s. Process Count: {processes.Count}");
                 }
             }
         }
@@ -617,7 +620,7 @@ namespace ETWAnalyzer.EventDump
                     };
                     break;
                 default:
-                    throw new InvalidOperationException($"There should be a sort order. By default SortOrders.Size == SortOrders.Default = 0 so we should never get here.");
+                    throw new InvalidOperationException($"There should be a sort order. SortOrder was: {SortOrder}. By default SortOrders.Size == SortOrders.Default = 0 so we should never get here.");
             }
 
             return lret;

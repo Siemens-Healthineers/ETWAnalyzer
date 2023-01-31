@@ -1,6 +1,7 @@
 ﻿//// SPDX-FileCopyrightText:  © 2022 Siemens Healthcare GmbH
 //// SPDX-License-Identifier:   MIT
 
+using ETWAnalyzer.Extract.Modules;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -54,6 +55,56 @@ namespace ETWAnalyzer.Extract
         public string Method
         {
             get => MethodList[(int)MethodIdx];
+            internal set => MethodList[(int)MethodIdx] = value;
+        }
+
+        /// <summary>
+        /// When true the method could not be resolved and is of the form xxxx.exe/.dll/.sys+0xdddd
+        /// </summary>
+        internal bool IsUnresolved
+        {
+            get
+            {
+                string method = Method;
+                return method.IndexOf(".exe+0x", StringComparison.Ordinal) != -1 ||
+                       method.IndexOf(".dll+0x", StringComparison.Ordinal) != -1 ||
+                       method.IndexOf(".sys+0x", StringComparison.Ordinal) != -1;
+            }
+        }
+
+
+        /// <summary>
+        /// When IsUnresolved is true we can retrieve the relative virtual address from the module for later symbol lookup to resolve the method name.
+        /// </summary>
+        internal uint Rva
+        {
+            get
+            {
+                int offset = Method.LastIndexOf('+');
+                if( offset != -1)
+                {
+                    string number = Method.Substring(offset + 3);
+                    if(uint.TryParse(number, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out uint address) )
+                    {
+                        return address;
+                    }
+                }
+
+                return 0;
+            }
+        }
+
+        internal IPdbIdentifier TryGetPdb(IETWExtract extract, ETWProcess process, string module)
+        {
+            foreach(var mod in extract.Modules.Modules.Where( x=> x.ModuleName == module &&  x.Processes.Contains(process) ) )
+            {
+                if( mod.PdbIdx != null ) 
+                {
+                    return extract.Modules.UnresolvedPdbs[(int)mod.PdbIdx];
+                }
+            }
+
+            return null;
         }
 
         string myModule;
@@ -87,7 +138,7 @@ namespace ETWAnalyzer.Extract
         /// </summary>
         public uint CPUMs
         {
-            get; private set;
+            get; internal set;
         }
 
         /// <summary>
@@ -95,7 +146,7 @@ namespace ETWAnalyzer.Extract
         /// </summary>
         public uint WaitMs
         {
-            get; private set;
+            get; internal set;
         }
 
         /// <summary>
@@ -103,7 +154,7 @@ namespace ETWAnalyzer.Extract
         /// </summary>
         public float FirstOccurenceInSecond
         {
-            get; private set;
+            get; internal set;
         }
 
         /// <summary>
@@ -111,7 +162,7 @@ namespace ETWAnalyzer.Extract
         /// </summary>
         public float LastOccurenceInSecond
         {
-            get; private set;
+            get; internal set;
         }
 
         /// <summary>
@@ -119,7 +170,7 @@ namespace ETWAnalyzer.Extract
         /// </summary>
         public int Threads
         {
-            get; private set;
+            get; internal set;
         }
 
         /// <summary>
@@ -129,7 +180,7 @@ namespace ETWAnalyzer.Extract
         /// </summary>
         public int DepthFromBottom
         {
-            get; private set;
+            get; internal set;
         }
 
         /// <summary>
@@ -138,7 +189,7 @@ namespace ETWAnalyzer.Extract
         /// </summary>
         public uint ReadyMs
         {
-            get; private set;
+            get; internal set;
         }
 
         /// <summary>

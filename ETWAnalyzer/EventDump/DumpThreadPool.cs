@@ -30,7 +30,8 @@ namespace ETWAnalyzer.EventDump
 
             if (IsCSVEnabled)
             {
-                OpenCSVWithHeader("CSVOptions", "Directory", "FileName", "Date", "Test Case", "Test Time in ms", "BaseLine", "ProcessName", "Process", "Command Line", "Starvation Time", "ThreadCount");
+                OpenCSVWithHeader(Col_CSVOptions, "Directory", Col_FileName, Col_Date, Col_TestCase, Col_TestTimeinms, Col_Baseline, 
+                    Col_ProcessName, Col_Process, Col_CommandLine, "Starvation Time", "ThreadCount");
 
                 foreach (var threadEvent in data)
                 {

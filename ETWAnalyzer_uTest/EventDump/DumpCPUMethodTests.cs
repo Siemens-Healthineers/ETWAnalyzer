@@ -11,6 +11,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Xunit;
+using static ETWAnalyzer.Commands.DumpCommand;
 
 namespace ETWAnalyzer_uTest.EventDump
 {
@@ -36,7 +37,7 @@ namespace ETWAnalyzer_uTest.EventDump
             var result = matchData[0];
 
             // Session starts at 10, process runs 11-12, when we subtract from processEnd-SessionStart we get 2h diff
-            Assert.Equal(new DateTimeOffset(2000, 1, 1, 8, 0,  5, TimeSpan.Zero), result.FirstCallTime);
+            Assert.Equal(new DateTimeOffset(2000, 1, 1, 8, 0, 5, TimeSpan.Zero), result.FirstCallTime);
             Assert.Equal(new DateTimeOffset(2000, 1, 1, 8, 0, 10, TimeSpan.Zero), result.LastCallTime);
         }
 
@@ -70,8 +71,8 @@ namespace ETWAnalyzer_uTest.EventDump
             {
                 ZeroTimeMode = ETWAnalyzer.Commands.DumpCommand.ZeroTimeModes.Last,
                 ZeroTimeProcessNameFilter = p => p == "cmd.exe(1234)",
-                MethodFilter = new KeyValuePair<string, Func<string, bool>>(DummyMethod,  p => p == DummyMethod),
-                ZeroTimeFilter = new KeyValuePair<string, Func<string,bool>>(DummyMethod, p => p == DummyMethod),
+                MethodFilter = new KeyValuePair<string, Func<string, bool>>(DummyMethod, p => p == DummyMethod),
+                ZeroTimeFilter = new KeyValuePair<string, Func<string, bool>>(DummyMethod, p => p == DummyMethod),
             };
 
             dumpLast.myPreloadedTests = new Lazy<SingleTest>[] { new Lazy<SingleTest>(Create(tempDir.Name)) };
@@ -189,24 +190,32 @@ namespace ETWAnalyzer_uTest.EventDump
             return t;
         }
 
-        [Fact]
-        public void FileSorting_AndTotalCalculation()
-        {
-            ETWProcess cmdProcess = new ETWProcess
-            {
-                ProcessID = 1234,
-                ProcessName = "cmd.exe",
-                CmdLine = "hi",
-            };
-            ProcessKey cmdProcessKey = cmdProcess.ToProcessKey();
 
-            ETWProcess cmdProcess2 = new ETWProcess
-            {
-                ProcessID = 2222,
-                ProcessName = "2222.exe",
-                CmdLine = "hi",
-            };
-            ProcessKey cmdProcssKey2 = cmdProcess2.ToProcessKey();
+        static readonly  ETWProcess myCmdProcess = new ETWProcess
+        {
+            ProcessID = 1234,
+            ProcessName = "cmd.exe",
+            CmdLine = "hi",
+        };
+
+        static readonly ProcessKey myCmdProcessKey = myCmdProcess.ToProcessKey();
+
+        static readonly ETWProcess myCmdProcess2 = new ETWProcess
+        {
+            ProcessID = 2222,
+            ProcessName = "2222.exe",
+            CmdLine = "hi",
+        };
+        static readonly  ProcessKey myCmdProcessKey2 = myCmdProcess2.ToProcessKey();
+
+
+        const string File1 = "File1.json";
+        const string File2 = "File2.json";
+        const string File3 = "File3.json";
+
+        List<DumpCPUMethod.MatchData> CreateTestData()
+        {
+          
 
             List<DumpCPUMethod.MatchData> data = new List<DumpCPUMethod.MatchData>
             {
@@ -216,9 +225,9 @@ namespace ETWAnalyzer_uTest.EventDump
                     WaitMs = 100,
                     ReadyMs = 50,
                     Method = "Wait100MsMethod_1msCPU",
-                    Process = cmdProcess,
-                    ProcessKey = cmdProcessKey,
-                    SourceFile = "File1.json"
+                    Process = myCmdProcess,
+                    ProcessKey = myCmdProcessKey,
+                    SourceFile = File1
                 },
                 new DumpCPUMethod.MatchData
                 {
@@ -226,9 +235,9 @@ namespace ETWAnalyzer_uTest.EventDump
                     WaitMs = 200,
                     ReadyMs = 100,
                     Method = "Wait200MsMethod_5msCPU",
-                    Process = cmdProcess,
-                    ProcessKey = cmdProcessKey,
-                    SourceFile = "File1.json"
+                    Process = myCmdProcess,
+                    ProcessKey = myCmdProcessKey,
+                    SourceFile = File1
                 },
                 new DumpCPUMethod.MatchData
                 {
@@ -236,43 +245,308 @@ namespace ETWAnalyzer_uTest.EventDump
                     WaitMs = 900,
                     ReadyMs = 40,
                     Method = "Wait900MsMethod_15000msCPU",
-                    Process = cmdProcess2,
-                    ProcessKey = cmdProcssKey2,
-                    SourceFile = "File2.json"
+                    Process = myCmdProcess2,
+                    ProcessKey = myCmdProcessKey2,
+                    SourceFile = File2
                 },
                 new DumpCPUMethod.MatchData
                 {
                     CPUMs = 1000,
                     WaitMs = 5000,
                     ReadyMs = 100,
-                    Method = "Wait500MsMethod_1000msCPU",
-                    Process = cmdProcess2,
-                    ProcessKey = cmdProcssKey2,
-                    SourceFile = "File2.json"
-                }
+                    Method = "Wait5000MsMethod_1000msCPU",
+                    Process = myCmdProcess2,
+                    ProcessKey = myCmdProcessKey2,
+                    SourceFile = File2
+
+                },
+                new DumpCPUMethod.MatchData
+                {
+                    CPUMs = 1,
+                    WaitMs = 1,
+                    ReadyMs = 1,
+                    Method = "Wait1MsMethod_1msCPU",
+                    Process = myCmdProcess,
+                    ProcessKey = myCmdProcessKey,
+                    SourceFile = File3
+                },
+                new DumpCPUMethod.MatchData
+                {
+                    CPUMs = 1,
+                    WaitMs = 1,
+                    ReadyMs = 5000,
+                    Method = "Wait1MsMethod_1msCPU",
+                    Process = myCmdProcess2,
+                    ProcessKey = myCmdProcessKey2,
+                    SourceFile = File3
+
+                },
             };
 
+            return data;
+        }
+
+        [Fact]
+        public void File_TotalSortOrder_Default()
+        {
             DumpCPUMethod dumper = new();
 
-            var (fileTotals, processTotals) = dumper.GetFileAndProcessTotals(data);
-            // Todo
-            // Assert if file and process totals are correct
-            Assert.Equal(1, fileTotals["File1.json"].WaitMs);
-            Assert.Equal(1, fileTotals["File1.json"].CPUMs);
-            Assert.Equal(1, fileTotals["File1.json"].ReadyMs);
+            var data = CreateTestData();
 
+            var (fileTotals, processTotals) = dumper.GetFileAndProcessTotals(data);
             Func<IGrouping<string, DumpCPUMethod.MatchData>, decimal> sorter = dumper.CreateFileSorter(fileTotals);
 
             List<IGrouping<string, DumpCPUMethod.MatchData>> fileGroups = data.GroupBy(x => x.SourceFile).OrderBy(sorter).ToList();
-            // Todo
-            // Assert if files are sorted by current sort order (CPU)
+            Assert.Equal(File1, fileGroups[0].Key);
+            Assert.Equal(File2, fileGroups[1].Key);
+            Assert.Equal(File3, fileGroups[2].Key);
+        }
 
-            // Todo: Add tests for sort order wait and ready times
-            dumper.SortOrder = ETWAnalyzer.Commands.DumpCommand.SortOrders.Wait;
-            dumper.SortOrder = ETWAnalyzer.Commands.DumpCommand.SortOrders.Ready;
+        [Fact]
+        public void File_TotalSortOrder_CPU()
+        {
+
+            DumpCPUMethod dumper = new();
+            dumper.SortOrder = SortOrders.CPU;
+            dumper.ShowTotal = TotalModes.Process;
+
+            var data = CreateTestData();
+
+            var (fileTotals, processTotals) = dumper.GetFileAndProcessTotals(data);
+            Func<IGrouping<string, DumpCPUMethod.MatchData>, decimal> sorter = dumper.CreateFileSorter(fileTotals);
+
+            List<IGrouping<string, DumpCPUMethod.MatchData>> fileGroups = data.GroupBy(x => x.SourceFile).OrderBy(sorter).ToList();
+            Assert.Equal(3, fileTotals.Count);
+            Assert.Equal(File3, fileGroups[0].Key);
+            Assert.Equal(File1, fileGroups[1].Key);
+            Assert.Equal(File2, fileGroups[2].Key);
+
+            Assert.Equal(6, fileTotals[File1].CPUMs);
+            Assert.Equal(16000, fileTotals[File2].CPUMs);
+            Assert.Equal(2, fileTotals[File3].CPUMs);
+
+        }
+
+        [Fact]
+        public void File_TotalSortOrder_Wait()
+        {
+            DumpCPUMethod dumper = new();
+            dumper.SortOrder = SortOrders.Wait;
+            dumper.ShowTotal = TotalModes.Process;
+            var data = CreateTestData();
+
+            var (fileTotals, processTotals) = dumper.GetFileAndProcessTotals(data);
+            Func<IGrouping<string, DumpCPUMethod.MatchData>, decimal> sorter = dumper.CreateFileSorter(fileTotals);
+
+            List<IGrouping<string, DumpCPUMethod.MatchData>> fileGroups = data.GroupBy(x => x.SourceFile).OrderBy(sorter).ToList();
+            Assert.Equal(File3, fileGroups[0].Key);
+            Assert.Equal(File1, fileGroups[1].Key);
+            Assert.Equal(File2, fileGroups[2].Key);
+
+            Assert.Equal(300, fileTotals[File1].WaitMs);
+            Assert.Equal(5900, fileTotals[File2].WaitMs);
+            Assert.Equal(2, fileTotals[File3].WaitMs);
+        }
+
+        [Fact]
+        public void File_TotalSortOrder_Ready()
+        {
+            DumpCPUMethod dumper = new();
+            dumper.SortOrder = SortOrders.Ready;
+            dumper.ShowTotal = TotalModes.Process;
+            var data = CreateTestData();
+
+            var (fileTotals, processTotals) = dumper.GetFileAndProcessTotals(data);
+            Func<IGrouping<string, DumpCPUMethod.MatchData>, decimal> sorter = dumper.CreateFileSorter(fileTotals);
+
+            List<IGrouping<string, DumpCPUMethod.MatchData>> fileGroups = data.GroupBy(x => x.SourceFile).OrderBy(sorter).ToList();
+            Assert.Equal(File2, fileGroups[0].Key);
+            Assert.Equal(File1, fileGroups[1].Key);
+            Assert.Equal(File3, fileGroups[2].Key);
+
+            Assert.Equal(150, fileTotals[File1].ReadyMs);
+            Assert.Equal(140, fileTotals[File2].ReadyMs);
+            Assert.Equal(5001, fileTotals[File3].ReadyMs);
+        }
+
+        [Fact]
+        public void File_TotalSortOrder_TopN1_Default()
+        {
+            DumpCPUMethod dumper = new();
+            dumper.SortOrder = SortOrders.Default;
+            dumper.ShowTotal = TotalModes.Process;
+            dumper.TopN = new ETWAnalyzer.Infrastructure.SkipTakeRange(1, null);
+
+            var data = CreateTestData();
+
+            var (fileTotals, processTotals) = dumper.GetFileAndProcessTotals(data);
+            Func<IGrouping<string, DumpCPUMethod.MatchData>, decimal> sorter = dumper.CreateFileSorter(fileTotals);
+
+            List<IGrouping<string, DumpCPUMethod.MatchData>> fileGroups = data.GroupBy(x => x.SourceFile).OrderBy(sorter).ToList();
+            Assert.Equal(File3, fileGroups[0].Key);
+            Assert.Equal(File1, fileGroups[1].Key);
+            Assert.Equal(File2, fileGroups[2].Key);
+
+            Assert.Equal(6, fileTotals[File1].CPUMs);
+            Assert.Equal(16000, fileTotals[File2].CPUMs);
+            Assert.Equal(1, fileTotals[File3].CPUMs);
+        }
 
 
+        [Fact]
+        public void File_TotalSortOrder_TopN1_CPU()
+        {
+            DumpCPUMethod dumper = new();
+            dumper.SortOrder = SortOrders.CPU;
+            dumper.ShowTotal = TotalModes.Process;
+            dumper.TopN = new ETWAnalyzer.Infrastructure.SkipTakeRange(1, null);
 
+            var data = CreateTestData();
+
+            var (fileTotals, processTotals) = dumper.GetFileAndProcessTotals(data);
+            Func<IGrouping<string, DumpCPUMethod.MatchData>, decimal> sorter = dumper.CreateFileSorter(fileTotals);
+
+            List<IGrouping<string, DumpCPUMethod.MatchData>> fileGroups = data.GroupBy(x => x.SourceFile).OrderBy(sorter).ToList();
+            Assert.Equal(File3, fileGroups[0].Key);
+            Assert.Equal(File1, fileGroups[1].Key);
+            Assert.Equal(File2, fileGroups[2].Key);
+
+            Assert.Equal(6, fileTotals[File1].CPUMs);
+            Assert.Equal(16000, fileTotals[File2].CPUMs);
+            Assert.Equal(1, fileTotals[File3].CPUMs);
+        }
+
+        [Fact]
+        public void File_TotalSortOrder_TopN1_Ready()
+        {
+            DumpCPUMethod dumper = new();
+            dumper.SortOrder = SortOrders.Ready;
+            dumper.ShowTotal = TotalModes.Process;
+            dumper.TopN = new ETWAnalyzer.Infrastructure.SkipTakeRange(1, null);
+
+            var data = CreateTestData();
+
+            var (fileTotals, processTotals) = dumper.GetFileAndProcessTotals(data);
+            Func<IGrouping<string, DumpCPUMethod.MatchData>, decimal> sorter = dumper.CreateFileSorter(fileTotals);
+
+            List<IGrouping<string, DumpCPUMethod.MatchData>> fileGroups = data.GroupBy(x => x.SourceFile).OrderBy(sorter).ToList();
+            Assert.Equal(File2, fileGroups[0].Key);
+            Assert.Equal(File1, fileGroups[1].Key);
+            Assert.Equal(File3, fileGroups[2].Key);
+
+            Assert.Equal(150, fileTotals[File1].ReadyMs);
+            Assert.Equal(140, fileTotals[File2].ReadyMs);
+            Assert.Equal(5000, fileTotals[File3].ReadyMs);
+        }
+
+
+        [Fact]
+        public void File_TotalSortOrder_TopN1_Wait()
+        {
+
+            DumpCPUMethod dumper = new();
+            dumper.SortOrder = SortOrders.Wait;
+            dumper.ShowTotal = TotalModes.Process;
+
+            dumper.TopN = new ETWAnalyzer.Infrastructure.SkipTakeRange(1, null);
+
+            var data = CreateTestData();
+
+            var (fileTotals, processTotals) = dumper.GetFileAndProcessTotals(data);
+            Func<IGrouping<string, DumpCPUMethod.MatchData>, decimal> sorter = dumper.CreateFileSorter(fileTotals);
+
+            List<IGrouping<string, DumpCPUMethod.MatchData>> fileGroups = data.GroupBy(x => x.SourceFile).OrderBy(sorter).ToList();
+            Assert.Equal(File3, fileGroups[0].Key);
+            Assert.Equal(File1, fileGroups[1].Key);
+            Assert.Equal(File2, fileGroups[2].Key);
+
+            Assert.Equal(300, fileTotals[File1].WaitMs);
+            Assert.Equal(5900, fileTotals[File2].WaitMs);
+            Assert.Equal(1, fileTotals[File3].WaitMs);
+        }
+
+        [Fact]
+        public void Total_File_Process_Calculation()
+        {
+           
+            DumpCPUMethod dumper = new();
+            dumper.ShowTotal = TotalModes.Process;
+
+            var data = CreateTestData();
+
+            var (fileTotals, processTotals) = dumper.GetFileAndProcessTotals(data);
+
+            Assert.Equal(300, fileTotals[File1].WaitMs);
+            Assert.Equal(6, fileTotals[File1].CPUMs);
+            Assert.Equal(150, fileTotals[File1].ReadyMs);
+
+            Assert.Equal(5900, fileTotals[File2].WaitMs);
+            Assert.Equal(16000, fileTotals[File2].CPUMs);
+            Assert.Equal(140, fileTotals[File2].ReadyMs);
+
+            Assert.Equal(2, fileTotals[File3].WaitMs);
+            Assert.Equal(2, fileTotals[File3].CPUMs);
+            Assert.Equal(5001, fileTotals[File3].ReadyMs);
+
+            Assert.Equal(6, processTotals[File1][myCmdProcess].CPUMs);
+            Assert.Equal(300, processTotals[File1][myCmdProcess].WaitMs);
+            Assert.Equal(150, processTotals[File1][myCmdProcess].ReadyMs);
+
+            Assert.Equal(16000, processTotals[File2][myCmdProcess2].CPUMs);
+            Assert.Equal(5900, processTotals[File2][myCmdProcess2].WaitMs);
+            Assert.Equal(140, processTotals[File2][myCmdProcess2].ReadyMs);
+
+            Assert.Equal(1, processTotals[File3][myCmdProcess].CPUMs);
+            Assert.Equal(1, processTotals[File3][myCmdProcess].WaitMs);
+            Assert.Equal(1, processTotals[File3][myCmdProcess].ReadyMs);
+
+            Assert.Equal(1, processTotals[File3][myCmdProcess2].CPUMs);
+            Assert.Equal(1, processTotals[File3][myCmdProcess2].WaitMs);
+            Assert.Equal(5000, processTotals[File3][myCmdProcess2].ReadyMs);
+        }
+
+        [Fact]
+        public void Total_File_Process_Calculation_TopN1_Wait()
+        {
+
+            DumpCPUMethod dumper = new();
+            dumper.SortOrder = SortOrders.Wait;
+            dumper.ShowTotal = TotalModes.Process;
+
+            dumper.TopN = new ETWAnalyzer.Infrastructure.SkipTakeRange(1, null);
+
+            var data = CreateTestData();
+
+            var (fileTotals, processTotals) = dumper.GetFileAndProcessTotals(data);
+
+            Assert.Equal(300, fileTotals[File1].WaitMs);
+            Assert.Equal(5900, fileTotals[File2].WaitMs);
+            Assert.Equal(1, fileTotals[File3].WaitMs);
+
+            Assert.Equal(300, processTotals[File1][myCmdProcess].WaitMs);
+
+            Assert.Equal(5900, processTotals[File2][myCmdProcess2].WaitMs);
+
+            Assert.Equal(1, processTotals[File3][myCmdProcess].WaitMs);
+
+        }
+
+        [Fact]
+        public void Total_File_Process_Calculation_TopN1_Ready()
+        {
+
+            DumpCPUMethod dumper = new();
+            dumper.ShowTotal = TotalModes.Process;
+            dumper.SortOrder = SortOrders.Ready;
+            dumper.TopN = new ETWAnalyzer.Infrastructure.SkipTakeRange(1, null);
+
+            var data = CreateTestData();
+
+            var (fileTotals, processTotals) = dumper.GetFileAndProcessTotals(data);
+
+            Assert.Equal(150, fileTotals[File1].ReadyMs);
+            Assert.Equal(140, fileTotals[File2].ReadyMs);
+            Assert.Equal(5000, fileTotals[File3].ReadyMs);
         }
     }
 }

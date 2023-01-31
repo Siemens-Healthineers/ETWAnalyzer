@@ -264,7 +264,7 @@ namespace ETWAnalyzer.EventDump
                 }
                 else
                 {
-                    lret = $"FileVersion: {version?.Trim()}, VersionString: {versionStr?.Trim()}";
+                    lret = $"FileVersion: {version?.Trim()}, VersionString: {versionStr?.Trim()},";
                 }
             }
 
@@ -277,21 +277,21 @@ namespace ETWAnalyzer.EventDump
                     {
                         lret += " ";
                     }
-                    lret += $"ProductVersion: {def.ProductVersionStr.Trim()}";
+                    lret += $"ProductVersion: {def.ProductVersionStr.Trim()},";
                 }
             }
 
             if (!String.IsNullOrEmpty(def.ProductName))
             {
-                lret += $" Name: {def.ProductName.Trim()}";
+                lret += $" ProductName: {def.ProductName.Trim()},";
             }
             if (!String.IsNullOrEmpty(def.Description?.Trim()))
             {
-                lret += $" Description: {def.Description.Trim()}";
+                lret += $" Description: {def.Description.Trim()},";
             }
             if( addDirectory)
             {
-                lret += $" {def.ModulePath}";
+                lret += $" Directory: {def.ModulePath}";
             }
 
             return lret;
@@ -373,26 +373,5 @@ namespace ETWAnalyzer.EventDump
             Dispose(true);
         }
         #endregion
-    }
-
-    /// <summary>
-    /// Typed base class which caches its output so we have a chance to later add specific unit tests for important aspects of the dump commands
-    /// </summary>
-    /// <typeparam name="T"></typeparam>
-    abstract class DumpBase<T> : DumpBase
-    {
-        public string ETLFile { get; set; }
-        public bool UsePrettyProcessName { get; set; }
-
-        public override void Execute()
-        {
-            ExecuteInternal();
-        }
-
-        /// <summary>
-        /// Execute command and return cached output for unit testing
-        /// </summary>
-        /// <returns></returns>
-        public abstract List<T> ExecuteInternal();
     }
 }

@@ -32,6 +32,11 @@ namespace ETWAnalyzer.Extract
         public string UsedExtractOptions { get; set; }
 
         /// <summary>
+        /// Computer Name
+        /// </summary>
+        public string ComputerName { get; set; }
+
+        /// <summary>
         /// OS Name
         /// </summary>
         public string OSName { get; set; }
@@ -433,16 +438,6 @@ namespace ETWAnalyzer.Extract
         /// <exception cref="InvalidOperationException">Pid is negative.</exception>
         public ETWProcess TryGetProcessByPID(int pid, DateTimeOffset startTime)
         {
-            if (pid == 0)
-            {
-                throw new ArgumentNullException(nameof(pid));
-            }
-
-            if (pid < 0)
-            {
-                throw new InvalidOperationException($"{nameof(pid)} cannot be negative!");
-            }
-
             foreach (ETWProcess process in Processes)
             {
                 if (process.ProcessID == pid && process.StartTime == startTime)

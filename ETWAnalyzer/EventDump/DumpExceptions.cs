@@ -1,12 +1,10 @@
 ﻿//// SPDX-FileCopyrightText:  © 2022 Siemens Healthcare GmbH
 //// SPDX-License-Identifier:   MIT
 
-using ETWAnalyzer.Analyzers;
-using ETWAnalyzer.Analyzers.Infrastructure;
 using ETWAnalyzer.Commands;
 using ETWAnalyzer.Extract;
 using ETWAnalyzer.Extract.Exceptions;
-using ETWAnalyzer.Extractors;
+using ETWAnalyzer.Extract.Modules;
 using ETWAnalyzer.Infrastructure;
 using ETWAnalyzer.ProcessTools;
 using Microsoft.Diagnostics.Tracing.Parsers.FrameworkEventSource;
@@ -16,8 +14,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ETWAnalyzer.EventDump
 {
@@ -35,6 +31,10 @@ namespace ETWAnalyzer.EventDump
         public MinMaxRange<double> MinMaxExTimeS { get; internal set; }
         public int MaxMessage { get; internal set; } = DumpCommand.MaxMessageLength;
         public DumpCommand.SortOrders SortOrder { get; internal set; }
+
+        /// <summary>
+        /// Show module file name and version. In cpu total mode also exe version.
+        /// </summary>
 
         public bool ShowTime { get; internal set; }
 
@@ -103,6 +103,8 @@ namespace ETWAnalyzer.EventDump
             /// </summary>
             public string BaseLine { get; internal set; }
 
+            public ModuleDefinition Module { get; internal set; }
+
             public MatchData Clone()
             {
                 return new MatchData
@@ -112,6 +114,7 @@ namespace ETWAnalyzer.EventDump
                     TimeStamp = TimeStamp,
                     Process = Process,
                     Stack = Stack,
+                    Module = Module,
                     SourceFile = SourceFile,
                     ZeroTimeS = ZeroTimeS,
                     BaseLine = BaseLine,
@@ -123,6 +126,8 @@ namespace ETWAnalyzer.EventDump
         /// Messages with longer strings are truncated at console output.
         /// </summary>
         const int ExceptionMaxMessageLength = 500;
+
+
 
         public override List<MatchData> ExecuteInternal()
         {
@@ -164,12 +169,21 @@ namespace ETWAnalyzer.EventDump
 
         private void WriteToCSVFile(List<MatchData> matches)
         {
-            OpenCSVWithHeader("CSVOptions", "Time", "Exception Type", "Message", "Process", "Process Name", "Start Time", "Command Line", "StackTrace", "TestCase", "BaseLine", "PerformedAt", "SourceFile");
+            OpenCSVWithHeader(Col_CSVOptions, Col_Time, "Exception Type", "Message", Col_Process, Col_ProcessName, Col_StartTime, 
+                Col_CommandLine, "StackTrace", Col_TestCase, Col_Baseline, "PerformedAt", Col_SourceJsonFile, 
+                Col_FileVersion, Col_VersionString, Col_ProductVersion, Col_ProductName, Col_Description, Col_Directory);
             foreach(var match in matches)
             {
+                string fileVersion = match.Module?.Fileversion?.ToString()?.Trim() ?? "";
+                string versionString = match.Module?.FileVersionStr?.Trim() ?? "";
+                string productVersion = match.Module?.ProductVersionStr?.Trim() ?? "";
+                string productName = match.Module?.ProductName?.Trim() ?? "";
+                string description = match.Module?.Description?.Trim() ?? "";
+                string directory = match.Module?.ModulePath ?? "";
                 WriteCSVLine(CSVOptions, GetDateTimeString(match.TimeStamp, match.SessionStart, TimeFormatOption), match.Type, match.Message, match.Process.GetProcessWithId(UsePrettyProcessName), 
                     match.Process.GetProcessName(UsePrettyProcessName), match.Process.StartTime,
-                    match.Process.CmdLine, match.Stack, match.TestCase, match.BaseLine, GetDateTimeString(match.PerformedAt), match.SourceFile);
+                    match.Process.CmdLine, match.Stack, match.TestCase, match.BaseLine, GetDateTimeString(match.PerformedAt), match.SourceFile,
+                    fileVersion, versionString, productVersion, productName, description, directory);
             }
         }
 
@@ -195,6 +209,12 @@ namespace ETWAnalyzer.EventDump
 
             foreach (var ex in file.Extract.Exceptions.Exceptions.Where(IsMatchingException))
             {
+                ModuleDefinition exceptionModule = ShowModuleInfo ? file.Extract.Modules.FindModule(ex.Process.ProcessName, ex.Process) : null;
+
+                if (!IsMatchingModule(exceptionModule))
+                {
+                    continue;
+                }
                 var data = new MatchData
                 {
                     Message = ex.Message,
@@ -208,6 +228,7 @@ namespace ETWAnalyzer.EventDump
                     BaseLine = file.Extract?.MainModuleVersion?.ToString(),
                     SessionStart = file.Extract.SessionStart,
                     ZeroTimeS = zeroTimeS,
+                    Module = exceptionModule
                 };
 
                 matches.Add(data);
@@ -346,7 +367,13 @@ namespace ETWAnalyzer.EventDump
         {
             foreach (var processExceptions in matches.GroupBy(x => x.Process))
             {
-                ColorConsole.WriteEmbeddedColorLine($"[magenta]{processExceptions.Key.GetProcessWithId(UsePrettyProcessName)} {processExceptions.Key.StartStopTags}[/magenta] {(NoCmdLine ? String.Empty : processExceptions.Key.CommandLineNoExe)}", ConsoleColor.DarkCyan);
+                ModuleDefinition processModule = processExceptions.First().Module;
+                string moduleInfo = processModule != null ? GetModuleString(processModule, true) : "";
+
+
+                ColorConsole.WriteEmbeddedColorLine($"[magenta]{processExceptions.Key.GetProcessWithId(UsePrettyProcessName)} {processExceptions.Key.StartStopTags}[/magenta] {(NoCmdLine ? String.Empty : processExceptions.Key.CommandLineNoExe)}", ConsoleColor.DarkCyan, true);
+                ColorConsole.WriteEmbeddedColorLine($"[red]{moduleInfo}[/red]");
+
                 foreach (var byType in processExceptions.GroupBy(x => x.Type))
                 {
                     ColorConsole.WriteLine($"\t{byType.Key}", ConsoleColor.Green);

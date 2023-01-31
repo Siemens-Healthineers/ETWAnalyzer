@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Linq;
 using ETWAnalyzer.TraceProcessorHelpers;
 using ETWAnalyzer.Infrastructure;
+using System.Globalization;
 
 namespace ETWAnalyzer.Extractors.CPU
 {
@@ -73,24 +74,32 @@ namespace ETWAnalyzer.Extractors.CPU
             // inspired by https://github.com/microsoft/eventtracing-processing-samples/blob/master/GetCpuSampleDuration/Program.cs
             Dictionary<ProcessKey, Dictionary<string, CpuData>> methodSamplesPerProcess = new();
             StackPrinter printer = new(StackFormat.DllAndMethod);
-            foreach (ICpuSample sample in mySamplingData.Result.Samples)
+            bool hasSamplesWithStacks = false;
+
+            if (mySamplingData.HasResult)
             {
-                if (sample?.Process?.ImageName == null)
+                foreach (ICpuSample sample in mySamplingData.Result.Samples)
                 {
-                    continue;
-                }
+                    if (sample?.Process?.ImageName == null)
+                    {
+                        continue;
+                    }
 
-                var process = new ProcessKey(sample.Process.ImageName, sample.Process.Id, sample.Process.CreateTime.HasValue ? sample.Process.CreateTime.Value.DateTimeOffset : default(DateTimeOffset));
+                    if (hasSamplesWithStacks == false)
+                    {
+                        hasSamplesWithStacks = sample.Stack != null;
+                    }
 
-                AddTotalCPU(process, sample, myPerProcessCPU);
-                AddPerMethodAndProcessCPU(process, sample, methodSamplesPerProcess, printer);
-                if (myTimelineExtractor != null)
-                {
-                    myTimelineExtractor.AddSample(process, sample);
+                    var process = new ProcessKey(sample.Process.ImageName, sample.Process.Id, sample.Process.CreateTime.HasValue ? sample.Process.CreateTime.Value.DateTimeOffset : default(DateTimeOffset));
+
+                    AddTotalCPU(process, sample, myPerProcessCPU);
+                    AddPerMethodAndProcessCPU(process, sample, methodSamplesPerProcess, printer);
+                    if (myTimelineExtractor != null)
+                    {
+                        myTimelineExtractor.AddSample(process, sample);
+                    }
                 }
             }
-
-            bool hasCpuSamples = mySamplingData.HasResult && mySamplingData.Result.Samples.Count > 0;
 
             // When we have context switch data recorded we can also calculate the thread wait time stacktags
             if (myCpuSchedlingData.HasResult)
@@ -109,7 +118,7 @@ namespace ETWAnalyzer.Extractors.CPU
 
                     var process = new ProcessKey(slice.Process.ImageName, slice.Process.Id, slice.Process.CreateTime.HasValue ? slice.Process.CreateTime.Value.DateTimeOffset : default(DateTimeOffset));
 
-                    AddPerMethodAndProcessWaits(process, slice, methodSamplesPerProcess, printer, hasCpuSamples);
+                    AddPerMethodAndProcessWaits(process, slice, methodSamplesPerProcess, printer, hasSamplesWithStacks);
                 }
             }
 
@@ -123,7 +132,7 @@ namespace ETWAnalyzer.Extractors.CPU
             CPUPerProcessMethodList inclusiveSamplesPerMethod = new()
             {
                 ContainsAllCPUData = ExtractAllCPUData,
-                HasCPUSamplingData = hasCpuSamples,
+                HasCPUSamplingData = hasSamplesWithStacks,
                 HasCSwitchData = myCpuSchedlingData.HasResult && myCpuSchedlingData.Result?.ContextSwitches?.Count > 0,
             };
 
@@ -177,7 +186,9 @@ namespace ETWAnalyzer.Extractors.CPU
                 }
 
                 string method = printer.GetPrettyMethod(frame.Symbol?.FunctionName, frame);
-                if (recursionCountGuard.Add(method) == false)
+                string methodWithRva = AddRva(method, frame.RelativeVirtualAddress);
+
+                if (recursionCountGuard.Add(methodWithRva) == false)
                 {
                     // do not attribute the same sample to the same method again or 
                     // we will count some methods twice or even more often!
@@ -185,10 +196,12 @@ namespace ETWAnalyzer.Extractors.CPU
                     continue;
                 }
 
-                if ( !methods.TryGetValue( method, out CpuData stats))
+               
+
+                if ( !methods.TryGetValue(methodWithRva, out CpuData stats))
                 {
                     stats = new CpuData();
-                    methods[method] = stats;
+                    methods[methodWithRva] = stats;
                 }
                 
                 if (slice.WaitingDuration.HasValue)
@@ -239,9 +252,11 @@ namespace ETWAnalyzer.Extractors.CPU
                     methods = new Dictionary<string, CpuData>();
                     methodSamplesPerProcess.Add(process, methods);
                 }
-
+                
                 string method = printer.GetPrettyMethod(frame.Symbol?.FunctionName, frame);
-                if (recursionCountGuard.Add(method) == false)
+                string rvaMethod = AddRva(method, frame.RelativeVirtualAddress);
+
+                if (recursionCountGuard.Add(rvaMethod) == false)
                 {
                     // do not attribute the same sample to the same method again or 
                     // we will count some methods twice or even more often!
@@ -249,10 +264,10 @@ namespace ETWAnalyzer.Extractors.CPU
                     continue;
                 }
 
-                if (!methods.TryGetValue(method, out CpuData stats))
+                if (!methods.TryGetValue(rvaMethod, out CpuData stats))
                 {
                     stats = new CpuData();
-                    methods[method] = stats;
+                    methods[rvaMethod] = stats;
                 }
 
                 stats.CpuInMs += sample.Weight;
@@ -263,6 +278,27 @@ namespace ETWAnalyzer.Extractors.CPU
                 UpdateMethodTimingAndThreadId(stats, time, sample.Thread.Id);
             }
 
+        }
+
+        /// <summary>
+        /// Add to method name if it was not resolved the RVA address. This is needed to later resolve the method
+        /// name when matching symbols could be loaded.
+        /// </summary>
+        /// <param name="method">Method of the form xxxx.dll!method where method is xxx.dll if the symbol lookup did fail.</param>
+        /// <param name="rva">Image Relative Virtual Address</param>
+        /// <returns>For unresolved methods the image + Image Relative Virtual Address.</returns>
+        string AddRva(string method, Address rva)
+        {
+            string lret = method;
+
+            // do not try to resolve invalid RVAs (like 0)
+            if(rva.Value > 0 && ( method.EndsWith(".exe", StringComparison.Ordinal) || method.EndsWith(".dll", StringComparison.Ordinal) || method.EndsWith(".sys", StringComparison.Ordinal) ) ) 
+            {
+                // Method could not be resolved. Use RVA
+                lret = method + "+0x" + rva.Value.ToString("X", CultureInfo.InvariantCulture);
+            }
+
+            return lret;
         }
 
         private static void UpdateMethodTimingAndThreadId(CpuData stats, decimal time, int threadId)

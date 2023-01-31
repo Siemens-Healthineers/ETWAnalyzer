@@ -38,6 +38,7 @@ namespace ETWAnalyzer.EventDump
         public bool ShowDetails { get; set; }
 
         public KeyValuePair<string, Func<string, bool>> DnsQueryFilter { get; internal set; } = new KeyValuePair<string, Func<string, bool>>(null, x => true);
+        public bool ShowProcess { get; internal set; }
 
         /// <summary>
         /// Unit testing only. ReadFileData will return this list instead of real data
@@ -49,9 +50,9 @@ namespace ETWAnalyzer.EventDump
             List<MatchData> lret = ReadFileData();
             if (IsCSVEnabled)
             {
-                OpenCSVWithHeader("CSVOptions", "Directory", "FileName", "Date", "Test Case", "Test Time in ms", "Baseline", "Process", "ProcessName",
-                                  "DNS Query", "Query StatusCode", "TimedOut", "Start Time", "Duration in s", "Queried Network Adapters", "Server List", "DNS Result",
-                                  "Command Line");
+                OpenCSVWithHeader(Col_CSVOptions, "Directory", Col_FileName, Col_Date, Col_TestCase, Col_TestTimeinms, Col_Baseline, Col_Process, Col_ProcessName,
+                                  "DNS Query", "Query StatusCode", "TimedOut", Col_StartTime, "Duration in s", "Queried Network Adapters", 
+                                  "Server List", "DNS Result", Col_CommandLine);
 
                 foreach (var dnsEvent in lret)
                 {
@@ -130,7 +131,7 @@ namespace ETWAnalyzer.EventDump
                         continue;
                     }
 
-                    if (!ShowDetails) // when -Details is set we already show every query with process name
+                    if (!ShowDetails && ShowProcess) // when -Details is set we already show every query with process name
                     {
                         if (previous == null || !previous.SequenceEqual(data.GroupProcesses))
                         {

@@ -344,7 +344,8 @@ namespace ETWAnalyzer.EventDump
         List<MatchData> GetCrashedProcesses(List<MatchData> data)
         {
             List<MatchData> lret = data.Where(x => ETWProcess.IsPossibleCrash(x.ReturnCode)).ToList();
-            foreach (var werDumpCall in data.Where(x => x.ProcessName == WerFault && x.CmdLine.Contains(" -p ")))
+            int lastPid = 0;
+            foreach(MatchData werDumpCall in data.Where(x => x.ProcessName == WerFault && x.CmdLine.Contains(" -p ")).OrderBy( x=>x.StartTime ) )
             {
                 int start = werDumpCall.CmdLine.IndexOf(" -p ");
                 if (start > -1)
@@ -363,18 +364,24 @@ namespace ETWAnalyzer.EventDump
                             }
                         }
 
-                        lret.Add(werDumpCall);
+                        if (lastPid != crashPid) // only show the first WerDump call. Normally WerFault is called two times. 
+                        {
+                            lret.Add(werDumpCall);
+                        }
+                        lastPid = crashPid;
                     }
                 }
             }
 
+
+            lret = lret.OrderBy(x=>x.PerformedAt).ThenBy(x=>x.EndTime).ThenBy(x=>x.StartTime).ToList();
 
             return lret;
         }
 
         private void WriteToCSV(List<MatchData> rowData)
         {
-            OpenCSVWithHeader("CSVOptions", "TestCase", "TestDate", "ProcessName", "ProcessName(pid)", "Parent ProcessId", "Return Code", "NewProcess", "Start Time", "End Time", "LifeTime in minutes", "User", "Command Line", "BaseLine", "SourceFile");
+            OpenCSVWithHeader(Col_CSVOptions, Col_TestCase, "TestDate", Col_ProcessName, "ProcessName(pid)", "Parent ProcessId", "Return Code", "NewProcess", "Start Time", "End Time", "LifeTime in minutes", "User", Col_CommandLine, Col_Baseline, "SourceFile");
             foreach (var data in rowData)
             {
                 WriteCSVLine(CSVOptions, data.TestCase, data.PerformedAt, data.ProcessName, data.ProcessWithPid, data.ParentProcessId, ETWProcess.GetReturnString(data.ReturnCode, out bool bCrash), Convert.ToInt32(data.IsNewProcess),

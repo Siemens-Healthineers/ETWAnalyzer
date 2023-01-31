@@ -1,0 +1,60 @@
+name: Compile and Upload Binaries
+
+on:
+  workflow_dispatch
+
+jobs:
+
+    build:
+
+        runs-on: windows-latest  # For a list of available runner types, refer to
+                                 # https://help.github.com/en/actions/reference/workflow-syntax-for-github-actions#jobsjob_idruns-on  
+  
+        strategy:
+            matrix:
+                onsystem:
+                    - 'x64-windows'
+
+                configuration: [Release]
+
+        env:
+            Solution_Name: ETWAnalyzer.sln
+
+        steps:
+       
+        - name: Checkout
+          uses: actions/checkout@v3
+          with:
+            fetch-depth: 0
+
+        # Add  MSBuild to the PATH: https://github.com/microsoft/setup-msbuild
+        - name: Setup MSBuild.exe
+          uses: microsoft/setup-msbuild@v1.1
+
+        # Print .NET information
+        - name: Get .NET Information
+          run: dotnet --info
+
+        - name: Build Release
+          run: ${{ github.workspace }}\ETWAnalyzer\MakeRelease.cmd
+            
+        - name: Upload .NET 6 Binaries
+          uses: actions/upload-artifact@v3
+          with:
+            name: Net6Binaries
+            path: ${{ github.workspace }}/bin/Release/ETWAnalyzer_Net6.zip
+            retention-days: 90
+
+        - name: Upload .NET 4.8 Binaries
+          uses: actions/upload-artifact@v3
+          with:
+            name: Net48Binaries
+            path: ${{ github.workspace }}/bin/Release/ETWAnalyzer_Net48.zip
+            retention-days: 90
+
+        - name: Upload Nuget Package
+          uses: actions/upload-artifact@v3
+          with:
+            name: ETWAnalyzer.nupkg
+            path: ${{ github.workspace }}/bin/Release/ETWAnalyzer*.nupkg
+            retention-days: 90

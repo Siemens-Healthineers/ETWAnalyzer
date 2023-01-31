@@ -142,6 +142,10 @@ namespace ETWAnalyzer.Extract
         /// <returns></returns>
         public string GetLongSymbolFolderForEtl(string etlFile, string extension)
         {
+            if( string.IsNullOrEmpty(etlFile))
+            {
+                return "";
+            }
             return Path.GetFullPath(etlFile) + extension;
         }
 

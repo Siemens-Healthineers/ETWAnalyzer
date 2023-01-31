@@ -7,8 +7,10 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 
 namespace ETWAnalyzer.Extract.Modules
 {
@@ -16,7 +18,7 @@ namespace ETWAnalyzer.Extract.Modules
     /// Module Definition which contains file name, directory, File Version, Product Version, Product Name, Description and numeric FileVersion and 
     /// the list of processes which have this module loaded.
     /// </summary>
-    public class ModuleDefinition
+    public class ModuleDefinition : IEquatable<ModuleDefinition>
     {
         /// <summary>
         /// Contains indices to Strings array for 
@@ -27,6 +29,11 @@ namespace ETWAnalyzer.Extract.Modules
         {
             get; set;
         }
+
+        /// <summary>
+        /// Contains Index to unresolved pbd array which could not be loaded during extraction.
+        /// </summary>
+        public PdbIndex? PdbIdx { get; set; }
 
         /// <summary>
         /// ETWProcess Ids are prefixed in <see cref="ModuleAndPid"/> array with this character.
@@ -182,19 +189,20 @@ namespace ETWAnalyzer.Extract.Modules
         /// </summary>
         /// <param name="container"></param>
         /// <param name="processIdx"></param>
+        /// <param name="pdbIdx"></param>
         /// <param name="fullPath"></param>
         /// <param name="fileVersionStr"></param>
         /// <param name="productVersionStr"></param>
         /// <param name="productName"></param>
         /// <param name="fileVersion"></param>
         /// <param name="description"></param>
-        public ModuleDefinition(ModuleContainer container, ETWProcessIndex processIdx, string fullPath, string fileVersionStr, string productVersionStr, string productName, Version fileVersion, string description)
+        public ModuleDefinition(ModuleContainer container, ETWProcessIndex processIdx, PdbIndex pdbIdx, string fullPath, string fileVersionStr, string productVersionStr, string productName, Version fileVersion, string description)
         {
             if (ModuleAndPid == null)
             {
                 string dirName = Path.GetDirectoryName(fullPath);
                 string fileName = Path.GetFileName(fullPath);
-
+               
                 UniqueStringList sharedStr = container.SharedStrings;
 
                 int dirIdx = sharedStr.GetIndexForString(dirName);
@@ -205,8 +213,11 @@ namespace ETWAnalyzer.Extract.Modules
                 int fileVersionIdx = sharedStr.GetIndexForString(fileVersion?.ToString());
                 int descriptionIdx = sharedStr.GetIndexForString(description);
                 ModuleAndPid = $"{dirIdx} {fileIdx} {fileVersionStrIdx} {productVersionStrIdx} {productNameIdx} {fileVersionIdx} {descriptionIdx}";
+
+                myModuleName = fileName;
             }
 
+            PdbIdx = pdbIdx == Modules.PdbIndex.Invalid ? null : pdbIdx;
             AddPid(processIdx);
         }
 
@@ -225,9 +236,20 @@ namespace ETWAnalyzer.Extract.Modules
         /// <summary>
         /// 
         /// </summary>
+        /// <returns></returns>
+        public override int GetHashCode()
+        {
+            int hash = 17 * 31 + (this.ModuleName?.GetHashCode()).GetValueOrDefault();
+            hash = hash * 31 + (int) this.PdbIdx.GetValueOrDefault();
+            return hash;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
         /// <param name="other"></param>
         /// <returns></returns>
-        internal bool Equals(ModuleDefinition other)
+        public bool Equals(ModuleDefinition other)
         {
             if (Object.ReferenceEquals(this.ModuleAndPid, other.ModuleAndPid))
             {
@@ -279,7 +301,7 @@ namespace ETWAnalyzer.Extract.Modules
         /// <returns></returns>
         public override string ToString()
         {
-            return $"{ModuleName} {ModulePath} {ProductName} {ProductVersionStr} {FileVersionStr} {Fileversion} {Description}";
+            return $"{ModuleName} {ModulePath} {ProductName} {ProductVersionStr} {FileVersionStr} {Fileversion} {Description} PdbIndex: {PdbIdx}";
         }
     }
 }

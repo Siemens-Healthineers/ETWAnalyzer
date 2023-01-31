@@ -3,6 +3,8 @@
 
 using ETWAnalyzer.EventDump;
 using ETWAnalyzer.Extract;
+using ETWAnalyzer.Extract.Disk;
+using ETWAnalyzer.Infrastructure;
 using ETWAnalyzer.ProcessTools;
 using Microsoft.Diagnostics.Tracing;
 using System;
@@ -48,6 +50,7 @@ namespace ETWAnalyzer
             "CPUVendor",
             "CPUName",
             "HyperThreading",
+            "Disk",
             "SessionStart",
             "SessionEnd",
             "SessionDurationS",
@@ -103,6 +106,7 @@ namespace ETWAnalyzer
             { "CPUSpeedMHz",        m => m.CPUSpeedMHz },
             { "CPUVendor",          m => m.CPUVendor },
             { "CPUName",            m => m.CPUName },
+            { "Disk",               m => FormatDisks(m.Disks) },
             { "HyperThreading",     m => m.CPUHyperThreadingEnabled?.ToString() },
             { "SessionStart",       m => m.SessionStart },
             { "SessionEnd",         m => m.SessionEnd},
@@ -116,6 +120,27 @@ namespace ETWAnalyzer
             { "Displays",           m => $"Horizontal: {m.DisplaysHorizontalResolution} Vertical: {m.DisplaysVerticalResolution} MemoryMiB: {m.DisplaysMemoryMiB} Name: {m.DisplaysNames}" }
 
         };
+
+        private static string FormatDisks(IReadOnlyList<IDiskLayout> disks)
+        {
+            if( disks == null )
+            {
+                return null;
+            }
+
+            string lret = null;
+
+            foreach (var disk in disks)
+            {
+                foreach (var partition in disk.Partitions)
+                {
+                    lret += $"Drive {partition.Drive}, {disk.Model}, WriteCache: {disk.IsWriteCachingEnabled}, Free {"F4".WidthFormat(partition.FreeSizeGiB,10)} GiB/{"F4".WidthFormat(partition.TotalSizeGiB,10)} GiB, DiskSize: {"F4".WidthFormat(disk.CapacityGiB, 10)} GiB" + Environment.NewLine;
+                }
+            }
+
+
+            return lret;
+        }
 
         class Match
         {
@@ -138,6 +163,7 @@ namespace ETWAnalyzer
             public string Model;
             public string AdDomain;
             public bool IsDomainJoined;
+            public IReadOnlyList<IDiskLayout> Disks;
             public string DisplaysHorizontalResolution;
             public string DisplaysVerticalResolution;
             public string DisplaysNames;
@@ -207,7 +233,7 @@ namespace ETWAnalyzer
                                 BaseLine = file.Extract?.MainModuleVersion?.ToString() ?? "",
                                 DurationMs = file.DurationInMs,
                                 Source = file.FileName,
-                                Machine = file.MachineName,
+                                Machine = file.Extract.ComputerName ?? file.MachineName,
                                 SourceETLFileName = file.Extract.SourceETLFileName,
                                 UsedExtractOptions = file.Extract.UsedExtractOptions,
                                 OSName = file.Extract.OSName,
@@ -218,6 +244,7 @@ namespace ETWAnalyzer
                                 CPUSpeedMHz = file.Extract.CPUSpeedMHz,
                                 CPUName = file.Extract.CPUName,
                                 CPUVendor = file.Extract.CPUVendor,
+                                Disks = file.Extract.Disk.DiskInformation,
                                 CPUHyperThreadingEnabled = file.Extract.CPUHyperThreadingEnabled,
                                 SessionStart = file.Extract.SessionStart,
                                 SessionEnd = file.Extract.SessionEnd,
@@ -249,7 +276,7 @@ namespace ETWAnalyzer
                 if (!myHeaderWritten)
                 {
                     myHeaderWritten = true;
-                    OpenCSVWithHeader("CSVOptions", "TestCase", "TestDate", "DurationMs", "SourceFile", "Machine", "SourceETLFileName", "BaseLine", "UsedExtractOptions", "OSName", "OSBuild", "OSVersion", "MemorySizeMB", "NumberOfProcessors", "CPUSpeedMHz", "SessionStart", "SessionEnd", "BootTime", "Model",
+                    OpenCSVWithHeader(Col_CSVOptions, Col_TestCase, "TestDate", Col_TestTimeinms, "SourceFile", Col_Machine, "SourceETLFileName", Col_Baseline, "UsedExtractOptions", "OSName", "OSBuild", "OSVersion", "MemorySizeMB", "NumberOfProcessors", "CPUSpeedMHz", "SessionStart", "SessionEnd", "BootTime", "Model",
                                       "AdDomain", "IsDomainJoined", "DisplaysHorizontalResolution", "DisplaysVerticalResolution", "DisplayNames", "MainModuleVersion", "DisplaysMemoryMiB");
                 }
 
@@ -275,7 +302,11 @@ namespace ETWAnalyzer
                             continue;
                         }
 
-                        ColorConsole.WriteEmbeddedColorLine(String.Format(fmtString, format.Key, value), null, OneLine);
+                        string[] lines = value.ToString().Split(Environment.NewLine.ToCharArray(), StringSplitOptions.RemoveEmptyEntries);
+                        for(int i=0;i < lines.Length;i++)
+                        {
+                            ColorConsole.WriteEmbeddedColorLine(String.Format(fmtString, format.Key, lines[i]), null, OneLine);
+                        }
                     }
                 }
 

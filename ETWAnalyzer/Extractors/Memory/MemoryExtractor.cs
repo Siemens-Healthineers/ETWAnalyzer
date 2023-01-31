@@ -43,22 +43,42 @@ namespace ETWAnalyzer.Extractors
                 Console.WriteLine("Warning: No Working Set snapshot data present in trace!");
                 return;
             }
-            results.MemoryUsage.WorkingSetsAtStart = ExtractWorkingSets(first);
+            results.MemoryUsage.WorkingSetsAtStart = ExtractWorkingSets(first, results);
 
             IWorkingSetSnapshot last = workingSets.Snapshots.Last();
-            results.MemoryUsage.WorkingSetsAtEnd = ExtractWorkingSets(last);
+            results.MemoryUsage.WorkingSetsAtEnd = ExtractWorkingSets(last, results);
         }
 
-        IReadOnlyList<ProcessWorkingSet> ExtractWorkingSets(IWorkingSetSnapshot workingsets)
+        IReadOnlyList<ProcessWorkingSet> ExtractWorkingSets(IWorkingSetSnapshot workingsets, ETWExtract extract)
         {
             List<ProcessWorkingSet> lret = new();
-            // IWorkingSetEntry.SystemCategoryName is set when Process is null. These values are of no interest except for kernel devs so we can safely skip them
-            // SystemCacheWs: 130.66 MiB 130.66 MiB 130.66 MiB
-            // PagedPoolWs: 288.46 MiB 288.46 MiB 296.56 MiB
-            // SystemPteWs: 8.39 MiB 8.39 MiB 8.39 MiB
-            foreach (IWorkingSetEntry entry in workingsets.Entries.Where(x => x.Process != null && x.Process.ImageName != null))
+
+            foreach (IWorkingSetEntry entry in workingsets.Entries)
             {
-                lret.Add(new ProcessWorkingSet(entry.Process, entry.CommitSize, entry.WorkingSetSize, entry.PrivateWorkingSetSize, entry.SharedCommitSize));
+                // IWorkingSetEntry.SystemCategoryName is set when Process is null.
+                // SystemCacheWs: 130.66 MiB 130.66 MiB 130.66 MiB
+                // PagedPoolWs: 288.46 MiB 288.46 MiB 296.56 MiB
+                // SystemPteWs: 8.39 MiB 8.39 MiB 8.39 MiB
+                if (entry.SystemCategoryName != null)
+                {
+                    ETWProcess process = extract.Processes.FirstOrDefault(x => x.ProcessName == entry.SystemCategoryName);
+                    if (process == null)
+                    {
+                        process = new ETWProcess
+                        {
+                            ProcessName = entry.SystemCategoryName,
+                            ProcessID = 1,
+                            Identity = @"NT AUTHORITY\SYSTEM",
+                        };
+                        extract.Processes.Add(process);
+                    }
+                    lret.Add(new ProcessWorkingSet(process.ToProcessKey(), entry.CommitSize, entry.WorkingSetSize, entry.PrivateWorkingSetSize, entry.SharedCommitSize));
+                }
+                else if (entry?.Process?.ImageName != null)
+                {
+                    lret.Add(new ProcessWorkingSet(entry.Process, entry.CommitSize, entry.WorkingSetSize, entry.PrivateWorkingSetSize, entry.SharedCommitSize));
+                }
+                
             }
 
             return lret.OrderByDescending(x => x.CommitInMiB).ToArray();
