@@ -3,6 +3,7 @@
 
 using Newtonsoft.Json;
 using System;
+using System.Linq;
 
 namespace ETWAnalyzer.Extract.Modules
 {
@@ -45,14 +46,14 @@ namespace ETWAnalyzer.Extract.Modules
             if( myName == null)
             {
                 string[] parts = Pdb.Split(SplitChar);
-                if( parts.Length != 3)
+                if (parts.Length < 3)
                 {
                     throw new ArgumentException($"Invalid data in IdAgeName: {Pdb}");
                 }
 
                 myId = Guid.Parse(parts[0]);
                 myAge = int.Parse(parts[1]);
-                myName = parts[2];
+                myName = String.Join(" ", parts.Skip(2));
             }
 
             return this;
