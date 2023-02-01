@@ -201,7 +201,29 @@
     <Entrypoint Module="appidsvc.dll" Method="*AppIDRpcVerifyFile*" />
     <Entrypoint Module="appid.sys" Method="*AiProcessNotifyRoutine*" />
   </Tag>
-  <Tag Name="Antivirus - Windows Defender" Priority="1">
+
+  <Tag Name="Antivirus - Sophos" Priority="1">
+    <Entrypoint Module="SophosED.sys" Method="*"/>
+
+    <Tag Name="HitmanPro Alert" Priority="1">
+      <Entrypoint Module="hmpalert.sys" Method="*"/>
+    </Tag>
+    <Tag Name="Web Intelligence" Priority="1">
+      <Entrypoint Module="swi_callout.sys" Method="*"/>
+    </Tag>
+    <Tag Name="Network Threat Protection" Priority="1">
+      <Entrypoint Module="sntp.sys" Method="*"/>
+    </Tag>
+    <Tag Name="Asmi Provider" Priority="1">
+      <Entrypoint Module="SophosAmsiProvider.dll" Method="*"/>
+    </Tag>		
+    <Tag Name="Scanning Engine" Priority="1">
+      <Entrypoint Module="SophosFileScanner.exe" Method="*"/>
+      <Entrypoint Module="savi.dll" Method="*"/>
+    </Tag>
+  </Tag>
+
+   <Tag Name="Antivirus - Windows Defender" Priority="1">
     <Entrypoint Module="mpengine.dll" Method="*"/>
     <Entrypoint Module="WdFilter.sys" Method="*"/>
     <Entrypoint Module="mssecflt.sys" Method="*"/>
