@@ -572,7 +572,7 @@ namespace ETWAnalyzer.Commands
         public bool NoCSVSeparator { get; internal set; }
         public int TestsPerRun { get; private set; }
         public SkipTakeRange TopN { get; private set; } = new SkipTakeRange();
-        public int LastNDays { get; private set; }
+        public double LastNDays { get; private set; } = double.MaxValue;
         public int TestRunIndex { get; private set; } = -1;
         public int SkipNTests { get; private set; }
         public int TestRunCount { get; private set; }
@@ -749,13 +749,13 @@ namespace ETWAnalyzer.Commands
 
                 switch (curArg?.ToLowerInvariant())
                 {
-                    case CommandFactory.DumpCommand:
+                    case CommandFactory.DumpCommand:  // -dump
                         // ignore -dump which is already known by factory
                         break;
-                    case DebugArg:
+                    case DebugArg:    // -debug
                         Program.DebugOutput = true;
                         break;
-                    case NoColorArg:
+                    case NoColorArg:   // -nocolor
                         ColorConsole.EnableColor = false;
                         break;
                     case "-clip":
@@ -845,8 +845,8 @@ namespace ETWAnalyzer.Commands
                             ShowModuleFilter = new KeyValuePair<string, Func<string, bool>>(showModuleInfoArg, Matcher.CreateMatcher(showModuleInfoArg));
                         }
                         break;
-                    case "-testsperrun":
-                        this.TestsPerRun = int.Parse(GetNextNonArg("-testsperrun"), CultureInfo.InvariantCulture);
+                    case TestsPerRunArg:  // -testsperrun
+                        this.TestsPerRun = int.Parse(GetNextNonArg(TestsPerRunArg), CultureInfo.InvariantCulture);
                         break;
                     case "-csv":
                         CSVFile = GetNextNonArg("-csv");
@@ -1119,14 +1119,14 @@ namespace ETWAnalyzer.Commands
                     case "-ia":
                         NoArgs = false;
                         break;
-                    case "-testrunindex":
-                    case "-tri":
-                        string testRun = GetNextNonArg("-testrunindex");
+                    case TestRunIndexArg:   // -testrunindex
+                    case TRIArg:           // -tri
+                        string testRun = GetNextNonArg(TestRunIndexArg);
                         TestRunIndex = int.Parse(testRun, CultureInfo.InvariantCulture);
                         break;
-                    case "-testruncount":
-                    case "-trc":
-                        string testrunCount = GetNextNonArg("-testruncount");
+                    case TestRunCountArg:  // -testruncount
+                    case TRCArg:           // -trc
+                        string testrunCount = GetNextNonArg(TestRunCountArg);
                         TestRunCount = int.Parse(testrunCount, CultureInfo.InvariantCulture);
                         break;
                     case "-showstack":
@@ -1153,12 +1153,12 @@ namespace ETWAnalyzer.Commands
                         string globalDiffMB = GetNextNonArg("-globaldiffmb");
                         GlobalDiffMB = int.Parse(globalDiffMB, CultureInfo.InvariantCulture);
                         break;
-                    case "-lastndays":
-                        string lastNWeeks = GetNextNonArg("-lastndays");
-                        LastNDays = int.Parse(lastNWeeks, CultureInfo.InvariantCulture);
+                    case LastNDaysArg:   // -lastndays
+                        string lastNDays = GetNextNonArg(LastNDaysArg);
+                        LastNDays = ParseDouble(lastNDays);
                         break;
-                    case "-skipntests":
-                        string skipNTests = GetNextNonArg("-skipntests");
+                    case SkipNTestsArg:  // -skipntests
+                        string skipNTests = GetNextNonArg(SkipNTestsArg);
                         SkipNTests = int.Parse(skipNTests, CultureInfo.InvariantCulture);
                         break;
                     case "-properties":

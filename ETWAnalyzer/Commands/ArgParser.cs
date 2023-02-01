@@ -9,7 +9,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-
+using System.Threading;
 
 abstract class ArgParser : ICommand
 {
@@ -36,9 +36,15 @@ abstract class ArgParser : ICommand
     internal const string PerThreadArg = "-perthread";
     internal const string AllExceptionsArgs = "-allexceptions";
     internal const string UnzipOperationArg = "-unzipoperation";
-    
 
 
+    internal const string SkipNTestsArg = "-skipntests";
+    internal const string TestRunIndexArg = "-testrunindex";
+    internal const string TRIArg = "-tri";
+    internal const string TestRunCountArg = "-testruncount";
+    internal const string TRCArg = "-trc";
+    internal const string TestsPerRunArg = "-testsperrun";
+    internal const string LastNDaysArg = "-lastndays";
 
     /// <summary>
     /// Supported file extensions
@@ -259,6 +265,30 @@ abstract class ArgParser : ICommand
     {
         TEnum[] values = ((TEnum[])Enum.GetValues(typeof(TEnum))).Where(x => !(ignored ?? Array.Empty<TEnum>()).Contains(x)).Distinct().ToArray();
         return String.Join(" ", values);
+    }
+
+
+    /// <summary>
+    /// Parse a number in local or invariant culture to get around decimal and thousand separator issues.
+    /// If a 1.001 is parsed in German it would lead to 1001 and not 1.001.
+    /// </summary>
+    /// <param name="number">Input number string e.g. 1.5 or 1,5 </param>
+    /// <returns>Parsed string</returns>
+    internal static double ParseDouble(string number)
+    {
+        NumberStyles style = NumberStyles.Float;
+
+        // first try in local culture
+        if ( !double.TryParse(number, style, Thread.CurrentThread.CurrentCulture, out double lret) )
+        {
+            // and then in invariant culture
+            if( !double.TryParse(number, style, CultureInfo.InvariantCulture, out lret) )
+            {
+                throw new InvalidDataException($"Could not parse string {number} to a floating point number.");
+            }
+        }
+
+        return lret;
     }
 
     /// <summary>

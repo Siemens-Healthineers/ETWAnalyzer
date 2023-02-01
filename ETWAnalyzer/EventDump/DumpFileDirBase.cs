@@ -3,6 +3,7 @@
 
 using ETWAnalyzer.Analyzers;
 using ETWAnalyzer.Analyzers.Infrastructure;
+using ETWAnalyzer.Commands;
 using ETWAnalyzer.Extract;
 using ETWAnalyzer.Extract.Modules;
 using ETWAnalyzer.Infrastructure;
@@ -35,11 +36,10 @@ namespace ETWAnalyzer.EventDump
 
         public SearchOption Recursive { get; internal set; }
         public List<string> FileOrDirectoryQueries { get; internal set; } = new List<string>();
-        public int LastNDays { get; internal set; }
+        public double LastNDays { get; internal set; } = double.MaxValue;
         public int TestRunIndex { get; internal set; } = -1;
         public int TestRunCount { get; internal set; }
         public int SkipNTests { get; internal set; }
-        public int LastNDaysSafe { get => LastNDays == 0 ? int.MaxValue : LastNDays; }
         public string TestCase { get; internal set; }
 
         public int TestsPerRun { get; internal set; }
@@ -465,7 +465,8 @@ namespace ETWAnalyzer.EventDump
             }
 
             TestRunData runs = new(FileOrDirectoryQueries, Recursive, FileOrDirectoryQueries.First());
-            SingleTest[] tests = GetTestRunsFromTestRunData(skipNonJsonTests, runs).Where(testFilter).ToArray();
+            SingleTest[] tests = GetTestRunsFromTestRunData(runs, skipNonJsonTests, false, TestRunIndex, TestRunCount, SkipNTests, TestsPerRun, LastNDays)
+                                 .Where(testFilter).ToArray();
 
             Queue<SingleTest> pendingWork = new(tests);  // tests are prefetched in order because normally we read things from oldest to youngest
             Queue<Task<SingleTest>> working = new();
@@ -542,30 +543,56 @@ namespace ETWAnalyzer.EventDump
             return sources;
         }
 
-        internal SingleTest[] GetTestRunsFromTestRunData(bool skipNonJsonTests, TestRunData runs)
+
+        /// <summary>
+        /// Get from different file queries the tests which are relevant for extraction (zip or etl files) or dumping (json files).
+        /// To be useful the input files must adhere to our test case naming convention. If not only the lastNDays flag is useful.
+        /// </summary>
+        /// <param name="runs">Input files</param>
+        /// <param name="skipNonJsonTests">If true compressed files are skipped (used during dump)</param>
+        /// <param name="skipJsonTests">If true Json files are excluded (used during extract)</param>
+        /// <param name="testRunIndex">Return only tests of the n-th TestRun</param>
+        /// <param name="testRunCount">Return the next N TestRuns starting at testRunIndex</param>
+        /// <param name="skipNTests">Skip the first n tests of a testcase</param>
+        /// <param name="testsPerRun">Take N tests from a testcase per TestRun</param>
+        /// <param name="lastNDays">Take only tests which are not older than N days</param>
+        /// <returns>Filtered set of test files.</returns>
+        /// <exception cref="ArgumentException">Test Run Index was out of bounds</exception>
+        internal static SingleTest[] GetTestRunsFromTestRunData(TestRunData runs, bool skipNonJsonTests, bool skipJsonTests, int testRunIndex, int testRunCount, int skipNTests, int testsPerRun, double lastNDays)
         {
             var singleTests = new List<SingleTest>();
 
-            if (TestRunIndex != -1)
+            TestRun[] filteredRuns = runs.Runs.ToArray();
+
+            if (skipJsonTests)   // ignore json only files during extraction
             {
-                if (TestRunIndex > runs.Runs.Count - 1)
+                filteredRuns = runs.Runs.Where(run =>
+                                     run.Tests.Any(singleTests =>
+                                        singleTests.Value.Any(singleTest =>
+                                            singleTest.Files.Any(testDataFile =>
+                                                Path.GetExtension(testDataFile.FileName) != TestRun.ExtractExtension)))).ToArray();
+            }
+
+            if (testRunIndex != -1)
+            {
+                if (testRunIndex > filteredRuns.Length - 1)
                 {
-                    throw new ArgumentException($"Test Run Index is too large. Allowed values are 0 - {runs.Runs.Count - 1}");
+                    throw new ArgumentException($"Test Run Index is too large. Allowed values are 0 - {filteredRuns.Length - 1}");
                 }
             }
 
-            int maxIndex = (TestRunIndex != -1 && TestRunCount > 0) ? TestRunIndex + TestRunCount : runs.Runs.Count;
-            maxIndex = Math.Min(maxIndex, runs.Runs.Count); // Clamp value so we do not get out of bounds exceptions
-            int startIndex = TestRunIndex == -1 ? 0 : TestRunIndex;
-            startIndex = Math.Max(0, Math.Min(startIndex, runs.Runs.Count));  // clamp start index between 0 and Count-1
+            int maxIndex = (testRunIndex != -1 && testRunCount > 0) ? testRunIndex + testRunCount : filteredRuns.Length;
+            maxIndex = Math.Min(maxIndex, filteredRuns.Length); // Clamp value so we do not get out of bounds exceptions
+            int startIndex = testRunIndex == -1 ? 0 : testRunIndex;
+            startIndex = Math.Max(0, Math.Min(startIndex, filteredRuns.Length));  // clamp start index between 0 and Count-1
 
             for (int i = startIndex; i < maxIndex; i++)
             {
-                TestRun run = runs.Runs[i];
+                TestRun run = filteredRuns[i];
 
                 foreach (var test in run.Tests)
                 {
-                    var tests = test.Value.Skip(SkipNTests).Take(TestsPerRun == 0 ? int.MaxValue : TestsPerRun);
+                    var tests = test.Value.Skip(skipNTests).Take(testsPerRun == 0 ? int.MaxValue : testsPerRun);
                     if (skipNonJsonTests)
                     {
                         tests = tests.Where(x => x.Files.All(x => x.JsonExtractFileWhenPresent != null));
@@ -576,7 +603,7 @@ namespace ETWAnalyzer.EventDump
 
             var now = DateTime.Now;
 
-            var testsOrderedByTime = singleTests.Where(x => (now - x.PerformedAt).TotalDays < LastNDaysSafe).OrderBy(GetTestTime).ToArray();
+            var testsOrderedByTime = singleTests.Where(x => (now - x.PerformedAt).TotalDays < lastNDays).OrderBy(GetTestTime).ToArray();
 
             return testsOrderedByTime;
         }
@@ -628,7 +655,7 @@ namespace ETWAnalyzer.EventDump
         }
 
 
-        protected DateTimeOffset GetTestTime(SingleTest test)
+        protected static DateTimeOffset GetTestTime(SingleTest test)
         {
             DateTimeOffset lret = test.PerformedAt;
             if ( !test.Files[0].IsValidTest && test.Files[0].JsonExtractFileWhenPresent != null)
