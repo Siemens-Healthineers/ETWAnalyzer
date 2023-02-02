@@ -201,21 +201,66 @@
     <Entrypoint Module="appidsvc.dll" Method="*AppIDRpcVerifyFile*" />
     <Entrypoint Module="appid.sys" Method="*AiProcessNotifyRoutine*" />
   </Tag>
-  <Tag Name="Antivirus - Windows Defender" Priority="1">
+
+  <Tag Name="Antivirus - Sophos" Priority="1">
+    <Entrypoint Module="SophosED.sys" Method="*"/>
+
+    <Tag Name="HitmanPro Alert" Priority="1">
+      <Entrypoint Module="hmpalert.sys" Method="*"/>
+    </Tag>
+    <Tag Name="Web Intelligence" Priority="1">
+      <Entrypoint Module="swi_callout.sys" Method="*"/>
+    </Tag>
+    <Tag Name="Network Threat Protection" Priority="1">
+      <Entrypoint Module="sntp.sys" Method="*"/>
+    </Tag>
+    <Tag Name="Asmi Provider" Priority="1">
+      <Entrypoint Module="SophosAmsiProvider.dll" Method="*"/>
+    </Tag>		
+    <Tag Name="Scanning Engine" Priority="1">
+      <Entrypoint Module="SophosFileScanner.exe" Method="*"/>
+      <Entrypoint Module="savi.dll" Method="*"/>
+    </Tag>
+  </Tag>
+
+   <Tag Name="Antivirus - Windows Defender" Priority="1">
     <Entrypoint Module="mpengine.dll" Method="*"/>
     <Entrypoint Module="WdFilter.sys" Method="*"/>
     <Entrypoint Module="mssecflt.sys" Method="*"/>
     <Entrypoint Module="MsSense.exe" Method="*"/>
   </Tag>
+	
   <Tag Name="Antivirus - Trend Micro" Priority="1">
-    <Entrypoint Module="VSApiNt.sys" Method="*"/>
-    <Entrypoint Module="tmcomeng.dll" Method="*"/>
-    <Entrypoint Module="NTRTScan.exe" Method="*"/>
+    <Tag Name="Driver Overhead VSApiNt.sys" Priority="1">
+      <Entrypoint Module="VSApiNt.sys" Method="*"/>
+    </Tag>
+    <Tag Name="Post Filter Driver TmXPFlt.sys" Priority="1">
+      <Entrypoint Module="TmXPFlt.sys" Method="*"/>
+    </Tag>
+    <Tag Name="Pre Filter Driver TmPreFlt.sys" Priority="1">
+      <Entrypoint Module="TmPreFlt.sys" Method="*"/>
+    </Tag>
+    <Tag Name="EvnetManager tmevtmgr.sys" Priority="1">
+      <Entrypoint Module="tmevtmgr.sys" Method="*"/>
+    </Tag>
+    <Tag Name="ActivityMonitor tmactmon.sys" Priority="1">
+      <Entrypoint Module="tmactmon.sys" Method="*"/>
+    </Tag>
+    <Tag Name="Injected Dll tmcomeng.dll" Priority="1">
+      <Entrypoint Module="tmcomeng.dll" Method="*"/>
+    </Tag>
+    <Tag Name="CommonModule tmcomm.sys" Priority="1">
+      <Entrypoint Module="tmcomm.sys" Method="*"/>
+    </Tag>
+    <Tag Name="Scan Engine" Priority="1">
+      <Entrypoint Module="NTRTScan.exe" Method="*"/>
+    </Tag>
+    <Tag Name="Injected Monitoring Dll">
+      <Entrypoint Module="tmmon64.dll" Method="*"/>
+      <Entrypoint Module="tmUmEvt64.dll" Method="*"/>
+    </Tag>
   </Tag>
-  <Tag Name="Antivirus - Trend Micro">
-    <Entrypoint Module="tmmon64.dll" Method="*"/>
-    <Entrypoint Module="tmUmEvt64.dll" Method="*"/>
-  </Tag>
+	
   <Tag Name="Antivirus - Symantec" Priority="1" >
     <Tag Name ="Real Time Storage Protection">
       <Entrypoint Module="srtsp64.sys" Method="*"/>

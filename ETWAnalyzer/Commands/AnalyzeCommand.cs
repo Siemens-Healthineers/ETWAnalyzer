@@ -161,7 +161,6 @@ namespace ETWAnalyzer.Commands
            @"   ETWAnalyzer.exe -analyze testcount -filedir C:\jsonDir -testrunindex 10 20" + Environment.NewLine +
             new string('=', Console.WindowWidth);
 
-        internal const string TestRunIndexArg = "-testrunindex";
         internal const string ComputerArg = "-computer";
         internal const string TestCaseArg = "-testcase";
         internal const string TimeRangeArg = "-timerange";
