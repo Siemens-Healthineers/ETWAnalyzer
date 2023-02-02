@@ -65,7 +65,7 @@ namespace ETWAnalyzer.Commands
         {
             while(myArgs.Count>0)
             {
-                string arg = myArgs.Dequeue();
+                string arg = myArgs.Dequeue().ToLower();
                 switch (AddPrefix(arg))
                 {
                     case CommandFactory.ExtractCommand:
