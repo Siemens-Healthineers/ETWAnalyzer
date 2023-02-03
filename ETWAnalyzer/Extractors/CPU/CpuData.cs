@@ -4,6 +4,7 @@
 using ETWAnalyzer.TraceProcessorHelpers;
 using Microsoft.Windows.EventTracing;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -61,10 +62,10 @@ namespace ETWAnalyzer.Extractors.CPU
         /// <summary>
         /// Get for each sample the call stack depth from the bottom frame
         /// </summary>
-        public List<ushort> DepthFromBottom
+        public ConcurrentBag<ushort> DepthFromBottom
         {
             get;
-        } = new List<ushort>();
+        } = new ConcurrentBag<ushort>();
 
         /// <summary>
         /// Contains a merged view of overlapping time range.
@@ -102,8 +103,10 @@ namespace ETWAnalyzer.Extractors.CPU
                 ThreadIds.Add(i);
             }
 
-            DepthFromBottom.AddRange(Enumerable.Repeat<ushort>(depthFromBottom, 5));
-
+            for(int i=0;i<5;i++) // first sample gets some headstart to make mean calculation more stable
+            {
+                DepthFromBottom.Add(depthFromBottom);
+            }
         }
     }
 }

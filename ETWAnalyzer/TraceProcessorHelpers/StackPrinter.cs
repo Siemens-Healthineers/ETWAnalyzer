@@ -5,9 +5,11 @@ using Microsoft.Windows.EventTracing;
 using Microsoft.Windows.EventTracing.Processes;
 using Microsoft.Windows.EventTracing.Symbols;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace ETWAnalyzer.TraceProcessorHelpers
@@ -37,7 +39,7 @@ namespace ETWAnalyzer.TraceProcessorHelpers
         /// <summary>
         /// Cache formatted string manipulations
         /// </summary>
-        readonly Dictionary<string, string> UglyVsPrettyMethodNames = new();
+        readonly ConcurrentDictionary<string, string> UglyVsPrettyMethodNames = new();
 
         public StackPrinter()
         {
@@ -64,18 +66,19 @@ namespace ETWAnalyzer.TraceProcessorHelpers
                 methodName = image?.FileName ?? UnknownMethod; 
             }
 
-            if (!UglyVsPrettyMethodNames.TryGetValue(methodName, out string prettyName))
+            string prettyName = null;
+
+            if (!UglyVsPrettyMethodNames.TryGetValue(methodName, out prettyName))
             {
                 prettyName = methodName
-                               .Replace(" 0x0", "")               // Managed methods contain some IL offset after the function name. That is superfluous
-                               .Replace("[COLD] ", "");           // NGenned managed methods contain [COLD] if the method is located in some cold code path e.g. during exception throwing
+                                .Replace(" 0x0", "")               // Managed methods contain some IL offset after the function name. That is superfluous
+                                .Replace("[COLD] ", "");           // NGenned managed methods contain [COLD] if the method is located in some cold code path e.g. during exception throwing
                 if (image?.Pdb == null)
                 {
                     prettyName = prettyName.Replace("::", ".");   // Managed JITed methods have :: while NGenned methods have . between class and method name. Be consistent and use . for everything, even C++
                 }
                 UglyVsPrettyMethodNames[methodName] = prettyName;
             }
-
 
             string imageName = image?.FileName;
 

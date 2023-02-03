@@ -10,6 +10,7 @@ using Microsoft.Windows.EventTracing.Cpu;
 using Microsoft.Windows.EventTracing.Processes;
 using Microsoft.Windows.EventTracing.Symbols;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -31,16 +32,6 @@ namespace ETWAnalyzer.Extractors.CPU
         IPendingResult<ICpuSampleDataSource> mySamplingData;
         IPendingResult<ICpuSchedulingDataSource> myCpuSchedlingData;
         readonly StackPrinter myStackPrinter = new();
-
-        /// <summary>
-        /// Processes for which no Stacktags are calculated to reduce output file size a bit
-        /// </summary>
-        static readonly HashSet<string> ProcessIgnoreList = new()
-        {
-            "conhost.exe",
-            "xperf.exe",
-            "findstr.exe",
-        };
 
         /// <summary>
         /// Stacktag file which is used for default stacktags
@@ -69,6 +60,7 @@ namespace ETWAnalyzer.Extractors.CPU
             get;
             set;
         } = ConfigFiles.SpecialStackTagFile;
+        public int? Concurrency { get; internal set; }
 
         /// <summary>
         /// GC/JIT Stacktags are thrown away when smaller 10ms
@@ -99,20 +91,41 @@ namespace ETWAnalyzer.Extractors.CPU
             var totalStackTagsRaw = new Dictionary<ProcessKey, Dictionary<string, StackTagDuration>>();
             var specialStackTagsRaw = new Dictionary<ProcessKey, Dictionary<string, StackTagDuration>>();
 
-            using (new PerfLogger($"Extract from default stacktag file: {DefaultStackTagFile}"))
+            var t1 = Task.Run(() =>
             {
-                ExtractStackTagsFromProfilingAndContextSwitchEvents(gcJitStackTagMapper, gcJitStackTags, addDefaultStackTag: false);
+                using (new PerfLogger($"Extract from default stacktag file: {DefaultStackTagFile}"))
+                {
+                    ExtractStackTagsFromProfilingAndContextSwitchEvents(gcJitStackTagMapper, gcJitStackTags, addDefaultStackTag: false);
+                }
+            });
+
+            if( Concurrency == null || Concurrency == 1)
+            {
+                t1.Wait();
             }
 
-            using (new PerfLogger($"Extracting from secondary stacktag file: {SecondaryStackTagFile}"))
+            var t2 = Task.Run(() =>
             {
-                ExtractStackTagsFromProfilingAndContextSwitchEvents(defaultStackTagMapper, totalStackTagsRaw, addDefaultStackTag: true);
+                using (new PerfLogger($"Extracting from secondary stacktag file: {SecondaryStackTagFile}"))
+                {
+                    ExtractStackTagsFromProfilingAndContextSwitchEvents(defaultStackTagMapper, totalStackTagsRaw, addDefaultStackTag: true);
+                }
+            });
+
+            if( Concurrency == 2)
+            {
+                Task.WaitAll(t1, t2);
             }
 
-            using (new PerfLogger($"Extracting from special stacktag file: {SpecialStacktagFile}"))
+            var t3 = Task.Run(() =>
             {
-                ExtractStackTagsFromProfilingAndContextSwitchEvents(specialStackTagMapper, specialStackTagsRaw, addDefaultStackTag: false);
-            }
+                using (new PerfLogger($"Extracting from special stacktag file: {SpecialStacktagFile}"))
+                {
+                    ExtractStackTagsFromProfilingAndContextSwitchEvents(specialStackTagMapper, specialStackTagsRaw, addDefaultStackTag: false);
+                }
+            });
+
+            Task.WaitAll(t1, t2, t3);
 
             ProcessStackTags totalStackTags = new()
             {
@@ -159,10 +172,6 @@ namespace ETWAnalyzer.Extractors.CPU
 
                 var key = new ProcessKey(imageName, sample.Process.Id, createTime);
 
-                if (ProcessIgnoreList.Contains(key.Name))
-                {
-                    continue;
-                }
 
                 AddSampleDuration(mapper, tags, sample, key, addDefaultStackTag);
             }
@@ -178,6 +187,7 @@ namespace ETWAnalyzer.Extractors.CPU
                     {
                         continue;
                     }
+
                     waitTag = myStackPrinter.GetPrettyMethod(waitTag, default(IImage));
 
                     DateTimeOffset createTime = DateTimeOffset.MinValue;
@@ -195,11 +205,6 @@ namespace ETWAnalyzer.Extractors.CPU
                     }
 
                     var key = new ProcessKey(imageName, process.Id, createTime);
-
-                    if (ProcessIgnoreList.Contains(key.Name)) // ignore unimportant processes such as conhost ... 
-                    {
-                        continue;
-                    }
 
                     if (!tags.TryGetValue(key, out Dictionary<string, StackTagDuration> durationkvp))
                     {
