@@ -36,6 +36,8 @@ namespace ETWAnalyzer.Extractors.CPU
         /// </summary>
         public CPUTimeLine Timeline  { get; }
 
+        object myLock = new object();
+
         public TimelineExtractor(float extractionInveralS, DateTimeOffset sessionStart, TimeSpan sessionDuration)
         {
             ExtractionInveralS = extractionInveralS;
@@ -57,14 +59,17 @@ namespace ETWAnalyzer.Extractors.CPU
         {
             DateTimeOffset sampleTime = sample.Timestamp.DateTimeOffset;
 
-            if (!Timeline.ProcessTimeLines.TryGetValue(process, out Extract.CPU.ProcessTimeLine processTimeLine))
+            lock (myLock)
             {
-                processTimeLine = new Extract.CPU.ProcessTimeLine();
-                processTimeLine.CPUMs.AddRange(myTimelineBuckets);
-                Timeline.ProcessTimeLines[process] = processTimeLine;
-            }
+                if (!Timeline.ProcessTimeLines.TryGetValue(process, out Extract.CPU.ProcessTimeLine processTimeLine))
+                {
+                    processTimeLine = new Extract.CPU.ProcessTimeLine();
+                    processTimeLine.CPUMs.AddRange(myTimelineBuckets);
+                    Timeline.ProcessTimeLines[process] = processTimeLine;
+                }
 
-            processTimeLine.CPUMs[GetBucket(sampleTime)] += sample.Weight.TotalMilliseconds;
+                processTimeLine.CPUMs[GetBucket(sampleTime)] += sample.Weight.TotalMilliseconds;
+            }
         }
 
         /// <summary>

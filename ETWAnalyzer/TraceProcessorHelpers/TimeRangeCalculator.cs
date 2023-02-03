@@ -3,6 +3,7 @@
 
 using Microsoft.Windows.EventTracing;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -18,7 +19,8 @@ namespace ETWAnalyzer.TraceProcessorHelpers
     /// </summary>
     internal class TimeRangeCalculator
     {
-        List<KeyValuePair<Timestamp, Duration>> myTimeRanges = new List<KeyValuePair<Timestamp, Duration>>();
+        ConcurrentBag<KeyValuePair<Timestamp, Duration>> myTimeRanges = new();
+        TimeSpan? myDuration;
 
         /// <summary>
         /// Add a timepoint with a duration which will be used to calculate the total duration
@@ -36,36 +38,41 @@ namespace ETWAnalyzer.TraceProcessorHelpers
         /// <returns>Total duration</returns>
         public TimeSpan GetDuration()
         {
-            List<KeyValuePair<Timestamp, Duration>> sorted = myTimeRanges.OrderBy(x => x.Key).ToList();
-            Timestamp totalDuration = Timestamp.Zero;
-
-            Timestamp previousEndTime = Timestamp.Zero;
-
-            for(int i = 0; i < sorted.Count; i++)
+            if (myDuration == null)
             {
-                var current = sorted[i];
-                if(previousEndTime >= current.Key )
+                List<KeyValuePair<Timestamp, Duration>> sorted = myTimeRanges.OrderBy(x => x.Key).ToList();
+                Timestamp totalDuration = Timestamp.Zero;
+
+                Timestamp previousEndTime = Timestamp.Zero;
+
+                for (int i = 0; i < sorted.Count; i++)
                 {
-                    if (previousEndTime.Nanoseconds > current.Key.Nanoseconds + current.Value.Nanoseconds)
+                    var current = sorted[i];
+                    if (previousEndTime >= current.Key)
                     {
-                        // ignore this one
+                        if (previousEndTime.Nanoseconds > current.Key.Nanoseconds + current.Value.Nanoseconds)
+                        {
+                            // ignore this one
+                        }
+                        else
+                        {
+                            long durationns = current.Value.Nanoseconds - (previousEndTime.Nanoseconds - current.Key.Nanoseconds);
+                            totalDuration += new Duration(durationns);
+                            Timestamp newEndtime = current.Key + current.Value;
+                            previousEndTime = newEndtime;
+                        }
                     }
                     else
                     {
-                        long durationns= current.Value.Nanoseconds - (previousEndTime.Nanoseconds - current.Key.Nanoseconds);
-                        totalDuration += new Duration(durationns);
-                        Timestamp newEndtime = current.Key + current.Value;
-                        previousEndTime = newEndtime;
+                        totalDuration += current.Value;
+                        previousEndTime = Timestamp.FromNanoseconds(current.Key.Nanoseconds + current.Value.Nanoseconds);
                     }
                 }
-                else
-                {
-                    totalDuration += current.Value;
-                    previousEndTime = Timestamp.FromNanoseconds( current.Key.Nanoseconds  + current.Value.Nanoseconds);
-                }
+
+                myDuration = TimeSpan.FromTicks(totalDuration.Nanoseconds / 100);
             }
 
-            return TimeSpan.FromTicks(totalDuration.Nanoseconds/100);
+            return myDuration.Value;
         }
     }
 }
