@@ -941,6 +941,7 @@ namespace ETWAnalyzer.Commands
                         break;
                     case "-methods":
                         string methodFilter = GetNextNonArg("-methods");
+                        methodFilter = ReplaceMethodFilterAliases(methodFilter);
                          MethodFilter =         new KeyValuePair<string, Func<string, bool>>(methodFilter,   Matcher.CreateMatcher(methodFilter));
                         break;
                     case "-stacktags":
@@ -1236,7 +1237,7 @@ namespace ETWAnalyzer.Commands
             delayedThrower();
         }
 
-        public override string Help
+         public override string Help
         {
             get
             {
@@ -1775,6 +1776,32 @@ namespace ETWAnalyzer.Commands
 
         }
 
+        /// <summary>
+        /// Make method filtering easier by omitting for module RVA names the *.dll+* by allowing you to write *.dll and *.sys 
+        /// </summary>
+        /// <param name="methodFilter"></param>
+        /// <returns></returns>
+        private static string ReplaceMethodFilterAliases(string methodFilter)
+        {
+
+            Dictionary<string, string> aliases = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                // Since we support RVA addresses make filtering easier
+                { "*.dll", "*.dll+*" },         
+                { "*.sys", "*.sys+*" },         
+                { "*.dll;*.sys", "*.dll+*;*.sys+*" }, 
+                { "*.sys;*.dll", "*.dll+*;*.sys+*" }, 
+            };
+
+            if (aliases.TryGetValue(methodFilter ?? "", out string replaced))
+            {
+                return replaced;
+            }
+            else
+            {
+                return methodFilter;
+            }
+        }
         void ThrowIfFileOrDirectoryIsInvalid(List<string> fileOrDirectoryQueries)
         {
             if(fileOrDirectoryQueries.Count == 0)
