@@ -11,6 +11,9 @@ using System.Linq;
 using ETWAnalyzer.TraceProcessorHelpers;
 using ETWAnalyzer.Infrastructure;
 using System.Globalization;
+using System.Threading.Tasks;
+using System.Threading;
+using System.Collections.Concurrent;
 
 namespace ETWAnalyzer.Extractors.CPU
 {
@@ -32,6 +35,27 @@ namespace ETWAnalyzer.Extractors.CPU
         public float? TimelineDataExtractionIntervalS { get; internal set; }
 
         /// <summary>
+        /// defines how many parallel threads we use, if set.
+        /// </summary>
+        public int? Concurrency { get; internal set; }
+
+        /// <summary>
+        /// Actual number of used threads
+        /// </summary>
+        private int UsedConcurrency { get; set; } = 1;
+
+        /// <summary>
+        /// Just a rough guess for initial dictionary size
+        /// </summary>
+        const int EstimatedMethodCount = 2000;
+
+        /// <summary>
+        /// Some locking is needed
+        /// </summary>
+        object myLock = new object();
+
+
+        /// <summary>
         /// When TimelineDataExtractionIntervalS is not null we will extract also CPU timeline data.
         /// </summary>
         TimelineExtractor myTimelineExtractor = null;
@@ -49,7 +73,7 @@ namespace ETWAnalyzer.Extractors.CPU
         /// <summary>
         /// Per process CPU
         /// </summary>
-        readonly Dictionary<ProcessKey, Duration> myPerProcessCPU = new();
+        readonly ConcurrentDictionary<ProcessKey, Duration> myPerProcessCPU = new();
 
         public CPUExtractor()
         {
@@ -66,23 +90,37 @@ namespace ETWAnalyzer.Extractors.CPU
         {
             using var logger = new PerfLogger("Extract CPU");
 
+            // access CSwitch data while we are processing CPU sampling data
+            Task.Run(() => { var _ = myCpuSchedlingData.Result?.ThreadActivity?.FirstOrDefault(); });
+
             if (TimelineDataExtractionIntervalS != null)
             {
                 myTimelineExtractor = new TimelineExtractor(TimelineDataExtractionIntervalS.Value, results.SessionStart, results.SessionDuration);
             }
 
+            if (Concurrency != null)
+            {
+                UsedConcurrency = Concurrency.Value;
+            }
+
             // inspired by https://github.com/microsoft/eventtracing-processing-samples/blob/master/GetCpuSampleDuration/Program.cs
-            Dictionary<ProcessKey, Dictionary<string, CpuData>> methodSamplesPerProcess = new();
+            ConcurrentDictionary<ProcessKey, ConcurrentDictionary<string, CpuData>> methodSamplesPerProcess = new(UsedConcurrency,1000);
             StackPrinter printer = new(StackFormat.DllAndMethod);
+
+            ParallelOptions concurrency = new ParallelOptions
+            {
+                MaxDegreeOfParallelism = UsedConcurrency
+            };
+
             bool hasSamplesWithStacks = false;
 
             if (mySamplingData.HasResult)
             {
-                foreach (ICpuSample sample in mySamplingData.Result.Samples)
+                Parallel.ForEach(mySamplingData.Result.Samples, concurrency, (ICpuSample sample) =>
                 {
                     if (sample?.Process?.ImageName == null)
                     {
-                        continue;
+                        return;
                     }
 
                     if (hasSamplesWithStacks == false)
@@ -98,33 +136,33 @@ namespace ETWAnalyzer.Extractors.CPU
                     {
                         myTimelineExtractor.AddSample(process, sample);
                     }
-                }
+                });
             }
 
             // When we have context switch data recorded we can also calculate the thread wait time stacktags
             if (myCpuSchedlingData.HasResult)
             {
-                foreach (ICpuThreadActivity slice in myCpuSchedlingData.Result.ThreadActivity)
+                Parallel.ForEach(myCpuSchedlingData.Result.ThreadActivity, concurrency, (ICpuThreadActivity slice) =>
                 {
                     if (slice?.Process?.ImageName == null)
                     {
-                        continue;
+                        return;
                     }
                     IReadOnlyList<StackFrame> frames = slice.SwitchIn.Stack?.Frames;
                     if (frames == null)
                     {
-                        continue;
+                        return;
                     }
 
                     var process = new ProcessKey(slice.Process.ImageName, slice.Process.Id, slice.Process.CreateTime.HasValue ? slice.Process.CreateTime.Value.DateTimeOffset : default(DateTimeOffset));
-
                     AddPerMethodAndProcessWaits(process, slice, methodSamplesPerProcess, printer, hasSamplesWithStacks);
-                }
+                });
             }
 
             // convert dictionary with kvp to format ProcessName(pid) and sample count in ms
             Dictionary<ProcessKey, uint> perProcessSamplesInMs = new();
-            foreach (var kvp in myPerProcessCPU.OrderByDescending(x => x.Value))
+            // sort by cpu then by process name and then by pid to get stable sort order
+            foreach (var kvp in myPerProcessCPU.OrderByDescending(x => x.Value).ThenBy(x => x.Key.Name).ThenBy( x=> x.Key.Pid) )
             {
                 perProcessSamplesInMs.Add(kvp.Key, (uint)kvp.Value.TotalMilliseconds);
             }
@@ -135,6 +173,16 @@ namespace ETWAnalyzer.Extractors.CPU
                 HasCPUSamplingData = hasSamplesWithStacks,
                 HasCSwitchData = myCpuSchedlingData.HasResult && myCpuSchedlingData.Result?.ContextSwitches?.Count > 0,
             };
+
+            // speed up time range calculation
+            Parallel.ForEach(methodSamplesPerProcess, concurrency, (process) =>
+            {
+                foreach(var methodCPU in process.Value)
+                {
+                    var tmp = methodCPU.Value.ReadyTimeRange.GetDuration();
+                    tmp = methodCPU.Value.WaitTimeRange.GetDuration();
+                }
+            });
 
             foreach (var process2Method in methodSamplesPerProcess)
             {
@@ -155,7 +203,7 @@ namespace ETWAnalyzer.Extractors.CPU
 
 
 
-        private void AddPerMethodAndProcessWaits(ProcessKey process, ICpuThreadActivity slice, Dictionary<ProcessKey, Dictionary<string, CpuData>> methodSamplesPerProcess, StackPrinter printer, bool hasCpuSampleData)
+        private void AddPerMethodAndProcessWaits(ProcessKey process, ICpuThreadActivity slice, ConcurrentDictionary<ProcessKey, ConcurrentDictionary<string, CpuData>> methodSamplesPerProcess, StackPrinter printer, bool hasCpuSampleData)
         {
             if (slice?.Process?.ImageName == null)  // Image Name can be null sometimes
             {
@@ -178,11 +226,17 @@ namespace ETWAnalyzer.Extractors.CPU
             for(int i=0;i<frames.Count;i++)
             {
                 StackFrame frame = frames[i];
+                ConcurrentDictionary<string, CpuData> methods = null;
 
-                if ( !methodSamplesPerProcess.TryGetValue(process, out Dictionary<string, CpuData> methods))
+                if (!methodSamplesPerProcess.TryGetValue(process, out methods))
                 {
-                    methods = new Dictionary<string, CpuData>();
-                    methodSamplesPerProcess.Add(process, methods);
+                    // do not waste too much memory when many ConcurrentDictionaries are created which creates by default
+                    // as many internal arrays as you have cores on server CPUs very wasteful
+                    methods = new ConcurrentDictionary<string, CpuData>(UsedConcurrency, EstimatedMethodCount);
+                    if( !methodSamplesPerProcess.TryAdd(process, methods) )
+                    {
+                        methodSamplesPerProcess.TryGetValue(process, out methods);
+                    }
                 }
 
                 string method = printer.GetPrettyMethod(frame.Symbol?.FunctionName, frame);
@@ -196,12 +250,16 @@ namespace ETWAnalyzer.Extractors.CPU
                     continue;
                 }
 
-               
 
-                if ( !methods.TryGetValue(methodWithRva, out CpuData stats))
+                CpuData stats = null;
+
+                if (!methods.TryGetValue(methodWithRva, out stats))
                 {
                     stats = new CpuData();
-                    methods[methodWithRva] = stats;
+                    if( !methods.TryAdd(methodWithRva, stats) )
+                    {
+                        methods.TryGetValue(methodWithRva, out stats);
+                    }
                 }
                 
                 if (slice.WaitingDuration.HasValue)
@@ -210,7 +268,7 @@ namespace ETWAnalyzer.Extractors.CPU
                     // a single threaded case which is wrong. Instead we subtract the wait time from the switch in event which solves the issue
                     TraceTimestamp waitStart = slice.SwitchIn.ContextSwitch.Timestamp - slice.WaitingDuration.Value;
                     stats.WaitTimeRange.Add(waitStart, slice.WaitingDuration.Value);
-                    stats.WaitMsCount++;
+                    Interlocked.Increment(ref stats.WaitMsCount);
                 }
 
                 if( slice.ReadyDuration.HasValue && slice?.SwitchIn?.ContextSwitch != null)
@@ -219,21 +277,23 @@ namespace ETWAnalyzer.Extractors.CPU
                     stats.ReadyTimeRange.Add(readyStart, slice.ReadyDuration.Value);
                 }
                     
-
-                // if we have no CPU sampling data we use the context switch CPU time as rough estimate. This will always attribute to waiting methods all CPU
-                // but that is the way how Context Switch data works
-                if (!hasCpuSampleData)  
-                {
-                    stats.CpuInMs += slice.Duration;
-                }
-
-                stats.DepthFromBottom.Add((ushort)i);
                 decimal time = slice.StopTime.RelativeTimestamp.TotalSeconds;
-                UpdateMethodTimingAndThreadId(stats, time, slice.Thread.Id);
+                stats.DepthFromBottom.Add((ushort)i);
+
+                lock (myLock)
+                {
+                    // if we have no CPU sampling data we use the context switch CPU time as rough estimate. This will always attribute to waiting methods all CPU
+                    // but that is the way how Context Switch data works
+                    if (!hasCpuSampleData)
+                    {
+                        stats.CpuInMs += slice.Duration;
+                    }
+                    UpdateMethodTimingAndThreadId(stats, time, slice.Thread.Id);
+                }
             }
         }
 
-        private void AddPerMethodAndProcessCPU(ProcessKey process, ICpuSample sample, Dictionary<ProcessKey, Dictionary<string, CpuData>> methodSamplesPerProcess, StackPrinter printer)
+        private void AddPerMethodAndProcessCPU(ProcessKey process, ICpuSample sample, ConcurrentDictionary<ProcessKey, ConcurrentDictionary<string, CpuData>> methodSamplesPerProcess, StackPrinter printer)
         {
             IStackSnapshot stack = sample.Stack;
             if( stack?.Process?.ImageName == null)
@@ -247,14 +307,23 @@ namespace ETWAnalyzer.Extractors.CPU
             for(int i=0;i<frames.Count;i++)
             {
                 StackFrame frame = frames[i];
-                if (!methodSamplesPerProcess.TryGetValue(process, out Dictionary<string, CpuData> methods))
+                ConcurrentDictionary<string, CpuData> methods = null;
+
+                if (!methodSamplesPerProcess.TryGetValue(process, out methods))
                 {
-                    methods = new Dictionary<string, CpuData>();
-                    methodSamplesPerProcess.Add(process, methods);
+                    // do not waste too much memory when many ConcurrentDictionaries are created which creates by default
+                    // as many internal arrays as you have cores on server CPUs very wasteful
+                    methods = new ConcurrentDictionary<string, CpuData>(UsedConcurrency, EstimatedMethodCount);
+                    if( !methodSamplesPerProcess.TryAdd(process, methods) )
+                    {
+                        methodSamplesPerProcess.TryGetValue(process, out methods);
+                    }
                 }
                 
                 string method = printer.GetPrettyMethod(frame.Symbol?.FunctionName, frame);
                 string rvaMethod = AddRva(method, frame.RelativeVirtualAddress);
+
+                CpuData stats = null;
 
                 if (recursionCountGuard.Add(rvaMethod) == false)
                 {
@@ -264,18 +333,23 @@ namespace ETWAnalyzer.Extractors.CPU
                     continue;
                 }
 
-                if (!methods.TryGetValue(rvaMethod, out CpuData stats))
+                if (!methods.TryGetValue(rvaMethod, out stats))
                 {
                     stats = new CpuData();
-                    methods[rvaMethod] = stats;
+                    if( !methods.TryAdd(rvaMethod, stats) ) // was already added
+                    {
+                        methods.TryGetValue(rvaMethod, out stats); // get added value
+                    }
                 }
 
-                stats.CpuInMs += sample.Weight;
-                stats.DepthFromBottom.Add((ushort)i);
-                stats.CpuInMsCount++;
-
+                Interlocked.Increment(ref stats.CpuInMsCount);
                 decimal time = sample.Timestamp.RelativeTimestamp.TotalSeconds;
-                UpdateMethodTimingAndThreadId(stats, time, sample.Thread.Id);
+                lock (myLock)
+                {
+                    stats.CpuInMs += sample.Weight;
+                    stats.DepthFromBottom.Add((ushort)i);
+                    UpdateMethodTimingAndThreadId(stats, time, sample.Thread.Id);
+                }
             }
 
         }
@@ -315,13 +389,16 @@ namespace ETWAnalyzer.Extractors.CPU
         /// <param name="process"></param>
         /// <param name="sample"></param>
         /// <param name="perProcessCPU"></param>
-        private static void AddTotalCPU(ProcessKey process, ICpuSample sample, Dictionary<ProcessKey, Duration> perProcessCPU)
+        private static void AddTotalCPU(ProcessKey process, ICpuSample sample, ConcurrentDictionary<ProcessKey, Duration> perProcessCPU)
         {
-            if (!perProcessCPU.TryGetValue(process, out Duration duration))
+            Duration duration = default;
+            do
             {
-                perProcessCPU.Add(process, default);
-            }
-            perProcessCPU[process] = duration + sample.Weight;
+                if (!perProcessCPU.TryGetValue(process, out duration))
+                {
+                    perProcessCPU.TryAdd(process, default);
+                }
+            } while (!perProcessCPU.TryUpdate(process, sample.Weight + duration, duration));
         }
 
         /// <summary>
@@ -330,13 +407,17 @@ namespace ETWAnalyzer.Extractors.CPU
         /// <param name="process"></param>
         /// <param name="slice"></param>
         /// <param name="perProcessCPU"></param>
-        private static void AddTotalCPU(ProcessKey process, ICpuThreadActivity slice, Dictionary<ProcessKey, Duration> perProcessCPU)
+        private static void AddTotalCPU(ProcessKey process, ICpuThreadActivity slice, ConcurrentDictionary<ProcessKey, Duration> perProcessCPU)
         {
-            if (!perProcessCPU.TryGetValue(process, out Duration duration))
+            Duration duration = default;
+            do
             {
-                perProcessCPU.Add(process, default);
+                if (!perProcessCPU.TryGetValue(process, out duration))
+                {
+                    perProcessCPU.TryAdd(process, default);
+                }
             }
-            perProcessCPU[process] = duration + slice.Duration;
+            while( !perProcessCPU.TryUpdate(process, duration + slice.Duration, duration));
         }
     }
 }
