@@ -296,16 +296,18 @@
         <Tag Name="Network Driver cyvrmtgn.sys" Priority="1">
             <Entrypoint Module="cyvrmtgn.sys" Method="*"/>
         </Tag>
-
     </Tag>
+	
     <Tag Name="Antivirus - Palo Alto Networks - FSFilter Activity Monitor cyvrlpc.sys" Priority="1">
         <Entrypoint Module="cyvrlpc.sys" Method="*"/>
     </Tag>
+	
     <Tag Name="Antivirus - ESET NOD32">
         <Tag Name="FSFilter Driver ehdrv.sys">
             <Entrypoint Module="ehdrv.sys" Method="*"/>
         </Tag>
     </Tag>
+	
     <Tag Name="Antivirus - Mc Afee" Priority="1" >
         <Entrypoint Module="MfeAVSvc.exe" Method="*"/>
         <Entrypoint Module="mfecore.dll" Method="*"/>
@@ -338,6 +340,7 @@
             <Entrypoint Module="mfewfpk.sys" Method="*"/>
         </Tag>
     </Tag>
+	
     <Tag Name="Antivirus - CrowdStrike Security" Priority="1">
         <Tag Name="Injected Dll umpcc*.dll">
             <Entrypoint Module="umppc*.dll" Method="*" />
@@ -346,20 +349,22 @@
             <Entrypoint Module="csagent.sys" Method="*" />
         </Tag>
     </Tag>
+	
     <Tag Name="Antivirus - CyberArk Security" Priority="1">
         <Tag Name="vfdrv.sys">
             <Entrypoint Module="vfdrv.sys" Method="*" />
         </Tag>
         <Tag Name="CybKernelTracker.sys">
-            <Entrypoint Module="" Method="*" />
+            <Entrypoint Module="CybKernelTracker.sys" Method="*" />
         </Tag>
         <Tag Name="Driver vfnet.sys">
-            <Entrypoint Module="" Method="*" />
+            <Entrypoint Module="vfnet.sys" Method="*" />
         </Tag>
         <Tag Name="Driver vfpd.sys">
-            <Entrypoint Module="" Method="*" />
+            <Entrypoint Module="vfpd.sys" Method="*" />
         </Tag>
     </Tag>
+	
     <Tag Name="Antivirus - Sentinel One" >
         <Tag Name="Driver SentinelMonitor.sys" Priority="101">
             <Entrypoint Module="SentinelMonitor.sys" Method="*" />
@@ -369,6 +374,7 @@
             <Entrypoint Module="InProcessClient32.dll" Method="*" />
         </Tag>
     </Tag>
+	
     <Tag Name="Antivirus - Avast">
         <Tag Name="Injected Dll aswhook.dll">
             <Entrypoint Module="aswhook.dll" Method="*" />
@@ -393,6 +399,7 @@
         </Tag>
     </Tag>
 
+	
 	<Tag Name="DWM Render">
         <Entrypoint Module="dwmcore.dll" Method="CPartitionVerticalBlankScheduler::ProcessFrame*"/>
   </Tag>
