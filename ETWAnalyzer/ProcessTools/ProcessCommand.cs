@@ -115,7 +115,7 @@ namespace ETWAnalyzer.Helper
 
         private void CtlrCPressed()
         {
-            if (Program.DebugOutput)
+            if (Program.DebugOutput && !myProcess.HasExited)
             {
                 Console.WriteLine($"Kill child process {myExecutable} {myArgs}");
             }
