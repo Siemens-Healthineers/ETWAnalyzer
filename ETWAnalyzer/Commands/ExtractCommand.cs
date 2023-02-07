@@ -623,12 +623,29 @@ namespace ETWAnalyzer.Commands
                 skipCount = 1;
             }
 
-            Parallel.ForEach(nonEmptyFiles.Skip(skipCount),
-                            new ParallelOptions()
-                            {
-                                MaxDegreeOfParallelism = maxThreads
-                            },
-                            parallelAction);
+            var queue = new Queue<TestDataFile>(nonEmptyFiles.Skip(skipCount));
+
+            // Paralle.Foreach does not evenly distribute long running task leading to a long tail 
+            // of single threaded extractions
+            Parallel.For(0, maxThreads, i =>
+            {
+                do
+                {
+                    TestDataFile file = null;
+                    lock (queue)
+                    {
+                        if (queue.Count > 0)
+                        {
+                            file = queue.Dequeue();
+                        }
+                    }
+
+                    if (file != null)
+                    {
+                        parallelAction(file);
+                    }
+                } while (queue.Count > 0);
+            });
 
             sw.Stop();
 
