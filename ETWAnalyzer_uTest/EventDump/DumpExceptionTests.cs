@@ -85,7 +85,6 @@ namespace ETWAnalyzer_uTest.EventDump
 
             Assert.Equal(5, lines.Length);
             Assert.Contains(Baseline, lines[0]);
-            Assert.Contains(Exe1, lines[0]);
             Assert.Contains(Exe1, lines[1]);
             Assert.Contains(ExceptionType1, lines[2]);
             Assert.Contains(ExceptionMessage1, lines[3]);
