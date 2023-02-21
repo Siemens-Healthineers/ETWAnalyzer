@@ -294,6 +294,9 @@ namespace ETWAnalyzer.EventDump
                 lret += $" Directory: {def.ModulePath}";
             }
 
+            lret = lret.TrimEnd();
+            lret = lret.TrimEnd(',');
+
             return lret;
         }
 
