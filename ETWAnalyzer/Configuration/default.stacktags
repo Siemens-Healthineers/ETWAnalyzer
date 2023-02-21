@@ -28,6 +28,12 @@
         <Tag Name="NTFS Close File">
             <Entrypoint Module="ntfs.sys" Method="NtfsFspClose*"/>
         </Tag>
+        <Tag Name="ReadDirectoryChanges">
+            <Entrypoint Module="KernelBase.dll" Method="ReadDirectoryChangesW*"/>
+        </Tag>
+        <Tag Name="NtfsReportDirNotify - Delays File operations when someone is listening to directory change events via ReadDirectoryChanges">
+            <Entrypoint Module="Ntfs.sys" Method="NtfsReportDirNotify*"/>
+        </Tag>
         <Tag Name="Windows Overlay FileSystem\Decompress WIM file (mostly during boot). See https://devblogs.microsoft.com/oldnewthing/20190618-00/?p=102597" >
             <Entrypoint Module="Wof.sys" Method="*"/>
         </Tag>
