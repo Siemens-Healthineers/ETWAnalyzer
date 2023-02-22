@@ -28,6 +28,12 @@
         <Tag Name="NTFS Close File">
             <Entrypoint Module="ntfs.sys" Method="NtfsFspClose*"/>
         </Tag>
+        <Tag Name="ReadDirectoryChanges">
+            <Entrypoint Module="KernelBase.dll" Method="ReadDirectoryChangesW*"/>
+        </Tag>
+        <Tag Name="NtfsReportDirNotify - Delays File operations when someone is listening to directory change events via ReadDirectoryChanges">
+            <Entrypoint Module="Ntfs.sys" Method="NtfsReportDirNotify*"/>
+        </Tag>
         <Tag Name="Windows Overlay FileSystem\Decompress WIM file (mostly during boot). See https://devblogs.microsoft.com/oldnewthing/20190618-00/?p=102597" >
             <Entrypoint Module="Wof.sys" Method="*"/>
         </Tag>
@@ -197,181 +203,210 @@
   <Tag Name="Nexthink Driver Overhead">
     <Entrypoint Module="nxtrdrv.sys" Method="*" />
   </Tag>
-  <Tag Name="Antivirus - AppLocker" Priority="1">
-    <Entrypoint Module="appidsvc.dll" Method="*AppIDRpcVerifyFile*" />
-    <Entrypoint Module="appid.sys" Method="*AiProcessNotifyRoutine*" />
-  </Tag>
 
-  <Tag Name="Antivirus - Sophos" Priority="1">
-    <Entrypoint Module="SophosED.sys" Method="*"/>
 
-    <Tag Name="HitmanPro Alert" Priority="1">
-      <Entrypoint Module="hmpalert.sys" Method="*"/>
+    <Tag Name="Antivirus - AppLocker" Priority="1">
+        <Tag Name="Driver appid.sys" Priority="1">
+            <Entrypoint Module="appid.sys" Method="*AiProcessNotifyRoutine*" />
+        </Tag>
+        <Tag Name="Application Identity Service appidsvc.dll" Priority="1">
+            <Entrypoint Module="appidsvc.dll" Method="*AppIDRpcVerifyFile*" />
+        </Tag>
     </Tag>
-    <Tag Name="Web Intelligence" Priority="1">
-      <Entrypoint Module="swi_callout.sys" Method="*"/>
-    </Tag>
-    <Tag Name="Network Threat Protection" Priority="1">
-      <Entrypoint Module="sntp.sys" Method="*"/>
-    </Tag>
-    <Tag Name="Asmi Provider" Priority="1">
-      <Entrypoint Module="SophosAmsiProvider.dll" Method="*"/>
-    </Tag>		
-    <Tag Name="Scanning Engine" Priority="1">
-      <Entrypoint Module="SophosFileScanner.exe" Method="*"/>
-      <Entrypoint Module="savi.dll" Method="*"/>
-    </Tag>
-  </Tag>
 
-   <Tag Name="Antivirus - Windows Defender" Priority="1">
-    <Entrypoint Module="mpengine.dll" Method="*"/>
-    <Entrypoint Module="WdFilter.sys" Method="*"/>
-    <Entrypoint Module="mssecflt.sys" Method="*"/>
-    <Entrypoint Module="MsSense.exe" Method="*"/>
-  </Tag>
+    <Tag Name="Antivirus - Sophos" Priority="1">
+        <Tag Name="Driver SophosED.sys" Priority="1">
+            <Entrypoint Module="SophosED.sys" Method="*"/>
+        </Tag>
+        <Tag Name="HitmanPro Alert Driver hmpalert.sys" Priority="1">
+            <Entrypoint Module="hmpalert.sys" Method="*"/>
+        </Tag>
+        <Tag Name="Web Intelligence Driver swi_callout.sys" Priority="1">
+            <Entrypoint Module="swi_callout.sys" Method="*"/>
+        </Tag>
+        <Tag Name="Network Threat Protection Driver sntp.sys" Priority="1">
+            <Entrypoint Module="sntp.sys" Method="*"/>
+        </Tag>
+        <Tag Name="Asmi Provider Injected Dll SophosAmsiProvider.dll" Priority="1">
+            <Entrypoint Module="SophosAmsiProvider.dll" Method="*"/>
+        </Tag>
+        <Tag Name="Scanning Engine" Priority="1">
+            <Entrypoint Module="SophosFileScanner.exe" Method="*"/>
+            <Entrypoint Module="savi.dll" Method="*"/>
+        </Tag>
+    </Tag>
+
+    <Tag Name="Antivirus - Windows Defender" Priority="1">
+        <Tag Name="Injected Dll  MpClient.dll" Priority="1">
+            <Entrypoint Module="MpClient.dll" Method="*"/>
+        </Tag>
+        <Tag Name="Injected Dll MpOAV.dll" Priority="1">
+            <Entrypoint Module="MpOAV.dll" Method="*"/>
+        </Tag>
+        <Tag Name="Filter Driver WdFilter.sys" Priority="1">
+            <Entrypoint Module="WdFilter.sys" Method="*"/>
+        </Tag>
+        <Tag Name="Filter Driver mssecflt.sys" Priority="1">
+            <Entrypoint Module="mssecflt.sys" Method="*"/>
+        </Tag>
+        <Entrypoint Module="mpengine.dll" Method="*"/>
+        <Entrypoint Module="MsSense.exe" Method="*"/>
+    </Tag>
+
+    <Tag Name="Antivirus - Trend Micro" Priority="1">
+        <Tag Name="Driver VSApiNt.sys" Priority="1">
+            <Entrypoint Module="VSApiNt.sys" Method="*"/>
+        </Tag>
+        <Tag Name="Post Filter Driver TmXPFlt.sys" Priority="1">
+            <Entrypoint Module="TmXPFlt.sys" Method="*"/>
+        </Tag>
+        <Tag Name="Pre Filter Driver TmPreFlt.sys" Priority="1">
+            <Entrypoint Module="TmPreFlt.sys" Method="*"/>
+        </Tag>
+        <Tag Name="EventManager Driver tmevtmgr.sys" Priority="1">
+            <Entrypoint Module="tmevtmgr.sys" Method="*"/>
+        </Tag>
+        <Tag Name="ActivityMonitor Driver tmactmon.sys" Priority="1">
+            <Entrypoint Module="tmactmon.sys" Method="*"/>
+        </Tag>
+        <Tag Name="Injected Dll tmcomeng.dll" Priority="1">
+            <Entrypoint Module="tmcomeng.dll" Method="*"/>
+        </Tag>
+        <Tag Name="CommonModule Driver tmcomm.sys" Priority="1">
+            <Entrypoint Module="tmcomm.sys" Method="*"/>
+        </Tag>
+        <Tag Name="Scan Engine" Priority="1">
+            <Entrypoint Module="NTRTScan.exe" Method="*"/>
+        </Tag>
+        <Tag Name="Monitoring Injected Dll tmmon64.dll">
+            <Entrypoint Module="tmmon64.dll" Method="*"/>
+        </Tag>
+        <Tag Name="Monitoring Injected Dll tmUmEvt64.dll">
+            <Entrypoint Module="tmUmEvt64.dll" Method="*"/>
+        </Tag>
+    </Tag>
+
+    <Tag Name="Antivirus - Symantec" Priority="1" >
+        <Tag Name ="Real Time Storage Protection Driver srtsp64.sys">
+            <Entrypoint Module="srtsp64.sys" Method="*"/>
+        </Tag>
+    </Tag>
+    <Tag Name="Antivirus - Palo Alto Endpoint Protection\Intercepts CreateProcess/LoadLibrary which can induce large delays duringprocess start" Priority="1">
+        <Entrypoint Module="cyverak.sys" Method="*"/>
+        <Tag Name="File System Filter Driver cyvrfsfd.sys" Priority="1">
+            <Entrypoint Module="cyvrfsfd.sys" Method="*"/>
+        </Tag>
+        <Tag Name="Network Driver cyvrlpc.sys" Priority="1">
+            <Entrypoint Module="cyvrlpc.sys" Method="*"/>
+        </Tag>
+        <Tag Name="Network Driver cyvrmtgn.sys" Priority="1">
+            <Entrypoint Module="cyvrmtgn.sys" Method="*"/>
+        </Tag>
+    </Tag>
 	
-  <Tag Name="Antivirus - Trend Micro" Priority="1">
-    <Tag Name="Driver Overhead VSApiNt.sys" Priority="1">
-      <Entrypoint Module="VSApiNt.sys" Method="*"/>
+    <Tag Name="Antivirus - Palo Alto Networks - FSFilter Activity Monitor cyvrlpc.sys" Priority="1">
+        <Entrypoint Module="cyvrlpc.sys" Method="*"/>
     </Tag>
-    <Tag Name="Post Filter Driver TmXPFlt.sys" Priority="1">
-      <Entrypoint Module="TmXPFlt.sys" Method="*"/>
-    </Tag>
-    <Tag Name="Pre Filter Driver TmPreFlt.sys" Priority="1">
-      <Entrypoint Module="TmPreFlt.sys" Method="*"/>
-    </Tag>
-    <Tag Name="EvnetManager tmevtmgr.sys" Priority="1">
-      <Entrypoint Module="tmevtmgr.sys" Method="*"/>
-    </Tag>
-    <Tag Name="ActivityMonitor tmactmon.sys" Priority="1">
-      <Entrypoint Module="tmactmon.sys" Method="*"/>
-    </Tag>
-    <Tag Name="Injected Dll tmcomeng.dll" Priority="1">
-      <Entrypoint Module="tmcomeng.dll" Method="*"/>
-    </Tag>
-    <Tag Name="CommonModule tmcomm.sys" Priority="1">
-      <Entrypoint Module="tmcomm.sys" Method="*"/>
-    </Tag>
-    <Tag Name="Scan Engine" Priority="1">
-      <Entrypoint Module="NTRTScan.exe" Method="*"/>
-    </Tag>
-    <Tag Name="Injected Monitoring Dll">
-      <Entrypoint Module="tmmon64.dll" Method="*"/>
-      <Entrypoint Module="tmUmEvt64.dll" Method="*"/>
-    </Tag>
-  </Tag>
 	
-  <Tag Name="Antivirus - Symantec" Priority="1" >
-    <Tag Name ="Real Time Storage Protection">
-      <Entrypoint Module="srtsp64.sys" Method="*"/>
+    <Tag Name="Antivirus - ESET NOD32">
+        <Tag Name="FSFilter Driver ehdrv.sys">
+            <Entrypoint Module="ehdrv.sys" Method="*"/>
+        </Tag>
     </Tag>
-  </Tag>
-  <Tag Name="Antivirus - Palo Alto Endpoint Protection\Intercepts CreateProcess/LoadLibrary which can induce large delays duringprocess start" Priority="1">
-    <Entrypoint Module="cyverak.sys" Method="*"/>
-    <Tag Name="File System Filter Driver" Priority="1">
-      <Entrypoint Module="cyvrfsfd.sys" Method="*"/>
+	
+    <Tag Name="Antivirus - Mc Afee" Priority="1" >
+        <Entrypoint Module="MfeAVSvc.exe" Method="*"/>
+        <Entrypoint Module="mfecore.dll" Method="*"/>
+        <Entrypoint Module="mfefires.dll" Method="*"/>
+        <Tag Name="Driver cfwids.sys">
+            <Entrypoint Module="cfwids.sys" Method="*"/>
+        </Tag>
+        <Tag Name="Driver McPvDrv.sys">
+            <Entrypoint Module="McPvDrv.sys" Method="*"/>
+        </Tag>
+        <Tag Name="Driver mfeaack.sys">
+            <Entrypoint Module="mfeaack.sys" Method="*"/>
+        </Tag>
+        <Tag Name="File Open/Close/... Driver mfeavfk.sys">
+            <Entrypoint Module="mfeavfk.sys" Method="*"/>
+        </Tag>
+        <Tag Name="Network/IOCompletionPort Driver mfefirek.sys">
+            <Entrypoint Module="mfefirek.sys" Method="*"/>
+        </Tag>
+        <Tag Name="File Filter Driver mfehidk.sys">
+            <Entrypoint Module="mfehidk.sys" Method="*"/>
+        </Tag>
+        <Tag Name="Anti-Malware Core Driver mfencbdc.sys">
+            <Entrypoint Module="mfencbdc.sys" Method="*"/>
+        </Tag>
+        <Tag Name="mfeplk.sys">
+            <Entrypoint Module="mfeplk.sys" Method="*"/>
+        </Tag>
+        <Tag Name="mfewfpk.sys">
+            <Entrypoint Module="mfewfpk.sys" Method="*"/>
+        </Tag>
     </Tag>
-    <Tag Name="Network Driver" Priority="1">
-      <Entrypoint Module="cyvrlpc.sys" Method="*"/>
-      <Entrypoint Module="cyvrmtgn.sys" Method="*"/>
+	
+    <Tag Name="Antivirus - CrowdStrike Security" Priority="1">
+        <Tag Name="Injected Dll umpcc*.dll">
+            <Entrypoint Module="umppc*.dll" Method="*" />
+        </Tag>
+        <Tag Name="Driver csagent.sys">
+            <Entrypoint Module="csagent.sys" Method="*" />
+        </Tag>
     </Tag>
-  </Tag>
-  <Tag Name="Antivirus - Palo Alto Networks - FSFilter Activity Monitor" Priority="1">
-    <Entrypoint Module="cyvrlpc.sys" Method="*"/>
-  </Tag>
-  <Tag Name="Antivirus - ESET NOD32">
-    <Tag Name="FSFilter">
-      <Entrypoint Module="ehdrv.sys" Method="*"/>
+	
+    <Tag Name="Antivirus - CyberArk Security" Priority="1">
+        <Tag Name="vfdrv.sys">
+            <Entrypoint Module="vfdrv.sys" Method="*" />
+        </Tag>
+        <Tag Name="CybKernelTracker.sys">
+            <Entrypoint Module="CybKernelTracker.sys" Method="*" />
+        </Tag>
+        <Tag Name="Driver vfnet.sys">
+            <Entrypoint Module="vfnet.sys" Method="*" />
+        </Tag>
+        <Tag Name="Driver vfpd.sys">
+            <Entrypoint Module="vfpd.sys" Method="*" />
+        </Tag>
     </Tag>
-  </Tag>
-  <Tag Name="Antivirus - Mc Afee" Priority="1" >
-    <Entrypoint Module="MfeAVSvc.exe" Method="*"/>
-    <Entrypoint Module="mfecore.dll" Method="*"/>
-    <Entrypoint Module="mfefires.dll" Method="*"/>
-    <Tag Name="cfwids.sys">
-      <Entrypoint Module="cfwids.sys" Method="*"/>
+	
+    <Tag Name="Antivirus - Sentinel One" >
+        <Tag Name="Driver SentinelMonitor.sys" Priority="101">
+            <Entrypoint Module="SentinelMonitor.sys" Method="*" />
+        </Tag>
+        <Tag Name="Injected Dll InProcessClient*.dll">
+            <Entrypoint Module="InProcessClient64.dll" Method="*" />
+            <Entrypoint Module="InProcessClient32.dll" Method="*" />
+        </Tag>
     </Tag>
-    <Tag Name="McPvDrv.sys">
-      <Entrypoint Module="McPvDrv.sys" Method="*"/>
+	
+    <Tag Name="Antivirus - Avast">
+        <Tag Name="Injected Dll aswhook.dll">
+            <Entrypoint Module="aswhook.dll" Method="*" />
+        </Tag>
+        <Tag Name="Driver aswMonFlt.sys">
+            <Entrypoint Module="aswMonFlt.sys" Method="*" />
+        </Tag>
+        <Tag Name="Interceptor Driver aswSnx.sys">
+            <Entrypoint Module="aswSnx.sys" Method="*" />
+        </Tag>
+        <Tag Name="Interceptor Driver aswbidsdriver.sys">
+            <Entrypoint Module="aswSnx.sys" Method="*" />
+        </Tag>
+        <Tag Name="AntiRootkit Driver aswArPot.sys">
+            <Entrypoint Module="aswArPot.sys" Method="*" />
+        </Tag>
+        <Tag Name="AntiRootkit Driver aswArDisk.sys">
+            <Entrypoint Module="aswArDisk.sys" Method="*" />
+        </Tag>
+        <Tag Name="Driver aswRdr2.sys">
+            <Entrypoint Module="aswRdr2.sys" Method="*" />
+        </Tag>
     </Tag>
-    <Tag Name="mfeaack.sys">
-      <Entrypoint Module="mfeaack.sys" Method="*"/>
-    </Tag>
-    <Tag Name="File Open/Close/... Interceptor - mfeavfk.sys">
-      <Entrypoint Module="mfeavfk.sys" Method="*"/>
-    </Tag>
-    <Tag Name="Network/IOCompletionPort - mfefirek.sys">
-      <Entrypoint Module="mfefirek.sys" Method="*"/>
-    </Tag>
-    <Tag Name="File Filter Driver - mfehidk.sys">
-      <Entrypoint Module="mfehidk.sys" Method="*"/>
-    </Tag>
-    <Tag Name="Anti-Malware Core - mfencbdc.sys">
-      <Entrypoint Module="mfencbdc.sys" Method="*"/>
-    </Tag>
-    <Tag Name="mfeplk.sys">
-      <Entrypoint Module="mfeplk.sys" Method="*"/>
-    </Tag>
-    <Tag Name="mfewfpk.sys">
-      <Entrypoint Module="mfewfpk.sys" Method="*"/>
-    </Tag>
-  </Tag>
-  <Tag Name="Antivirus - CrowdStrike Security" Priority="1">
-    <Tag Name="CrowdStrike User Mode Overhead">
-      <Entrypoint Module="umppc*.dll" Method="*" />
-    </Tag>
-    <Tag Name="CrowdStrike Device Driver Overhead">
-      <Entrypoint Module="csagent.sys" Method="*" />
-    </Tag>
-  </Tag>
-  <Tag Name="Antivirus - CyberArk Security" Priority="1">
-    <Tag Name="vfdrv Driver Overhead">
-      <Entrypoint Module="vfdrv.sys" Method="*" />
-    </Tag>
-    <Tag Name="CybKernelTracker Driver Overhead">
-      <Entrypoint Module="CybKernelTracker.sys" Method="*" />
-    </Tag>
-    <Tag Name="EPM Network Driver Overhead">
-      <Entrypoint Module="vfnet.sys" Method="*" />
-    </Tag>
-    <Tag Name="EPM Protection Driver Driver Overhead">
-      <Entrypoint Module="vfpd.sys" Method="*" />
-    </Tag>
-  </Tag>
-  <Tag Name="Antivirus - Sentinel One" >
-    <Tag Name="Sentinel One Device Driver" Priority="101">
-      <Entrypoint Module="SentinelMonitor.sys" Method="*" />
-    </Tag>
-    <Tag Name="Sentinel One Injected Dll">
-      <Entrypoint Module="InProcessClient64.dll" Method="*" />
-      <Entrypoint Module="InProcessClient32.dll" Method="*" />
-    </Tag>
-  </Tag>
-  <Tag Name="Antivirus - Avast">
-    <Tag Name="aswhook.dll InProcess Hooking">
-      <Entrypoint Module="aswhook.dll" Method="*" />
-    </Tag>    
-    <Tag Name="File System Driver">
-      <Entrypoint Module="aswMonFlt.sys" Method="*" />
-    </Tag>
-    <Tag Name="aswSnx.sys Interceptor Driver">
-      <Entrypoint Module="aswSnx.sys" Method="*" />
-    </Tag>
-    <Tag Name="aswbidsdriver.sys Interceptor Driver">
-      <Entrypoint Module="aswSnx.sys" Method="*" />
-    </Tag>
-    <Tag Name="aswArPot.sys AntiRootkit Driver">
-      <Entrypoint Module="aswArPot.sys" Method="*" />
-    </Tag>
-    <Tag Name="aswArDisk.sys AntiRootkit Disk Driver">
-      <Entrypoint Module="aswArDisk.sys" Method="*" />
-    </Tag>
-    <Tag Name="aswRdr2.sys Driver">
-      <Entrypoint Module="aswRdr2.sys" Method="*" />
-    </Tag>
-  </Tag>
 
-<Tag Name="DWM Render">
+	
+	<Tag Name="DWM Render">
         <Entrypoint Module="dwmcore.dll" Method="CPartitionVerticalBlankScheduler::ProcessFrame*"/>
   </Tag>
   <Tag Name="MS Teams">
