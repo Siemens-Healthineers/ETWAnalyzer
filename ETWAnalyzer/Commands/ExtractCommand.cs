@@ -32,7 +32,7 @@ namespace ETWAnalyzer.Commands
     {
         internal static readonly string HelpString =
          "ETWAnalyzer [-extract [All, Default or Disk File CPU Memory Exception Stacktag ThreadPool PMC Dns] -filedir/-fd inEtlOrZip [-DryRun] [-symServer NtSymbolPath/MS/Google/syngo] [-keepTemp] [-NoOverwrite] [-pThreads dd] [-nThreads dd]" + Environment.NewLine +
-         "            [-LastNDays dd] [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd]  " + Environment.NewLine + 
+         "            [-Concurrency dd] [-LastNDays dd] [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd]  " + Environment.NewLine + 
          "Retrieve data from ETL files and store extracted data in a serialized format in Json in the output directory \\Extract folder." + Environment.NewLine +
          "The data can the be analyzed by other tools or ETWAnalyzer itself which can also analyze the data for specific patterns or issues." + Environment.NewLine +
          "Extract Options are separated by space" + Environment.NewLine +
@@ -74,7 +74,8 @@ namespace ETWAnalyzer.Commands
          " -LastNDays dd        Only extract files which are not older then dd days. Fractional days are supported." + Environment.NewLine + 
          " -pthreads dd         Percentage of threads to use during extract. Default is 75% of all cores  with a cap at 5 parallel extractions. " + Environment.NewLine + 
          "                      This can already utilize 100% of all cores because some operations are multithreaded like symbol transcoding." + Environment.NewLine +
-         " -nthreads dd         Absolute number of threads/processes used during extract." + Environment.NewLine +
+         " -nthreads dd         Number of extraction processes (one per file) used during extraction." + Environment.NewLine +
+         " -Concurrency dd      Number of threads used in one extraction process to extract data multithreaded." + Environment.NewLine + 
          " -symServer [NtSymbolPath, MS, Google, syngo or your own symbol server]  Load pdbs from remote symbol server which is stored in the ETWAnalyzer.dll/exe.config file." + Environment.NewLine +
          "                      With NtSymbolPath the contents of the environment variable _NT_SYMBOL_PATH are used." + Environment.NewLine +
          "                      When using a custom remote symbol server use this form with a local folder: E.g. SRV*C:\\Symbols*https://msdl.microsoft.com/download/symbols" + Environment.NewLine + 
@@ -130,7 +131,7 @@ namespace ETWAnalyzer.Commands
         internal const string TimeLineArg = "-timeline";
         internal const string ChildArg = "-child";  // Marker argument to prevent by accident to spawn child of child processes. Child processes process a trace single threaded
         internal const string AllCPUArg = "-allcpu";
-
+        internal const string ConcurrencyArg = "-concurrency";
         internal const string DryRunArg = "-dryrun";
 
 
@@ -305,6 +306,11 @@ namespace ETWAnalyzer.Commands
         /// </summary>
         public bool IsDryRun { get; private set; }
 
+        /// <summary>
+        /// -concurrency Defines how many threads are used during CPU and Stacktag Extraction.
+        /// </summary>
+        public int? Concurrency { get; private set; }
+
 
         /// <summary>
         /// Create an extract command with given command line switches
@@ -365,6 +371,14 @@ namespace ETWAnalyzer.Commands
                             throw new InvalidDataException($"{NThreadsArg} {nThreadsStr} is not a valid number for the thread count.");
                         }
                         myNThreads = tmpNThreads;
+                        break;
+                    case ConcurrencyArg: // -concurrency
+                        string nConcurrencyStr = GetNextNonArg(ConcurrencyArg);
+                        if (!int.TryParse(nConcurrencyStr, out int nConcurrency))
+                        {
+                            throw new InvalidDataException($"{NThreadsArg} {nConcurrencyStr} is not a valid number for the concurrency count.");
+                        }
+                        Concurrency = nConcurrency;
                         break;
                     case TimeLineArg:   // -timeline
                         string timelineInterval = GetNextNonArg(TimeLineArg);
@@ -449,7 +463,7 @@ namespace ETWAnalyzer.Commands
             }
 
             ConfigureExtractors(Extractors, myProcessingActionList);
-            SetExtractorFilters(Extractors, ExtractAllCPUData, DisableExceptionFilter, TimelineDataExtractionIntervalS);
+            SetExtractorFilters(Extractors, ExtractAllCPUData, DisableExceptionFilter, TimelineDataExtractionIntervalS, Concurrency);
 
         }
 
@@ -502,13 +516,20 @@ namespace ETWAnalyzer.Commands
             }
         }
 
-        static void SetExtractorFilters(List<ExtractorBase> extractors, bool extractAllCpuData, bool disableExceptionFilter, float? timelineExtractionInterval)
+        static void SetExtractorFilters(List<ExtractorBase> extractors, bool extractAllCpuData, bool disableExceptionFilter, float? timelineExtractionInterval, int ?concurrency)
         {
             var cpu = extractors.OfType<CPUExtractor>().SingleOrDefault();
             if (cpu != null)
             {
                 cpu.ExtractAllCPUData = extractAllCpuData;
+                cpu.Concurrency = concurrency;
                 cpu.TimelineDataExtractionIntervalS = timelineExtractionInterval;
+            }
+
+            var stacktag = extractors.OfType<StackTagExtractor>().SingleOrDefault();
+            if( stacktag != null)
+            {
+                stacktag.Concurrency = concurrency;
             }
 
             var exception = extractors.OfType<ExceptionExtractor>().SingleOrDefault();
@@ -602,12 +623,29 @@ namespace ETWAnalyzer.Commands
                 skipCount = 1;
             }
 
-            Parallel.ForEach(nonEmptyFiles.Skip(skipCount),
-                            new ParallelOptions()
-                            {
-                                MaxDegreeOfParallelism = maxThreads
-                            },
-                            parallelAction);
+            var queue = new Queue<TestDataFile>(nonEmptyFiles.Skip(skipCount));
+
+            // Paralle.Foreach does not evenly distribute long running task leading to a long tail 
+            // of single threaded extractions
+            Parallel.For(0, maxThreads, i =>
+            {
+                do
+                {
+                    TestDataFile file = null;
+                    lock (queue)
+                    {
+                        if (queue.Count > 0)
+                        {
+                            file = queue.Dequeue();
+                        }
+                    }
+
+                    if (file != null)
+                    {
+                        parallelAction(file);
+                    }
+                } while (queue.Count > 0);
+            });
 
             sw.Stop();
 
@@ -651,6 +689,13 @@ namespace ETWAnalyzer.Commands
             }
 
             string subCommand = GetCommandLineForSingleExtractFile(fileToAnalyze.FileName);
+
+            // when only one file is extracted we by default use up to 75% of all cores to speed up CPU and Stacktag extraction
+            if(myTotalFilesToExtract == 1 && Concurrency == null)
+            {
+                subCommand += $" {ConcurrencyArg} {CalcMaxThreadCount()}";
+            }
+
             var command = new ProcessCommand(ConfigFiles.ETWAnalyzerExe, subCommand);
             try
             {

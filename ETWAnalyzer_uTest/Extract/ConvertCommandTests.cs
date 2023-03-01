@@ -33,9 +33,11 @@ namespace ETWAnalyzer_uTest.Extract
             cmd.Parse();
             cmd.Run();
             Assert.Equal(2, files.Count);
-            Assert.Equal(file1, files[0]);
-            Assert.Equal(file2, files[1]);
+            Assert.Contains(file1, files);
+            Assert.Contains(file2, files);
         }
+
+
         [Fact]
         public void Can_Convert_Single_File()
 
@@ -61,6 +63,8 @@ namespace ETWAnalyzer_uTest.Extract
             cmd.Run();
             Assert.Equal(file1, files[0]);
         }
+
+
         [Fact]
         public void No_File()
         {
