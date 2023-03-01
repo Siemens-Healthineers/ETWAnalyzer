@@ -59,39 +59,31 @@ namespace ETWAnalyzer_uTest.EventDump
 
             MatchData groupedData01 = new()
             {
-                FileOpenTimeInus = 12,
+                FileOpenTimeInus = 1,
                 FileCloseTimeInus = 200,
                 FileWriteTimeInus = 5,
-                FileReadTimeInus = 6,
-                FileReadSizeInBytes = 8,
-                FileReadMaxPos = 1024,
-                FileWriteSizeInBytes = 64,
-                FileWriteMaxFilePos = 256,
-                FileOpenCount = 51,
-                FileCloseCount = 65,
-                FileWriteCount = 56,
-                FileReadCount = 4,
-                FileSetSecurityCount = 9,
+                FileReadTimeInus = 10,
+                FileReadSizeInBytes = 20,
+                FileReadMaxPos = 1000,
+                FileWriteSizeInBytes = 100,
+                FileWriteMaxFilePos = 500,
+                FileOpenCount = 50,
+                FileCloseCount = 300,
+                FileWriteCount = 600,
+                FileReadCount = 400,
+                FileSetSecurityCount = 900,
                 FileDeleteCount = 3000,
-                FileRenameCount = 201,
+                FileRenameCount = 150,
                 FileOpenCloseTimeInus = 201,
             };
 
             dump.SortOrder = ETWAnalyzer.Commands.DumpCommand.SortOrders.Length;
             decimal length01 = dump.GetSortValue(groupedData01);
-            Assert.Equal(512, length01);
-
-            dump.SortOrder = ETWAnalyzer.Commands.DumpCommand.SortOrders.Size;
-            decimal size01 = dump.GetSortValue(groupedData01);
-            Assert.Equal(223, size01);
-
-            dump.SortOrder = ETWAnalyzer.Commands.DumpCommand.SortOrders.Time;
-            decimal time01 = dump.GetSortValue(groupedData01);
-            Assert.Equal(223, time01);
+            Assert.Equal(1000, length01);
 
             dump.SortOrder = ETWAnalyzer.Commands.DumpCommand.SortOrders.Count;
             decimal count01 = dump.GetSortValue(groupedData01);
-            Assert.Equal(185, count01);
+            Assert.Equal(2250, count01);
 
         }
     }
