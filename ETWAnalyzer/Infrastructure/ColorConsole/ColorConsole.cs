@@ -320,7 +320,14 @@ namespace ETWAnalyzer.ProcessTools
             int at2 = text.IndexOf("]", StringComparison.Ordinal);
             if (at == -1 || at2 <= at)
             {
-                WriteLine(ClipToConsole(text), baseTextColor);
+                if (skipLineFeed)
+                {
+                    Write(ClipToConsole(text), baseTextColor);
+                }
+                else
+                {
+                    WriteLine(ClipToConsole(text), baseTextColor);
+                }
                 return;
             }
 
