@@ -113,7 +113,7 @@ namespace ETWAnalyzer.EventDump
         /// <param name="fmt">Controls how time is formatted.</param>
         /// <param name="alignWidth">if true the output width is adjusted to some common width depending on the used time format</param>
         /// <returns>Formatted time string locale independent</returns>
-        protected internal string GetDateTimeString(DateTimeOffset ?time, DateTimeOffset sessionstart, TimeFormats fmt, bool alignWidth=false)
+        protected internal string GetDateTimeString(DateTimeOffset? time, DateTimeOffset sessionstart, TimeFormats fmt, bool alignWidth=false)
         {
             if (time == null)
             {
