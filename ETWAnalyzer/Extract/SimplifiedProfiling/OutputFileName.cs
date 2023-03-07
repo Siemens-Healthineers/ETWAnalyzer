@@ -99,7 +99,7 @@ namespace TAU.Toolkit.Diagnostics.Profiling.Simplified
 
                 if (fragments.Count > 0)
                 {
-                    while (Enum.TryParse<GeneratedAt>(fragments.Peek(), out GeneratedAt _) == false)
+                    while (fragments.Count > 0 && Enum.TryParse<GeneratedAt>(fragments.Peek(), out GeneratedAt _) == false)
                     {
                         outputFileName.MachineWhereResultsAreGeneratedOn += outputFileName.MachineWhereResultsAreGeneratedOn == null ? fragments.Dequeue() : "_" + fragments.Dequeue();
                     }
