@@ -117,7 +117,7 @@ namespace ETWAnalyzer.EventDump
         {
             if (time == null)
             {
-                return "";
+                return "".WithWidth(alignWidth ? GetWidth(fmt) : 0);
             }
 
             if (fmt == TimeFormats.LocalTime || fmt == TimeFormats.HereTime || fmt == TimeFormats.UTCTime)
