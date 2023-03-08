@@ -2,6 +2,8 @@
 //// SPDX-License-Identifier:   MIT
 
 
+using ETWAnalyzer.Extract.Network.Tcp;
+
 namespace ETWAnalyzer.Extract.Network
 {
     /// <summary>
@@ -13,5 +15,10 @@ namespace ETWAnalyzer.Extract.Network
         /// DNS Events
         /// </summary>
         IDnsClient DnsClient { get;  }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        ITcpStatistics TcpData { get; }
     }
 }
