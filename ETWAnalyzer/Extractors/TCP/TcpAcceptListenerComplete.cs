@@ -1,4 +1,8 @@
-﻿using ETWAnalyzer.Extract;
+﻿//// SPDX-FileCopyrightText:  © 2023 Siemens Healthcare GmbH
+//// SPDX-License-Identifier:   MIT
+
+
+using ETWAnalyzer.Extract;
 using ETWAnalyzer.Extract.Network.Tcp;
 using ETWAnalyzer.TraceProcessorHelpers;
 using Microsoft.Windows.EventTracing.Events;
@@ -8,8 +12,7 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
-//// SPDX-FileCopyrightText:  © 2023 Siemens Healthcare GmbH
-//// SPDX-License-Identifier:   MIT
+
 
 namespace ETWAnalyzer.Extractors.TCP
 {
