@@ -548,7 +548,7 @@ namespace ETWAnalyzer.EventDump
                         FileOperation.Read => data.FileReadCount,
                         FileOperation.Write => data.FileWriteCount,
                         FileOperation.SetSecurity => data.FileSetSecurityCount,
-                        FileOperation.Invalid => data.FileCloseCount + data.FileOpenCount + data.FileSetSecurityCount + data.FileWriteCount + data.FileReadCount,
+                        FileOperation.Invalid => throw new ArgumentException($"You need to set -FileOperationValue to sort by a specific row. Possible values are Close, Open, Read, Write, SetSecurity, Delete, Rename."),
                         FileOperation.Delete => data.FileDeleteCount,
                         FileOperation.Rename => data.FileRenameCount,
                         _ => throw new NotSupportedException($"File Operation sort not yet implemented for value: {FileOperationValue}"),
@@ -580,7 +580,7 @@ namespace ETWAnalyzer.EventDump
                         FileOperation.Read => data.FileReadTimeInus,
                         FileOperation.Write => data.FileWriteTimeInus,
                         FileOperation.SetSecurity => data.FileSetSecurityCount,
-                        FileOperation.Invalid => data.TotalFileTime,
+                        FileOperation.Invalid => throw new ArgumentException($"You need to set -FileOperationValue to sort by a specific row. Possible values are Close, Open, Read, Write, SetSecurity, Delete, Rename."),
                         FileOperation.Delete => data.TotalFileTime,
                         FileOperation.Rename => data.TotalFileTime,
                         _ => throw new NotSupportedException($"File Operation sort not yet implemented for value: {FileOperationValue}"),
@@ -608,8 +608,7 @@ namespace ETWAnalyzer.EventDump
                             lret = data.FileRenameCount;
                             break;
                         case FileOperation.Invalid:  // by default we sort by total time to stay consistent with -Dump disk.
-                            lret = data.TotalFileTime;
-                            break;
+                            throw new ArgumentException($"You need to set -FileOperationValue to sort by a specific row. Possible values are Close, Open, Read, Write, SetSecurity, Delete, Rename.");
                         default:
                             throw new NotSupportedException($"File Operation sort not yet implemented for value: {FileOperationValue}");
                     }
