@@ -72,5 +72,24 @@ namespace ETWAnalyzer_uTest.Infrastructure
             DummyParser parser = new DummyParser(new string[] { "-a" });
             Assert.True(parser.PeekNextArgumentSwitch(out string arg));
         }
+
+        [Fact]
+        public void Can_Parse_Double_In_German_Locale()
+        {
+            double value = ArgParser.ParseDouble("1.001");
+            Assert.Equal(1.001d, value);
+
+            CultureInfo currentculture = Thread.CurrentThread.CurrentCulture;
+            try
+            {
+                Thread.CurrentThread.CurrentCulture = new CultureInfo("de-DE");
+                value = ArgParser.ParseDouble("1.001");
+                Assert.Equal(1.001d, value);
+            }
+            finally
+            {
+                Thread.CurrentThread.CurrentCulture = currentculture;
+            }
+        }
     }
 }

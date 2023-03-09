@@ -40,7 +40,10 @@ namespace ETWAnalyzer.EventDump
         public KeyValuePair<string, Func<string, bool>> DnsQueryFilter { get; internal set; } = new KeyValuePair<string, Func<string, bool>>(null, x => true);
         public bool ShowProcess { get; internal set; }
 
-        List<MatchData> myUTestData = null;
+        /// <summary>
+        /// Unit testing only. ReadFileData will return this list instead of real data
+        /// </summary>
+        internal List<MatchData> myUTestData = null;
 
         public override List<MatchData> ExecuteInternal()
         {

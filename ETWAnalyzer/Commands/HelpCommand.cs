@@ -18,13 +18,13 @@ namespace ETWAnalyzer.Commands
            $"ETWAnalyzer {FileVersionInfo.GetVersionInfo(Process.GetCurrentProcess().MainModule.FileName).FileVersion}" + Environment.NewLine +
             " ETWAnalyzer [green]-help[/green] [Extract, Dump, Convert or LoadSymbol]  Get further information about the specific sub command" + Environment.NewLine +
             " ETWAnalyzer [green]-Extract[/green] [All or CPU Disk File Module Memory Exception Stacktag ThreadPool PMC Dns] -filedir inEtlOrZip [-outDir xxxxx] [-symServer [MS, syngo or NtSymbolPath] [-keepTemp] [-symFolder bbbb]" + Environment.NewLine +
+            "        Extract data from etl file/s and write summary data into json files." + Environment.NewLine +
             " ETWAnalyzer [green]-LoadSymbol[/green] -filedir xxx.json -symserver ..." + Environment.NewLine +
+            "        Resolve method names from an extracted Json file." + Environment.NewLine +
             " ETWAnalyzer [green]-Dump[/green] [Stats,Process,CPU,Memory,Disk,File,ThreadPool,Exception,Mark,TestRun,Version,PMC,LBR,Dns]" + Environment.NewLine +
+            "        Dump previously extracted data from Json files. Some commands additionally support ETL files (e.g. -dump Process)" + Environment.NewLine +
             " ETWAnalyzer [green]-Convert[/green] -filedir xx.etl -pid dd [-perthread]" + Environment.NewLine +
-            "  -Extract    Extract specific aspects from etl files into json files" + Environment.NewLine +
-            "  -LoadSymbol Resolve method names from an extracted Json file." + Environment.NewLine +
-            "  -Dump       Dump previously extracted data from Json files. Some commands additionally support ETL files (e.g. -dump Process)" + Environment.NewLine +
-            "  -Convert    Convert from an ETL File a process to a speedscope json file." + Environment.NewLine +
+            "        Convert from an ETL File a process to a speedscope json file." + Environment.NewLine +
             "[yellow]Examples:[/yellow] " + Environment.NewLine +
             "[green]Get more help on specific option[/green]" + Environment.NewLine +
             "    ETWAnalyzer -help [Extract, Dump, Convert or Loadsymbol]" + Environment.NewLine +
@@ -65,7 +65,7 @@ namespace ETWAnalyzer.Commands
         {
             while(myArgs.Count>0)
             {
-                string arg = myArgs.Dequeue();
+                string arg = myArgs.Dequeue().ToLower();
                 switch (AddPrefix(arg))
                 {
                     case CommandFactory.ExtractCommand:

@@ -9273,9 +9273,19 @@ namespace ETWAnalyzer.Extract
         STATUS_FATAL_USER_CALLBACK_EXCEPTION = 0xC000041D,
 
         /// <summary>
+        /// Processes was terminated because it did no longer respond to user messages.
+        /// </summary>
+        STATUS_APPLICATION_HANG = 0xCFFFFFFF,
+
+        /// <summary>
         /// Manged Exception
         /// </summary>
         CLR_Exception = 0xE0434352,
+
+        /// <summary>
+        /// Internal .NET Runtime Exception
+        /// </summary>
+        STATUS_CLR_EXCEPTION = 0xE0434f4D,
 
         /// <summary>
         /// C++ Exception

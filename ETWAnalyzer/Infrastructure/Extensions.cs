@@ -138,6 +138,21 @@ namespace ETWAnalyzer.Infrastructure
             return new KeyValuePair<int, int>(min, max);
         }
 
+        public static KeyValuePair<ulong,ulong> GetMinMaxULong(this string minMaxStr)
+        {
+            string[] minmax = minMaxStr.Split(new char[] { '-' }, StringSplitOptions.RemoveEmptyEntries);
+
+            ulong min = ulong.Parse(minmax[0], CultureInfo.InvariantCulture);
+            ulong max = ulong.MaxValue;
+
+            if (minmax.Length == 2)
+            {
+                max = ulong.Parse(minmax[1], CultureInfo.InvariantCulture);
+            }
+
+            return new KeyValuePair<ulong, ulong>(min, max);
+        }
+
         public static Tuple<double,double> GetMinMaxDouble(this string minStr, string maxStr)
         {
             double min = double.Parse(minStr);

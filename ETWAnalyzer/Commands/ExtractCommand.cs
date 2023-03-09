@@ -21,6 +21,8 @@ using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using ETWAnalyzer.EventDump;
+using ETWAnalyzer.Extractors.TCP;
 
 namespace ETWAnalyzer.Commands
 {
@@ -30,7 +32,8 @@ namespace ETWAnalyzer.Commands
     class ExtractCommand : ArgParser
     {
         internal static readonly string HelpString =
-         "ETWAnalyzer [-extract [All, Default or Disk File CPU Memory Exception Stacktag ThreadPool PMC Dns] -filedir/-fd inEtlOrZip [-symServer NtSymbolPath/MS/Google/syngo] [-keepTemp] [-NoOverwrite] [-pThreads dd] [-nThreads dd]" + Environment.NewLine +
+         "ETWAnalyzer [-extract [All, Default or Disk File CPU Memory Exception Stacktag ThreadPool PMC Dns] -filedir/-fd inEtlOrZip [-DryRun] [-symServer NtSymbolPath/MS/Google/syngo] [-keepTemp] [-NoOverwrite] [-pThreads dd] [-nThreads dd]" + Environment.NewLine +
+         "            [-Concurrency dd] [-LastNDays dd] [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd]  " + Environment.NewLine + 
          "Retrieve data from ETL files and store extracted data in a serialized format in Json in the output directory \\Extract folder." + Environment.NewLine +
          "The data can the be analyzed by other tools or ETWAnalyzer itself which can also analyze the data for specific patterns or issues." + Environment.NewLine +
          "Extract Options are separated by space" + Environment.NewLine +
@@ -54,15 +57,26 @@ namespace ETWAnalyzer.Commands
          "  ThreadPool: Extract relevant data from .NET Runtime ThreadPool if available. ThreadingKeyword 0x10000 needs to be set for the Microsoft-Windows-DotNETRuntime ETW Provider during recording." + Environment.NewLine +
          "              Json Nodes: ThreadPool-PerProcessThreadPoolStarvations" + Environment.NewLine +
          "  PMC       : Extract Performance Monitoring Counters and Last Branch Record CPU traces. You need to enable PMC/LBR ETW Tracing during the recording to get data." + Environment.NewLine +
-         "  DNS       : Extract DNS Queries. You need to enable ETW provider Microsoft-Windows-DNS-Client" + Environment.NewLine + 
+         "  DNS       : Extract DNS Queries. You need to enable ETW provider Microsoft-Windows-DNS-Client" + Environment.NewLine +
+         "The following filters work only if the adhere to a specific file naming convention." + Environment.NewLine + 
+         "Select files from a testrun (all tests which have a time gap < 1h) to e.g. select only the first, or skip the warmump run or to extract just a sample of test cases." + Environment.NewLine +
+         "         TestCaseName_ddddmsMachineName.yyyymmdd-hhmmss.7z/.zip/.etl  e.g. Build_166375msfv-az192-659.20230127-093520"  + Environment.NewLine + 
+         "         TestCaseName_ddddms_Machine_CLT/SRV/SINGLE_TestStatus-Passed/Failed_yyyymmdd-hhmmss.7z/.etl e.g. LoadPrepUseCase_4897ms_RN6498AA8B-B18F_SRV_TestStatus-Passed_20230112-170100.7z" + Environment.NewLine + 
+         "   -TestRunIndex dd           Select only data from a specific test run by index. To get the index value use -dump TestRun -filedir xxxx " + Environment.NewLine +
+         "   -TestRunCount dd           Select from a given TestRunIndex the next dd TestRuns. " + Environment.NewLine +
+         "   -TestsPerRun dd            Number of test cases to load of each test run. Useful if you want get an overview how a test behaves over time without loading thousands of files." + Environment.NewLine +
+         "   -SkipNTests dd             Skip the first n tests of a testcase in a TestRun. Use this to e.g. skip the first test run which shows normally first time init effects which may be not representative" + Environment.NewLine +
+         " -DryRun              Do not extract. Only print which files would be extracted." + Environment.NewLine + 
          " -NoOverwrite         By default existing Json files are overwritten during a new extraction run. If you want to extract from a large directory only the missing extraction files you can use this option" + Environment.NewLine +
          "                      This way you can have the same extract command line in a script after a profiling run to extract only the newly added profiling data." + Environment.NewLine +
-        "  -recursive           Test data is searched recursively below -filedir" + Environment.NewLine +
+         " -recursive           Test data is searched recursively below -filedir" + Environment.NewLine +
          " -filedir/-fd  xxx    Can occur multiple times. If a directory is entered all compressed and contained ETL files are extracted. You can also specify a single etl/zip file." + Environment.NewLine +
-        @"                      File queries and exclusions are also supported. E.g. -fd C:\Temp\*error*.etl;!*disk* will extract all etl files in c:\temp containing the name error but exclude the ones which contain disk in the file name" + Environment.NewLine + 
+        @"                      File queries and exclusions are also supported. E.g. -fd C:\Temp\*error*.etl;!*disk* will extract all etl files in c:\temp containing the name error but exclude the ones which contain disk in the file name" + Environment.NewLine +
+         " -LastNDays dd        Only extract files which are not older then dd days. Fractional days are supported." + Environment.NewLine + 
          " -pthreads dd         Percentage of threads to use during extract. Default is 75% of all cores  with a cap at 5 parallel extractions. " + Environment.NewLine + 
          "                      This can already utilize 100% of all cores because some operations are multithreaded like symbol transcoding." + Environment.NewLine +
-         " -nthreads dd         Absolute number of threads/processes used during extract." + Environment.NewLine +
+         " -nthreads dd         Number of extraction processes (one per file) used during extraction." + Environment.NewLine +
+         " -Concurrency dd      Number of threads used in one extraction process to extract data multithreaded." + Environment.NewLine + 
          " -symServer [NtSymbolPath, MS, Google, syngo or your own symbol server]  Load pdbs from remote symbol server which is stored in the ETWAnalyzer.dll/exe.config file." + Environment.NewLine +
          "                      With NtSymbolPath the contents of the environment variable _NT_SYMBOL_PATH are used." + Environment.NewLine +
          "                      When using a custom remote symbol server use this form with a local folder: E.g. SRV*C:\\Symbols*https://msdl.microsoft.com/download/symbols" + Environment.NewLine + 
@@ -91,6 +105,9 @@ namespace ETWAnalyzer.Commands
          " ETWAnalyzer -extract Default -filedir \\\\PerformanceHost\\ProfilingShare\\Baseline_12122022 -outdir c:\\temp\\Profiling\\Baseline_Extracted -keepTemp -tempdir c:\\RawETL" + Environment.NewLine +
          "[green]Update after a profiling run the missing Json extract files but do not overwrite already extracted ETL files again[/green]" + Environment.NewLine +
          " ETWAnalyzer -extract All -filedir C:\\Profiling\\Baseline_12122022 -symServer MS -outdir c:\\temp\\Profiling\\Baseline_Extracted -noOverwrite" + Environment.NewLine +
+         "[green]Show which files would be extracted. Select only files which are not older than one day.[/green]" + Environment.NewLine +
+         " ETWAnalyzer -extract All -fd C:\\Profiling\\Baseline_12122022 -DryRun -LastNDays 1" + Environment.NewLine +
+
          "" + Environment.NewLine
          ;
 
@@ -104,7 +121,9 @@ namespace ETWAnalyzer.Commands
         /// </summary>
         internal const string ETLFileNameVariable = "#ETLFileName#";
 
-        
+
+        // Extract specific command line Arguments
+
         internal const string TempDirArg = "-tempdir";
         internal const string KeepTempArg = "-keeptemp";
         internal const string NoOverWriteArg = "-nooverwrite";
@@ -113,6 +132,9 @@ namespace ETWAnalyzer.Commands
         internal const string TimeLineArg = "-timeline";
         internal const string ChildArg = "-child";  // Marker argument to prevent by accident to spawn child of child processes. Child processes process a trace single threaded
         internal const string AllCPUArg = "-allcpu";
+        internal const string ConcurrencyArg = "-concurrency";
+        internal const string DryRunArg = "-dryrun";
+
 
 
         public override string Help => HelpString;
@@ -135,6 +157,7 @@ namespace ETWAnalyzer.Commands
             Module,
             PMC,
             Dns,
+            TCP,
         }
 
         /// <summary>
@@ -160,6 +183,7 @@ namespace ETWAnalyzer.Commands
             { ExtractionOptions.Module,     () => new ModuleExtractor()     },
             { ExtractionOptions.PMC,        () => new PMCExtractor()        },
             { ExtractionOptions.Dns,        () => new DnsClientExtractor()  },
+            { ExtractionOptions.TCP,        () => new TCPExtractor()        },
         };
 
         /// <summary>
@@ -256,6 +280,42 @@ namespace ETWAnalyzer.Commands
 
 
         /// <summary>
+        /// Start Extraction at TestRun x
+        /// </summary>
+        public int TestRunIndex { get; internal set; } = -1;
+
+        /// <summary>
+        /// Extract N TestRuns
+        /// </summary>
+        public int TestRunCount { get; internal set; }
+
+        /// <summary>
+        /// Skip N tests of a testrun for extraction
+        /// </summary>
+        public int SkipNTests { get; internal set; }
+
+        /// <summary>
+        /// -TestsPerRun dd Extract N tests per run per test case
+        /// </summary>
+        public int TestsPerRun { get; internal set; }
+
+        /// <summary>
+        /// -LastNDays dd Extract data which was generated during the last N Days
+        /// </summary>
+        public double LastNDays { get; private set; } = double.MaxValue;
+
+        /// <summary>
+        /// -DryRun Do not extract but just print what would be extracted
+        /// </summary>
+        public bool IsDryRun { get; private set; }
+
+        /// <summary>
+        /// -concurrency Defines how many threads are used during CPU and Stacktag Extraction.
+        /// </summary>
+        public int? Concurrency { get; private set; }
+
+
+        /// <summary>
         /// Create an extract command with given command line switches
         /// </summary>
         /// <param name="args"></param>
@@ -279,18 +339,18 @@ namespace ETWAnalyzer.Commands
                     case CommandFactory.ExtractCommand:    // -extract xxxx
                         myProcessingActionList = GetArgList(ExtractArg, false);
                         break;
-                    case FileOrDirectoryArg:
-                    case FileOrDirectoryAlias:
+                    case FileOrDirectoryArg:   // -filedir
+                    case FileOrDirectoryAlias:  // -fd
                         string fileOrDir = GetNextNonArg(FileOrDirectoryArg);
                         InputFileOrDirectories.Add(fileOrDir); // we support multiple occurrences 
                         break;
                     // All optional Arguments
-                    case OutDirArg:
+                    case OutDirArg:   // -outdir
                         string outDir = GetNextNonArg(OutDirArg);
                         OutDir.OutputDirectory = ArgParser.CheckIfFileOrDirectoryExistsAndExtension(outDir);
                         OutDir.IsDefault = false;
                         break;
-                    case TempDirArg:
+                    case TempDirArg:  // -tempdir
                         string tmpDir = GetNextNonArg(TempDirArg);
                         if (!Directory.Exists(tmpDir))
                         {
@@ -307,7 +367,7 @@ namespace ETWAnalyzer.Commands
                         }
                         myPThreads = tmpPThreads;
                         break;
-                    case NThreadsArg:
+                    case NThreadsArg:   // -nthreads
                         string nThreadsStr = GetNextNonArg(NThreadsArg);
                         if( !int.TryParse(nThreadsStr, out int tmpNThreads))
                         {
@@ -315,7 +375,15 @@ namespace ETWAnalyzer.Commands
                         }
                         myNThreads = tmpNThreads;
                         break;
-                    case TimeLineArg:
+                    case ConcurrencyArg: // -concurrency
+                        string nConcurrencyStr = GetNextNonArg(ConcurrencyArg);
+                        if (!int.TryParse(nConcurrencyStr, out int nConcurrency))
+                        {
+                            throw new InvalidDataException($"{NThreadsArg} {nConcurrencyStr} is not a valid number for the concurrency count.");
+                        }
+                        Concurrency = nConcurrency;
+                        break;
+                    case TimeLineArg:   // -timeline
                         string timelineInterval = GetNextNonArg(TimeLineArg);
                         if( !float.TryParse(timelineInterval, out float tmpTimeLine))
                         {
@@ -323,19 +391,19 @@ namespace ETWAnalyzer.Commands
                         }
                         TimelineDataExtractionIntervalS = tmpTimeLine;
                         break;
-                    case UnzipOperationArg:
+                    case UnzipOperationArg:   // -unzipoperation
                         AfterUnzipCommand =  GetNextNonArg(UnzipOperationArg);
                         break;
                     case ChildArg: // -child
                         IsChildProcess = true;
                         break;
-                    case AllCPUArg:
+                    case AllCPUArg:   // -allcpu
                         ExtractAllCPUData = true;
                         break;
-                    case AllExceptionsArgs:
+                    case AllExceptionsArgs:  // -allexceptions
                         DisableExceptionFilter = true;
                         break;
-                    case RecursiveArg:
+                    case RecursiveArg:    // -recursive
                         mySearchOption = SearchOption.AllDirectories;
                         break;
                     case NoOverWriteArg: // -noOverwrite
@@ -359,6 +427,30 @@ namespace ETWAnalyzer.Commands
                     case DebugArg:    // -debug
                         Program.DebugOutput = true;
                         break;
+                    case SkipNTestsArg:  // -skipntests
+                        string skipNTests = GetNextNonArg(SkipNTestsArg);
+                        SkipNTests = int.Parse(skipNTests, CultureInfo.InvariantCulture);
+                        break;
+                    case TestRunIndexArg:  // -testrunindex
+                    case TRIArg:
+                        string testRun = GetNextNonArg(TestRunIndexArg);
+                        TestRunIndex = int.Parse(testRun, CultureInfo.InvariantCulture);
+                        break;
+                    case TestRunCountArg:  // -testruncount
+                    case TRCArg:
+                        string testrunCount = GetNextNonArg(TestRunCountArg);
+                        TestRunCount = int.Parse(testrunCount, CultureInfo.InvariantCulture);
+                        break;
+                    case TestsPerRunArg:  // -testsperrun
+                        TestsPerRun = int.Parse(GetNextNonArg(TestsPerRunArg), CultureInfo.InvariantCulture);
+                        break;
+                    case LastNDaysArg:   // -lastndays
+                        string lastNDays = GetNextNonArg(LastNDaysArg);
+                        LastNDays = ParseDouble(lastNDays);
+                        break;
+                    case DryRunArg:      // -dryrun
+                        IsDryRun = true;
+                        break;
                     case HelpArg:
                         throw new InvalidOperationException(HelpArg);
                     default: throw new NotSupportedException($"Invalid Argument: {arg}");
@@ -374,7 +466,7 @@ namespace ETWAnalyzer.Commands
             }
 
             ConfigureExtractors(Extractors, myProcessingActionList);
-            SetExtractorFilters(Extractors, ExtractAllCPUData, DisableExceptionFilter, TimelineDataExtractionIntervalS);
+            SetExtractorFilters(Extractors, ExtractAllCPUData, DisableExceptionFilter, TimelineDataExtractionIntervalS, Concurrency);
 
         }
 
@@ -408,6 +500,7 @@ namespace ETWAnalyzer.Commands
                         extractors.Add(myExtractorFactory[ExtractionOptions.Module]());
                         extractors.Add(myExtractorFactory[ExtractionOptions.PMC]());
                         extractors.Add(myExtractorFactory[ExtractionOptions.Dns]());
+                        extractors.Add(myExtractorFactory[ExtractionOptions.TCP]());
                     }
                     else
                     {
@@ -427,13 +520,20 @@ namespace ETWAnalyzer.Commands
             }
         }
 
-        static void SetExtractorFilters(List<ExtractorBase> extractors, bool extractAllCpuData, bool disableExceptionFilter, float? timelineExtractionInterval)
+        static void SetExtractorFilters(List<ExtractorBase> extractors, bool extractAllCpuData, bool disableExceptionFilter, float? timelineExtractionInterval, int ?concurrency)
         {
             var cpu = extractors.OfType<CPUExtractor>().SingleOrDefault();
             if (cpu != null)
             {
                 cpu.ExtractAllCPUData = extractAllCpuData;
+                cpu.Concurrency = concurrency;
                 cpu.TimelineDataExtractionIntervalS = timelineExtractionInterval;
+            }
+
+            var stacktag = extractors.OfType<StackTagExtractor>().SingleOrDefault();
+            if( stacktag != null)
+            {
+                stacktag.Concurrency = concurrency;
             }
 
             var exception = extractors.OfType<ExceptionExtractor>().SingleOrDefault();
@@ -473,14 +573,24 @@ namespace ETWAnalyzer.Commands
         public override void Run()
         {
             TestRunData runData = new(InputFileOrDirectories, mySearchOption, OutDir.OutputDirectory);
+            SingleTest[] tests = DumpFileDirBase<ExtractCommand>.GetTestRunsFromTestRunData(runData, false, true, TestRunIndex, TestRunCount, SkipNTests, TestsPerRun, LastNDays).ToArray();
 
-            IReadOnlyList<TestDataFile> filesToAnalyze = runData.AllFiles;
+            IReadOnlyList<TestDataFile> filesToAnalyze = tests.SelectMany(x=>x.Files).ToList();
             TestDataFile[] nonEmptyFiles = filesToAnalyze.Where(file => file.SizeInMB != 0).ToArray();
             myTotalFilesToExtract = nonEmptyFiles.Length;
 
             if (!IsChildProcess)
             {
                 Console.WriteLine($"{myTotalFilesToExtract} - files found to extract.");
+                if( IsDryRun )
+                {
+                    Console.WriteLine("The following files would be extracted:");
+                    foreach(var file in nonEmptyFiles)
+                    {
+                        Console.WriteLine($"{file.FileName}");
+                    }
+                    return;
+                }
             }
 
             var sw = Stopwatch.StartNew();
@@ -517,12 +627,29 @@ namespace ETWAnalyzer.Commands
                 skipCount = 1;
             }
 
-            Parallel.ForEach(nonEmptyFiles.Skip(skipCount),
-                            new ParallelOptions()
-                            {
-                                MaxDegreeOfParallelism = maxThreads
-                            },
-                            parallelAction);
+            var queue = new Queue<TestDataFile>(nonEmptyFiles.Skip(skipCount));
+
+            // Paralle.Foreach does not evenly distribute long running task leading to a long tail 
+            // of single threaded extractions
+            Parallel.For(0, maxThreads, i =>
+            {
+                do
+                {
+                    TestDataFile file = null;
+                    lock (queue)
+                    {
+                        if (queue.Count > 0)
+                        {
+                            file = queue.Dequeue();
+                        }
+                    }
+
+                    if (file != null)
+                    {
+                        parallelAction(file);
+                    }
+                } while (queue.Count > 0);
+            });
 
             sw.Stop();
 
@@ -534,6 +661,7 @@ namespace ETWAnalyzer.Commands
                 Console.WriteLine(str);
             }
         }
+
         int CalcMaxThreadCount()
         {
             bool defaultThreading = myNThreads == null && myPThreads == null;
@@ -565,6 +693,13 @@ namespace ETWAnalyzer.Commands
             }
 
             string subCommand = GetCommandLineForSingleExtractFile(fileToAnalyze.FileName);
+
+            // when only one file is extracted we by default use up to 75% of all cores to speed up CPU and Stacktag extraction
+            if(myTotalFilesToExtract == 1 && Concurrency == null)
+            {
+                subCommand += $" {ConcurrencyArg} {CalcMaxThreadCount()}";
+            }
+
             var command = new ProcessCommand(ConfigFiles.ETWAnalyzerExe, subCommand);
             try
             {

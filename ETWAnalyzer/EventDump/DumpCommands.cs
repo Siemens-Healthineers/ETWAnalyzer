@@ -93,5 +93,10 @@ namespace ETWAnalyzer.EventDump
         /// Dump Dns data
         /// </summary>
         Dns,
+
+        /// <summary>
+        /// Dump TCP data
+        /// </summary>
+        TCP,
     }
 }

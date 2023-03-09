@@ -15,6 +15,7 @@ using System.Linq;
 using static ETWAnalyzer.Commands.DumpCommand;
 using ETWAnalyzer.TraceProcessorHelpers;
 using System.Text.RegularExpressions;
+using System.Diagnostics;
 
 namespace ETWAnalyzer.EventDump
 {
@@ -153,11 +154,6 @@ namespace ETWAnalyzer.EventDump
         readonly Dictionary<string, bool> myMethodFilterResultsCache = new();
 
         /// <summary>
-        /// Cache results of filters
-        /// </summary>
-        readonly Dictionary<string, bool> myFirstLastMethodFilterResultsCache = new();
-
-        /// <summary>
         /// Needed for StackDepth sorting of methods where we determine the highest CPU consuming method with stack depth 0.
         /// Then we use for all methods > myMaxCPUSortData the metric CPU/exp(StackDepth), for the rest CPU/exp(StackDepth+10) to ensure
         /// that the deepest methods consuming most CPU are coming first while other methods with less CPU but have a
@@ -201,6 +197,12 @@ namespace ETWAnalyzer.EventDump
             public DateTimeOffset LastCallTime { get; internal set; }
 
             public ModuleDefinition Module { get; internal set; }
+
+            /// <summary>
+            /// Module data of the executable when -smi is used
+            /// </summary>
+            public ModuleDefinition ExeModule { get; internal set; }
+
             public Driver Driver { get; internal set; }
             public string ModuleName { get; internal set; }
             public DateTimeOffset SessionStart { get; internal set; }
@@ -304,6 +306,11 @@ namespace ETWAnalyzer.EventDump
 
                     if (process != null)
                     {
+                        ModuleDefinition exeModule = null;
+                        if (ShowModuleInfo && file.Extract.Modules != null)
+                        {
+                            exeModule = file.Extract.Modules.FindModule(process.ProcessName, process);
+                        }
 
                         matches.Add(new MatchData
                         {
@@ -325,6 +332,7 @@ namespace ETWAnalyzer.EventDump
                             FirstLastCallDurationS = (float)stacktag.FirstLastOccurenceDuration.TotalSeconds,
                             SessionStart = file.Extract.SessionStart,
                             Process = process,
+                            ExeModule = exeModule,
                             ZeroTimeS = zeroTimeS,
                         });
                     }
@@ -359,12 +367,14 @@ namespace ETWAnalyzer.EventDump
                         DateTimeOffset lastCallTime = file.Extract.ConvertTraceRelativeToAbsoluteTime (methodCost.LastOccurenceInSecond  - (float) zeroTimeS );
                         DateTimeOffset firstCallTime = file.Extract.ConvertTraceRelativeToAbsoluteTime(methodCost.FirstOccurenceInSecond - (float) zeroTimeS );
                         ModuleDefinition module = null;
+                        ModuleDefinition exeModule = null;
                         Driver driver = null;
 
                         if (ShowModuleInfo && file.Extract.Modules != null )
                         {
                             driver = Drivers.Default.TryGetDriverForModule(methodCost.Module);
                             module = file.Extract.Modules.FindModule(methodCost.Module, process);
+                            exeModule = file.Extract.Modules.FindModule(process.ProcessName, process);
                         }
 
                         if( !IsMatchingModule(module) ) // filter by module string
@@ -396,9 +406,10 @@ namespace ETWAnalyzer.EventDump
                             StackDepth = methodCost.DepthFromBottom,
                             Process = process,
                             Module = module,
+                            ExeModule = exeModule,
                             Driver = driver,
                             ZeroTimeS = zeroTimeS,
-                        });
+                        }) ;
                     }
                 }
             }
@@ -651,7 +662,10 @@ namespace ETWAnalyzer.EventDump
                         string cmdLine = NoCmdLine ? "" : firstProcessGroup.Process.CommandLineNoExe;
                         MatchData current = processGroup.First();
                         ETWProcess process = current.Process;
-                        ColorConsole.WriteEmbeddedColorLine($"   {processTotalString}[grey]{process.GetProcessWithId(UsePrettyProcessName)}{GetProcessTags(process, current.SessionStart.AddSeconds(current.ZeroTimeS))}[/grey] {cmdLine}", ConsoleColor.DarkCyan, false);
+                        string moduleString = current.ExeModule != null ? " " + GetModuleString(current.ExeModule, true) : "";
+
+                        ColorConsole.WriteEmbeddedColorLine($"   {processTotalString}[grey]{process.GetProcessWithId(UsePrettyProcessName)}{GetProcessTags(process, current.SessionStart.AddSeconds(current.ZeroTimeS))}[/grey] {cmdLine}", ConsoleColor.DarkCyan, true);
+                        ColorConsole.WriteEmbeddedColorLine($"[red]{moduleString}[/red]");
                     }
 
                     if (ShowTotal == TotalModes.Process)
