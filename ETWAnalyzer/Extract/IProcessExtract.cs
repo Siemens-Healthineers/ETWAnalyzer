@@ -74,6 +74,16 @@ namespace ETWAnalyzer.Extract
         /// <exception cref="KeyNotFoundException">Process could not be found with given <paramref name="pid"/> and <paramref name="startTime"/></exception>
         ETWProcessIndex GetProcessIndexByPID(int pid, DateTimeOffset startTime);
 
+
+        /// <summary>
+        /// Get process index at a given time. This is useful to correlate ETW events which log a pid at a given time so we can find the corresponding process later.
+        /// </summary>
+        /// <param name="pid">Process Id</param>
+        /// <param name="timeWhenProcessDidExist">Time when process was running.</param>
+        /// <returns>EtwProcessIndex.Invalid or a valid index on success. It does not throw if nothing could be found.</returns>
+        /// <exception cref="ArgumentException">When pid is 0 or smaller.</exception>
+        public ETWProcessIndex GetProcessIndexByPidAtTime(int pid, DateTimeOffset timeWhenProcessDidExist);
+
         /// <summary>
         /// Non throwing version
         /// </summary>

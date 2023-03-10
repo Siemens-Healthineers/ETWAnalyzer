@@ -22,6 +22,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using ETWAnalyzer.EventDump;
+using ETWAnalyzer.Extractors.TCP;
 
 namespace ETWAnalyzer.Commands
 {
@@ -156,6 +157,7 @@ namespace ETWAnalyzer.Commands
             Module,
             PMC,
             Dns,
+            TCP,
         }
 
         /// <summary>
@@ -181,6 +183,7 @@ namespace ETWAnalyzer.Commands
             { ExtractionOptions.Module,     () => new ModuleExtractor()     },
             { ExtractionOptions.PMC,        () => new PMCExtractor()        },
             { ExtractionOptions.Dns,        () => new DnsClientExtractor()  },
+            { ExtractionOptions.TCP,        () => new TCPExtractor()        },
         };
 
         /// <summary>
@@ -497,6 +500,7 @@ namespace ETWAnalyzer.Commands
                         extractors.Add(myExtractorFactory[ExtractionOptions.Module]());
                         extractors.Add(myExtractorFactory[ExtractionOptions.PMC]());
                         extractors.Add(myExtractorFactory[ExtractionOptions.Dns]());
+                        extractors.Add(myExtractorFactory[ExtractionOptions.TCP]());
                     }
                     else
                     {

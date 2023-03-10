@@ -450,6 +450,34 @@ namespace ETWAnalyzer.Extract
         }
 
         /// <summary>
+        /// Get process index at a given time. This is useful to correlate ETW events which log a pid at a given time so we can find the corresponding process later.
+        /// </summary>
+        /// <param name="pid">Process Id</param>
+        /// <param name="timeWhenProcessDidExist">Time when process was running.</param>
+        /// <returns>EtwProcessIndex.Invalid or a valid index on success. It does not throw if nothing could be found.</returns>
+        /// <exception cref="ArgumentException">When pid is 0 or smaller.</exception>
+        public ETWProcessIndex GetProcessIndexByPidAtTime(int pid, DateTimeOffset timeWhenProcessDidExist)
+        {
+            if (pid <= 0)
+            {
+                throw new ArgumentException($"Pid {pid} was not valid!");
+            }
+
+            ETWProcessIndex lret = ETWProcessIndex.Invalid;
+
+            for (int i = 0; i < Processes.Count; i++)
+            {
+                if (Processes[i].ProcessID == pid && timeWhenProcessDidExist > Processes[i].StartTime &&  timeWhenProcessDidExist < Processes[i].EndTime)
+                {
+                    lret = (ETWProcessIndex)i;
+                }
+            }
+
+            return lret;
+        }
+
+
+        /// <summary>
         /// Find a process by its process id and process start time which is a unique tuple
         /// </summary>
         /// <param name="pid">Process Id</param>

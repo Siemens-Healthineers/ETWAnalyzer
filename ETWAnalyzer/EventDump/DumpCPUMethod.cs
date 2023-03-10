@@ -154,11 +154,6 @@ namespace ETWAnalyzer.EventDump
         readonly Dictionary<string, bool> myMethodFilterResultsCache = new();
 
         /// <summary>
-        /// Cache results of filters
-        /// </summary>
-        readonly Dictionary<string, bool> myFirstLastMethodFilterResultsCache = new();
-
-        /// <summary>
         /// Needed for StackDepth sorting of methods where we determine the highest CPU consuming method with stack depth 0.
         /// Then we use for all methods > myMaxCPUSortData the metric CPU/exp(StackDepth), for the rest CPU/exp(StackDepth+10) to ensure
         /// that the deepest methods consuming most CPU are coming first while other methods with less CPU but have a

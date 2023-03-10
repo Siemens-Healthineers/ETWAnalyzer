@@ -255,6 +255,19 @@ abstract class ArgParser : ICommand
         }
     }
 
+    internal static TEnum ParseEnum<TEnum>(string context, string input, params TEnum[] allowedValues) where TEnum:Enum
+    {
+        try
+        {
+            TEnum value = (TEnum) Enum.Parse(typeof(TEnum), input, true);
+            return value;
+        }
+        catch(ArgumentException ex)
+        {
+            throw new ArgumentException($"Valid {context} values are {String.Join(",", allowedValues.Select(x=>x.ToString()).ToArray())}. Input value was {input}.", ex);
+        }
+    }
+
     /// <summary>
     /// Get filtered list of enum values as string
     /// </summary>
