@@ -537,6 +537,7 @@ namespace ETWAnalyzer.Commands
             WriteSize,
             WriteTime,
             FlushTime,
+            OpenCloseTime,
             TotalSize,
             TotalTime,
 
@@ -553,8 +554,8 @@ namespace ETWAnalyzer.Commands
             MaxRetransmissionTime,
 
             // Retransmit Orders
-            Delay
-            OpenCloseTime,
+            Delay,
+
         }
 
         const string SortRetransmitContext = "-SortRetransmitBy";

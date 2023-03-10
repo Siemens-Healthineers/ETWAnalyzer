@@ -25,6 +25,8 @@ namespace ETWAnalyzer.EventDump
     {
         static readonly char[] PathSplitChars = new char[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar };
         static readonly string PathSplitCharAsString = new string(Path.DirectorySeparatorChar, 1);
+        static readonly FileOperation[] ReadWriteFilter = new FileOperation[] {FileOperation.Read, FileOperation.Write};
+        static readonly FileOperation[] ReadWriteOpenCloseFilter = new FileOperation[] {FileOperation.Read, FileOperation.Write, FileOperation.Open, FileOperation.Close};
 
         public Func<string, bool> FileNameFilter { get; internal set; }
 
@@ -555,21 +557,55 @@ namespace ETWAnalyzer.EventDump
                     };
                     break;
                 case SortOrders.ReadSize:
+                    if( FileOperationValue != FileOperation.Invalid && FileOperationValue != FileOperation.Read)
+                    {
+                        throw new ArgumentException($"The -FileOperationValue is not valid. Allowed value must be Read only.");
+                    }
                     lret = data.FileReadSizeInBytes;
                     break;
                 case SortOrders.WriteSize:
+                    if (FileOperationValue != FileOperation.Invalid && FileOperationValue != FileOperation.Write)
+                    {
+                        throw new ArgumentException($"The -FileOperationValue is not valid. Allowed value must be Write only.");
+                        // throw  No -FileOperationValue is valid 
+                    }
+
                     lret = data.FileWriteSizeInBytes;
                     break;
                 case SortOrders.TotalSize:
+                    if (FileOperationValue != FileOperation.Invalid )
+                    {
+                        throw new ArgumentException($"The -FileOperationValue is not valid. Allowed value must be Invalid only.");
+                        // throw  No -FileOperationValue is valid 
+                    }
+
                     lret = data.FileWriteSizeInBytes + data.FileReadSizeInBytes;
                     break;
                 case SortOrders.TotalTime:
+                    if (FileOperationValue != FileOperation.Invalid )
+                    {
+                        throw new ArgumentException($"The -FileOperationValue is not valid. Allowed value must be Invalid only.");
+                        // throw  No -FileOperationValue is valid 
+                    }
+
                     lret = data.TotalFileTime;
                     break;
                 case SortOrders.ReadTime:
+                    if (FileOperationValue != FileOperation.Invalid && FileOperationValue != FileOperation.Read)
+                    {
+                        throw new ArgumentException($"The -FileOperationValue is not valid. Allowed value must be Read only.");
+                        // throw  No -FileOperationValue is valid 
+                    }
+
                     lret = data.FileReadTimeInus;
                     break;
                 case SortOrders.WriteTime:
+                    if (FileOperationValue != FileOperation.Invalid && FileOperationValue != FileOperation.Write)
+                    {
+                        throw new ArgumentException($"The -FileOperationValue is not valid. Allowed value must be Write only.");
+                        // throw  No -FileOperationValue is valid 
+                    }
+
                     lret = data.FileWriteTimeInus;
                     break;
                 case SortOrders.Time:
@@ -579,10 +615,10 @@ namespace ETWAnalyzer.EventDump
                         FileOperation.Open => data.FileOpenTimeInus,
                         FileOperation.Read => data.FileReadTimeInus,
                         FileOperation.Write => data.FileWriteTimeInus,
-                        FileOperation.SetSecurity => data.FileSetSecurityCount,
-                        FileOperation.Invalid => throw new ArgumentException($"You need to set -FileOperationValue to sort by a specific row. Possible values are Close, Open, Read, Write, SetSecurity, Delete, Rename."),
-                        FileOperation.Delete => data.TotalFileTime,
-                        FileOperation.Rename => data.TotalFileTime,
+                        FileOperation.SetSecurity => ThrowArgumentException(ReadWriteOpenCloseFilter),// throw exception
+                        FileOperation.Invalid => ThrowArgumentException(ReadWriteOpenCloseFilter),
+                        FileOperation.Delete => ThrowArgumentException(ReadWriteOpenCloseFilter),// throw exception
+                        FileOperation.Rename => ThrowArgumentException(ReadWriteOpenCloseFilter),// throw exception
                         _ => throw new NotSupportedException($"File Operation sort not yet implemented for value: {FileOperationValue}"),
                     };
                     break;
@@ -596,19 +632,13 @@ namespace ETWAnalyzer.EventDump
                             lret = data.FileWriteSizeInBytes;
                             break;
                         case FileOperation.SetSecurity:
-                            break;
                         case FileOperation.Close:
                         case FileOperation.Open:
-                            lret = data.FileWriteSizeInBytes + data.FileReadSizeInBytes;
-                            break;
                         case FileOperation.Delete:
-                            lret = data.FileDeleteCount;
-                            break;
                         case FileOperation.Rename:
-                            lret = data.FileRenameCount;
-                            break;
                         case FileOperation.Invalid:  // by default we sort by total time to stay consistent with -Dump disk.
-                            throw new ArgumentException($"You need to set -FileOperationValue to sort by a specific row. Possible values are Close, Open, Read, Write, SetSecurity, Delete, Rename.");
+                            ThrowArgumentException(ReadWriteFilter);
+                            break;
                         default:
                             throw new NotSupportedException($"File Operation sort not yet implemented for value: {FileOperationValue}");
                     }
@@ -618,9 +648,7 @@ namespace ETWAnalyzer.EventDump
                     {
                         FileOperation.Read => data.FileReadMaxPos,
                         FileOperation.Write => data.FileWriteMaxFilePos,
-                        FileOperation.Delete => data.FileDeleteCount,
-                        FileOperation.Rename => data.FileRenameCount,
-                        _ => data.FileWriteMaxFilePos + data.FileWriteMaxFilePos,
+                        _ => ThrowArgumentException(ReadWriteFilter),
                     };
                     break;
                 case SortOrders.OpenCloseTime:
@@ -633,6 +661,11 @@ namespace ETWAnalyzer.EventDump
             return lret;
         }
 
+
+        decimal ThrowArgumentException(FileOperation[] allowedValues)
+        {
+            throw new ArgumentException($"You need to set -FileOperationValue to sort by a specific row. Possible values are {string.Join(", ", allowedValues)}.");
+        }
 
         public class MatchData
         {

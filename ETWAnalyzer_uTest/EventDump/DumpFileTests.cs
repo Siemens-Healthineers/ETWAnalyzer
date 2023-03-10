@@ -41,7 +41,7 @@ namespace ETWAnalyzer_uTest.EventDump
             dump.FileOperationValue = ETWAnalyzer.Extract.FileIO.FileIOStatistics.FileOperation.Invalid;
             // You need to set -FileOperation to sort by a specific row. Possible values are Enum.GetNames(typeof(FileIOoper...=
             var values = Enum.GetNames<FileOperation>().Where(x => x!= "Invalid").ToArray();
-            String.Join(",", values);
+            string valuesList = String.Join(", ", values);
             var ex = Assert.Throws<ArgumentException>( () => dump.GetSortValue(groupedData01));
             Assert.Equal("You need to set -FileOperationValue to sort by a specific row. Possible values are Close, Open, Read, Write, SetSecurity, Delete, Rename.", ex.Message);
 
@@ -181,11 +181,6 @@ namespace ETWAnalyzer_uTest.EventDump
         public void DumpFile_Length()
         {
             dump.SortOrder = ETWAnalyzer.Commands.DumpCommand.SortOrders.Length;
-            dump.FileOperationValue = ETWAnalyzer.Extract.FileIO.FileIOStatistics.FileOperation.Delete;
-            decimal lengthDelete = dump.GetSortValue(groupedData01);
-            Assert.Equal(3000, lengthDelete);
-
-            dump.SortOrder = ETWAnalyzer.Commands.DumpCommand.SortOrders.Length;
             dump.FileOperationValue = ETWAnalyzer.Extract.FileIO.FileIOStatistics.FileOperation.Read;
             decimal lengthRead = dump.GetSortValue(groupedData01);
             Assert.Equal(1000, lengthRead);
@@ -194,11 +189,6 @@ namespace ETWAnalyzer_uTest.EventDump
             dump.FileOperationValue = ETWAnalyzer.Extract.FileIO.FileIOStatistics.FileOperation.Write;
             decimal lengthWrite = dump.GetSortValue(groupedData01);
             Assert.Equal(500, lengthWrite);
-
-            dump.SortOrder = ETWAnalyzer.Commands.DumpCommand.SortOrders.Length;
-            dump.FileOperationValue = ETWAnalyzer.Extract.FileIO.FileIOStatistics.FileOperation.Rename;
-            decimal lengthRename = dump.GetSortValue(groupedData01);
-            Assert.Equal(150, lengthRename);
         }
 
         [Fact]
