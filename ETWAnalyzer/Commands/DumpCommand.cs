@@ -309,18 +309,19 @@ namespace ETWAnalyzer.Commands
         "       [-SortRetransmitBy Delay/Time] [-MinMaxRetransDelayMs xx-yy] [-MinMaxRetransBytes xx-yy] [-TopNRetrans dd nn] [-Details] [-Tcb 0xdddddd] [-recursive]" + Environment.NewLine + 
         "       [-TimeFmt s,Local,LocalTime,UTC,UTCTime,Here,HereTime] [-csv xxx.csv] [-NoCSVSeparator] [-NoCmdLine] [-Clip] [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd] [-MinMaxMsTestTimes xx-yy ...] [-ProcessName/pn xxx.exe(pid)] " + Environment.NewLine +
         "       [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-CmdLine substring]" + Environment.NewLine +
-        "                         Print TCP summary and retransmit metrics. To see data you need to enable the Microsoft-Windows-TCPIP ETW provider" + Environment.NewLine +
+        "                         Print TCP summary and retransmit metrics. To see data you need to enable the Microsoft-Windows-TCPIP ETW provider. Data is sorted by retransmission count by default." + Environment.NewLine +
         "                         -IpPort xxx                Filter for substrings in source/destination IP and port." + Environment.NewLine +
         "                         -TopN dd nn                Show top n connection by current sort order" + Environment.NewLine +
         "                         -TopNRetrans dd nn         Show top n retransmission events when -ShowRetransmit is used" + Environment.NewLine +
         "                         -SortBy [...]              Default sort order is total bytes. Valid sort orders are ReceivedCount/SentCount/ReceivedSize/SentSize/TotalCount/TotalSize/ConnectTime/DisconnectTime/RetransmissionCount/RetransmissionTime/MaxRetransmissionTime" + Environment.NewLine +
-        "                         -SortRetransmitBy [...]    When -ShowRetransmit is used the events are sorted by time. The other valid value is Delay." + Environment.NewLine + 
+        "                                                    Sort applies to totals per connection. RetransmissionTime is the sum of all Delays and MaxRetransmissionTime sorts connections with highest Max retransmission times." + Environment.NewLine + 
+        "                         -SortRetransmitBy [...]    When -ShowRetransmit is used the events are sorted by Time. Valid values are Time/Delay" + Environment.NewLine + 
         "                         -ShowRetransmit            Show single retransmission events with timing data. Use -timefmt s to convert time to WPA time" + Environment.NewLine + 
         "                         -MinMaxRetransDelayMs xx-yy Filter by retransmission delay in ms. By default all retransmissions are shown." + Environment.NewLine +
         "                         -MinMaxRetransBytes xx-yy  Filter by retransmission sent packet size in bytes. Default is > 1 bytes because 0 and 1 bytes packets are often just keepalive or ACKs." + Environment.NewLine +
         "                         -MinMaxSentBytes xx-yy     Filter connections which have sent at least xx bytes." + Environment.NewLine + 
         "                         -MinMaxReceivedBytes xx-yy Filter connections which have received at least xx bytes." + Environment.NewLine + 
-        "                         -Details                   Show socket connect/disconnect time, used TCP template setting, TCB pointer" + Environment.NewLine +
+        "                         -Details                   Show retransmit Max/Median/Min, connect/disconnect time, used TCP template setting, TCB pointer." + Environment.NewLine +
         "                         -Tcb 0xdddddd              Filter by \"connection\" which is actually the Transfer Control Block pointer. This value can be reused if connections are frequently created."+ Environment.NewLine + 
             Environment.NewLine
         ;
@@ -1922,10 +1923,11 @@ namespace ETWAnalyzer.Commands
 
 
         /// <summary>
-        /// Context can be SortByContext, SortRetransmitContext
+        ///Return valid sort orders depending on used command and conext. 
+        ///Context can be SortByContext, SortRetransmitContext
         /// </summary>
         /// <param name="context"></param>
-        /// <returns></returns>
+        /// <returns>Array of valid sort order for current command</returns>
         SortOrders[] GetValidSortOrders(string context)
         {
 
