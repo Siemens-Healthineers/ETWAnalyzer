@@ -189,6 +189,37 @@ namespace ETWAnalyzer_uTest.EventDump
             dump.FileOperationValue = ETWAnalyzer.Extract.FileIO.FileIOStatistics.FileOperation.Write;
             decimal lengthWrite = dump.GetSortValue(groupedData01);
             Assert.Equal(500, lengthWrite);
+
+            // Exception tests
+            dump.SortOrder = ETWAnalyzer.Commands.DumpCommand.SortOrders.Length;
+            dump.FileOperationValue = ETWAnalyzer.Extract.FileIO.FileIOStatistics.FileOperation.SetSecurity;
+            var exSecurity = Assert.Throws<ArgumentException>(() => dump.GetSortValue(groupedData01));
+            Assert.Equal("You need to set -FileOperationValue to sort by a specific row. Possible values are Read, Write.", exSecurity.Message);
+
+            dump.SortOrder = ETWAnalyzer.Commands.DumpCommand.SortOrders.Length;
+            dump.FileOperationValue = ETWAnalyzer.Extract.FileIO.FileIOStatistics.FileOperation.Close;
+            var exClose = Assert.Throws<ArgumentException>(() => dump.GetSortValue(groupedData01));
+            Assert.Equal("You need to set -FileOperationValue to sort by a specific row. Possible values are Read, Write.", exClose.Message);
+
+            dump.SortOrder = ETWAnalyzer.Commands.DumpCommand.SortOrders.Length;
+            dump.FileOperationValue = ETWAnalyzer.Extract.FileIO.FileIOStatistics.FileOperation.Open;
+            var exOpen = Assert.Throws<ArgumentException>(() => dump.GetSortValue(groupedData01));
+            Assert.Equal("You need to set -FileOperationValue to sort by a specific row. Possible values are Read, Write.", exOpen.Message);
+
+            dump.SortOrder = ETWAnalyzer.Commands.DumpCommand.SortOrders.Length;
+            dump.FileOperationValue = ETWAnalyzer.Extract.FileIO.FileIOStatistics.FileOperation.Delete;
+            var exDelete = Assert.Throws<ArgumentException>(() => dump.GetSortValue(groupedData01));
+            Assert.Equal("You need to set -FileOperationValue to sort by a specific row. Possible values are Read, Write.", exDelete.Message);
+
+            dump.SortOrder = ETWAnalyzer.Commands.DumpCommand.SortOrders.Length;
+            dump.FileOperationValue = ETWAnalyzer.Extract.FileIO.FileIOStatistics.FileOperation.Rename;
+            var exRename = Assert.Throws<ArgumentException>(() => dump.GetSortValue(groupedData01));
+            Assert.Equal("You need to set -FileOperationValue to sort by a specific row. Possible values are Read, Write.", exRename.Message);
+
+            dump.SortOrder = ETWAnalyzer.Commands.DumpCommand.SortOrders.Length;
+            dump.FileOperationValue = ETWAnalyzer.Extract.FileIO.FileIOStatistics.FileOperation.Invalid;
+            var exInvalid = Assert.Throws<ArgumentException>(() => dump.GetSortValue(groupedData01));
+            Assert.Equal("You need to set -FileOperationValue to sort by a specific row. Possible values are Read, Write.", exInvalid.Message);
         }
 
         [Fact]

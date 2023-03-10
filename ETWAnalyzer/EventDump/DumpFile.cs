@@ -648,6 +648,12 @@ namespace ETWAnalyzer.EventDump
                     {
                         FileOperation.Read => data.FileReadMaxPos,
                         FileOperation.Write => data.FileWriteMaxFilePos,
+                        FileOperation.SetSecurity => ThrowArgumentException(ReadWriteFilter),
+                        FileOperation.Close => ThrowArgumentException(ReadWriteFilter),
+                        FileOperation.Open => ThrowArgumentException(ReadWriteFilter),
+                        FileOperation.Delete => ThrowArgumentException(ReadWriteFilter),
+                        FileOperation.Rename => ThrowArgumentException(ReadWriteFilter),
+                        FileOperation.Invalid => ThrowArgumentException(ReadWriteFilter),
                         _ => ThrowArgumentException(ReadWriteFilter),
                     };
                     break;
