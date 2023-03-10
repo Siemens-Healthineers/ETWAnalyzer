@@ -159,24 +159,45 @@ namespace ETWAnalyzer.EventDump
             int remoteIPLen = allPrinted.Max(x => x.Connection.RemoteIpAndPort.ToString().Length);
             int tcpTemplateLen = allPrinted.Max(x => x.Connection.LastTcpTemplate?.Length).GetValueOrDefault();
 
+            string connectionHeadline = "Source IP/Port -> Destination IP/Port".WithWidth(localIPLen+remoteIPLen+4);
+            const int PacketCountWidth = 9;
+            const int BytesCountWidth = 15;
+            const int PercentWidth = 4;
+            const int RetransMsWidth = 6;
+            int timeWidth = GetWidth(TimeFormatOption);
+            const int PointerWidth = 16;
+
+            string sentHeadline = "Sent Packets/Bytes".WithWidth(PacketCountWidth + BytesCountWidth+7);
+            string receivedHeadline = "Received Packets/Bytes".WithWidth(PacketCountWidth + BytesCountWidth+7);
+            string retransmissionHeadline = "Retrans Count/%/Delay".WithWidth(PacketCountWidth+PercentWidth+ PacketCountWidth+7);
+            string detailsMinMaxMedian = ShowDetails ? "Max/Median/Min in ms".WithWidth(3 * (RetransMsWidth+4)+1) : " ";
+            string detailsTemplate = ShowDetails ? "Template".WithWidth(tcpTemplateLen+2) : "";
+            string detailsConnectionTimes = ShowDetails ? "Connect/Disconnect Time".WithWidth(2 * timeWidth+3) : "";
+            string detailsTCB = ShowDetails ? "TCB".WithWidth(PointerWidth + 3) : "";
+
+            string headline = $"[yellow]{connectionHeadline}[/yellow] [green]{receivedHeadline}[/green] [red]{sentHeadline}[/red] [yellow]{retransmissionHeadline}[/yellow][yellow]{detailsMinMaxMedian}[/yellow]"+
+                              $"{detailsTemplate}{detailsConnectionTimes}{detailsTCB} [magenta]Process[/magenta]";
+
+            ColorConsole.WriteEmbeddedColorLine(headline);
+
             foreach (var file in byFile)
             {
                 ColorConsole.WriteEmbeddedColorLine($"{file.First().Session.SessionStart,-22} {GetPrintFileName(file.Key)} {file.First().Session.Baseline}", ConsoleColor.Cyan);
                 foreach (var match in file.SortAscendingGetTopNLast(SortBy, null, TopN) )
                 {
-                    string retransPercent = "N0".WidthFormat(100.0f * match.Retransmissions.Count / match.Connection.DatagramsSent, 4);
-                    string totalRetransDelay = "N0".WidthFormat(match.Retransmissions.Sum(x => x.RetransmitDiff().TotalMilliseconds), 9);
+                    string retransPercent = "N0".WidthFormat(100.0f * match.Retransmissions.Count / match.Connection.DatagramsSent, PercentWidth);
+                    string totalRetransDelay = "N0".WidthFormat(match.Retransmissions.Sum(x => x.RetransmitDiff().TotalMilliseconds), PacketCountWidth);
 
                     ColorConsole.WriteEmbeddedColorLine($"{match.Connection.LocalIpAndPort.ToString().WithWidth(localIPLen)} -> {match.Connection.RemoteIpAndPort.ToString().WithWidth(remoteIPLen)} ", ConsoleColor.Yellow, true);
                     ColorConsole.WriteEmbeddedColorLine(
-                                      $"[green]#Sent: {"N0".WidthFormat(match.Connection.DatagramsSent, 9)} {"N0".WidthFormat(match.Connection.BytesSent, 15)} Bytes[/green] " +
-                                      $"[red]#Received{"N0".WidthFormat(match.Connection.DatagramsReceived, 9)} {"N0".WidthFormat(match.Connection.BytesReceived, 15)} Bytes[/red] " +
-                                      $"[yellow]Retransmissions: {"N0".WidthFormat(match.Retransmissions.Count, 6)} {retransPercent} % Delay: {totalRetransDelay} ms [/yellow] " +
+                                      $"[green]{"N0".WidthFormat(match.Connection.DatagramsReceived, PacketCountWidth)} {"N0".WidthFormat(match.Connection.BytesReceived, BytesCountWidth)} Bytes[/green] " +
+                                      $"[red]{"N0".WidthFormat(match.Connection.DatagramsSent, PacketCountWidth)} {"N0".WidthFormat(match.Connection.BytesSent, BytesCountWidth)} Bytes[/red] " +
+                                      $"[yellow]{"N0".WidthFormat(match.Retransmissions.Count, PacketCountWidth)} {retransPercent} % {totalRetransDelay} ms [/yellow] " +
                         ( ShowDetails ? 
-                                      $"[yellow]Max: {"F0".WidthFormat(match.RetransMaxms,6)} ms Median: {"F0".WidthFormat(match.RetransMedianMs,6)} ms Min: {"F0".WidthFormat(match.RetransMinMs,6)}[/yellow] " + 
-                                      $"TCPTemplate: {(match.Connection.LastTcpTemplate ?? "-").WithWidth(tcpTemplateLen)} " +
-                                      $"Connect: {GetDateTimeString(match.Connection.TimeStampOpen, match.Session.SessionStart, TimeFormatOption,true).WithWidth(10)} Disconnect: {GetDateTimeString(match.Connection.TimeStampClose, match.Session.SessionStart,TimeFormatOption,true).WithWidth(10)} " +
-                                      $" TCB: 0x{"X".WidthFormat(match.Connection.Tcb, 16)} "
+                                      $"[yellow]{"F0".WidthFormat(match.RetransMaxms, RetransMsWidth)} ms {"F0".WidthFormat(match.RetransMedianMs, RetransMsWidth)} ms {"F0".WidthFormat(match.RetransMinMs, RetransMsWidth)} ms [/yellow] " + 
+                                      $"{(match.Connection.LastTcpTemplate ?? "-").WithWidth(tcpTemplateLen)} " +
+                                      $"{GetDateTimeString(match.Connection.TimeStampOpen, match.Session.SessionStart, TimeFormatOption,true).WithWidth(timeWidth)} {GetDateTimeString(match.Connection.TimeStampClose, match.Session.SessionStart,TimeFormatOption,true).WithWidth(timeWidth)} " +
+                                      $" 0x{"X".WidthFormat(match.Connection.Tcb, PointerWidth)} "
                                 : "") +                                      
                                       $"[magenta]{match.Process.GetProcessWithId(UsePrettyProcessName)}[/magenta]", ConsoleColor.White, true);
                     ColorConsole.WriteLine(NoCmdLine ? "" : match.Process.CommandLineNoExe, ConsoleColor.DarkCyan);
