@@ -18,6 +18,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static ETWAnalyzer.Commands.DumpCommand;
 using static ETWAnalyzer.Extract.ETWProcess;
 
 namespace ETWAnalyzer.EventDump
@@ -61,6 +62,16 @@ namespace ETWAnalyzer.EventDump
 
             return lret;
         }
+
+
+        /// <summary>
+        /// Used by context sensitive help
+        /// </summary>
+        static readonly internal SortOrders[] ValidSortOrders = new[]
+        {
+            SortOrders.Time,
+            SortOrders.Default,
+        };
 
         private void Print(List<MatchData> data)
         {

@@ -144,6 +144,7 @@ namespace ETWAnalyzer.EventDump
             return lret;
         }
 
+
         private void PrintMatches(List<MatchData> data)
         {
             if( data.Count == 0 )
@@ -166,6 +167,7 @@ namespace ETWAnalyzer.EventDump
             const int RetransMsWidth = 6;
             int timeWidth = GetWidth(TimeFormatOption);
             const int PointerWidth = 16;
+            const int TotalColumnWidth = 22;
 
             string sentHeadline = "Sent Packets/Bytes".WithWidth(PacketCountWidth + BytesCountWidth+7);
             string receivedHeadline = "Received Packets/Bytes".WithWidth(PacketCountWidth + BytesCountWidth+7);
@@ -175,7 +177,7 @@ namespace ETWAnalyzer.EventDump
             string detailsConnectionTimes = ShowDetails ? "Connect/Disconnect Time".WithWidth(2 * timeWidth+3) : "";
             string detailsTCB = ShowDetails ? "TCB".WithWidth(PointerWidth + 3) : "";
 
-            string headline = $"[yellow]{connectionHeadline}[/yellow] [green]{receivedHeadline}[/green] [red]{sentHeadline}[/red] [yellow]{retransmissionHeadline}[/yellow][yellow]{detailsMinMaxMedian}[/yellow]"+
+            string headline = $"[yellow]{connectionHeadline}[/yellow] [green]{receivedHeadline}[/green] [red]{sentHeadline}[/red] [magenta]{GetTotalColumnHeader(TotalColumnWidth)}[/magenta][yellow]{retransmissionHeadline}[/yellow][yellow]{detailsMinMaxMedian}[/yellow]"+
                               $"{detailsTemplate}{detailsConnectionTimes}{detailsTCB} [magenta]Process[/magenta]";
 
             ColorConsole.WriteEmbeddedColorLine(headline);
@@ -192,6 +194,7 @@ namespace ETWAnalyzer.EventDump
                     ColorConsole.WriteEmbeddedColorLine(
                                       $"[green]{"N0".WidthFormat(match.Connection.DatagramsReceived, PacketCountWidth)} {"N0".WidthFormat(match.Connection.BytesReceived, BytesCountWidth)} Bytes[/green] " +
                                       $"[red]{"N0".WidthFormat(match.Connection.DatagramsSent, PacketCountWidth)} {"N0".WidthFormat(match.Connection.BytesSent, BytesCountWidth)} Bytes[/red] " +
+                                      $"[magenta]{GetTotalString(match, TotalColumnWidth)}[/magenta]" +
                                       $"[yellow]{"N0".WidthFormat(match.Retransmissions.Count, PacketCountWidth)} {retransPercent} % {totalRetransDelay} ms [/yellow] " +
                         ( ShowDetails ? 
                                       $"[yellow]{"F0".WidthFormat(match.RetransMaxms, RetransMsWidth)} ms {"F0".WidthFormat(match.RetransMedianMs, RetransMsWidth)} ms {"F0".WidthFormat(match.RetransMinMs, RetransMsWidth)} ms [/yellow] " + 
@@ -330,7 +333,12 @@ namespace ETWAnalyzer.EventDump
             return lret;
         }
 
-
+        /// <summary>
+        /// Sort order for single retransmission events when we are displaying them
+        /// </summary>
+        /// <param name="retrans"></param>
+        /// <returns></returns>
+        /// <exception cref="NotSupportedException"></exception>
         decimal SortRetransmit(ITcpRetransmission retrans)
         {
             decimal lret = 0;
@@ -345,6 +353,12 @@ namespace ETWAnalyzer.EventDump
             return lret;
         }
 
+
+        /// <summary>
+        /// Sort by connection summaries
+        /// </summary>
+        /// <param name="match"></param>
+        /// <returns></returns>
         decimal SortBy(MatchData match)
         {
             var connection = match.Connection;
@@ -366,6 +380,37 @@ namespace ETWAnalyzer.EventDump
                 _ => match.Retransmissions.Count,
             };
             return lret;
+        }
+
+        /// <summary>
+        /// When data is sorted which is not printed by default we add it as dynamic column to make the sorted data visible.
+        /// </summary>
+        /// <param name="minWidth"></param>
+        /// <returns></returns>
+        string GetTotalColumnHeader(int minWidth)
+        {
+            return SortOrder switch
+            {
+                SortOrders.TotalCount => "Total Count".WithWidth(minWidth),
+                SortOrders.TotalSize => "Total Size".WithWidth(minWidth),
+                _ => ""
+            };
+        }
+
+        /// <summary>
+        /// Get Total string which is dynamically added to output to make sorted data visible.
+        /// </summary>
+        /// <param name="data"></param>
+        /// <param name="minWidth"></param>
+        /// <returns></returns>
+        string GetTotalString(MatchData data, int minWidth)
+        {
+            return SortOrder switch
+            {
+                SortOrders.TotalCount => "N0".WidthFormat(data.Connection.DatagramsReceived + data.Connection.DatagramsSent, minWidth),
+                SortOrders.TotalSize => $"{data.Connection.BytesReceived + data.Connection.BytesSent:N0} Bytes".WithWidth(minWidth),
+                _ => "",
+            };
         }
 
         public class MatchData

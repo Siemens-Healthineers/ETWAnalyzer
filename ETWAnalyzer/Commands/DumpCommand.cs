@@ -314,7 +314,7 @@ namespace ETWAnalyzer.Commands
         "                         -TopN dd nn                Show top n connection by current sort order" + Environment.NewLine +
         "                         -TopNRetrans dd nn         Show top n retransmission events when -ShowRetransmit is used" + Environment.NewLine +
         "                         -SortBy [...]              Default sort order is total bytes. Valid sort orders are ReceivedCount/SentCount/ReceivedSize/SentSize/TotalCount/TotalSize/ConnectTime/DisconnectTime/RetransmissionCount/RetransmissionTime/MaxRetransmissionTime" + Environment.NewLine +
-        "                                                    Sort applies to totals per connection. RetransmissionTime is the sum of all Delays and MaxRetransmissionTime sorts connections with highest Max retransmission times." + Environment.NewLine + 
+        "                                                    Sort applies to totals per connection. RetransmissionTime is the sum of all Delays. MaxRetransmissionTime sorts connections by highest max retransmission delay." + Environment.NewLine + 
         "                         -SortRetransmitBy [...]    When -ShowRetransmit is used the events are sorted by Time. Valid values are Time/Delay" + Environment.NewLine + 
         "                         -ShowRetransmit            Show single retransmission events with timing data. Use -timefmt s to convert time to WPA time" + Environment.NewLine + 
         "                         -MinMaxRetransDelayMs xx-yy Filter by retransmission delay in ms. By default all retransmissions are shown." + Environment.NewLine +
@@ -1921,8 +1921,8 @@ namespace ETWAnalyzer.Commands
 
 
         /// <summary>
-        ///Return valid sort orders depending on used command and conext. 
-        ///Context can be SortByContext, SortRetransmitContext
+        /// Return valid sort orders depending on used command and context. 
+        /// Context can be SortByContext, SortRetransmitContext
         /// </summary>
         /// <param name="context"></param>
         /// <returns>Array of valid sort order for current command</returns>
@@ -1931,12 +1931,19 @@ namespace ETWAnalyzer.Commands
 
             return myCommand switch
             {
+                DumpCommands.Process => DumpProcesses.ValidSortOrders,
+                DumpCommands.CPU => DumpCPUMethod.ValidCPUSortOrders,
+                DumpCommands.Disk => DumpDisk.ValidSortOrders,
+                DumpCommands.File => DumpFile.ValidSortOrders,
+                DumpCommands.Memory => DumpMemory.ValidSortOrders,
+                DumpCommands.Exceptions => DumpExceptions.ValidSortOrders,
+                DumpCommands.Dns => DumpDns.ValidSortOrders,
                 DumpCommands.TCP => context switch
                 {
                     SortRetransmitContext => DumpTcp.SupportRetransmitSortOrders,
                     _ => DumpTcp.SupportedSortOrders,
-
                 },
+
                 _ => (SortOrders[]) Enum.GetValues(typeof(SortOrders)),
             };
         }

@@ -242,6 +242,15 @@ namespace ETWAnalyzer.EventDump
             }
         }
 
+        /// <summary>
+        /// Used by context sensitive help
+        /// </summary>
+        static internal readonly DumpCommand.SortOrders[] ValidSortOrders = new[]
+        {
+            DumpCommand.SortOrders.Time,
+            DumpCommand.SortOrders.Default,
+        };
+
         internal void PrintMatches(List<MatchData> matches)
         {
             foreach (var byFile in matches.GroupBy(x => x.SourceFile).OrderBy(x => x.First().PerformedAt))
