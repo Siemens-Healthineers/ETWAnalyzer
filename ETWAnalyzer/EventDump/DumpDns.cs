@@ -10,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using static ETWAnalyzer.Commands.DumpCommand;
 
 namespace ETWAnalyzer.EventDump
 {
@@ -254,6 +255,16 @@ namespace ETWAnalyzer.EventDump
 
             return lret;
         }
+
+        /// <summary>
+        /// Used by context sensitive help to print the allowed values.
+        /// </summary>
+        static internal readonly SortOrders[] ValidSortOrders = new[]
+        {
+            SortOrders.Count,
+            SortOrders.Time,
+            SortOrders.Default,
+        };
 
         internal class MatchData
         {

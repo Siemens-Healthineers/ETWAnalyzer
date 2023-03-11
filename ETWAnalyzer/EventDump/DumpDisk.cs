@@ -97,28 +97,60 @@ namespace ETWAnalyzer.EventDump
                 return data;
             }
 
+            const int TotalHeadlineWidth = 15;
+
             // group by file or if merge is used do not group at all
             TestDataFile grouping(MatchData data) => Merge ? null : data.DataFile;
 
+
             foreach (var byFileOrNoGroup in data.GroupBy(grouping).OrderBy(x => x.Key?.PerformedAt))
             {
+
+                decimal totalReadBytes = 0;
+                decimal totalWriteBytes = 0;
+                decimal totalReadTimeInus = 0;
+                decimal totalWriteTimeInus = 0;
+                decimal totalFlushtimeInus = 0;
+
                 List<MatchData> aggregatedByDirectory = AggregateByDirectory(byFileOrNoGroup.ToList(), DirectoryLevel);
                 if (byFileOrNoGroup.Key != null)
                 {
                     PrintFileName(byFileOrNoGroup.Key.JsonExtractFileWhenPresent, null, byFileOrNoGroup.Key.PerformedAt, byFileOrNoGroup.Key.Extract?.MainModuleVersion?.ToString());
                 }
 
-                ColorConsole.WriteEmbeddedColorLine("[green]Read                                [/green][yellow]Write                               [/yellow][cyan]Flush       [/cyan] Directory or File if -dirLevel 100 is used");
-                foreach (var group in aggregatedByDirectory.Where(MinMaxFilter).SortAscendingGetTopNLast(SortByValue, null, TopN))
+                string headline = $"[green]Read                                [/green][yellow]Write                               [/yellow][cyan]Flush       [/cyan] [magenta]{GetTotalHeadline(-1*TotalHeadlineWidth)}[/magenta]Directory or File if -dirLevel 100 is used";
+
+                ColorConsole.WriteEmbeddedColorLine(headline);
+                foreach (MatchData group in aggregatedByDirectory.Where(MinMaxFilter).SortAscendingGetTopNLast(SortByValue, null, TopN))
                 {
+                    totalReadBytes     += group.DiskReadSizeInBytes;
+                    totalWriteBytes    += group.DiskWriteSizeInBytes;
+                    totalReadTimeInus  += group.DiskReadTimeInus;
+                    totalWriteTimeInus += group.DiskWriteTimeInus;
+                    totalFlushtimeInus += group.DiskFlushTimeInus;
+
                     string diskReadTime = $"{group.DiskReadTimeInus / Million:F5}";
                     string diskReadMB = $"{group.DiskReadSizeInBytes / MB:F0}";
                     string diskWriteTime = $"{group.DiskWriteTimeInus / Million:F5}";
                     string diskWriteMB = $"{group.DiskWriteSizeInBytes / MB:F0}";
                     string diskFlushTime = $"{group.DiskFlushTimeInus / Million:F3}";
 
-                    ColorConsole.WriteEmbeddedColorLine($"[green]r {diskReadTime,10} s {diskReadMB,7} MB {group.ReadMBPerSeconds,4} MB/s[/green] [yellow]w {diskWriteTime,10} s {diskWriteMB,7} MB {group.WriteMBPerSeconds,4} MB/s[/yellow] [cyan]f {diskFlushTime,8} s[/cyan] {DumpFile.GetFileName(group.RootLevelDirectory, ReverseFileName)}");
+                    string line = $"[green]r {diskReadTime,10} s {diskReadMB,7} MB {group.ReadMBPerSeconds,4} MB/s[/green] " +
+                                  $"[yellow]w {diskWriteTime,10} s {diskWriteMB,7} MB {group.WriteMBPerSeconds,4} MB/s[/yellow] " +
+                                  $"[cyan]f {diskFlushTime,8} s[/cyan] " +
+                                  $"[magenta]{GetTotalValue(group,TotalHeadlineWidth)}[/magenta]"+
+                                  $"{DumpFile.GetFileName(group.RootLevelDirectory, ReverseFileName)}";
+
+                    ColorConsole.WriteEmbeddedColorLine(line);
                 }
+
+                ColorConsole.WriteEmbeddedColorLine(
+                    $"[magenta]Totals {(totalFlushtimeInus + totalReadTimeInus + totalWriteTimeInus) / Million:F2} s {(totalReadBytes + totalWriteBytes) / MB:N0} MB[/magenta] " +
+                    $"[green]r {totalReadTimeInus / Million:F2} s {totalReadBytes / MB:N0} MB[/green] " +
+                    $"[yellow]w {totalWriteTimeInus / Million:F2} s {totalWriteBytes / MB:N0} MB[/yellow] " +
+                    $"[cyan]f {totalFlushtimeInus:F2} s[/cyan] " +
+                    $"{byFileOrNoGroup.Count()} accessed file/s. Process Count: {new HashSet<ETWProcess>(byFileOrNoGroup.SelectMany(x => x.Processes)).Count}"
+                    );
             }
 
 
@@ -131,7 +163,8 @@ namespace ETWAnalyzer.EventDump
                     {
                         PrintFileName(byFileOrNoGroup.Key.JsonExtractFileWhenPresent, null, byFileOrNoGroup.Key.PerformedAt, byFileOrNoGroup.Key.Extract?.MainModuleVersion?.ToString());
                     }
-                    ColorConsole.WriteEmbeddedColorLine("[green]Read                            [/green][yellow]Write                           [/yellow][cyan]Flush         [/cyan]Involved Processes");
+                    string headline = $"[green]Read                            [/green][yellow]Write                           [/yellow][cyan]Flush         [/cyan][magenta]{GetTotalHeadline(TotalHeadlineWidth)}[/magenta]Involved Processes";
+                    ColorConsole.WriteEmbeddedColorLine(headline);
 
                     List<MatchData> aggregatedByProcess = AggregateByProcess(byFileOrNoGroup.ToList(), UsePrettyProcessName);
                     foreach (var group in aggregatedByProcess.Where(MinMaxFilter).SortAscendingGetTopNLast(SortByValue, null, TopNProcesses))
@@ -157,16 +190,57 @@ namespace ETWAnalyzer.EventDump
                         string diskReadTime = $"{group.DiskReadTimeInus / Million:F3}";
                         string diskWriteTime = $"{group.DiskWriteTimeInus / Million:F3}";
                         string diskFlushTime = $"{group.DiskFlushTimeInus / Million:F3}";
-                        string diskReadSizeInMB = $"{group.DiskReadSizeInBytes / (1024 * 1024.0m):F0}";
-                        string diskWriteSizeInMB = $"{group.DiskWriteSizeInBytes / (1024 * 1024.0m):F0}";
+                        string diskReadSizeInMB = $"{group.DiskReadSizeInBytes / MB:F0}";
+                        string diskWriteSizeInMB = $"{group.DiskWriteSizeInBytes / MB:F0}";
 
-                        ColorConsole.WriteEmbeddedColorLine($"[green]r {diskReadTime,8} s {diskReadSizeInMB,5} MB {group.ReadMBPerSeconds,4} MB/s[/green] [yellow]w {diskWriteTime,8} s {diskWriteSizeInMB,5} MB {group.WriteMBPerSeconds,4} MB/s[/yellow] [cyan]f {diskFlushTime,8}[/cyan] s  {procs}");
+                        ColorConsole.WriteEmbeddedColorLine($"[green]r {diskReadTime,8} s {diskReadSizeInMB,5} MB {group.ReadMBPerSeconds,4} MB/s[/green] [yellow]w {diskWriteTime,8} s {diskWriteSizeInMB,5} MB {group.WriteMBPerSeconds,4} MB/s[/yellow] [cyan]f {diskFlushTime,8}[/cyan] s  [magenta]{GetTotalValue(group,TotalHeadlineWidth)}[/magenta]{procs}");
                     }
                 }
             }
 
             return data;
         }
+
+
+
+        /// <summary>
+        /// Used by context sensitive help
+        /// </summary>
+        static internal readonly DumpCommand.SortOrders[] ValidSortOrders = new[]
+        {
+            SortOrders.ReadTime,
+            SortOrders.WriteTime,
+            SortOrders.FlushTime,
+            SortOrders.ReadSize,
+            SortOrders.WriteSize,
+            SortOrders.TotalSize,
+            SortOrders.TotalTime,
+            SortOrders.Default,
+        };
+
+        string GetTotalHeadline(int minWidth)
+        {
+            return SortOrder switch 
+            {
+                SortOrders.Default => "TotalSize".WithWidth(minWidth) + " ",
+                SortOrders.TotalSize => "TotalSize".WithWidth(minWidth) + " ",
+                SortOrders.TotalTime => "TotalTime".WithWidth(minWidth) + " ",
+                _ => "",
+            };
+        }
+
+        string GetTotalValue(MatchData data, int minWidth)
+        {
+            return SortOrder switch
+            {
+                SortOrders.Default => $"{(data.DiskWriteSizeInBytes + data.DiskReadSizeInBytes) / MB:F0} MB".WithWidth(minWidth) + " ",
+                SortOrders.TotalSize => $"{(data.DiskWriteSizeInBytes + data.DiskReadSizeInBytes) /MB:F0} MB".WithWidth(minWidth) + " ",
+                SortOrders.TotalTime => $"{data.DiskTotalTimeInus/Million:F5} s".WithWidth(minWidth) + " ",
+                SortOrders.FlushTime => $"{data.DiskFlushTimeInus/Million:F5} s".WithWidth(minWidth) + " ",
+                _ => ""
+            };
+        }
+
 
         /// <summary>
         /// Define sort order by SortOrders enum common for all commands
@@ -177,11 +251,11 @@ namespace ETWAnalyzer.EventDump
         {
             return SortOrder switch
             {
-                SortOrders.ReadTime =>   x.DiskReadTimeInus,
+                SortOrders.ReadTime  =>  x.DiskReadTimeInus,
                 SortOrders.WriteTime =>  x.DiskWriteTimeInus,
-                SortOrders.ReadSize =>   x.DiskReadSizeInBytes,
+                SortOrders.ReadSize  =>  x.DiskReadSizeInBytes,
                 SortOrders.WriteSize =>  x.DiskWriteSizeInBytes,
-                SortOrders.Size =>       (x.DiskWriteSizeInBytes + x.DiskReadSizeInBytes),
+                SortOrders.Default   =>  (x.DiskWriteSizeInBytes + x.DiskReadSizeInBytes),
                 SortOrders.TotalSize =>  (x.DiskWriteSizeInBytes + x.DiskReadSizeInBytes),
                 SortOrders.TotalTime =>  x.DiskTotalTimeInus,
                 SortOrders.FlushTime =>  x.DiskFlushTimeInus,

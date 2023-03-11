@@ -149,6 +149,18 @@ namespace ETWAnalyzer.EventDump
             return set.WorkingSetInMiB >= (ulong)MinWorkingSetMB;
         }
 
+        /// <summary>
+        /// Used by context sensitive help
+        /// </summary>
+        static internal readonly SortOrders[] ValidSortOrders = new[]
+        {
+            SortOrders.Commit,
+            SortOrders.WorkingSet,
+            SortOrders.Diff,
+            SortOrders.SharedCommit,
+            SortOrders.Default,
+        };
+
         double SortByValue(Match data)
         {
             return SortOrder switch

@@ -988,6 +988,23 @@ namespace ETWAnalyzer.EventDump
         }
 
         /// <summary>
+        /// Used by context sensitive help to print valid sort order based on context.
+        /// </summary>
+        static readonly internal SortOrders[] ValidCPUSortOrders =
+            new SortOrders[]
+            {
+                SortOrders.CPU,
+                SortOrders.Wait,                
+                SortOrders.Ready,
+                SortOrders.CPUWait,
+                SortOrders.CPUWaitReady,
+                SortOrders.StackDepth,
+                SortOrders.First,
+                SortOrders.Last,
+                SortOrders.TestTime,
+            };
+
+        /// <summary>
         /// Used for totals calculation to cut off the -topn processes which after 
         /// </summary>
         /// <param name="data"></param>

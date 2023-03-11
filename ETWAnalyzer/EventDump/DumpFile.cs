@@ -627,6 +627,25 @@ namespace ETWAnalyzer.EventDump
         }
 
 
+        /// <summary>
+        /// Used by context aware help
+        /// </summary>
+        static internal readonly SortOrders[] ValidSortOrders = new[]
+        {
+            SortOrders.ReadTime,
+            SortOrders.WriteTime,
+            SortOrders.TotalTime,
+            
+            SortOrders.ReadSize,
+            SortOrders.WriteSize,
+            SortOrders.TotalSize,
+
+            SortOrders.Count,
+            SortOrders.Length,
+            SortOrders.Time,
+            SortOrders.Default,
+        };
+
         public class MatchData
         {
             static readonly char[] DirectorySeparators = new char[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar };

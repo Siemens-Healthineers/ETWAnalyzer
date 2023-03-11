@@ -144,6 +144,7 @@ namespace ETWAnalyzer.EventDump
             return lret;
         }
 
+
         private void PrintMatches(List<MatchData> data)
         {
             if( data.Count == 0 )
@@ -159,24 +160,47 @@ namespace ETWAnalyzer.EventDump
             int remoteIPLen = allPrinted.Max(x => x.Connection.RemoteIpAndPort.ToString().Length);
             int tcpTemplateLen = allPrinted.Max(x => x.Connection.LastTcpTemplate?.Length).GetValueOrDefault();
 
+            string connectionHeadline = "Source IP/Port -> Destination IP/Port".WithWidth(localIPLen+remoteIPLen+4);
+            const int PacketCountWidth = 9;
+            const int BytesCountWidth = 15;
+            const int PercentWidth = 4;
+            const int RetransMsWidth = 6;
+            int timeWidth = GetWidth(TimeFormatOption);
+            const int PointerWidth = 16;
+            const int TotalColumnWidth = 22;
+
+            string sentHeadline = "Sent Packets/Bytes".WithWidth(PacketCountWidth + BytesCountWidth+7);
+            string receivedHeadline = "Received Packets/Bytes".WithWidth(PacketCountWidth + BytesCountWidth+7);
+            string retransmissionHeadline = "Retrans Count/%/Delay".WithWidth(PacketCountWidth+PercentWidth+ PacketCountWidth+7);
+            string detailsMinMaxMedian = ShowDetails ? "Max/Median/Min in ms".WithWidth(3 * (RetransMsWidth+4)+1) : " ";
+            string detailsTemplate = ShowDetails ? "Template".WithWidth(tcpTemplateLen+2) : "";
+            string detailsConnectionTimes = ShowDetails ? "Connect/Disconnect Time".WithWidth(2 * timeWidth+3) : "";
+            string detailsTCB = ShowDetails ? "TCB".WithWidth(PointerWidth + 3) : "";
+
+            string headline = $"[yellow]{connectionHeadline}[/yellow] [green]{receivedHeadline}[/green] [red]{sentHeadline}[/red] [magenta]{GetTotalColumnHeader(TotalColumnWidth)}[/magenta][yellow]{retransmissionHeadline}[/yellow][yellow]{detailsMinMaxMedian}[/yellow]"+
+                              $"{detailsTemplate}{detailsConnectionTimes}{detailsTCB} [magenta]Process[/magenta]";
+
+            ColorConsole.WriteEmbeddedColorLine(headline);
+
             foreach (var file in byFile)
             {
                 ColorConsole.WriteEmbeddedColorLine($"{file.First().Session.SessionStart,-22} {GetPrintFileName(file.Key)} {file.First().Session.Baseline}", ConsoleColor.Cyan);
                 foreach (var match in file.SortAscendingGetTopNLast(SortBy, null, TopN) )
                 {
-                    string retransPercent = "N0".WidthFormat(100.0f * match.Retransmissions.Count / match.Connection.DatagramsSent, 4);
-                    string totalRetransDelay = "N0".WidthFormat(match.Retransmissions.Sum(x => x.RetransmitDiff().TotalMilliseconds), 9);
+                    string retransPercent = "N0".WidthFormat(100.0f * match.Retransmissions.Count / match.Connection.DatagramsSent, PercentWidth);
+                    string totalRetransDelay = "N0".WidthFormat(match.Retransmissions.Sum(x => x.RetransmitDiff().TotalMilliseconds), PacketCountWidth);
 
                     ColorConsole.WriteEmbeddedColorLine($"{match.Connection.LocalIpAndPort.ToString().WithWidth(localIPLen)} -> {match.Connection.RemoteIpAndPort.ToString().WithWidth(remoteIPLen)} ", ConsoleColor.Yellow, true);
                     ColorConsole.WriteEmbeddedColorLine(
-                                      $"[green]#Sent: {"N0".WidthFormat(match.Connection.DatagramsSent, 9)} {"N0".WidthFormat(match.Connection.BytesSent, 15)} Bytes[/green] " +
-                                      $"[red]#Received{"N0".WidthFormat(match.Connection.DatagramsReceived, 9)} {"N0".WidthFormat(match.Connection.BytesReceived, 15)} Bytes[/red] " +
-                                      $"[yellow]Retransmissions: {"N0".WidthFormat(match.Retransmissions.Count, 6)} {retransPercent} % Delay: {totalRetransDelay} ms [/yellow] " +
+                                      $"[green]{"N0".WidthFormat(match.Connection.DatagramsReceived, PacketCountWidth)} {"N0".WidthFormat(match.Connection.BytesReceived, BytesCountWidth)} Bytes[/green] " +
+                                      $"[red]{"N0".WidthFormat(match.Connection.DatagramsSent, PacketCountWidth)} {"N0".WidthFormat(match.Connection.BytesSent, BytesCountWidth)} Bytes[/red] " +
+                                      $"[magenta]{GetTotalString(match, TotalColumnWidth)}[/magenta]" +
+                                      $"[yellow]{"N0".WidthFormat(match.Retransmissions.Count, PacketCountWidth)} {retransPercent} % {totalRetransDelay} ms [/yellow] " +
                         ( ShowDetails ? 
-                                      $"[yellow]Max: {"F0".WidthFormat(match.RetransMaxms,6)} ms Median: {"F0".WidthFormat(match.RetransMedianMs,6)} ms Min: {"F0".WidthFormat(match.RetransMinMs,6)}[/yellow] " + 
-                                      $"TCPTemplate: {(match.Connection.LastTcpTemplate ?? "-").WithWidth(tcpTemplateLen)} " +
-                                      $"Connect: {GetDateTimeString(match.Connection.TimeStampOpen, match.Session.SessionStart, TimeFormatOption,true).WithWidth(10)} Disconnect: {GetDateTimeString(match.Connection.TimeStampClose, match.Session.SessionStart,TimeFormatOption,true).WithWidth(10)} " +
-                                      $" TCB: 0x{"X".WidthFormat(match.Connection.Tcb, 16)} "
+                                      $"[yellow]{"F0".WidthFormat(match.RetransMaxms, RetransMsWidth)} ms {"F0".WidthFormat(match.RetransMedianMs, RetransMsWidth)} ms {"F0".WidthFormat(match.RetransMinMs, RetransMsWidth)} ms [/yellow] " + 
+                                      $"{(match.Connection.LastTcpTemplate ?? "-").WithWidth(tcpTemplateLen)} " +
+                                      $"{GetDateTimeString(match.Connection.TimeStampOpen, match.Session.SessionStart, TimeFormatOption,true).WithWidth(timeWidth)} {GetDateTimeString(match.Connection.TimeStampClose, match.Session.SessionStart,TimeFormatOption,true).WithWidth(timeWidth)} " +
+                                      $" 0x{"X".WidthFormat(match.Connection.Tcb, PointerWidth)} "
                                 : "") +                                      
                                       $"[magenta]{match.Process.GetProcessWithId(UsePrettyProcessName)}[/magenta]", ConsoleColor.White, true);
                     ColorConsole.WriteLine(NoCmdLine ? "" : match.Process.CommandLineNoExe, ConsoleColor.DarkCyan);
@@ -309,7 +333,12 @@ namespace ETWAnalyzer.EventDump
             return lret;
         }
 
-
+        /// <summary>
+        /// Sort order for single retransmission events when we are displaying them
+        /// </summary>
+        /// <param name="retrans"></param>
+        /// <returns></returns>
+        /// <exception cref="NotSupportedException"></exception>
         decimal SortRetransmit(ITcpRetransmission retrans)
         {
             decimal lret = 0;
@@ -324,6 +353,12 @@ namespace ETWAnalyzer.EventDump
             return lret;
         }
 
+
+        /// <summary>
+        /// Sort by connection summaries
+        /// </summary>
+        /// <param name="match"></param>
+        /// <returns></returns>
         decimal SortBy(MatchData match)
         {
             var connection = match.Connection;
@@ -345,6 +380,37 @@ namespace ETWAnalyzer.EventDump
                 _ => match.Retransmissions.Count,
             };
             return lret;
+        }
+
+        /// <summary>
+        /// When data is sorted which is not printed by default we add it as dynamic column to make the sorted data visible.
+        /// </summary>
+        /// <param name="minWidth"></param>
+        /// <returns></returns>
+        string GetTotalColumnHeader(int minWidth)
+        {
+            return SortOrder switch
+            {
+                SortOrders.TotalCount => "Total Count".WithWidth(minWidth),
+                SortOrders.TotalSize => "Total Size".WithWidth(minWidth),
+                _ => ""
+            };
+        }
+
+        /// <summary>
+        /// Get Total string which is dynamically added to output to make sorted data visible.
+        /// </summary>
+        /// <param name="data"></param>
+        /// <param name="minWidth"></param>
+        /// <returns></returns>
+        string GetTotalString(MatchData data, int minWidth)
+        {
+            return SortOrder switch
+            {
+                SortOrders.TotalCount => "N0".WidthFormat(data.Connection.DatagramsReceived + data.Connection.DatagramsSent, minWidth),
+                SortOrders.TotalSize => $"{data.Connection.BytesReceived + data.Connection.BytesSent:N0} Bytes".WithWidth(minWidth),
+                _ => "",
+            };
         }
 
         public class MatchData
