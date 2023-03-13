@@ -657,6 +657,7 @@ namespace ETWAnalyzer.Commands
             {
                 string durationStr = sw.Elapsed.ToString("dd\\ hh\\:mm\\:ss", CultureInfo.InvariantCulture);
                 string str = $"Extracted: {mySuccessExtracted} files in {durationStr}, Failed Files {myFailedExtracted}";
+                myReturnCode = myFailedExtracted;  // set return code as defined by contract on main method. 0 is successs. > 0 is the number of failed files.
                 Logger.Info(str);
                 Console.WriteLine(str);
             }
@@ -705,6 +706,7 @@ namespace ETWAnalyzer.Commands
             {
                 ExecResult res = command.Execute(ProcessPriorityClass.BelowNormal);
                 Console.WriteLine(res.AllOutput.TrimEnd(Environment.NewLine.ToCharArray()));
+                Logger.Info($"Pid: {res.ExitedProcess.Id} exited with {res.ReturnCode}, Hex: 0x{(uint)res.ReturnCode:X}");
                 // Exception is already caught in command.Execute Method, so it is necessary to check if file really exists - Program reaches this point
                 fileToAnalyze.JsonExtractFileWhenPresent = null; // force to reevaluate search 
                 if (fileToAnalyze.JsonExtractFileWhenPresent != null && res.ReturnCode == 0)

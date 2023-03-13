@@ -21,6 +21,12 @@ namespace ETWAnalyzer.Commands
         void Run();
 
         /// <summary>
+        /// Return code which should be returned by executable when command is finished.
+        /// </summary>
+        public int? ReturnCode { get; }
+
+
+        /// <summary>
         /// Get Help for current Command
         /// </summary>
         public string Help
