@@ -111,6 +111,13 @@ abstract class ArgParser : ICommand
     }
 
     /// <summary>
+    /// When set this return code will be returned by main application.
+    /// </summary>
+    protected int? myReturnCode = null;
+
+    public int? ReturnCode => myReturnCode;
+
+    /// <summary>
     /// Create an argument parser of given command line
     /// </summary>
     /// <param name="args"></param>

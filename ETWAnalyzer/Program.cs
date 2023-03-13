@@ -58,7 +58,7 @@ namespace ETWAnalyzer
         /// Main entry point
         /// </summary>
         /// <param name="args">passed command line arguments to executable.</param>
-        /// <returns>0 on success, > 0 the number of failed items which could not be processed.</returns>
+        /// <returns>0 on success, > 0 the number of failed items which could not be processed. -1 on Exception.</returns>
         public static int Main(string[] args)
         {
             int returnCode = 0;
@@ -66,7 +66,12 @@ namespace ETWAnalyzer
             {
                 Logger.Info(String.Format(CultureInfo.InvariantCulture, "Process called with args: {0}", String.Join(" ", args)));
                 MainCore(args);
-                returnCode = 0;
+
+                // when return code is set by command return it. 
+                if (myProgram?.CurrentCommand?.ReturnCode != null)
+                {
+                    returnCode = myProgram.CurrentCommand.ReturnCode.Value;
+                }
             }
             catch (Exception ex)
             {
@@ -89,7 +94,7 @@ namespace ETWAnalyzer
 
                 returnCode = -1;
             }
-            
+
             Logger.Info($"Return code: {returnCode}");
             return returnCode;
         }
