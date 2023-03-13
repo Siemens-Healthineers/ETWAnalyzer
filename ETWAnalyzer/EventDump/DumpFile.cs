@@ -106,7 +106,7 @@ namespace ETWAnalyzer.EventDump
                                   "SetSecurity Times",
                                   "File Delete Count",
                                   "File Rename Count",
-                                  "File Open Close Time"
+                                  "File Open Close Time Duration (us)"
                                   );
 
                 foreach (var fileIO in data)
