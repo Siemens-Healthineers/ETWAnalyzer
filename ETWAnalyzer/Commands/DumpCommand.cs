@@ -1176,7 +1176,7 @@ namespace ETWAnalyzer.Commands
                         string fileOp = GetNextNonArg("-fileoperation");
                         ParseEnum<Extract.FileIO.FileIOStatistics.FileOperation>("FileOperation values", fileOp,
                             () => { FileOperation = (Extract.FileIO.FileIOStatistics.FileOperation)Enum.Parse(typeof(Extract.FileIO.FileIOStatistics.FileOperation), fileOp, true); },
-                            Extract.FileIO.FileIOStatistics.FileOperation.Invalid);
+                            Extract.FileIO.FileIOStatistics.FileOperation.All);
                         break;
                     case "-sortby":
                         string sortOrder = GetNextNonArg("-sortby");
