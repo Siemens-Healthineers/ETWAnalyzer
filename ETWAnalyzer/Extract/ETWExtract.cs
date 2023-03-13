@@ -337,6 +337,16 @@ namespace ETWAnalyzer.Extract
         /// </summary>
         readonly Lazy<FileIOData> myFileIODeserializer;
 
+        /// <summary>
+        /// Open file read only.
+        /// </summary>
+        /// <param name="filename"></param>
+        /// <returns></returns>
+        static internal FileStream OpenFileReadOnly(string filename)
+        {
+            return new FileStream(filename, FileMode.Open, FileAccess.Read, FileShare.Read);   
+        }
+
         FileIOData ReadFileIOFromExternalFile()
         {
             FileIOData lret = FileIO;
@@ -346,7 +356,7 @@ namespace ETWAnalyzer.Extract
                 string file = ser.GetFileNameFor(DeserializedFileName, ExtractSerializer.FileIOPostFix);
                 if (File.Exists(file))
                 {
-                    using var fileStream = new FileStream(file, FileMode.Open);
+                    using var fileStream = OpenFileReadOnly(file);
                     lret = ExtractSerializer.Deserialize<FileIOData>(fileStream);
                 }
             }
@@ -369,7 +379,7 @@ namespace ETWAnalyzer.Extract
                 string file = ser.GetFileNameFor(DeserializedFileName, ExtractSerializer.ModulesPostFix);
                 if (File.Exists(file))
                 {
-                    using var fileStream = new FileStream(file, FileMode.Open);
+                    using var fileStream = OpenFileReadOnly(file);
                     lret = ExtractSerializer.Deserialize<ModuleContainer>(fileStream);
                     // Set parent nodes for shared strings and process list of ETWExtract after deserialization
                     lret.Extract = this;

@@ -161,7 +161,7 @@ namespace ETWAnalyzer.Extractors
         {
             try
             {
-                using var fileStream = new FileStream(inFile, FileMode.Open, FileAccess.Read);
+                using var fileStream = ETWExtract.OpenFileReadOnly(inFile);
                 ETWExtract extract =  Deserialize<ETWExtract>(fileStream);
                 extract.DeserializedFileName = inFile;
                 return extract;
