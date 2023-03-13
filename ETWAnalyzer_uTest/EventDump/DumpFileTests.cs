@@ -30,7 +30,6 @@ namespace ETWAnalyzer_uTest.EventDump
             FileSetSecurityCount = 900,
             FileDeleteCount = 3000,
             FileRenameCount = 150,
-            FileOpenCloseTimeInus = 201,
         };
 
         [Fact]

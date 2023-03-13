@@ -429,7 +429,6 @@ namespace ETWAnalyzer.EventDump
                         SourceFileName = String.Join(" ", group.Select(x => x.SourceFileName).ToHashSet().ToArray()),
                         BaseLine = String.Join(",", group.Select(x => x.BaseLine).ToHashSet()),
                         SessionStart = (group.FirstOrDefault()?.SessionStart).GetValueOrDefault(),
-                        FileOpenCloseTimeInus = fileOpenCloseTimeInus,
                     };
 
                    
@@ -726,7 +725,7 @@ namespace ETWAnalyzer.EventDump
                     };
                     break;
                 case SortOrders.OpenCloseTime:
-                    lret = data.FileOpenCloseTimeInus;
+                    lret = data.FileOpenTimeInus + data.FileCloseTimeInus;
                     break;
                 default:
                     throw new InvalidOperationException($"There should be a sort order. SortOrder was: {SortOrder}. By default SortOrders.Size == SortOrders.Default = 0 so we should never get here.");
@@ -853,7 +852,6 @@ namespace ETWAnalyzer.EventDump
             public long FileSetSecurityCount { get; internal set; }
             public long FileDeleteCount { get; internal set; }
             public long FileRenameCount { get; internal set; }
-            public long FileOpenCloseTimeInus { get; internal set; }
             public DateTimeOffset SessionStart { get; internal set; }
             public int InputFileCountUsedForGrouping { get; internal set; }
         }
