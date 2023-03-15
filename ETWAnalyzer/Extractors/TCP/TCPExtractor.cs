@@ -150,13 +150,38 @@ namespace ETWAnalyzer.Extractors.TCP
                 var filterConnection = (IGenericTcpEvent ev) => ev.Connection == tcpconnection;
 
                 ulong bytesReceived = (ulong) receivedByConnection[tcpconnection].Sum(x => (decimal) ((TcpDataTransferReceive) x).NumBytes);
+
+
                 ulong bytesSent = (ulong)sentByConnection[tcpconnection].Sum(x => (decimal) ((TcpDataSend) x).BytesSent);
                 int datagramsReceived = receivedByConnection[tcpconnection].Count();
                 int datagramsSent = sentByConnection[tcpconnection].Count();
 
-                TcpConnection connection = new TcpConnection(tcpconnection.Tcb, tcpconnection.LocalIpAndPort, tcpconnection.RemoteIpAndPort, tcpconnection.TimeStampOpen, tcpconnection.TimeStampClose,
+                TcpConnection connection = new(tcpconnection.Tcb, tcpconnection.LocalIpAndPort, tcpconnection.RemoteIpAndPort, tcpconnection.TimeStampOpen, tcpconnection.TimeStampClose,
                     templates.LastOrDefault(), bytesSent, datagramsSent, bytesReceived, datagramsReceived, tcpconnection.ProcessIdx);
-                connect2Idx[tcpconnection] = results.Network.TcpData.AddConnection(connection);
+                ConnectionIdx connIdx = results.Network.TcpData.AddConnection(connection);
+                connect2Idx[tcpconnection] = connIdx;
+
+
+                // Detect client side retransmissions which can be identified by packets > 1 bytes 
+                // and which have the same sequence number. 
+                // Todo: Sequence rollover is currently handled by a 3s timeout filter which should work up to 10 GBit uplinks before
+                // sequence rollover kicks in.
+                foreach (var clientRetransmissions in receivedByConnection[tcpconnection].Where(x => x.NumBytes > 1).ToLookup(x => x.SequenceNr).Where(x => x.Count() > 1))
+                {
+                    var candidates = clientRetransmissions.OrderBy(x => x.Timestamp).ToArray();
+                    DateTimeOffset first = candidates[0].Timestamp;
+                    foreach (var retransCandidate in candidates.Skip(1))
+                    {
+                        TimeSpan diff = retransCandidate.Timestamp - first;
+                        if (diff.TotalSeconds < 3)
+                        {
+                            var clientRetrans = new TcpRetransmission(connIdx, retransCandidate.Timestamp, first, retransCandidate.SequenceNr, retransCandidate.NumBytes, true);
+                            results.Network.TcpData.Retransmissions.Add(clientRetrans);
+                        }
+                    }
+
+                }
+
             }
 
 
@@ -179,7 +204,7 @@ namespace ETWAnalyzer.Extractors.TCP
 
         private void OnTcpTemplateChanged(IGenericEvent ev)
         {
-            TcpTemplateChanged changed = new TcpTemplateChanged(ev);
+            TcpTemplateChanged changed = new(ev);
             myTemplateChangedEvents.Add(changed);
         }
 

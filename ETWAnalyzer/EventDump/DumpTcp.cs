@@ -66,6 +66,9 @@ namespace ETWAnalyzer.EventDump
         public SkipTakeRange TopNRetrans { get; internal set; } = new SkipTakeRange();
         public MinMaxRange<ulong> MinMaxSentBytes { get; internal set; } = new();
         public MinMaxRange<ulong> MinMaxReceivedBytes { get; internal set; } = new();
+        public bool OnlyClientRetransmit { get; internal set; }
+        public MinMaxRange<int> MinMaxRetransCount { get; internal set; } = new();
+
 
         /// <summary>
         /// Unit testing only. ReadFileData will return this list instead of real data
@@ -77,18 +80,35 @@ namespace ETWAnalyzer.EventDump
             List<MatchData> lret = ReadFileData();
             if (IsCSVEnabled)
             {
-                OpenCSVWithHeader(Col_CSVOptions, "Directory", Col_FileName, Col_Date, Col_TestCase, Col_TestTimeinms, Col_Baseline, Col_Process, Col_ProcessName,
-                                  "SourceIP","Source Port", "DestinationIP", "Destination Port", "TCB", "ConnectionIdx", "Sent Packets (Total per connection)", "Sent Bytes (Total per connection)", "Received Packets (Total per connection)", "Received Bytes (Total per connection)", 
-                                  "Retransmitted Packets (Total per connection)", "% Retransmitted Packets (Total per connection)", "TCP Template", "Connection Open Time", "Connection Close Time",
-                                  "Retrans Time", "Retrans Delay (ms)", "Retrans Size", "Retrans SequenceNr",  Col_CommandLine);
+                string[] columms = new string[]
+                    {   Col_CSVOptions, "Directory", Col_FileName, Col_Date, Col_TestCase, Col_TestTimeinms, Col_Baseline, Col_Process, Col_ProcessName,
+                        "SourceIP","Source Port", "DestinationIP", "Destination Port", "TCB", "ConnectionIdx", "Sent Packets (Total per connection)", "Sent Bytes (Total per connection)", "Received Packets (Total per connection)", "Received Bytes (Total per connection)",
+                        "Retransmitted Packets (Total per connection)", "% Retransmitted Packets (Total per connection)", "TCP Template", "Connection Open Time", "Connection Close Time",
+                    };
+
+                string[] additionalColumns = new string[] { Col_CommandLine };
+
+                if (ShowRetransmit || ShowDetails)
+                {
+                    additionalColumns = new string[]
+                    {
+                        "Retrans Time", "Retrans Delay (ms)", "Retrans Size", "Retrans SequenceNr", "IsClientRetransmission", Col_CommandLine
+                    };
+                }
+
+                columms = columms.Concat(additionalColumns).ToArray();
+
+                OpenCSVWithHeader(columms);
+                                  
 
                 foreach (MatchData tcpEvent in lret)
                 {
                     string tcb = "0x" + tcpEvent.Connection.Tcb.ToString("X");
                     int retransPercent = tcpEvent.Retransmissions.Count > 0 ? (int)( (100.0f * tcpEvent.Retransmissions.Count/ tcpEvent.Connection.DatagramsSent)) : 0;
                    
-                    if (ShowRetransmit)
+                    if (ShowRetransmit || ShowDetails)
                     {
+                        bool first = true;
                         // write data for all retransmit events 
                         // this repeats total columns!
                         foreach (var retrans in tcpEvent.Retransmissions)
@@ -101,17 +121,24 @@ namespace ETWAnalyzer.EventDump
                                 tcpEvent.Connection.RemoteIpAndPort.Address,
                                 tcpEvent.Connection.RemoteIpAndPort.Port,
                                 tcb,
-                                tcpEvent.Connection.DatagramsSent, tcpEvent.Connection.BytesSent, tcpEvent.Connection.DatagramsReceived, tcpEvent.Connection.BytesReceived,
-                                tcpEvent.Retransmissions.Count,
-                                retransPercent,
+                                tcpEvent.ConnectionIndex,
+                                (first ? tcpEvent.Connection.DatagramsSent : 0),      // print only once per connection to get better pivot chart data which will sum the connection summary per retransmit event which would result in huge numbers
+                                (first ? tcpEvent.Connection.BytesSent : 0),
+                                (first ? tcpEvent.Connection.DatagramsReceived : 0),
+                                (first ? tcpEvent.Connection.BytesReceived : 0),  
+                                (first ? tcpEvent.Retransmissions.Count : 0),     
+                                (first ? retransPercent : 0),                                
                                 tcpEvent.Connection.LastTcpTemplate,
                                 GetDateTimeString(tcpEvent.Connection.TimeStampOpen, tcpEvent.Session.SessionStart, TimeFormatOption, false),
                                 GetDateTimeString(tcpEvent.Connection.TimeStampClose, tcpEvent.Session.SessionStart, TimeFormatOption, false),
                                 GetDateTimeString(retrans.RetransmitTime, tcpEvent.Session.SessionStart, TimeFormatOption, false),
                                 (int) retrans.RetransmitDiff().TotalMilliseconds,
-                                retrans.BytesSent,
+                                retrans.NumBytes,
                                 retrans.SequenceNumber,
+                                retrans.IsClientRetransmission.GetValueOrDefault(),
                                 NoCmdLine ? "" : tcpEvent.Process.CommandLineNoExe);
+
+                            first = false;
                         }
                     }
                     else
@@ -125,13 +152,15 @@ namespace ETWAnalyzer.EventDump
                        tcpEvent.Connection.RemoteIpAndPort.Port,
                        tcb,
                        tcpEvent.ConnectionIndex,
-                       tcpEvent.Connection.DatagramsSent, tcpEvent.Connection.BytesSent, tcpEvent.Connection.DatagramsReceived, tcpEvent.Connection.BytesReceived,
+                       tcpEvent.Connection.DatagramsSent, 
+                       tcpEvent.Connection.BytesSent, 
+                       tcpEvent.Connection.DatagramsReceived, 
+                       tcpEvent.Connection.BytesReceived,
                        tcpEvent.Retransmissions.Count,
                        retransPercent,
                        tcpEvent.Connection.LastTcpTemplate,
                        GetDateTimeString(tcpEvent.Connection.TimeStampOpen, tcpEvent.Session.SessionStart, TimeFormatOption, false),
                        GetDateTimeString(tcpEvent.Connection.TimeStampClose, tcpEvent.Session.SessionStart, TimeFormatOption, false),
-                       "", "", "", "",
                        NoCmdLine ? "" : tcpEvent.Process.CommandLineNoExe);
                     }
                 }
@@ -187,7 +216,10 @@ namespace ETWAnalyzer.EventDump
                 ColorConsole.WriteEmbeddedColorLine($"{file.First().Session.SessionStart,-22} {GetPrintFileName(file.Key)} {file.First().Session.Baseline}", ConsoleColor.Cyan);
                 foreach (var match in file.SortAscendingGetTopNLast(SortBy, null, TopN) )
                 {
-                    string retransPercent = "N0".WidthFormat(100.0f * match.Retransmissions.Count / match.Connection.DatagramsSent, PercentWidth);
+                    // retransmission % can only be calculated by sent packets and retransmission events excluding client retransmissions
+                    string retransPercent = "N0".WidthFormat(100.0f * match.Retransmissions.Where(x=>x.IsClientRetransmission.GetValueOrDefault() == false).Count() / match.Connection.DatagramsSent, PercentWidth);
+
+                    // Delay on the other hand can be calculated by all Retransmit events.
                     string totalRetransDelay = "N0".WidthFormat(match.Retransmissions.Sum(x => x.RetransmitDiff().TotalMilliseconds), PacketCountWidth);
 
                     ColorConsole.WriteEmbeddedColorLine($"{match.Connection.LocalIpAndPort.ToString().WithWidth(localIPLen)} -> {match.Connection.RemoteIpAndPort.ToString().WithWidth(remoteIPLen)} ", ConsoleColor.Yellow, true);
@@ -209,7 +241,9 @@ namespace ETWAnalyzer.EventDump
                     {
                         foreach (ITcpRetransmission retrans in match.Retransmissions.SortAscendingGetTopNLast(SortRetransmit, null, TopNRetrans))
                         {
-                            Console.WriteLine($"  {"F0".WidthFormat(retrans.RetransmitDiff().TotalMilliseconds, 10)} ms delay at {GetDateTimeString(retrans.RetransmitTime, match.Session.SessionStart, TimeFormatOption, true)} {"N0".WidthFormat(retrans.BytesSent,7)} bytes SequenceNr: {retrans.SequenceNumber} ");
+                            string clientTransmission = retrans.IsClientRetransmission == null ? "" : $"ClientRetransmission: {retrans.IsClientRetransmission.Value}";
+                            Console.WriteLine($"  {"F0".WidthFormat(retrans.RetransmitDiff().TotalMilliseconds, 10)} ms delay at {GetDateTimeString(retrans.RetransmitTime, match.Session.SessionStart, TimeFormatOption, true)} {"N0".WidthFormat(retrans.NumBytes,7)} bytes " +
+                                              $"SequenceNr: {retrans.SequenceNumber} {clientTransmission}");
                         }
                     }
                 }
@@ -259,8 +293,7 @@ namespace ETWAnalyzer.EventDump
                             }
                         }
 
-                        if (IpPortFilter.Value?.Invoke(localIPAndPort.ToString()) == false &&
-                            IpPortFilter.Value?.Invoke(remoteIPAndPort.ToString()) == false)
+                        if (IpPortFilter.Value?.Invoke( localIPAndPort.ToString() + remoteIPAndPort.ToString() ) == false )
                         {
                             continue;
                         }
@@ -280,19 +313,35 @@ namespace ETWAnalyzer.EventDump
                             continue;
                         }
 
-                        foreach (var retransmission in retransByConnections[connection])
+                        var retransmissionsForConnection = retransByConnections[connection];
+
+                        foreach (var retransmission in retransmissionsForConnection)
                         {
                             if (!MinMaxRetransDelayMs.IsWithin((int) retransmission.RetransmitDiff().TotalMilliseconds))
                             {
                                 continue;
                             }
 
-                            if( !MinMaxRetransBytes.IsWithin( retransmission.BytesSent))
+                            if( !MinMaxRetransBytes.IsWithin( retransmission.NumBytes))
                             {
                                 continue;
                             }
 
+                            if( OnlyClientRetransmit ) // only keep client retransmissions
+                            {
+                                if( retransmission.IsClientRetransmission == null || retransmission.IsClientRetransmission.Value == false)
+                                {
+                                    continue;
+                                }
+                            }
+
                             retransmissions.Add(retransmission);
+                        }
+
+
+                        if (!MinMaxRetransCount.IsWithin(retransmissions.Count))
+                        {
+                            continue;
                         }
 
                         List<double> retransMs = retransmissions.Select(x => x.RetransmitDiff().TotalMilliseconds).ToList();
