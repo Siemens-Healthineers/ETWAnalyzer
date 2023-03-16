@@ -513,7 +513,7 @@ namespace ETWAnalyzer.Commands
             TcpHelpString;
 
 
-        DumpCommands myCommand = DumpCommands.None;
+        internal DumpCommands myCommand = DumpCommands.None;
 
         string myEtlFileOrZip;
         bool myIsVerbose;
@@ -1481,6 +1481,8 @@ namespace ETWAnalyzer.Commands
             }
         }
 
+        internal DumpBase myCurrentDumper = null;
+
 
         public override void Run()
         {
@@ -1504,14 +1506,14 @@ namespace ETWAnalyzer.Commands
                 FileOrDirectoryQueries.Add("."); // If nothing is specified use current directory
             }
 
-            DumpBase dumper = null;
+            myCurrentDumper = null;
 
             try
             {
                 switch (myCommand)
                 {
                     case DumpCommands.Stats:
-                        dumper = new DumpStats()
+                        myCurrentDumper = new DumpStats()
                         {
                             ETLFile = decompressedETL,
                             FileOrDirectoryQueries = FileOrDirectoryQueries,
@@ -1533,7 +1535,7 @@ namespace ETWAnalyzer.Commands
                         break;
                     case DumpCommands.Versions:
                         ThrowIfFileOrDirectoryIsInvalid(FileOrDirectoryQueries);
-                        dumper = new DumpModuleVersions()
+                        myCurrentDumper = new DumpModuleVersions()
                         {
                             FileOrDirectoryQueries = FileOrDirectoryQueries,
                             ShowFullFileName = ShowFullFileName,
@@ -1560,7 +1562,7 @@ namespace ETWAnalyzer.Commands
                     case DumpCommands.Process:
                         ThrowIfFileOrDirectoryIsInvalid(FileOrDirectoryQueries);
 
-                        dumper = new DumpProcesses
+                        myCurrentDumper = new DumpProcesses
                         {
                             FileOrDirectoryQueries = FileOrDirectoryQueries,
                             ShowFullFileName = ShowFullFileName,
@@ -1595,7 +1597,7 @@ namespace ETWAnalyzer.Commands
                         break;
                     case DumpCommands.CPU:
                         ThrowIfFileOrDirectoryIsInvalid(FileOrDirectoryQueries);
-                        dumper = new DumpCPUMethod
+                        myCurrentDumper = new DumpCPUMethod
                         {
                             FileOrDirectoryQueries = FileOrDirectoryQueries,
                             ShowFullFileName = ShowFullFileName,
@@ -1645,7 +1647,7 @@ namespace ETWAnalyzer.Commands
                         break;
                     case DumpCommands.Disk:
                         ThrowIfFileOrDirectoryIsInvalid(FileOrDirectoryQueries);
-                        dumper = new DumpDisk
+                        myCurrentDumper = new DumpDisk
                         {
                             FileOrDirectoryQueries = FileOrDirectoryQueries,
                             ShowFullFileName = ShowFullFileName,
@@ -1683,7 +1685,7 @@ namespace ETWAnalyzer.Commands
                         break;
                     case DumpCommands.File:
                         ThrowIfFileOrDirectoryIsInvalid(FileOrDirectoryQueries);
-                        dumper = new DumpFile
+                        myCurrentDumper = new DumpFile
                         {
                             FileOrDirectoryQueries = FileOrDirectoryQueries,
                             ShowFullFileName = ShowFullFileName,
@@ -1722,7 +1724,7 @@ namespace ETWAnalyzer.Commands
                         break;
                     case DumpCommands.Exceptions:
                         ThrowIfFileOrDirectoryIsInvalid(FileOrDirectoryQueries);
-                        dumper = new DumpExceptions
+                        myCurrentDumper = new DumpExceptions
                         {
                             FileOrDirectoryQueries = FileOrDirectoryQueries,
                             ShowFullFileName = ShowFullFileName,
@@ -1762,7 +1764,7 @@ namespace ETWAnalyzer.Commands
                         break;
                     case DumpCommands.Memory:
                         ThrowIfFileOrDirectoryIsInvalid(FileOrDirectoryQueries);
-                        dumper = new DumpMemory
+                        myCurrentDumper = new DumpMemory
                         {
                             FileOrDirectoryQueries = FileOrDirectoryQueries,
                             ShowFullFileName = ShowFullFileName,
@@ -1797,7 +1799,7 @@ namespace ETWAnalyzer.Commands
                         break;
                     case DumpCommands.ThreadPool:
                         ThrowIfFileOrDirectoryIsInvalid(FileOrDirectoryQueries);
-                        dumper = new DumpThreadPool
+                        myCurrentDumper = new DumpThreadPool
                         {
                             FileOrDirectoryQueries = FileOrDirectoryQueries,
                             ShowFullFileName = ShowFullFileName,
@@ -1821,7 +1823,7 @@ namespace ETWAnalyzer.Commands
                         break;
                     case DumpCommands.Mark:
                         ThrowIfFileOrDirectoryIsInvalid(FileOrDirectoryQueries);
-                        dumper = new DumpMarks
+                        myCurrentDumper = new DumpMarks
                         {
                             FileOrDirectoryQueries = FileOrDirectoryQueries,
                             ShowFullFileName = ShowFullFileName,
@@ -1849,7 +1851,7 @@ namespace ETWAnalyzer.Commands
 
                     case DumpCommands.TestRuns:
                         ThrowIfFileOrDirectoryIsInvalid(FileOrDirectoryQueries);
-                        dumper = new TestRunDumper
+                        myCurrentDumper = new TestRunDumper
                         {
                             Recursive = mySearchOption,
                             Directories = FileOrDirectoryQueries,
@@ -1871,7 +1873,7 @@ namespace ETWAnalyzer.Commands
                         break;
                     case DumpCommands.PMC:
                         ThrowIfFileOrDirectoryIsInvalid(FileOrDirectoryQueries);
-                        dumper = new DumpPMC
+                        myCurrentDumper = new DumpPMC
                         {
                             FileOrDirectoryQueries = FileOrDirectoryQueries,
                             ShowFullFileName = ShowFullFileName,
@@ -1895,7 +1897,7 @@ namespace ETWAnalyzer.Commands
                         break;
                     case DumpCommands.LBR:
                         ThrowIfFileOrDirectoryIsInvalid(FileOrDirectoryQueries);
-                        dumper = new DumpLBR
+                        myCurrentDumper = new DumpLBR
                         {
                             FileOrDirectoryQueries = FileOrDirectoryQueries,
                             ShowFullFileName = ShowFullFileName,
@@ -1925,7 +1927,7 @@ namespace ETWAnalyzer.Commands
                         break;
                     case DumpCommands.Dns:
                         ThrowIfFileOrDirectoryIsInvalid(FileOrDirectoryQueries);
-                        dumper = new DumpDns
+                        myCurrentDumper = new DumpDns
                         {
                             FileOrDirectoryQueries = FileOrDirectoryQueries,
                             ShowFullFileName = ShowFullFileName,
@@ -1957,7 +1959,7 @@ namespace ETWAnalyzer.Commands
                         };
                         break;
                     case DumpCommands.TCP:
-                        dumper = new DumpTcp
+                        myCurrentDumper = new DumpTcp
                         {
                             FileOrDirectoryQueries = FileOrDirectoryQueries,
                             ShowFullFileName = ShowFullFileName,
@@ -2001,11 +2003,11 @@ namespace ETWAnalyzer.Commands
                         throw new NotSupportedException($"The dump command {myCommand} is not implemented.");
                 }
 
-                dumper.Execute();
+                myCurrentDumper.Execute();
             }
             finally
             {
-                dumper?.Dispose();
+                myCurrentDumper?.Dispose();
             }
 
         }

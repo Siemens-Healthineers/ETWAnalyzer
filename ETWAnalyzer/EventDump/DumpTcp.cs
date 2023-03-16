@@ -187,7 +187,7 @@ namespace ETWAnalyzer.EventDump
 
             int localIPLen = allPrinted.Max(x => x.Connection.LocalIpAndPort.ToString().Length);
             int remoteIPLen = allPrinted.Max(x => x.Connection.RemoteIpAndPort.ToString().Length);
-            int tcpTemplateLen = allPrinted.Max(x => x.Connection.LastTcpTemplate?.Length).GetValueOrDefault();
+            int tcpTemplateLen = allPrinted.Max(x => x.Connection.LastTcpTemplate?.Length) ?? 8;
 
             string connectionHeadline = "Source IP/Port -> Destination IP/Port".WithWidth(localIPLen+remoteIPLen+4);
             const int PacketCountWidth = 9;
@@ -203,7 +203,7 @@ namespace ETWAnalyzer.EventDump
             string retransmissionHeadline = "Retrans Count/%/Delay".WithWidth(PacketCountWidth+PercentWidth+ PacketCountWidth+7);
             string detailsMinMaxMedian = ShowDetails ? "Max/Median/Min in ms".WithWidth(3 * (RetransMsWidth+4)+1) : " ";
             string detailsTemplate = ShowDetails ? "Template".WithWidth(tcpTemplateLen+2) : "";
-            string detailsConnectionTimes = ShowDetails ? "Connect/Disconnect Time".WithWidth(2 * timeWidth+3) : "";
+            string detailsConnectionTimes = ShowDetails ? "Connect/Disconnect Time".WithWidth(2 * timeWidth+2) : "";
             string detailsTCB = ShowDetails ? "TCB".WithWidth(PointerWidth + 3) : "";
 
             string headline = $"[yellow]{connectionHeadline}[/yellow] [green]{receivedHeadline}[/green] [red]{sentHeadline}[/red] [magenta]{GetTotalColumnHeader(TotalColumnWidth)}[/magenta][yellow]{retransmissionHeadline}[/yellow][yellow]{detailsMinMaxMedian}[/yellow]"+
@@ -232,7 +232,7 @@ namespace ETWAnalyzer.EventDump
                                       $"[yellow]{"F0".WidthFormat(match.RetransMaxms, RetransMsWidth)} ms {"F0".WidthFormat(match.RetransMedianMs, RetransMsWidth)} ms {"F0".WidthFormat(match.RetransMinMs, RetransMsWidth)} ms [/yellow] " + 
                                       $"{(match.Connection.LastTcpTemplate ?? "-").WithWidth(tcpTemplateLen)} " +
                                       $"{GetDateTimeString(match.Connection.TimeStampOpen, match.Session.SessionStart, TimeFormatOption,true).WithWidth(timeWidth)} {GetDateTimeString(match.Connection.TimeStampClose, match.Session.SessionStart,TimeFormatOption,true).WithWidth(timeWidth)} " +
-                                      $" 0x{"X".WidthFormat(match.Connection.Tcb, PointerWidth)} "
+                                      $"0x{"X".WidthFormat(match.Connection.Tcb, PointerWidth)} "
                                 : "") +                                      
                                       $"[magenta]{match.Process.GetProcessWithId(UsePrettyProcessName)}[/magenta]", ConsoleColor.White, true);
                     ColorConsole.WriteLine(NoCmdLine ? "" : match.Process.CommandLineNoExe, ConsoleColor.DarkCyan);
