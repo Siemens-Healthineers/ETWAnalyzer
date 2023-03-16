@@ -114,15 +114,18 @@ namespace ETWAnalyzer.Infrastructure
         /// Parse a min max string of the from dd, xx-yy
         /// </summary>
         /// <param name="minMaxStr"></param>
+        /// <param name="defaultUnit"></param>
         /// <param name="allownegativeMax">When true the max value can be negative.</param>
         /// <returns></returns>
-        public static KeyValuePair<int, int> GetMinMax(this string minMaxStr, bool allownegativeMax = false)
+        public static KeyValuePair<int, int> GetMinMax(this string minMaxStr, decimal defaultUnit=1.0m, bool allownegativeMax = false)
         {
             string[] minmax = minMaxStr.Split(new char[] { '-' }, StringSplitOptions.RemoveEmptyEntries);
 
-            int min = int.Parse(minmax[0], CultureInfo.InvariantCulture);
+            string number1 = GetUnit(minmax[0], out decimal? unitMultiplier);
+            decimal unit = (unitMultiplier ?? defaultUnit);
+            int min = (int) (int.Parse(number1, CultureInfo.InvariantCulture)* unit);
             int max = int.MaxValue;
-
+         
             // if -MinMax 0-100 or -100 was given we treat negative values as positive upper bounds.
             if (minMaxStr.StartsWith("-"))
             {
@@ -132,34 +135,112 @@ namespace ETWAnalyzer.Infrastructure
 
             if (minmax.Length == 2)
             {
-                max = int.Parse(minmax[1], CultureInfo.InvariantCulture);
+                string number2 = GetUnit(minmax[1], out decimal? unitMultiplier2);
+                decimal unit2 = (unitMultiplier2 ?? defaultUnit);
+                max = (int) (int.Parse(number2, CultureInfo.InvariantCulture)* unit2);
             }
 
             return new KeyValuePair<int, int>(min, max);
         }
 
-        public static KeyValuePair<ulong,ulong> GetMinMaxULong(this string minMaxStr)
+        static List<KeyValuePair<string, decimal>> units = new()
+        {
+                new KeyValuePair<string,decimal>( "Bytes", 1m ),
+                new KeyValuePair<string,decimal>( "Byte", 1m ),
+                new KeyValuePair<string,decimal>( "KB",   1000.0m),
+                new KeyValuePair<string,decimal>( "KiB",  1024*1024m),
+                new KeyValuePair<string,decimal>( "MB",   1_000_000m ),
+                new KeyValuePair<string,decimal>( "MiB",  1024*1024m ),
+                new KeyValuePair<string,decimal>( "GB",   1_000_000_000m ),
+                new KeyValuePair<string,decimal>( "GiB",  1024*1024*1024m ),
+                new KeyValuePair<string,decimal>( "TB",   1_000_000_000_000m ),
+                new KeyValuePair<string,decimal>( "TiB",  1024*1024*1024*1024m ),
+                new KeyValuePair<string,decimal>( "B",    1m ), // order is important
+                new KeyValuePair<string,decimal>( "ms",   1/1000.0m ),
+                new KeyValuePair<string,decimal>( "us",   1/1_000_000.0m ),
+                new KeyValuePair<string,decimal>( "ns",   1/1_000_000_000.0m ),
+                new KeyValuePair<string,decimal>( "second", 1.0m),
+                new KeyValuePair<string,decimal>( "seconds", 1.0m),
+                new KeyValuePair<string,decimal>( "s",    1m ),  // must be last of seconds or it will match .EndsWith("seconds") resulting in invalid numbers
+        };
+
+
+        static internal string GetUnit(string input, out decimal? multiplier)
+        {
+            string plainNumber = input;
+            multiplier = null;
+            foreach(var unit in units)
+            {
+                if( input.EndsWith(unit.Key, StringComparison.OrdinalIgnoreCase))
+                {
+                    multiplier = unit.Value;
+                    plainNumber = input.Substring(0, input.IndexOf(unit.Key, StringComparison.OrdinalIgnoreCase));
+                    break;
+                }
+            }
+
+            return plainNumber;
+        }
+
+
+        /// <summary>
+        /// Convert a decimal value which can have decimal.MaxValue to an integer. 
+        /// The multiplication is done in decimal value range and after that the integer conversion is done.
+        /// </summary>
+        /// <param name="input"></param>
+        /// <param name="multiplier"></param>
+        /// <returns></returns>
+        public static int ConvertToInt(this decimal input, decimal multiplier)
+        {
+            return input == decimal.MaxValue ? int.MaxValue : (int)(input * multiplier);
+        }
+
+        public static KeyValuePair<decimal,decimal> GetMinMaxDecimal(this string minMaxStr, decimal defaultUnit)
         {
             string[] minmax = minMaxStr.Split(new char[] { '-' }, StringSplitOptions.RemoveEmptyEntries);
 
-            ulong min = ulong.Parse(minmax[0], CultureInfo.InvariantCulture);
+            string number1 = GetUnit(minmax[0], out decimal? multiplier);
+
+            decimal min = decimal.Parse(number1, CultureInfo.InvariantCulture) * (multiplier ?? defaultUnit);
+
+            decimal max = decimal.MaxValue;
+
+            if (minmax.Length == 2)
+            {
+                string number2 = GetUnit(minmax[1], out decimal? multiplier2);
+                max = decimal.Parse(number2, CultureInfo.InvariantCulture) * (multiplier2 ?? defaultUnit);
+            }
+
+            return new KeyValuePair<decimal, decimal>(min, max);
+        }
+
+        public static KeyValuePair<ulong,ulong> GetMinMaxULong(this string minMaxStr, decimal defaultUnit)
+        {
+            string[] minmax = minMaxStr.Split(new char[] { '-' }, StringSplitOptions.RemoveEmptyEntries);
+
+            string number1 = GetUnit(minmax[0], out decimal? multiplier);
+            ulong min = (ulong) (ulong.Parse(number1, CultureInfo.InvariantCulture)*(multiplier ?? defaultUnit));
             ulong max = ulong.MaxValue;
 
             if (minmax.Length == 2)
             {
-                max = ulong.Parse(minmax[1], CultureInfo.InvariantCulture);
+                string number2 = GetUnit(minmax[1], out decimal? multiplier2);
+                max = (ulong) ( ulong.Parse(number2, CultureInfo.InvariantCulture) * (multiplier2 ?? defaultUnit));
             }
 
             return new KeyValuePair<ulong, ulong>(min, max);
         }
 
-        public static Tuple<double,double> GetMinMaxDouble(this string minStr, string maxStr)
+        public static Tuple<double,double> GetMinMaxDouble(this string minStr, string maxStr, decimal defaultUnit)
         {
-            double min = double.Parse(minStr);
+            string minNumber = GetUnit(minStr, out decimal? multiplierMin);
+            double min = (double) ( (decimal)double.Parse(minNumber) * (multiplierMin ?? defaultUnit));
+
             double max = double.MaxValue;
             if (!String.IsNullOrEmpty(maxStr))
             {
-                max = double.Parse(maxStr);
+                string maxNumberStr = GetUnit(maxStr, out decimal? multiplierMax);
+                max = (double) ( (decimal) double.Parse(maxNumberStr) * (multiplierMax ?? defaultUnit));
             }
 
             return Tuple.Create(min, max);

@@ -37,16 +37,6 @@ namespace ETWAnalyzer.EventDump
         public bool Merge { get; internal set; }
 
         /// <summary>
-        /// Generic Min value which is used by filters. Can be size, time
-        /// </summary>
-        public int Min { get; internal set; }
-
-        /// <summary>
-        /// Generic Max value which is used by filter. Can be size, time
-        /// </summary>
-        public int Max { get; internal set; }
-
-        /// <summary>
         /// Filter for data for specific file operations
         /// </summary>
         public FileIOStatistics.FileOperation FileOperationValue { get; internal set; }
@@ -70,12 +60,16 @@ namespace ETWAnalyzer.EventDump
         /// Take top n processes based on current sort order when per process mode is enabled.
         /// </summary>
         public SkipTakeRange TopNProcesses { get; internal set; }
+        public MinMaxRange<decimal> MinMaxReadSizeBytes { get; internal set; } = new();
+        public MinMaxRange<decimal> MinMaxReadTimeS { get; internal set; } = new();
+        public MinMaxRange<decimal> MinMaxWriteSizeBytes { get; internal set; } = new();
+        public MinMaxRange<decimal> MinMaxWriteTimeS { get; internal set; } = new();
+        public MinMaxRange<decimal> MinMaxTotalTimeS { get; internal set; } = new();
+        public MinMaxRange<decimal> MinMaxTotalSizeBytes { get; internal set; } = new();
 
         internal List<MatchData> myUTestData;
 
         internal const decimal Million = (1000 * 1000.0m);
-        internal const decimal MB = 1024 * 1024.0m;
-
 
         public override List<MatchData> ExecuteInternal()
         {
@@ -130,9 +124,9 @@ namespace ETWAnalyzer.EventDump
                     totalFlushtimeInus += group.DiskFlushTimeInus;
 
                     string diskReadTime = $"{group.DiskReadTimeInus / Million:F5}";
-                    string diskReadMB = $"{group.DiskReadSizeInBytes / MB:F0}";
+                    string diskReadMB = $"{group.DiskReadSizeInBytes / Million:F0}";
                     string diskWriteTime = $"{group.DiskWriteTimeInus / Million:F5}";
-                    string diskWriteMB = $"{group.DiskWriteSizeInBytes / MB:F0}";
+                    string diskWriteMB = $"{group.DiskWriteSizeInBytes / Million:F0}";
                     string diskFlushTime = $"{group.DiskFlushTimeInus / Million:F3}";
 
                     string line = $"[green]r {diskReadTime,10} s {diskReadMB,7} MB {group.ReadMBPerSeconds,4} MB/s[/green] " +
@@ -145,9 +139,9 @@ namespace ETWAnalyzer.EventDump
                 }
 
                 ColorConsole.WriteEmbeddedColorLine(
-                    $"[magenta]Totals {(totalFlushtimeInus + totalReadTimeInus + totalWriteTimeInus) / Million:F2} s {(totalReadBytes + totalWriteBytes) / MB:N0} MB[/magenta] " +
-                    $"[green]r {totalReadTimeInus / Million:F2} s {totalReadBytes / MB:N0} MB[/green] " +
-                    $"[yellow]w {totalWriteTimeInus / Million:F2} s {totalWriteBytes / MB:N0} MB[/yellow] " +
+                    $"[magenta]Totals {(totalFlushtimeInus + totalReadTimeInus + totalWriteTimeInus) / Million:F2} s {(totalReadBytes + totalWriteBytes) / Million:N0} MB[/magenta] " +
+                    $"[green]r {totalReadTimeInus / Million:F2} s {totalReadBytes / Million:N0} MB[/green] " +
+                    $"[yellow]w {totalWriteTimeInus / Million:F2} s {totalWriteBytes / Million:N0} MB[/yellow] " +
                     $"[cyan]f {totalFlushtimeInus:F2} s[/cyan] " +
                     $"{byFileOrNoGroup.Count()} accessed file/s. Process Count: {new HashSet<ETWProcess>(byFileOrNoGroup.SelectMany(x => x.Processes)).Count}"
                     );
@@ -190,8 +184,8 @@ namespace ETWAnalyzer.EventDump
                         string diskReadTime = $"{group.DiskReadTimeInus / Million:F3}";
                         string diskWriteTime = $"{group.DiskWriteTimeInus / Million:F3}";
                         string diskFlushTime = $"{group.DiskFlushTimeInus / Million:F3}";
-                        string diskReadSizeInMB = $"{group.DiskReadSizeInBytes / MB:F0}";
-                        string diskWriteSizeInMB = $"{group.DiskWriteSizeInBytes / MB:F0}";
+                        string diskReadSizeInMB = $"{group.DiskReadSizeInBytes / Million:F0}";
+                        string diskWriteSizeInMB = $"{group.DiskWriteSizeInBytes / Million:F0}";
 
                         ColorConsole.WriteEmbeddedColorLine($"[green]r {diskReadTime,8} s {diskReadSizeInMB,5} MB {group.ReadMBPerSeconds,4} MB/s[/green] [yellow]w {diskWriteTime,8} s {diskWriteSizeInMB,5} MB {group.WriteMBPerSeconds,4} MB/s[/yellow] [cyan]f {diskFlushTime,8}[/cyan] s  [magenta]{GetTotalValue(group,TotalHeadlineWidth)}[/magenta]{procs}");
                     }
@@ -233,8 +227,8 @@ namespace ETWAnalyzer.EventDump
         {
             return SortOrder switch
             {
-                SortOrders.Default => $"{(data.DiskWriteSizeInBytes + data.DiskReadSizeInBytes) / MB:F0} MB".WithWidth(minWidth) + " ",
-                SortOrders.TotalSize => $"{(data.DiskWriteSizeInBytes + data.DiskReadSizeInBytes) /MB:F0} MB".WithWidth(minWidth) + " ",
+                SortOrders.Default => $"{(data.DiskWriteSizeInBytes + data.DiskReadSizeInBytes) / Million:F0} MB".WithWidth(minWidth) + " ",
+                SortOrders.TotalSize => $"{(data.DiskWriteSizeInBytes + data.DiskReadSizeInBytes) / Million:F0} MB".WithWidth(minWidth) + " ",
                 SortOrders.TotalTime => $"{data.DiskTotalTimeInus/Million:F5} s".WithWidth(minWidth) + " ",
                 SortOrders.FlushTime => $"{data.DiskFlushTimeInus/Million:F5} s".WithWidth(minWidth) + " ",
                 _ => ""
@@ -266,12 +260,15 @@ namespace ETWAnalyzer.EventDump
         bool MinMaxFilter(MatchData data)
         {
             bool lret = true;
-            lret = FileOperationValue switch
-            {
-                FileIOStatistics.FileOperation.Read => data.DiskReadTimeInus >= Min && (Min >= Max || data.DiskReadTimeInus <= Max),
-                FileIOStatistics.FileOperation.Write => data.DiskWriteTimeInus >= Min && (Min >= Max || data.DiskWriteTimeInus <= Max),
-                _ => data.DiskTotalTimeInus >= Min && (Min >= Max || data.DiskTotalTimeInus <= Max),
-            };
+
+            lret = MinMaxReadSizeBytes.IsWithin(data.DiskReadSizeInBytes) &&
+                   MinMaxWriteSizeBytes.IsWithin(data.DiskWriteSizeInBytes) &&
+                   MinMaxTotalSizeBytes.IsWithin((data.DiskWriteSizeInBytes + data.DiskReadSizeInBytes)) &&
+                   MinMaxReadTimeS.IsWithin(data.DiskReadTimeInus / Million) &&
+                   MinMaxWriteTimeS.IsWithin(data.DiskWriteTimeInus / Million) &&
+                   MinMaxTotalTimeS.IsWithin((data.DiskWriteTimeInus + data.DiskReadTimeInus + data.DiskFlushTimeInus) / Million);
+
+          
             return lret;
         }
 
@@ -410,8 +407,8 @@ namespace ETWAnalyzer.EventDump
             public HashSet<ETWProcess> Processes = new();
 
 
-            public int ReadMBPerSeconds => DiskReadTimeInus > 0 ? (int)(DiskReadSizeInBytes / MB / (DiskReadTimeInus / Million)) : 0;
-            public int WriteMBPerSeconds => DiskWriteTimeInus > 0 ? (int)(DiskWriteSizeInBytes / MB / (DiskWriteTimeInus / Million)) : 0;
+            public int ReadMBPerSeconds => DiskReadTimeInus > 0 ? (int)(DiskReadSizeInBytes / Million / (DiskReadTimeInus / Million)) : 0;
+            public int WriteMBPerSeconds => DiskWriteTimeInus > 0 ? (int)(DiskWriteSizeInBytes / Million / (DiskWriteTimeInus / Million)) : 0;
 
             /// <summary>
             /// Sum of read+write+flush time

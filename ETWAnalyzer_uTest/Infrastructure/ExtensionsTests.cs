@@ -72,7 +72,87 @@ namespace ETWAnalyzer_uTest.Infrastructure
         public void GetMinMax_Max_Can_Be_Negative()
         {
             string str = "-15";
-            Assert.Equal(new KeyValuePair<int, int>(0, -15), str.GetMinMax(true));
+            Assert.Equal(new KeyValuePair<int, int>(0, -15), str.GetMinMax(1.0m, true));
+        }
+
+        [Fact]
+        public void GetMinMax_MB_Unit()
+        {
+            string str = "15MB";
+            Assert.Equal(new KeyValuePair<int, int>(15_000_000, int.MaxValue), str.GetMinMax());
+        }
+
+
+        [Fact]
+        public void GetMinMax_Decimal_MB_Unit()
+        {
+            string str = "15MB";
+            Assert.Equal(new KeyValuePair<decimal, decimal>(15_000_000, decimal.MaxValue), str.GetMinMaxDecimal(1));
+        }
+
+        [Fact]
+        public void GetMinMax_ULong_MB_Unit()
+        {
+            string str = "15MB";
+            Assert.Equal(new KeyValuePair<ulong, ulong>(15_000_000, ulong.MaxValue), str.GetMinMaxULong(1));
+        }
+
+        [Fact]
+        public void GetMinMax_Double_MB_Unit()
+        {
+            string str = "15MB";
+            Assert.Equal(new Tuple<double, double>(15_000_000, double.MaxValue), str.GetMinMaxDouble("", 1.0m));
+        }
+
+        [Fact]
+        public void GetMinMax_Double_MS_Unit()
+        {
+            string str = "15MS";
+            Assert.Equal(new Tuple<double, double>(0.015d, double.MaxValue), str.GetMinMaxDouble("", 1.0m));
+        }
+
+
+        [Fact]
+        public void GetMinMax_s_Unit()
+        {
+            string str = "15s";
+            Assert.Equal(new KeyValuePair<int, int>(15, int.MaxValue), str.GetMinMax());
+        }
+
+
+        [Fact]
+        public void GetMinMax_DefaultUnit_Is_Applied()
+        {
+            string str = "15";
+            Assert.Equal(new KeyValuePair<int, int>(15_000, int.MaxValue), str.GetMinMax(1000));
+        }
+
+        [Fact]
+        public void GetMinMax_Decimal_DefaultUnit_Is_Applied()
+        {
+            string str = "15";
+            Assert.Equal(new KeyValuePair<decimal, decimal>(15_000, decimal.MaxValue), str.GetMinMaxDecimal(1000));
+        }
+
+        [Fact]
+        public void GetMinMax_ULong_DefaultUnit_Is_Applied()
+        {
+            string str = "15";
+            Assert.Equal(new KeyValuePair<ulong, ulong>(15_000, ulong.MaxValue), str.GetMinMaxULong(1000));
+        }
+
+        [Fact]
+        public void GetMinMax_Double_DefaultUnit_Is_Applied()
+        {
+            string str = "15";
+            Assert.Equal(new Tuple<double, double>(15, 20), str.GetMinMaxDouble("20", 1.0m));
+        }
+
+        [Fact]
+        public void GetMinMax_Double_NoMax_DefaultUnit_Is_Applied()
+        {
+            string str = "15";
+            Assert.Equal(new Tuple<double, double>(15, double.MaxValue), str.GetMinMaxDouble("", 1.0m));
         }
 
         [Fact]
