@@ -41,7 +41,11 @@ namespace ETWAnalyzer.EventDump
         /// </summary>
         public long GlobalDiffMB { get; internal set; }
         public bool TotalMemory { get; internal set; }
-        public int MinWorkingSetMB { get; internal set; }
+
+        public MinMaxRange<decimal> MinMaxWorkingSetMiB { get; internal set; } = new();
+        public MinMaxRange<decimal> MinMaxCommitMiB { get; internal set; } = new();
+        public MinMaxRange<decimal> MinMaxSharedCommitMiB { get; internal set; } = new();
+
         public DumpCommand.SortOrders SortOrder { get; internal set; }
         public bool NoCmdLine { get; internal set; }
 
@@ -146,7 +150,9 @@ namespace ETWAnalyzer.EventDump
 
         bool MemoryFilter(ProcessWorkingSet set)
         {
-            return set.WorkingSetInMiB >= (ulong)MinWorkingSetMB;
+            return MinMaxWorkingSetMiB.IsWithin( set.WorkingSetInMiB ) &&
+                   MinMaxCommitMiB.IsWithin( set.CommitInMiB ) &&
+                   MinMaxSharedCommitMiB.IsWithin( set.SharedCommitSizeInMiB);
         }
 
         /// <summary>
@@ -176,7 +182,7 @@ namespace ETWAnalyzer.EventDump
         private void ExtractPerProcessMemoryInfo(List<Match> matches, TestDataFile file)
         {
             var memory = file.Extract.MemoryUsage;
-            foreach(var mem1 in memory.WorkingSetsAtStart.Where(MemoryFilter).OrderBy(x=>x.CommitInMiB))
+            foreach(var mem1 in memory.WorkingSetsAtStart.OrderBy(x=>x.CommitInMiB))
             {
                 ETWProcess process = file.FindProcessByKey(mem1.Process);
 
@@ -186,7 +192,7 @@ namespace ETWAnalyzer.EventDump
                 }
 
                 long DiffMb = 0;
-                foreach(var mem2 in memory.WorkingSetsAtEnd.OrderBy(x => x.CommitInMiB))
+                foreach(var mem2 in memory.WorkingSetsAtEnd.Where(MemoryFilter).OrderBy(x => x.CommitInMiB))
                 {
                     if( mem2.Process.EqualNameAndPid(mem1.Process) )
                     {
@@ -342,20 +348,20 @@ namespace ETWAnalyzer.EventDump
                 PrintFileName(fileGroup.Key, null, fileGroup.First().PerformedAt, fileGroup.First().Baseline);
 
                 long totalDiff = 0;
-                ulong totalCommitedMem = 0;
+                ulong totalCommitedMemMiB = 0;
                 int processCount = 0;
 
                 foreach (var m in fileGroup.SortAscendingGetTopNLast(SortByValue, null, TopN))
                 {
                     totalDiff += m.DiffMb;
-                    totalCommitedMem += m.CommitedMiB;
+                    totalCommitedMemMiB += m.CommitedMiB;
                     processCount ++;
                     string moduleInfo = m.Module != null ? GetModuleString(m.Module, true) : "";
                     ColorConsole.WriteEmbeddedColorLine($"[darkcyan]{GetDateTimeString(m.SessionEnd, m.SessionStart, TimeFormatOption)}[/darkcyan] [{GetColor(m.DiffMb)}]Diff: {m.DiffMb,4}[/{GetColor(m.DiffMb)}] [{GetColorTotal(m.CommitedMiB)}]Commit {m.CommitedMiB,4} MiB[/{GetColorTotal(m.CommitedMiB)}] [{GetColorTotal(m.WorkingSetMiB)}]WorkingSet {m.WorkingSetMiB,4} MiB[/{GetColorTotal(m.WorkingSetMiB)}] [{GetColorTotal(m.SharedCommitInMiB)}]Shared Commit: {m.SharedCommitInMiB,4} MiB [/{GetColorTotal(m.SharedCommitInMiB)}] ", null, true);
                     ColorConsole.WriteEmbeddedColorLine($"[yellow]{m.Process}[/yellow] {(NoCmdLine ? "" : m.CmdLine)} ", ConsoleColor.DarkCyan, true);
                     ColorConsole.WriteEmbeddedColorLine($"[red]{moduleInfo}[/red]");
                 }
-                ColorConsole.WriteEmbeddedColorLine($"[cyan]Memory Total per File:[/cyan] [{GetTrendColor(totalDiff)}]TotalDiff: {totalDiff} [/{GetTrendColor(totalDiff)}] [{GetColorTotal(totalCommitedMem)}] TotalCommitedMem: {totalCommitedMem} MiB [/{GetColorTotal(totalCommitedMem)}] [Darkyellow] Number of Involved Processes: {processCount} [/Darkyellow]");
+                ColorConsole.WriteEmbeddedColorLine($"[cyan]Memory Total per File:[/cyan] [{GetTrendColor(totalDiff)}]TotalDiff: {totalDiff} [/{GetTrendColor(totalDiff)}] [{GetColorTotal(totalCommitedMemMiB)}] TotalCommitedMem: {totalCommitedMemMiB} MiB [/{GetColorTotal(totalCommitedMemMiB)}] [Darkyellow] Number of Involved Processes: {processCount} [/Darkyellow]");
             }
         }
     }

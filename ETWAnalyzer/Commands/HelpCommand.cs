@@ -45,6 +45,11 @@ namespace ETWAnalyzer.Commands
         public string Help => Retriever();
 
         /// <summary>
+        /// Return default return code as when application terminates.
+        /// </summary>
+        public int? ReturnCode => null;
+
+        /// <summary>
         /// Command line arguments
         /// </summary>
         readonly Queue<string> myArgs;

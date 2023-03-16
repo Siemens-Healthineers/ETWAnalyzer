@@ -12,9 +12,10 @@ namespace ETWAnalyzer.Extract.Network.Tcp
     public interface ITcpRetransmission
     {
         /// <summary>
-        /// Bytes which were tried to send. Windows get spurious retransmissions for 0 and 1 byte sized packets which look like ACK and keepalive pings
+        /// Bytes which were tried to send. Windows get spurious retransmissions for 0 and 1 byte sized packets which look like ACK and keepalive pings.
+        /// When <see cref="IsClientRetransmission"/> is true it is the number of received bytes.
         /// </summary>
-        int BytesSent { get;  }
+        int NumBytes { get;  }
 
         /// <summary>
         /// Connection Index to retrieve connection later from TcpStatistics.Connections
@@ -34,5 +35,10 @@ namespace ETWAnalyzer.Extract.Network.Tcp
         /// Sequence Number of TCP packet which is missing
         /// </summary>
         uint SequenceNumber { get;  }
+
+        /// <summary>
+        /// When true it indicates that retransmission was detected as duplicate client transmision which had a byte count > 1
+        /// </summary>
+        bool? IsClientRetransmission { get; }
     }
 }

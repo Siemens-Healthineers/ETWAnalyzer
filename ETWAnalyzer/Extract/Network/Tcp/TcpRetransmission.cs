@@ -37,14 +37,15 @@ namespace ETWAnalyzer.Extract.Network.Tcp
         public uint SequenceNumber { get; set; }
 
         /// <summary>
-        /// Bytes which were tried to send. Windows get spurious retransmissions for 0 and 1 byte sized packets which look like ACK and keepalive pings
+        /// Bytes which were tried to send. Windows get spurious retransmissions for 0 and 1 byte sized packets which look like ACK and keepalive pings.
+        /// When <see cref="IsClientRetransmission"/> is true it is the number of received bytes.
         /// </summary>
-        public int BytesSent { get; set; }
+        public int NumBytes { get; set; }
 
         /// <summary>
-        /// Get RetransmitTime - SendTime
+        /// When true it indicates that retransmission was detected as duplicate client transmision which had a byte count > 1
         /// </summary>
-        internal TimeSpan RetransmitDiff => RetransmitTime - SendTime;
+        public bool? IsClientRetransmission { get; set; }
 
         /// <summary>
         /// Create a new TcpRetransmission instance
@@ -53,14 +54,29 @@ namespace ETWAnalyzer.Extract.Network.Tcp
         /// <param name="retransmitTime"></param>
         /// <param name="sendTime"></param>
         /// <param name="sequenceNumber"></param>
-        /// <param name="bytesSent"></param>
-        public TcpRetransmission(ConnectionIdx connectionIdx, DateTimeOffset retransmitTime, DateTimeOffset sendTime, uint sequenceNumber, int bytesSent)
+        /// <param name="numBytes">Number of bytes sent/received</param>
+        /// <param name="isClientRetransmission"></param>
+        public TcpRetransmission(ConnectionIdx connectionIdx, DateTimeOffset retransmitTime, DateTimeOffset sendTime, uint sequenceNumber, int numBytes, bool? isClientRetransmission)
         {
             ConnectionIdx = connectionIdx;
             RetransmitTime = retransmitTime;
             SendTime = sendTime;
             SequenceNumber = sequenceNumber;
-            BytesSent = bytesSent;
+            NumBytes = numBytes;
+            IsClientRetransmission = isClientRetransmission;
+        }
+
+        /// <summary>
+        /// Create a new TcpRetransmission instance
+        /// </summary>
+        /// <param name="connectionIdx"></param>
+        /// <param name="retransmitTime"></param>
+        /// <param name="sendTime"></param>
+        /// <param name="sequenceNumber"></param>
+        /// <param name="numBytes"></param>
+        internal TcpRetransmission(ConnectionIdx connectionIdx, DateTimeOffset retransmitTime, DateTimeOffset sendTime, uint sequenceNumber, int numBytes)
+                           :this(connectionIdx,retransmitTime,sendTime,sequenceNumber, numBytes, null)
+        {
         }
     }
 }
