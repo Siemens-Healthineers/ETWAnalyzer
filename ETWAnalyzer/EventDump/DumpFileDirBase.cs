@@ -672,6 +672,7 @@ namespace ETWAnalyzer.EventDump
             {
                 myWriter.Dispose();
                 myWriter = null;
+                Console.WriteLine($"CSV export was successful. File is: {CSVFile}");
             }
 
             base.Dispose(disposing);

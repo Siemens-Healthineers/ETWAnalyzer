@@ -25,6 +25,7 @@ namespace ETWAnalyzer.Infrastructure
             return data.OrderByDescending(keyselector).Take(topN).ToArray();
         }
 
+
         /// <summary>
         /// Sort an input sequence ascending and then select the last topN values of it
         /// </summary>
@@ -37,8 +38,32 @@ namespace ETWAnalyzer.Infrastructure
         /// <returns>Array with first topN results of sorted sequence</returns>
         public static TData[] SortAscendingGetTopNLast<TData, V>(this IEnumerable<TData> data, Func<TData, V> keyselector, Action<IEnumerable<TData>> sortStatePreparer, SkipTakeRange topN)
         {
+            return SortAscendingGetTopNLast(data, keyselector, null, sortStatePreparer, topN);
+        }
+
+        /// <summary>
+        /// Sort an input sequence ascending and then select the last topN values of it
+        /// </summary>
+        /// <typeparam name="TData"></typeparam>
+        /// <typeparam name="V"></typeparam>
+        /// <param name="data"></param>
+        /// <param name="keyselector"></param>
+        /// <param name="thenbySelector">Secondary sort criteria</param>
+        /// <param name="sortStatePreparer">Some sorting algos might need to accumulate some state which can be set here before the sort is performed.</param>
+        /// <param name="topN"></param>
+        /// <returns>Array with first topN results of sorted sequence</returns>
+        public static TData[] SortAscendingGetTopNLast<TData, V>(this IEnumerable<TData> data, Func<TData, V> keyselector, Func<TData, V> thenbySelector, Action<IEnumerable<TData>> sortStatePreparer, SkipTakeRange topN)
+        {
             sortStatePreparer?.Invoke(data);
-            var sorted = data.OrderBy(keyselector).ToArray();
+            TData[] sorted = null;
+            if( thenbySelector != null )
+            {
+                sorted = data.OrderBy(keyselector).ThenBy(thenbySelector).ToArray();
+            }
+            else
+            {
+                sorted = data.OrderBy(keyselector).ToArray();
+            }
             List<TData> lret = new List<TData>();
             int skipCount = sorted.Length - topN.TakeN >= 0 ? sorted.Length - topN.TakeN : 0;
             skipCount -= topN.SkipN;

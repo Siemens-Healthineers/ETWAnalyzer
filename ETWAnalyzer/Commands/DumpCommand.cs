@@ -163,7 +163,7 @@ namespace ETWAnalyzer.Commands
 
         static readonly string MemoryHelpString =
         "  Memory    -filedir/fd Extract\\ or xxx.json [-recursive] [-csv xxx.csv] [-NoCSVSeparator] [-TopN dd nn] [-TimeFmt s,Local,LocalTime,UTC,UTCTime,Here,HereTime] [-ProcessFmt timefmt] [-TotalMemory] [-MinDiffMB dd] " + Environment.NewLine +
-        "                           [-SortBy Commit/WorkingSet/SharedCommit/Diff] [-GlobalDiffMB dd] [-MinWorkingSetMB dd] [-Clip] [-NoCmdLine] " + Environment.NewLine +
+        "                           [-SortBy Commit/WorkingSet/SharedCommit/Diff] [-GlobalDiffMB dd] [-MinMaxWorkingSetMiB xx-yy] [-MinMaxCommitMiB xx-yy] [-MinMaxSharedCommitMiB xx-yy] [-Clip] [-NoCmdLine] " + Environment.NewLine +
         "                           [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd] [-MinMaxMsTestTimes xx-yy ...] [-ProcessName/pn xxx.exe(pid)] [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-CmdLine substring]" + Environment.NewLine +
         "                           [-ShowFullFileName/-sffn] [-ShowModuleInfo [Driver] or [filter]]" + Environment.NewLine +
         "                         Print memory (Working Set, Committed Memory) of all or some processes from extracted Json files. To get output -extract Memory, All or Default must have been used during extraction." + Environment.NewLine +
@@ -171,7 +171,9 @@ namespace ETWAnalyzer.Commands
         "                                 WorkingSet/Diff    Sort by working set or committed memory difference" + Environment.NewLine +
         "                         -TopN dd nn                Select top dd processes. Optional nn skips the first nn lines of top list" + Environment.NewLine +
         "                         -TotalMemory               Show System wide commit and active memory metrics. Useful to check if machine was in a bad memory situation." + Environment.NewLine +
-        "                         -MinWorkingSetMB dd        Only include processes which had at least a working set of dd MB at trace start" + Environment.NewLine +
+        "                         -MinMaxWorkingSetMiB xx-yy  Only include processes which had at least a working set xx-yy MiB (=1024*1024) at trace end. Numbers can have units like Bytes,KiB,MiB,GiB e.g. 500MiB." + Environment.NewLine +
+        "                         -MinMaxCommitMiB xx-yy      Only include processes which had at last committed xx-yy MiB at trace end." + Environment.NewLine + 
+        "                         -MinMaxSharedCommitMiB xx-yy Only include processes which had at least a shared commit of xx-yy MiB at trace end." + Environment.NewLine + 
         "                         -MinDiffMB    dd           Include processes which have gained inside one Json file more than xx MB of committed memory." + Environment.NewLine +
         "                         -GlobalDiffMB dd           Same as before but the diff is calculated across all incuded Json files." + Environment.NewLine +
         "                         For other options [-recursive] [-csv] [-NoCSVSeparator] [-TimeFmt] [-NoCmdLine] [-TestsPerRun] [-SkipNTests] [-TestRunIndex] [-TestRunCount] [-MinMaxMsTestTimes] [-ProcessName/pn] [-NewProcess] [-CmdLine]" + Environment.NewLine +
@@ -201,7 +203,7 @@ namespace ETWAnalyzer.Commands
         "                         [-NewProcess] [-CmdLine] [-ShowFullFileName] refer to help of TestRun, Process and CPU (-ProcessFmt, -ShowModuleInfo).  Run \'EtwAnalyzer -help dump\' to get more infos." + Environment.NewLine;
 
         static readonly string DiskHelpString =
-        "  Disk -filedir/fd Extract\\ or xxx.json [-DirLevel dd] [-PerProcess] [-filename *C:*] [-MinMax xx-yy] [-TopN dd nn] [-SortBy order] [-FileOperation op] [-ReverseFileName/rfn] [-Merge] [-recursive] [-csv xxx.csv] [-NoCSVSeparator]" + Environment.NewLine +
+        "  Disk -filedir/fd Extract\\ or xxx.json [-DirLevel dd] [-PerProcess] [-filename *C:*] [-MinMax[Read/Write/Total][Size/Time] xx-yy] [-TopN dd nn] [-SortBy order] [-FileOperation op] [-ReverseFileName/rfn] [-Merge] [-recursive] [-csv xxx.csv] [-NoCSVSeparator]" + Environment.NewLine +
         "                         [-TopNProcesses dd nn] [-TimeFmt s,Local,LocalTime,UTC,UTCTime,Here,HereTime] [-Clip] [-TestsPerRun dd - SkipNTests dd] [-TestRunIndex dd - TestRunCount dd] [-MinMaxMsTestTimes xx-yy ...] [-ProcessName/pn xxx.exe(pid)]" + Environment.NewLine +
         "                         [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-CmdLine substring]" + Environment.NewLine +
         "                         [-ShowFullFileName/-sffn]" + Environment.NewLine +
@@ -216,9 +218,7 @@ namespace ETWAnalyzer.Commands
         "                                                    Warning: Other columns than the filtered one can be misleading. E.g. if you filter for read then in the write column only files will show up from which data was also read!" + Environment.NewLine +
         "                         -SortBy order              Console Output Only. Valid values are: ReadSize,WriteSize,ReadTime,WriteTime,FlushTime,TotalSize and TotalTime (= Read+Write+Flush). Default is TotalTime." + Environment.NewLine +
         "                         -TopN dd nn                Select top dd (skip nn) files based on current sort order." + Environment.NewLine +
-        "                         -MinMax xx-yy              Console Output Only. Filter for rows which have > xx and < yy us of total disk IO time." + Environment.NewLine +
-        "                                                    Filter for read duration  > 1ms : -MinMax 1000 -FileOperation Read" + Environment.NewLine +
-        "                                                    Filter for write duration > 1ms : -MinMax 1000 -FileOperation Write" + Environment.NewLine +
+        "                         -MinMax[Read/Write/Total][Size/Time] xx-yy Filter column wise for corresponding data. You can add units for size B,MB,MiB,GB,GiB,TB and time s,seconds,ms,us,ns. E.g. -MinMaxReadSize 100MB-500MB. Fractions use . as decimal separator." + Environment.NewLine +
         "                         -ReverseFileName/rfn       Reverse file name. Useful with -Clip to keep output clean (no console wraparound regardless how long the file name is)." + Environment.NewLine +
         "                         -Merge                     Merge all selected Json files into one summary output. Useful to get a merged view of a session consisting of multiple ETL files." + Environment.NewLine +
         "                         For other options [-recursive] [-csv] [-NoCSVSeparator] [-TimeFmt] [-TestsPerRun] [-SkipNTests] [-TestRunIndex] [-TestRunCount] [-MinMaxMsTestTimes] [-ProcessName/pn] [-NewProcess] [-CmdLine]" + Environment.NewLine +
@@ -306,23 +306,26 @@ namespace ETWAnalyzer.Commands
 
         static readonly string TcpHelpString =
         "  Tcp -filedir/fd Extract\\ or xxx.json [-IpPort xxx] [-ShowRetransmits]  [-TopN dd nn] [-SortBy ReceivedCount/SentCount/ReceivedSize/SentSize/TotalCount/TotalSize/ConnectTime/DisconnectTime/RetransmissionCount/RetransmissionTime/MaxRetransmissionTime]   " + Environment.NewLine +
-        "       [-SortRetransmitBy Delay/Time] [-MinMaxRetransDelayMs xx-yy] [-MinMaxRetransBytes xx-yy] [-TopNRetrans dd nn] [-Details] [-Tcb 0xdddddd] [-recursive]" + Environment.NewLine + 
+        "       [-SortRetransmitBy Delay/Time] [-MinMaxRetransDelayMs xx-yy] [-MinMaxRetransBytes xx-yy] [-MinMaxRetransCount xx-yy] [-MinMaxSentBytes xx-yy] [-MinMaxReceivedBytes xx-yy] [-TopNRetrans dd nn] [-OnlyClientRetransmit] [-Details] [-Tcb 0xdddddd] " + Environment.NewLine + 
         "       [-TimeFmt s,Local,LocalTime,UTC,UTCTime,Here,HereTime] [-csv xxx.csv] [-NoCSVSeparator] [-NoCmdLine] [-Clip] [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd] [-MinMaxMsTestTimes xx-yy ...] [-ProcessName/pn xxx.exe(pid)] " + Environment.NewLine +
-        "       [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-CmdLine substring]" + Environment.NewLine +
+        "       [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-CmdLine substring] [-recursive]" + Environment.NewLine +
         "                         Print TCP summary and retransmit metrics. To see data you need to enable the Microsoft-Windows-TCPIP ETW provider. Data is sorted by retransmission count by default." + Environment.NewLine +
+        "                         It can detect send retransmissions and duplicate received packets which show up as client retransmission events." + Environment.NewLine + 
         "                         -IpPort xxx                Filter for substrings in source/destination IP and port." + Environment.NewLine +
         "                         -TopN dd nn                Show top n connection by current sort order" + Environment.NewLine +
         "                         -TopNRetrans dd nn         Show top n retransmission events when -ShowRetransmit is used" + Environment.NewLine +
         "                         -SortBy [...]              Default sort order is total bytes. Valid sort orders are ReceivedCount/SentCount/ReceivedSize/SentSize/TotalCount/TotalSize/ConnectTime/DisconnectTime/RetransmissionCount/RetransmissionTime/MaxRetransmissionTime" + Environment.NewLine +
         "                                                    Sort applies to totals per connection. RetransmissionTime is the sum of all Delays. MaxRetransmissionTime sorts connections by highest max retransmission delay." + Environment.NewLine + 
         "                         -SortRetransmitBy [...]    When -ShowRetransmit is used the events are sorted by Time. Valid values are Time/Delay" + Environment.NewLine + 
-        "                         -ShowRetransmit            Show single retransmission events with timing data. Use -timefmt s to convert time to WPA time" + Environment.NewLine + 
+        "                         -ShowRetransmit            Show single retransmission events with timing data. Use -timefmt s to convert time to WPA time. Use this or -Details to get all events into a csv file." + Environment.NewLine + 
+        "                         -OnlyClientRetransmit      Only show client retransmissions which are visible by duplicate received packets with a payload > 1 bytes." + Environment.NewLine + 
         "                         -MinMaxRetransDelayMs xx-yy Filter by retransmission delay in ms. By default all retransmissions are shown." + Environment.NewLine +
-        "                         -MinMaxRetransBytes xx-yy  Filter by retransmission sent packet size in bytes. Default is > 1 bytes because 0 and 1 bytes packets are often just keepalive or ACKs." + Environment.NewLine +
+        "                         -MinMaxRetransBytes xx-yy  Filter every retransmission event by retransmission size (sent/received) in bytes. Default is > 1 bytes because 0 and 1 byte packets are often just ACKs or timer based ping packets." + Environment.NewLine +
+        "                         -MinMaxRetransCount xx-yy  Show only connections which have at least xx retransmission events" + Environment.NewLine + 
         "                         -MinMaxSentBytes xx-yy     Filter connections which have sent at least xx bytes." + Environment.NewLine + 
         "                         -MinMaxReceivedBytes xx-yy Filter connections which have received at least xx bytes." + Environment.NewLine + 
         "                         -Details                   Show retransmit Max/Median/Min, connect/disconnect time, used TCP template setting, TCB pointer." + Environment.NewLine +
-        "                         -Tcb 0xdddddd              Filter by \"connection\" which is actually the Transfer Control Block pointer. This value can be reused if connections are frequently created."+ Environment.NewLine + 
+        "                         -Tcb 0xdddddd              Filter by \"connection\" which is actually the Transfer Control Block pointer. Its value can be reused for new connections."+ Environment.NewLine + 
             Environment.NewLine
         ;
 
@@ -425,8 +428,8 @@ namespace ETWAnalyzer.Commands
         " ETWAnalyzer -dump Disk -filedir xx.json -DirLevel 3 -fileName E:*" + Environment.NewLine +
         "[green]Show Disk IO per process with name *Viewing* in the E:\\Store* folder.[/green]" + Environment.NewLine +
         " ETWAnalyzer -dump Disk -filedir xx.json -PerProcess -fileName E:\\Store* -processname *Viewing*" + Environment.NewLine +
-        "[green]Show Disk IO per file with Read Time > 1ms[/green]" + Environment.NewLine +
-        " ETWAnalyzer -dump Disk -filedir xx.json -FileOperation Read -MinMax 1000 -DirLevel 100" + Environment.NewLine;
+        "[green]Show Disk IO per file with Read Time in range 1-10 ms[/green]" + Environment.NewLine +
+        " ETWAnalyzer -dump Disk -filedir xx.json -MinMaxReadTime 1ms-10ms -DirLevel 100" + Environment.NewLine;
 
 
         static readonly string FileExamples = ExamplesHelpString +
@@ -477,9 +480,16 @@ namespace ETWAnalyzer.Commands
         " ETWAnalyzer -fd xx.json -dump Dns -Details -MinMaxTimeMs 20 -TimeFmt s" + Environment.NewLine;
 
         static readonly string TcpExamples = ExamplesHelpString +
-        "[green]Dump all TCP connections and summary metrics[/green]" + Environment.NewLine +
-        " ETWAnalyzer -fd xx.json -dump Tcp" + Environment.NewLine;
-
+        "[green]Dump all TCP connections and summary metrics sorted by retransmission count.[/green]" + Environment.NewLine +
+        " ETWAnalyzer -fd xx.json -dump Tcp" + Environment.NewLine +
+        "[green]Dump all TCP connections which have sent 4MB - 500MB data sorted by sent bytes.[/green]" + Environment.NewLine +
+        " ETWAnalyzer -fd xx.json -dump Tcp  -SortBy SentSize -MinMaxSentBytes 4MB-500MB" + Environment.NewLine +
+        "[green]Dump all TCP connections for a given port range 32* (substring match).[/green]" + Environment.NewLine +
+        " ETWAnalyzer -fd xx.json -dump Tcp  -IpPort *:32*" + Environment.NewLine +
+        "[green]Dump all retransmission events into a csv file.[/green]" + Environment.NewLine +
+        " ETWAnalyzer -fd xx.json -dump Tcp  -ShowRetransmit -csv Retransmissions.csv" +
+        "[green]Dump all all client retransmission events sorted by delay and omit connections which have no retransmissions in output.[/green]" + Environment.NewLine +
+        " ETWAnalyzer -fd xx.json -dump Tcp -OnlyClientRetransmit -MinMaxRetransCount 1 -ShowRetransmit -SortRetransmitBy Delay";
 
         /// <summary>
         /// Default Helpstring which prints all dump commands
@@ -509,9 +519,15 @@ namespace ETWAnalyzer.Commands
         bool myIsVerbose;
         bool myPrintFiles;
 
-
+        const decimal ByteUnit = 1.0m;
+        const decimal SecondUnit = 1.0m;
+        const decimal MBUnit = 1_000_000m;
+        const decimal MiBUnit = 1024m * 1024m;
+        const decimal MSUnit = 1/1000m;
         /// <summary>
-        /// Sort order which can later be added to more and more commands where it makes sense
+        /// Sort order which can later be added to more and more commands and columns where it makes sense.
+        /// Because not all sort orders make sense in for every command we limit the sort order to a list of allowed values per command which 
+        /// is also used for command specific help strings. 
         /// </summary>
         internal enum SortOrders
         {
@@ -612,11 +628,11 @@ namespace ETWAnalyzer.Commands
 
         public Func<string, bool> ProcessNameFilter { get; private set; } = _ => true;
         public Func<string, bool> CmdLineFilter { get; private set; } = _ => true;
-        public List<string> FileOrDirectoryQueries { get; private set; } = new List<string>();
+        public List<string> FileOrDirectoryQueries { get; private set; } = new();
         public string CSVFile { get; private set; }
         public bool NoCSVSeparator { get; internal set; }
         public int TestsPerRun { get; private set; }
-        public SkipTakeRange TopN { get; private set; } = new SkipTakeRange();
+        public SkipTakeRange TopN { get; private set; } = new();
         public double LastNDays { get; private set; } = double.MaxValue;
         public int TestRunIndex { get; private set; } = -1;
         public int SkipNTests { get; private set; }
@@ -652,7 +668,7 @@ namespace ETWAnalyzer.Commands
 
         // Zero time definitions
         public ZeroTimeModes ZeroTimeMode { get; private set; }
-        public KeyValuePair<string, Func<string, bool>> ZeroTimeFilter { get; private set; } = new KeyValuePair<string, Func<string, bool>>(null, _ => false);
+        public KeyValuePair<string, Func<string, bool>> ZeroTimeFilter { get; private set; } = new(null, _ => false);
         public Func<string, bool> ZeroTimeProcessNameFilter { get; private set; } = (x) => true;
 
 
@@ -665,22 +681,22 @@ namespace ETWAnalyzer.Commands
 
         public Func<string, bool> ModuleFilter { get; private set; } = _ => true;
 
-        public KeyValuePair<string, Func<string, bool>> DllFilter { get; set; } = new KeyValuePair<string, Func<string, bool>>(null, _ => true);
-        public KeyValuePair<string, Func<string, bool>> MissingPdbFilter { get; set; } = new KeyValuePair<string, Func<string, bool>>(null, _ => true);
+        public KeyValuePair<string, Func<string, bool>> DllFilter { get; set; } = new(null, _ => true);
+        public KeyValuePair<string, Func<string, bool>> MissingPdbFilter { get; set; } = new(null, _ => true);
 
-        public KeyValuePair<string, Func<string, bool>> VersionFilter { get; set; } = new KeyValuePair<string, Func<string, bool>>(null, _ => true);
+        public KeyValuePair<string, Func<string, bool>> VersionFilter { get; set; } = new(null, _ => true);
 
         // Dump Exception specific Flags
         public bool FilterExceptions { get; private set; }
-        public KeyValuePair<string, Func<string, bool>> TypeFilter { get; private set; } = new KeyValuePair<string, Func<string, bool>>(null, _ => true);
-        public KeyValuePair<string, Func<string, bool>> MessageFilter { get; private set; } = new KeyValuePair<string, Func<string, bool>>(null, _ => true);
-        public KeyValuePair<string, Func<string, bool>> StackFilter { get; private set; } = new KeyValuePair<string, Func<string, bool>>(null, _ => true);
+        public KeyValuePair<string, Func<string, bool>> TypeFilter { get; private set; } = new(null, _ => true);
+        public KeyValuePair<string, Func<string, bool>> MessageFilter { get; private set; } = new(null, _ => true);
+        public KeyValuePair<string, Func<string, bool>> StackFilter { get; private set; } = new(null, _ => true);
         public int CutStackMin { get; private set; }
         public int CutStackMax { get; private set; }
 
         public const int MaxMessageLength = 500;
         public int MaxMessage { get; private set; } = MaxMessageLength;
-        public MinMaxRange<double> MinMaxExTimeS { get; private set; } = new MinMaxRange<double>();
+        public MinMaxRange<double> MinMaxExTimeS { get; private set; } = new();
         public bool ShowTime { get; private set; }
 
         // Dump Process specific Flags
@@ -688,23 +704,23 @@ namespace ETWAnalyzer.Commands
         public bool ShowFileOnLine { get; private set; }
         public bool Crash { get; private set; }
         public bool ShowUser { get; private set; }
-        public MinMaxRange<double> MinMaxStart { get; private set; } = new MinMaxRange<double>();
+        public MinMaxRange<double> MinMaxStart { get; private set; } = new();
 
         // Dump CPU specific Flags
         public KeyValuePair<string, Func<string, bool>> StackTagFilter { get; private set; }
         public KeyValuePair<string, Func<string, bool>> MethodFilter { get; private set; }
 
-        public SkipTakeRange TopNMethods { get; private set; } = new SkipTakeRange();
+        public SkipTakeRange TopNMethods { get; private set; } = new();
         public bool NoDll { get; private set; } = true;
         public bool NoArgs { get; private set; } = true;
 
-        public MinMaxRange<int> MinMaxCPUMs { get; private set; } = new MinMaxRange<int>();
-        public MinMaxRange<int> MinMaxWaitMs { get; private set; } = new MinMaxRange<int>();
-        public MinMaxRange<int> MinMaxReadyMs { get; private set; } = new MinMaxRange<int>();
+        public MinMaxRange<int> MinMaxCPUMs { get; private set; } = new();
+        public MinMaxRange<int> MinMaxWaitMs { get; private set; } = new();
+        public MinMaxRange<int> MinMaxReadyMs { get; private set; } = new();
 
-        public MinMaxRange<double> MinMaxFirstS { get; private set; } = new MinMaxRange<double>();
-        public MinMaxRange<double> MinMaxLastS { get; private set; } = new MinMaxRange<double>();
-        public MinMaxRange<double> MinMaxDurationS { get; private set; } = new MinMaxRange<double>();
+        public MinMaxRange<double> MinMaxFirstS { get; private set; } = new();
+        public MinMaxRange<double> MinMaxLastS { get; private set; } = new();
+        public MinMaxRange<double> MinMaxDurationS { get; private set; } = new();
 
         public int MethodCutStart { get; private set; }
         public int MethodCutLength { get; private set; } = int.MaxValue;
@@ -713,7 +729,7 @@ namespace ETWAnalyzer.Commands
         public bool ShowDetailsOnMethodLine { get; private set; }
         public bool ShowModuleInfo { get; private set; }
         public bool ShowDriversOnly { get; private set; }
-        public KeyValuePair<string, Func<string, bool>> ShowModuleFilter { get; private set; } = new KeyValuePair<string, Func<string, bool>>(null, _ => true);
+        public KeyValuePair<string, Func<string, bool>> ShowModuleFilter { get; private set; } = new(null, _ => true);
 
         public bool ThreadCount { get; private set; }
         public bool FirstLastDuration { get; private set; }
@@ -724,9 +740,12 @@ namespace ETWAnalyzer.Commands
         // Dump Memory specific Flags
         public bool TotalMemory { get; private set; }
 
-        public int MinWorkingSetMB { get; private set; }
-        public int MinDiffMB { get; private set; }
+        public MinMaxRange<decimal> MinMaxWorkingSetMiB { get; private set; } = new();
+        public MinMaxRange<decimal> MinMaxCommitMiB { get; private set; } = new();
+        public MinMaxRange<decimal> MinMaxSharedCommitMiB { get; private set; } = new();
+        public int MinDiffMB { get; private set; } 
         public int GlobalDiffMB { get; private set; }
+
 
         // Dump Disk specific Flags
         public Func<string, bool> FileNameFilter { get; private set; } = _ => true;
@@ -737,7 +756,15 @@ namespace ETWAnalyzer.Commands
         public bool Merge { get; private set; }
         public bool ReverseFileName { get; private set; }
         public SortOrders SortOrder { get; private set; }
-        public SkipTakeRange TopNProcesses { get; private set; } = new SkipTakeRange();
+        public SkipTakeRange TopNProcesses { get; private set; } = new();
+        public MinMaxRange<decimal> MinMaxReadSizeBytes     { get; private set; } = new();
+        public MinMaxRange<decimal> MinMaxWriteSizeBytes    { get; private set; } = new();
+        public MinMaxRange<decimal> MinMaxTotalSizeBytes    { get; private set; } = new();
+
+        public MinMaxRange<decimal> MinMaxWriteTimeS      { get; private set; } = new();
+        public MinMaxRange<decimal> MinMaxReadTimeS       { get; private set; } = new();
+        public MinMaxRange<decimal> MinMaxTotalTimeS      { get; private set; } = new();
+
 
         // Dump File specific flags
         public bool ShowAllFiles { get; private set; }
@@ -754,7 +781,7 @@ namespace ETWAnalyzer.Commands
 
         // Dump Marker specific Flags
         public Func<string, bool> MarkerFilter { get; private set; } = _ => true;
-        public MinMaxRange<double> MinMaxMarkDiffTime = new MinMaxRange<double>();
+        public MinMaxRange<double> MinMaxMarkDiffTime = new();
 
         // Dump PMC specific flags
         public bool NoCounters { get; private set; }
@@ -763,28 +790,32 @@ namespace ETWAnalyzer.Commands
         public bool ShowCaller { get; private set; }
 
         public int ScalingFactor { get; private set; } = 1;
-        public MinMaxRange<int> MinMaxCount { get; private set; } = new MinMaxRange<int>();
+        public MinMaxRange<int> MinMaxCount { get; private set; } = new();
 
         // Dump Dns specific flags
         public bool ShowAdapter { get; set; }
         public bool ShowReturnCode { get; set; }
-        public KeyValuePair<string, Func<string, bool>> DnsQueryFilter { get; private set; } = new KeyValuePair<string, Func<string, bool>>(null, _ => true);
-        public MinMaxRange<double> MinMaxTimeMs { get; private set; } = new MinMaxRange<double>();
-        public MinMaxRange<double> MinMaxTotalTimeMs { get; private set; } = new MinMaxRange<double>();
+        public KeyValuePair<string, Func<string, bool>> DnsQueryFilter { get; private set; } = new(null, _ => true);
+        public MinMaxRange<double> MinMaxTimeMs { get; private set; } = new();
+        public MinMaxRange<double> MinMaxTotalTimeMs { get; private set; } = new();
         public bool ShowProcess { get; set; }
 
 
         // Dump Tcp specific flags
-        public KeyValuePair<string, Func<string, bool>> IpPortFilter { get; private set; } = new KeyValuePair<string, Func<string, bool>>(null, _ => true);
+        public KeyValuePair<string, Func<string, bool>> IpPortFilter { get; private set; } = new(null, _ => true);
         public MinMaxRange<int> MinMaxRetransDelayMs { get; private set; } = new();
-        public MinMaxRange<int> MinMaxRetransBytes { get; private set; } = new MinMaxRange<int>(2, null);  // by default filter retransmitted packets which are not 0 or 1 bytes which are often just ACKs or keepalive packets.
-        public KeyValuePair<string, Func<string, bool>> TcbFilter { get; private set; } = new KeyValuePair<string, Func<string, bool>>(null, _ => true);
+        public MinMaxRange<int> MinMaxRetransBytes { get; private set; } = new(2, null);  // by default filter retransmitted packets which are not 0 or 1 bytes which are often just ACKs or keepalive packets.
+        public KeyValuePair<string, Func<string, bool>> TcbFilter { get; private set; } = new(null, _ => true);
+
+        public MinMaxRange<int> MinMaxRetransCount { get; private set; } = new();
 
         public bool ShowRetransmit {get; private set; }
         public SortOrders RetransSortOrder { get; private set; }
         public SkipTakeRange TopNRetrans { get; private set; } = new();
         public MinMaxRange<ulong> MinMaxSentBytes { get; private set; } = new();
         public MinMaxRange<ulong> MinMaxReceivedBytes { get; private set; } = new();
+
+        public bool OnlyClientRetransmit { get; private set; }
 
 
         /// <summary>
@@ -933,6 +964,9 @@ namespace ETWAnalyzer.Commands
                     case "-showretransmit":
                         ShowRetransmit = true;
                         break;
+                    case "-onlyclientretransmit":
+                        OnlyClientRetransmit = true;
+                        break;
                     case "-topn":
                         string topN = GetNextNonArg("-topn");
                         string skip = GetNextNonArg("-topn", false); // skip string is optional
@@ -1051,24 +1085,24 @@ namespace ETWAnalyzer.Commands
                         break;
                     case "-cutmethod":
                         string cutmethod = GetNextNonArg("-cutmethod");
-                        KeyValuePair<int, int> cutminmax = cutmethod.GetMinMax(true);
+                        KeyValuePair<int, int> cutminmax = cutmethod.GetMinMax(1, true);
                         MethodCutStart = cutminmax.Key;
                         MethodCutLength = cutminmax.Value;
                         break;
                     case "-minmaxcpums":
                         string minMaxCPUms = GetNextNonArg("-minmaxcpums");
-                        KeyValuePair<int, int> minMax = minMaxCPUms.GetMinMax();
-                        MinMaxCPUMs = new MinMaxRange<int>(minMax.Key, minMax.Value);
+                        KeyValuePair<decimal, decimal> minMax = minMaxCPUms.GetMinMaxDecimal(MSUnit);
+                        MinMaxCPUMs = new MinMaxRange<int>(minMax.Key.ConvertToInt(1/MSUnit),  minMax.Value.ConvertToInt(1/MSUnit) );
                         break;
                     case "-minmaxwaitms":
                         string minMaxWaitms = GetNextNonArg("-minmaxwaitms");
-                        KeyValuePair<int, int> minMaxWait = minMaxWaitms.GetMinMax();
-                        MinMaxWaitMs = new MinMaxRange<int>(minMaxWait.Key, minMaxWait.Value);
+                        KeyValuePair<decimal, decimal> minMaxWait = minMaxWaitms.GetMinMaxDecimal(MSUnit);
+                        MinMaxWaitMs = new MinMaxRange<int>(minMaxWait.Key.ConvertToInt(1/MSUnit), minMaxWait.Value.ConvertToInt(1/MSUnit));
                         break;
                     case "-minmaxreadyms":
                         string minmaxreadyms = GetNextNonArg("-minmaxreadyms");
-                        KeyValuePair<int, int> minMaxReady = minmaxreadyms.GetMinMax();
-                        MinMaxReadyMs = new MinMaxRange<int>(minMaxReady.Key, minMaxReady.Value);
+                        KeyValuePair<decimal, decimal> minMaxReady = minmaxreadyms.GetMinMaxDecimal(MSUnit);
+                        MinMaxReadyMs = new MinMaxRange<int>(minMaxReady.Key.ConvertToInt(1/MSUnit), minMaxReady.Value.ConvertToInt(1/MSUnit));
                         break;
                     case "-minmaxcount":
                         string minmaxcount = GetNextNonArg("-minmaxcount");
@@ -1086,6 +1120,11 @@ namespace ETWAnalyzer.Commands
                         KeyValuePair<int, int> minmaxretransdelayms = minmaxretransdelaymsStr.GetMinMax();
                         MinMaxRetransDelayMs = new MinMaxRange<int>(minmaxretransdelayms.Key, minmaxretransdelayms.Value);
                         break;
+                    case "-minmaxretranscount":
+                        string minmaxretranscountStr = GetNextNonArg("-minmaxretranscount");
+                        KeyValuePair<int, int> minmaxretransCount = minmaxretranscountStr.GetMinMax();
+                        MinMaxRetransCount = new MinMaxRange<int>(minmaxretransCount.Key, minmaxretransCount.Value);
+                        break;
                     case "-minmaxretransbytes":
                         string minmaxretransbytesStr = GetNextNonArg("-minmaxretransbytes");
                         KeyValuePair<int, int> minmaxretransbytes = minmaxretransbytesStr.GetMinMax();
@@ -1093,67 +1132,112 @@ namespace ETWAnalyzer.Commands
                         break;
                     case "-minmaxsentbytes":
                         string minmaxsentbytesStr = GetNextNonArg("-minmaxsentbytes");
-                        KeyValuePair<ulong, ulong> minmaxsentBytes = minmaxsentbytesStr.GetMinMaxULong();
+                        KeyValuePair<ulong, ulong> minmaxsentBytes = minmaxsentbytesStr.GetMinMaxULong(ByteUnit);
                         MinMaxSentBytes = new MinMaxRange<ulong>(minmaxsentBytes.Key, minmaxsentBytes.Value);
                         break;
                     case "-minmaxreceivedbytes":
                         string minmaxreceivedbytesStr = GetNextNonArg("-minmaxreceivedbytes");
-                        KeyValuePair<ulong, ulong> minmaxreceivedBytes = minmaxreceivedbytesStr.GetMinMaxULong();
+                        KeyValuePair<ulong, ulong> minmaxreceivedBytes = minmaxreceivedbytesStr.GetMinMaxULong(ByteUnit);
                         MinMaxReceivedBytes = new MinMaxRange<ulong>(minmaxreceivedBytes.Key, minmaxreceivedBytes.Value);
+                        break;
+                    case "-minmaxreadsize":
+                        string minmaxreadsizeStr = GetNextNonArg("-minmaxreadsize");
+                        KeyValuePair<decimal, decimal> minmaxReadSizeBytes = minmaxreadsizeStr.GetMinMaxDecimal(ByteUnit);
+                        MinMaxReadSizeBytes = new MinMaxRange<decimal>(minmaxReadSizeBytes.Key, minmaxReadSizeBytes.Value);
+                        break;
+                    case "-minmaxwritesize":
+                        string minmaxwritesizeStr = GetNextNonArg("-minmaxwritesize");
+                        KeyValuePair<decimal, decimal> minmaxWriteSizeBytes = minmaxwritesizeStr.GetMinMaxDecimal(ByteUnit);
+                        MinMaxWriteSizeBytes = new MinMaxRange<decimal>(minmaxWriteSizeBytes.Key, minmaxWriteSizeBytes.Value);
+                        break;
+                    case "-minmaxtotalsize":
+                        string minmaxtotalsizeStr = GetNextNonArg("-minmaxtotalsize");
+                        KeyValuePair<decimal, decimal> minmaxtotalSizeBytes = minmaxtotalsizeStr.GetMinMaxDecimal(ByteUnit);
+                        MinMaxTotalSizeBytes = new MinMaxRange<decimal>(minmaxtotalSizeBytes.Key, minmaxtotalSizeBytes.Value);
+                        break;
+                    case "-minmaxreadtime":
+                        string minmaxreadtimeStr = GetNextNonArg("-minmaxreadtime");
+                        KeyValuePair<decimal,decimal> minmaxreadtimeS = minmaxreadtimeStr.GetMinMaxDecimal(SecondUnit);
+                        MinMaxReadTimeS = new MinMaxRange<decimal>(minmaxreadtimeS.Key, minmaxreadtimeS.Value);
+                        break;
+                    case "-minmaxwritetime":
+                        string minmaxwritetimeStr = GetNextNonArg("-minmaxwritetime");
+                        KeyValuePair<decimal, decimal> minmaxWriteTimeS = minmaxwritetimeStr.GetMinMaxDecimal(SecondUnit);
+                        MinMaxWriteTimeS = new MinMaxRange<decimal>(minmaxWriteTimeS.Key, minmaxWriteTimeS.Value);
+                        break;
+                    case "-minmaxtotaltime":
+                        string minmaxtotaltimeStr = GetNextNonArg("-minmaxtotaltime");
+                        KeyValuePair<decimal, decimal> minmaxtotalTimeS = minmaxtotaltimeStr.GetMinMaxDecimal(SecondUnit);
+                        MinMaxTotalTimeS = new MinMaxRange<decimal>(minmaxtotalTimeS.Key, minmaxtotalTimeS.Value);
+                        break;
+                    case "-minmaxworkingsetmib":
+                        string minworkingsetmbStr = GetNextNonArg("-minmaxworkingsetmib");
+                        KeyValuePair<decimal, decimal> minworkingsetmb = minworkingsetmbStr.GetMinMaxDecimal(MiBUnit);
+                        MinMaxWorkingSetMiB = new MinMaxRange<decimal>(minworkingsetmb.Key/ MiBUnit, minworkingsetmb.Value/ MiBUnit);
+                        break;
+                    case "-minmaxcommitmib":
+                        string minmaxcommitMBStr = GetNextNonArg("-minmaxcommitmib");
+                        KeyValuePair<decimal,decimal> minmaxcommitMB = minmaxcommitMBStr.GetMinMaxDecimal(MiBUnit);
+                        MinMaxCommitMiB = new MinMaxRange<decimal>(minmaxcommitMB.Key / MiBUnit, minmaxcommitMB.Value / MiBUnit);
+                        break;
+                    case "-minmaxsharedcommitmib":
+                        string minmaxsharedcommitMBStr = GetNextNonArg("-minmaxsharedcommitmib");
+                        KeyValuePair<decimal, decimal> minmaxsharedcommit = minmaxsharedcommitMBStr.GetMinMaxDecimal(MiBUnit);
+                        MinMaxSharedCommitMiB = new MinMaxRange<decimal>(minmaxsharedcommit.Key / MiBUnit, minmaxsharedcommit.Value / MiBUnit);
                         break;
                     case "-minmaxfirst":
                         string minFirst = GetNextNonArg("-minmaxfirst");
                         string maxFirst = GetNextNonArg("-minmaxfirst", false); // optional
-                        Tuple<double,double> minMaxFirst = minFirst.GetMinMaxDouble(maxFirst);
+                        Tuple<double,double> minMaxFirst = minFirst.GetMinMaxDouble(maxFirst, SecondUnit);
                         MinMaxFirstS = new MinMaxRange<double>(minMaxFirst.Item1, minMaxFirst.Item2);
                         break;
                     case "-minmaxlast":
                         string minLast = GetNextNonArg("-minmaxlast");
                         string maxLast = GetNextNonArg("-minmaxlast", false); // optional
-                        Tuple<double, double> minMaxLast = minLast.GetMinMaxDouble(maxLast);
+                        Tuple<double, double> minMaxLast = minLast.GetMinMaxDouble(maxLast, SecondUnit);
                         MinMaxLastS = new MinMaxRange<double>(minMaxLast.Item1, minMaxLast.Item2);
                         break;
                     case "-minmaxduration":
                         string minDuration = GetNextNonArg("-minmaxduration");
                         string maxDuration = GetNextNonArg("-minmaxduration", false); // optional
-                        Tuple<double, double> minMaxDuration = minDuration.GetMinMaxDouble(maxDuration);
+                        Tuple<double, double> minMaxDuration = minDuration.GetMinMaxDouble(maxDuration, SecondUnit);
                         MinMaxDurationS = new MinMaxRange<double>(minMaxDuration.Item1, minMaxDuration.Item2);
                         break;
                     case "-minmaxextime":
                         string minExTime = GetNextNonArg("-minmaxextime");
                         string maxExTime = GetNextNonArg("-minmaxextime", false); // optional
-                        Tuple<double, double> exMinMax = minExTime.GetMinMaxDouble(maxExTime);
+                        Tuple<double, double> exMinMax = minExTime.GetMinMaxDouble(maxExTime, SecondUnit);
                         MinMaxExTimeS = new MinMaxRange<double>(exMinMax.Item1, exMinMax.Item2);
                         break;
                     case "-minmaxmarkdifftime":
                         string minMarkDiffTime = GetNextNonArg("-minmaxmarkdifftime");
                         string maxMarkDiffTime = GetNextNonArg("-minmaxmarkdifftime", false); // optional
-                        Tuple<double, double> minmaxmarkdifftimedouble = minMarkDiffTime.GetMinMaxDouble(maxMarkDiffTime);
+                        Tuple<double, double> minmaxmarkdifftimedouble = minMarkDiffTime.GetMinMaxDouble(maxMarkDiffTime, SecondUnit);
                         MinMaxMarkDiffTime = new MinMaxRange<double>(minmaxmarkdifftimedouble.Item1, minmaxmarkdifftimedouble.Item2);
                         break;
                     case "-minmaxtimems":
                         string minTimeMs = GetNextNonArg("-minmaxtimems");
                         string maxTimeMs = GetNextNonArg("-minmaxtimems", false); // optional
-                        Tuple<double, double> minMaxTimeMsDouble = minTimeMs.GetMinMaxDouble(maxTimeMs);
+                        Tuple<double, double> minMaxTimeMsDouble = minTimeMs.GetMinMaxDouble(maxTimeMs, MSUnit);
                         MinMaxTimeMs = new MinMaxRange<double>(minMaxTimeMsDouble.Item1, minMaxTimeMsDouble.Item2);
                         break;
                     case "-minmaxtotaltimems":
                         string minTotalTimeMs = GetNextNonArg("-minmaxtimems");
                         string maxTotalTimeMs = GetNextNonArg("-minmaxtimems", false); // optional
-                        Tuple<double, double> minMaxTotalTimeMsDouble = minTotalTimeMs.GetMinMaxDouble(maxTotalTimeMs);
+                        Tuple<double, double> minMaxTotalTimeMsDouble = minTotalTimeMs.GetMinMaxDouble(maxTotalTimeMs, MSUnit);
                         MinMaxTotalTimeMs = new MinMaxRange<double>(minMaxTotalTimeMsDouble.Item1, minMaxTotalTimeMsDouble.Item2);
                         break;
                     case "-minmaxstart":
                         string minStart = GetNextNonArg("-minmaxstart");
                         string maxStart = GetNextNonArg("-minmaxstart", false); //optional
-                        Tuple<double, double> minmaxStartDouble = minStart.GetMinMaxDouble(maxStart);
+                        Tuple<double, double> minmaxStartDouble = minStart.GetMinMaxDouble(maxStart, SecondUnit);
                         MinMaxStart = new MinMaxRange<double>(minmaxStartDouble.Item1, minmaxStartDouble.Item2);
                         break;
                     case "-minmaxmstesttimes":
                         string minMaxTestTime = GetNextNonArg("-minmaxmstesttimes");
                         do
                         {
-                            KeyValuePair<int, int> minmax = minMaxTestTime.GetMinMax();
+                            KeyValuePair<int, int> minmax = minMaxTestTime.GetMinMax(SecondUnit);
                             MinMaxMsTestTimes.Add( new MinMaxRange<int>(minmax.Key, minmax.Value) );
                         } while( (minMaxTestTime = GetNextNonArg("-minmaxmstesttimes", false)) != null);
 
@@ -1248,10 +1332,6 @@ namespace ETWAnalyzer.Commands
                     case "-mindiffmb":
                         string minDiffMB = GetNextNonArg("-mindiffmb");
                         MinDiffMB = int.Parse(minDiffMB, CultureInfo.InvariantCulture);
-                        break;
-                    case "-minworkingsetmb":
-                        string minworkingsetmb = GetNextNonArg("-minworkingsetmb");
-                        MinWorkingSetMB = int.Parse(minworkingsetmb, CultureInfo.InvariantCulture);
                         break;
                     case "-globaldiffmb":
                         string globalDiffMB = GetNextNonArg("-globaldiffmb");
@@ -1400,6 +1480,7 @@ namespace ETWAnalyzer.Commands
                 return lret.TrimEnd(Environment.NewLine.ToCharArray());
             }
         }
+
 
         public override void Run()
         {
@@ -1587,8 +1668,12 @@ namespace ETWAnalyzer.Commands
                             DirectoryLevel = DirectoryLevel,
                             IsPerProcess = IsPerProcess,
                             FileNameFilter = FileNameFilter,
-                            Min = Min,
-                            Max = Max,
+                            MinMaxReadSizeBytes = MinMaxReadSizeBytes,
+                            MinMaxReadTimeS = MinMaxReadTimeS,
+                            MinMaxWriteSizeBytes = MinMaxWriteSizeBytes,
+                            MinMaxWriteTimeS = MinMaxWriteTimeS,
+                            MinMaxTotalTimeS = MinMaxTotalTimeS,
+                            MinMaxTotalSizeBytes = MinMaxTotalSizeBytes,
                             TopN = TopN,
                             TopNProcesses = TopNProcesses,
                             SortOrder = SortOrder,
@@ -1703,7 +1788,9 @@ namespace ETWAnalyzer.Commands
                             MinDiffMB = MinDiffMB,
                             GlobalDiffMB = GlobalDiffMB,
                             TotalMemory = TotalMemory,
-                            MinWorkingSetMB = MinWorkingSetMB,
+                            MinMaxWorkingSetMiB = MinMaxWorkingSetMiB,
+                            MinMaxCommitMiB = MinMaxCommitMiB,
+                            MinMaxSharedCommitMiB = MinMaxSharedCommitMiB,
                             NoCmdLine = NoCmdLine,
                            
                         };
@@ -1901,6 +1988,8 @@ namespace ETWAnalyzer.Commands
                             MinMaxSentBytes = MinMaxSentBytes,
                             MinMaxReceivedBytes = MinMaxReceivedBytes,
                             ShowRetransmit = ShowRetransmit,
+                            OnlyClientRetransmit = OnlyClientRetransmit,
+                            MinMaxRetransCount = MinMaxRetransCount,
                             TcbFilter = TcbFilter,
                         };
                         break;
@@ -1958,7 +2047,7 @@ namespace ETWAnalyzer.Commands
         private static string ReplaceMethodFilterAliases(string methodFilter)
         {
 
-            Dictionary<string, string> aliases = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            Dictionary<string, string> aliases = new(StringComparer.OrdinalIgnoreCase)
             {
                 // Since we support RVA addresses make filtering easier
                 { "*.dll", "*.dll+*" },         

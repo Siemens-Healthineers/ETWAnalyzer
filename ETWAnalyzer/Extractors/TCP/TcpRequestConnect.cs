@@ -121,8 +121,9 @@ namespace ETWAnalyzer.Extractors.TCP
         public bool IsMatching(ulong tcb, DateTimeOffset time)
         {
             return tcb == Tcb && 
-                ( !TimeStampOpen.HasValue  ||  TimeStampOpen.Value < time )  && 
-                ( !TimeStampClose.HasValue ||  time < TimeStampClose.Value);
+                // time needs some wiggle room since we are using different events to detect a connection which are logged during connection handshake at  different times
+                ( !TimeStampOpen.HasValue  ||  (time >= TimeStampOpen.Value-TimeSpan.FromMilliseconds(1)) )  && 
+                ( !TimeStampClose.HasValue ||  (time <= TimeStampClose.Value + TimeSpan.FromMilliseconds(1)) ) ;
         }
 
 
