@@ -290,11 +290,12 @@ namespace ETWAnalyzer.Commands
         "                         -Methods *Func1*;xxx.dll!FullMethodName   Dump one or more methods from all or selected processes. When omitted only process total method call is printed to give an overview." + Environment.NewLine;
 
         static readonly string DnsHelpString =
-        "  Dns -filedir/fd Extract\\ or xxx.json [-DnsQueryFilter xxx] [-Details] [-ShowProcess] [-ShowAdapter] [-ShowReturnCode] [-TopN dd nn] [-SortBy Time/Count] [-MinMaxTotalTimeMs min [max]] [-MinMaxTimeMs min [max]] [-recursive] " + Environment.NewLine +
+        "  Dns -filedir/fd Extract\\ or xxx.json [-DnsQueryFilter xxx] [-Details] [-ShowProcess] [-ShowAdapter] [-ShowReturnCode] [-TopN dd nn] [-TopNDetails dd nn] [-SortBy Time/Count] [-MinMaxTotalTimeMs min [max]] [-MinMaxTimeMs min [max]] [-recursive] " + Environment.NewLine +
         "       [-TimeFmt s,Local,LocalTime,UTC,UTCTime,Here,HereTime] [-csv xxx.csv] [-NoCSVSeparator] [-NoCmdLine] [-Clip] [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd] [-MinMaxMsTestTimes xx-yy ...] [-ProcessName/pn xxx.exe(pid)] " + Environment.NewLine +
         "       [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-CmdLine substring]" + Environment.NewLine +
         "                         Print Dns summary and delay metrics. To see data you need to enable the Microsoft-Windows-DNS-Client ETW provider" + Environment.NewLine +
         "                         -Details                   Display time, duration, process, resolved IP of every Dns request." + Environment.NewLine +
+        "                         -TopNDetails dd nn         Limit detail list to dd elements per DNS Query." + Environment.NewLine + 
         "                         -ShowAdapter               Show which network adapters were used to query Dns." + Environment.NewLine +
         "                         -ShowReturnCode            Show Dns API Win32 return code/s. Success and InvalidParameter are not shown." + Environment.NewLine +
         "                         -ShowProcess               Show for each Dns query the calling process/es in the lines above." + Environment.NewLine +
@@ -797,6 +798,7 @@ namespace ETWAnalyzer.Commands
         public MinMaxRange<double> MinMaxTimeMs { get; private set; } = new();
         public MinMaxRange<double> MinMaxTotalTimeMs { get; private set; } = new();
         public bool ShowProcess { get; set; }
+        public SkipTakeRange TopNDetails { get; set; } = new();
 
 
         // Dump Tcp specific flags
@@ -970,6 +972,12 @@ namespace ETWAnalyzer.Commands
                         string skip = GetNextNonArg("-topn", false); // skip string is optional
                         Tuple<int,int> topNAndSkip = topN.GetRange(skip);
                         TopN = new SkipTakeRange(topNAndSkip.Item1, topNAndSkip.Item2);
+                        break;
+                    case "-topndetails":
+                        string topnDetailsStr = GetNextNonArg("-topndetails");
+                        string topnDetailSkipStr = GetNextNonArg("-topndetails", false); // skip string is optional
+                        Tuple<int, int> topNDetailsSkip = topnDetailsStr.GetRange(topnDetailSkipStr);
+                        TopNDetails = new SkipTakeRange(topNDetailsSkip.Item1, topNDetailsSkip.Item2);
                         break;
                     case "-topnretrans":
                         string topnretrans = GetNextNonArg("-topnretrans");
@@ -1946,6 +1954,7 @@ namespace ETWAnalyzer.Commands
                             
                             NoCmdLine = NoCmdLine,
                             TopN = TopN,
+                            TopNDetails = TopNDetails,
                             SortOrder = SortOrder,
                             ShowDetails = ShowDetails,
                             ShowAdapter = ShowAdapter,
