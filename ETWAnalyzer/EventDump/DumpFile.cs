@@ -169,6 +169,12 @@ namespace ETWAnalyzer.EventDump
             decimal ordering(IGrouping<ETWProcess, MatchData> data) => data.Sum(GetSortValue);
             bool bPrintHeader = true;
 
+            // SortOrder Column strings, count, times, etc
+            long totalSortOrderCount = 0;
+            long totalSortOrderPos = 0;
+            decimal totalSortOrderTimeInus = 0.0m;
+            decimal totalSortOrderSizeInBytes = 0.0m;
+
             int printedFiles = 0;
 
             decimal totalFileReadTimeInus = 0.0m;
@@ -233,11 +239,11 @@ namespace ETWAnalyzer.EventDump
                     {
                         if (ShowDetails)
                         {
-                            ColorConsole.WriteEmbeddedColorLine("[green]Read (Size, MaxFilePos, Duration, Throughput, Count)[/green][yellow]              Write (Size, MaxFilePos, Duration, Throughput, Count)[/yellow][cyan]              Open+Close Duration, Open, Close, SetSecurity Count, Del Count, Rename Count[/cyan]          Directory or File if -dirLevel 100 is used");
+                            ColorConsole.WriteEmbeddedColorLine($"[magenta]SortOrder({SortOrder}) [/magenta] [green]Read (Size, MaxFilePos, Duration, Throughput, Count)[/green][yellow]              Write (Size, MaxFilePos, Duration, Throughput, Count)[/yellow][cyan]              Open+Close Duration, Open, Close, SetSecurity Count, Del Count, Rename Count[/cyan]          Directory or File if -dirLevel 100 is used");
                         }
                         else
                         {
-                            ColorConsole.WriteEmbeddedColorLine("[green]Read (Size, Duration, Count)[/green][yellow]        Write (Size, Duration, Count)[/yellow][cyan]         Open+Close Duration, Open, Close[/cyan]        Directory or File if -dirLevel 100 is used");
+                            ColorConsole.WriteEmbeddedColorLine($"[magenta]SortOrder({SortOrder}) [/magenta] [green]Read (Size, Duration, Count)[/green][yellow]        Write (Size, Duration, Count)[/yellow][cyan]         Open+Close Duration, Open, Close[/cyan]        Directory or File if -dirLevel 100 is used");
                         }
                         bPrintHeader = false;
                     }
@@ -259,16 +265,191 @@ namespace ETWAnalyzer.EventDump
                     decimal readMBPerSeconds = (fileEvent.FileReadSizeInBytes / MB) / ((fileEvent.FileReadTimeInus + 1.0m) / Million);
                     decimal writeMBPerSeconds = (fileEvent.FileWriteSizeInBytes / MB) / ((fileEvent.FileWriteTimeInus + 1.0m) / Million);
 
+                    // switch case for SortOrder Column
+                    switch (SortOrder)
+                    {
+                        case SortOrders.Count:
+                            switch (FileOperationValue)
+                            {
+                                case FileOperation.Read:
+                                    totalSortOrderCount = fileEvent.FileReadCount;
+                                    break;
+                                case FileOperation.Write:
+                                    totalSortOrderCount = fileEvent.FileWriteCount;
+                                    break;
+                                case FileOperation.Open:
+                                    totalSortOrderCount = fileEvent.FileOpenCount;
+                                    break;
+                                case FileOperation.Close:
+                                    totalSortOrderCount = fileEvent.FileCloseCount;
+                                    break;
+                                case FileOperation.SetSecurity:
+                                    totalSortOrderCount = fileEvent.FileSetSecurityCount;
+                                    break;
+                                case FileOperation.Delete:
+                                    totalSortOrderCount = fileEvent.FileDeleteCount;
+                                    break;
+                                case FileOperation.Rename:
+                                    totalSortOrderCount = fileEvent.FileRenameCount;
+                                    break;
+                                case FileOperation.All:
+                                    totalSortOrderCount = fileEvent.FileReadCount + fileEvent.FileWriteCount + fileEvent.FileOpenCount + fileEvent.FileCloseCount +
+                                                          fileEvent.FileSetSecurityCount + fileEvent.FileDeleteCount + fileEvent.FileRenameCount;
+                                    break;
+                            }
+                            break;
+                        case SortOrders.Time:
+                            switch (FileOperationValue)
+                            {
+                                case FileOperation.Read:
+                                    totalSortOrderTimeInus = fileEvent.FileReadTimeInus;
+                                    break;
+                                case FileOperation.Write:
+                                    totalSortOrderTimeInus = fileEvent.FileWriteTimeInus;
+                                    break;
+                                case FileOperation.Open:
+                                    totalSortOrderTimeInus = fileEvent.FileOpenTimeInus;
+                                    break;
+                                case FileOperation.Close:
+                                    totalSortOrderTimeInus = fileEvent.FileCloseTimeInus;
+                                    break;
+                                case FileOperation.SetSecurity:
+                                case FileOperation.Delete:
+                                case FileOperation.Rename:
+                                case FileOperation.All:
+                                    totalSortOrderTimeInus = fileEvent.FileReadTimeInus + fileEvent.FileWriteTimeInus + fileEvent.FileOpenTimeInus + fileEvent.FileCloseTimeInus;
+                                    break;
+                            }
+                            break;
+                        case SortOrders.Size:
+                            switch (FileOperationValue)
+                            {
+                                case FileOperation.Read:
+                                    totalSortOrderSizeInBytes = fileEvent.FileReadSizeInBytes;
+                                    break;
+                                case FileOperation.Write:
+                                    totalSortOrderSizeInBytes = fileEvent.FileWriteSizeInBytes;
+                                    break;
+                                case FileOperation.Open:
+                                case FileOperation.Close:
+                                case FileOperation.SetSecurity:
+                                case FileOperation.Delete:
+                                case FileOperation.Rename:
+                                    totalSortOrderSizeInBytes = 0.0m;
+                                    break;
+                                case FileOperation.All:
+                                    totalSortOrderSizeInBytes = fileEvent.FileReadSizeInBytes + fileEvent.FileWriteSizeInBytes;
+                                    break;
+                            }
+                            break;
+                        case SortOrders.Length:
+                            switch (FileOperationValue)
+                            {
+                                case FileOperation.Read:
+                                    totalSortOrderPos = fileEvent.FileReadMaxPos;
+                                    break;
+                                case FileOperation.Write:
+                                    totalSortOrderPos = fileEvent.FileWriteMaxFilePos;
+                                    break;
+                                case FileOperation.Open:
+                                case FileOperation.Close:
+                                case FileOperation.SetSecurity:
+                                case FileOperation.Delete:
+                                case FileOperation.Rename:
+                                    totalSortOrderPos = 0;
+                                    break;
+                                case FileOperation.All:
+                                    totalSortOrderPos = fileEvent.FileReadMaxPos + fileEvent.FileWriteMaxFilePos;
+                                    break;
+                            }
+                            break;
+                        case SortOrders.ReadSize:
+                            switch(FileOperationValue)
+                            {
+                                case FileOperation.Read:
+                                    totalSortOrderSizeInBytes = fileEvent.FileReadSizeInBytes;
+                                    break;
+                                case FileOperation.All:
+                                    totalSortOrderSizeInBytes = fileEvent.FileReadSizeInBytes + fileEvent.FileWriteSizeInBytes;
+                                    break;
+                            }
+                            break;
+                        case SortOrders.WriteSize:
+                            switch (FileOperationValue)
+                            {
+                                case FileOperation.Write:
+                                    totalSortOrderSizeInBytes = fileEvent.FileWriteSizeInBytes;
+                                    break;
+                                case FileOperation.All:
+                                    totalSortOrderSizeInBytes = fileEvent.FileReadSizeInBytes + fileEvent.FileWriteSizeInBytes;
+                                    break;
+                            }
+                            break;
+                        case SortOrders.TotalSize:
+                            totalSortOrderSizeInBytes = fileEvent.FileReadSizeInBytes + fileEvent.FileWriteSizeInBytes;
+                            break;
+                        case SortOrders.TotalTime:
+                            totalSortOrderTimeInus = fileEvent.TotalFileTime;
+                            break;
+                        case SortOrders.ReadTime:
+                            switch (FileOperationValue)
+                            {
+                                case FileOperation.Read:
+                                    totalSortOrderTimeInus = fileEvent.FileReadTimeInus;
+                                    break;
+                                case FileOperation.All:
+                                    totalSortOrderTimeInus = fileEvent.FileReadTimeInus + fileEvent.FileWriteTimeInus;
+                                    break;
+                            }
+                            break;
+                        case SortOrders.WriteTime:
+                            switch (FileOperationValue)
+                            {
+                                case FileOperation.Write:
+                                    totalSortOrderTimeInus = fileEvent.FileWriteTimeInus;
+                                    break;
+                                case FileOperation.All:
+                                    totalSortOrderTimeInus = fileEvent.FileReadTimeInus + fileEvent.FileWriteTimeInus;
+                                    break;
+                            }
+                            break;
+                        case SortOrders.OpenCloseTime:
+                            totalSortOrderTimeInus = fileEvent.FileReadTimeInus + fileEvent.FileWriteTimeInus;
+                            break;
+                    }
+
+                    string totalSortOrderCell = null;
+                    if (totalSortOrderTimeInus != 0.0m)
+                    {
+                        totalSortOrderCell = $"{totalSortOrderTimeInus / Million:F5}" + "s"; 
+                    }
+                    else if (totalSortOrderSizeInBytes != 0.0m)
+                    {
+                        totalSortOrderCell = $"{totalSortOrderSizeInBytes / KB:N0}" + " KB";
+                    }
+                    else if (totalSortOrderPos != 0.0m)
+                    {
+                        totalSortOrderCell = $"{totalSortOrderPos / KB:N0}" + " KB";
+                    }
+                    else if (totalSortOrderCount != 0)
+                    {
+                        totalSortOrderCell = $"{totalSortOrderCount}";
+                    }
+                    else
+                    {
+                        totalSortOrderCell = null;
+                    }
+
                     // suppress details when total mode is total which shows only per file totals, or per process totals
                     if ( ( !IsTotalMode && !IsPerProcessTotal ) || IsFileTotalMode )
                     {
                         if (ShowDetails)
                         {
-                            ColorConsole.WriteEmbeddedColorLine($"[green]r {fileReadKB,12} KB {fileReadMaxPosKB,12} KB {fileReadTime,10} s {(int)readMBPerSeconds,5} MB/s {fileEvent.FileReadCount,4} [/green] [yellow]w {fileWriteKB,12} KB {fileWriteMaxPos,12} KB {fileWriteTime,10} s {(int)writeMBPerSeconds,5} MB/s {fileEvent.FileWriteCount,4} [/yellow] [cyan] O+C {fileOpenCloseTime,10} s Open: {fileEvent.FileOpenCount,4} Close: {fileEvent.FileCloseCount,4} SetSecurity: {fileEvent.FileSetSecurityCount,3} Del: {fileEvent.FileDeleteCount,3}, Ren: {fileEvent.FileRenameCount,3}[/cyan] {GetFileName(fileEvent.RootLevelDirectory, ReverseFileName)}");
+                            ColorConsole.WriteEmbeddedColorLine($"[magenta]{totalSortOrderCell, 16} [/magenta] [green]r {fileReadKB,12} KB {fileReadMaxPosKB,12} KB {fileReadTime,10} s {(int)readMBPerSeconds,5} MB/s {fileEvent.FileReadCount,4} [/green] [yellow]w {fileWriteKB,12} KB {fileWriteMaxPos,12} KB {fileWriteTime,10} s {(int)writeMBPerSeconds,5} MB/s {fileEvent.FileWriteCount,4} [/yellow] [cyan] O+C {fileOpenCloseTime,10} s Open: {fileEvent.FileOpenCount,4} Close: {fileEvent.FileCloseCount,4} SetSecurity: {fileEvent.FileSetSecurityCount,3} Del: {fileEvent.FileDeleteCount,3}, Ren: {fileEvent.FileRenameCount,3}[/cyan] {GetFileName(fileEvent.RootLevelDirectory, ReverseFileName)}");
                         }
                         else
                         {
-                            ColorConsole.WriteEmbeddedColorLine($"[green]r {fileReadKB,12} KB {fileReadTime,10} s {fileEvent.FileReadCount,4}[/green] [yellow]w {fileWriteKB,12} KB {fileWriteTime,10} s {fileEvent.FileWriteCount,4} [/yellow] [cyan] O+C {fileOpenCloseTime,10} s Open: {fileEvent.FileOpenCount,4} Close: {fileEvent.FileCloseCount,4}[/cyan] {GetFileName(fileEvent.RootLevelDirectory, ReverseFileName)}");
+                            ColorConsole.WriteEmbeddedColorLine($"[magenta]{totalSortOrderCell, 16} [/magenta] [green]r {fileReadKB,12} KB {fileReadTime,10} s {fileEvent.FileReadCount,4}[/green] [yellow]w {fileWriteKB,12} KB {fileWriteTime,10} s {fileEvent.FileWriteCount,4} [/yellow] [cyan] O+C {fileOpenCloseTime,10} s Open: {fileEvent.FileOpenCount,4} Close: {fileEvent.FileCloseCount,4}[/cyan] {GetFileName(fileEvent.RootLevelDirectory, ReverseFileName)}");
                         }
                     }
                     printedFiles++;
@@ -321,11 +502,11 @@ namespace ETWAnalyzer.EventDump
 
                 if (ShowDetails)
                 {
-                    ColorConsole.WriteEmbeddedColorLine($"[red]r {fileReadKB,12} KB {fileReadTimeS,10} s {totalFileReadCount,6}[/red] [magenta]w {fileWriteKB,12} KB {fileWriteTimeS,10} s {totalFileWriteCount,6} [/magenta] [yellow] O+C {fileOpenCloseTimeS,10} s Open: {totalFileOpenCount,6} Close: {totalFileCloseCount,6} SetSecurity: {totalFileSetSecurityCount,6} Del: {totalFileDeleteCount,5}, Ren: {totalFileRenameCount,5}[/yellow] [magenta]TotalTime: {fileTotalTimeS} s[/magenta] File/s Total with {totalFileCount} accessed file/s. Process Count: {processes.Count}");
+                    ColorConsole.WriteEmbeddedColorLine($"[cyan]{"",16} [/cyan] [red]r {fileReadKB,12} KB {fileReadTimeS,10} s {totalFileReadCount,6}[/red] [magenta]w {fileWriteKB,12} KB {fileWriteTimeS,10} s {totalFileWriteCount,6} [/magenta] [yellow] O+C {fileOpenCloseTimeS,10} s Open: {totalFileOpenCount,6} Close: {totalFileCloseCount,6} SetSecurity: {totalFileSetSecurityCount,6} Del: {totalFileDeleteCount,5}, Ren: {totalFileRenameCount,5}[/yellow] [magenta]TotalTime: {fileTotalTimeS} s[/magenta] File/s Total with {totalFileCount} accessed file/s. Process Count: {processes.Count}");
                 }
                 else
                 {
-                    ColorConsole.WriteEmbeddedColorLine($"[red]r {fileReadKB,12} KB {fileReadTimeS,10} s {totalFileReadCount,6}[/red] [magenta]w {fileWriteKB,12} KB {fileWriteTimeS,10} s {totalFileWriteCount,6} [/magenta] [yellow] O+C {fileOpenCloseTimeS,10} s Open: {totalFileOpenCount,6} Close: {totalFileCloseCount,6}[/yellow] [magenta]TotalTime: {fileTotalTimeS} s[/magenta] File/s Total with {totalFileCount} accessed file/s. Process Count: {processes.Count}");
+                    ColorConsole.WriteEmbeddedColorLine($"[cyan]{"",16} [/cyan] [red]r {fileReadKB,12} KB {fileReadTimeS,10} s {totalFileReadCount,6}[/red] [magenta]w {fileWriteKB,12} KB {fileWriteTimeS,10} s {totalFileWriteCount,6} [/magenta] [yellow] O+C {fileOpenCloseTimeS,10} s Open: {totalFileOpenCount,6} Close: {totalFileCloseCount,6}[/yellow] [magenta]TotalTime: {fileTotalTimeS} s[/magenta] File/s Total with {totalFileCount} accessed file/s. Process Count: {processes.Count}");
                 }
             }
         }
