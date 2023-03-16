@@ -54,21 +54,21 @@ namespace ETWAnalyzer_uTest.EventDump
             // 1 GiB = 1024*1024*1024
             // input value 1, 1MiB, 100Mi, 50-100, 1Mib-1Gib
             // -MinMaxWorkingSetMiB MinMaxRange<decimal> MinMaxWorkingSetMiB
-            Assert.Fail();
+            Assert.Fail("TODO");
         }
 
         [Fact]
         public void MinMaxCommitMiB_Filter()
         {
             // -MinMaxCommitMiB   MinMaxRange<decimal> MinMaxCommitMiB
-            Assert.Fail();
+            Assert.Fail("TODO");
         }
 
         [Fact]
         public void MinMaxSharedCommitMiB_Filter()
         {
             //  -MinMaxSharedCommitMiB MinMaxRange<decimal> MinMaxSharedCommitMiB
-            Assert.Fail();
+            Assert.Fail("TODO");
         }
     }
 }

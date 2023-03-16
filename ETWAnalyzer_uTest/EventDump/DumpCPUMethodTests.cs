@@ -503,7 +503,7 @@ namespace ETWAnalyzer_uTest.EventDump
             // -MinMaxFirst    MinMaxRange<double> MinMaxFirstS
             // -MinMaxLast     MinMaxRange<double> MinMaxLastS 
             // -MinmaxDuration MinMaxRange<double> MinMaxDurationS
-            Assert.Fail();
+            Assert.Fail("TODO");
         }
 
         [Fact]
@@ -512,7 +512,7 @@ namespace ETWAnalyzer_uTest.EventDump
             // -MinMaxFirst    MinMaxRange<double> MinMaxFirstS
             // -MinMaxLast     MinMaxRange<double> MinMaxLastS 
             // -MinmaxDuration MinMaxRange<double> MinMaxDurationS
-            Assert.Fail();
+            Assert.Fail("TODO");
         }
 
 
@@ -522,7 +522,7 @@ namespace ETWAnalyzer_uTest.EventDump
             // -MinMaxFirst    MinMaxRange<double> MinMaxFirstS
             // -MinMaxLast     MinMaxRange<double> MinMaxLastS 
             // -MinmaxDuration MinMaxRange<double> MinMaxDurationS
-            Assert.Fail();
+            Assert.Fail("TODO");
         }
 
         [Fact]
