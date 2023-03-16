@@ -265,7 +265,7 @@ namespace ETWAnalyzer.EventDump
                     decimal readMBPerSeconds = (fileEvent.FileReadSizeInBytes / MB) / ((fileEvent.FileReadTimeInus + 1.0m) / Million);
                     decimal writeMBPerSeconds = (fileEvent.FileWriteSizeInBytes / MB) / ((fileEvent.FileWriteTimeInus + 1.0m) / Million);
 
-                    // switch case for SortOrder Column
+                    // switch case for SortOrder Column for console output for specific fileoperationvalue
                     switch (SortOrder)
                     {
                         case SortOrders.Count:
@@ -418,6 +418,7 @@ namespace ETWAnalyzer.EventDump
                             break;
                     }
 
+                    // sortorder column per file totals, or per process totals as a string
                     string totalSortOrderCell = null;
                     if (totalSortOrderTimeInus != 0.0m)
                     {
