@@ -1,9 +1,12 @@
 ﻿//// SPDX-FileCopyrightText:  © 2022 Siemens Healthcare GmbH
 //// SPDX-License-Identifier:   MIT
 
+using ETWAnalyzer;
+using ETWAnalyzer.Commands;
 using ETWAnalyzer.EventDump;
 using ETWAnalyzer.Extract;
 using ETWAnalyzer.Helper;
+using ETWAnalyzer.Infrastructure;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -191,7 +194,7 @@ namespace ETWAnalyzer_uTest.EventDump
         }
 
 
-        static readonly  ETWProcess myCmdProcess = new ETWProcess
+        static readonly ETWProcess myCmdProcess = new ETWProcess
         {
             ProcessID = 1234,
             ProcessName = "cmd.exe",
@@ -206,7 +209,7 @@ namespace ETWAnalyzer_uTest.EventDump
             ProcessName = "2222.exe",
             CmdLine = "hi",
         };
-        static readonly  ProcessKey myCmdProcessKey2 = myCmdProcess2.ToProcessKey();
+        static readonly ProcessKey myCmdProcessKey2 = myCmdProcess2.ToProcessKey();
 
 
         const string File1 = "File1.json";
@@ -215,7 +218,7 @@ namespace ETWAnalyzer_uTest.EventDump
 
         List<DumpCPUMethod.MatchData> CreateTestData()
         {
-          
+
 
             List<DumpCPUMethod.MatchData> data = new List<DumpCPUMethod.MatchData>
             {
@@ -464,6 +467,99 @@ namespace ETWAnalyzer_uTest.EventDump
             Assert.Equal(5900, fileTotals[File2].WaitMs);
             Assert.Equal(1, fileTotals[File3].WaitMs);
         }
+
+
+        KeyValuePair<string, MinMaxRange<int>>[] RangeValues = new KeyValuePair<string, MinMaxRange<int>>[]
+            {
+                new KeyValuePair<string, MinMaxRange<int>>("1", new MinMaxRange<int>(1, int.MaxValue)),
+                new KeyValuePair<string, MinMaxRange<int>>("1ms", new MinMaxRange<int>(1, int.MaxValue)),
+                new KeyValuePair<string, MinMaxRange<int>>("0.5s", new MinMaxRange<int>(500, int.MaxValue)),
+                new KeyValuePair<string, MinMaxRange<int>>("1s-2s", new MinMaxRange<int>(1000, 2000)),
+                new KeyValuePair<string, MinMaxRange<int>>("1ms-5000", new MinMaxRange<int>(1, 5000)),
+                new KeyValuePair<string, MinMaxRange<int>>("500-1000", new MinMaxRange<int>(500, 1000)),
+            };
+
+
+        [Fact]
+        public void CPUMs_Filter()
+        {
+
+            foreach (var input in RangeValues)
+            {
+                var args = new string[] { "-dump", "cpu", "-MinMaxCPUms",input.Key };
+                DumpCommand dump = (DumpCommand)CommandFactory.CreateCommand(args);
+                dump.Parse();
+                dump.Run();
+                DumpCPUMethod cpuDumper = (DumpCPUMethod)dump.myCurrentDumper;
+
+                Assert.Equal(input.Value.Min, cpuDumper.MinMaxCPUMs.Min);
+                Assert.Equal(input.Value.Max, cpuDumper.MinMaxCPUMs.Max);
+            }
+        }
+
+        [Fact]
+        public void MinMaxFirst_Filter()
+        {
+            // -MinMaxFirst    MinMaxRange<double> MinMaxFirstS
+            // -MinMaxLast     MinMaxRange<double> MinMaxLastS 
+            // -MinmaxDuration MinMaxRange<double> MinMaxDurationS
+            Assert.Fail();
+        }
+
+        [Fact]
+        public void MinMaxLast_Filter()
+        {
+            // -MinMaxFirst    MinMaxRange<double> MinMaxFirstS
+            // -MinMaxLast     MinMaxRange<double> MinMaxLastS 
+            // -MinmaxDuration MinMaxRange<double> MinMaxDurationS
+            Assert.Fail();
+        }
+
+
+        [Fact]
+        public void MinmaxDuration_Filter()
+        {
+            // -MinMaxFirst    MinMaxRange<double> MinMaxFirstS
+            // -MinMaxLast     MinMaxRange<double> MinMaxLastS 
+            // -MinmaxDuration MinMaxRange<double> MinMaxDurationS
+            Assert.Fail();
+        }
+
+        [Fact]
+        public void WaitMs_Filter()
+        {
+
+            foreach (var input in RangeValues)
+            {
+                var args = new string[] { "-dump", "cpu", "-MinMaxWaitms", input.Key };
+                DumpCommand dump = (DumpCommand)CommandFactory.CreateCommand(args);
+                dump.Parse();
+                dump.Run();
+                DumpCPUMethod cpuDumper = (DumpCPUMethod)dump.myCurrentDumper;
+
+                Assert.Equal(input.Value.Min, cpuDumper.MinMaxWaitMs.Min);
+                Assert.Equal(input.Value.Max, cpuDumper.MinMaxWaitMs.Max);
+            }
+        }
+
+
+        [Fact]
+        public void ReadyMs_Filter()
+        {
+
+            foreach (var input in RangeValues)
+            {
+                var args = new string[] { "-dump", "cpu", "-MinMaxReadyMS", input.Key };
+                DumpCommand dump = (DumpCommand)CommandFactory.CreateCommand(args);
+                dump.Parse();
+                dump.Run();
+                DumpCPUMethod cpuDumper = (DumpCPUMethod)dump.myCurrentDumper;
+
+                Assert.Equal(input.Value.Min, cpuDumper.MinMaxReadyMs.Min);
+                Assert.Equal(input.Value.Max, cpuDumper.MinMaxReadyMs.Max);
+            }
+        }
+
 
         [Fact]
         public void Total_File_Process_Calculation()
