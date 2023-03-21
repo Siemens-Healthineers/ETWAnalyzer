@@ -19,6 +19,8 @@ namespace ETWAnalyzer.EventDump
         public bool NoCmdLine { get; set; }
         public SkipTakeRange TopN { get; set; }
 
+        public SkipTakeRange TopNDetails { get; set; } = new();
+
         public bool ShowReturnCode { get; set; }
         public bool ShowAdapter { get; set; }
         public DumpCommand.SortOrders SortOrder { get; internal set; }
@@ -157,7 +159,7 @@ namespace ETWAnalyzer.EventDump
                     ColorConsole.WriteEmbeddedColorLine($"[green]{dnsQueryTime,12} s[/green]  {minTime,6} s  [yellow]{maxTime,7} s[/yellow] {data.GroupQueryCount,6} [red]{timedOut,7}[/red] [yellow]{data.GroupQuery,dnsQueryWidth}[/yellow]{returnCode}{adapter}");
                     if (ShowDetails)
                     {
-                        foreach (DnsEvent dnsEvent in data.GroupQueries.OrderBy(x => x.Start))
+                        foreach (DnsEvent dnsEvent in data.GroupQueries.OrderBy(x => x.Start).Skip(TopNDetails.SkipN).Take(TopNDetails.TakeN))
                         {
                             string duration = $"{dnsEvent.Duration.TotalSeconds:F3}".WithWidth(6);
                             string timedOutServer = "";
