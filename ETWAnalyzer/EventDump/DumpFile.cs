@@ -37,6 +37,13 @@ namespace ETWAnalyzer.EventDump
         public bool ShowAllFiles { get; internal set; }
         public int Max { get; internal set; }
         public int Min { get; internal set; }
+        public MinMaxRange<decimal> MinMaxReadSizeBytes { get; internal set; } = new();
+        public MinMaxRange<decimal> MinMaxReadTimeS { get; internal set; } = new();
+        public MinMaxRange<decimal> MinMaxWriteSizeBytes { get; internal set; } = new();
+        public MinMaxRange<decimal> MinMaxWriteTimeS { get; internal set; } = new();
+        public MinMaxRange<decimal> MinMaxTotalTimeS { get; internal set; } = new();
+        public MinMaxRange<decimal> MinMaxTotalSizeBytes { get; internal set; } = new();
+        public MinMaxRange<decimal> MinMaxTotalCount { get; internal set; } = new();
         public FileOperation FileOperationValue { get; internal set; }
         public DumpCommand.SortOrders SortOrder { get; internal set; }
         public bool NoCmdLine { get; internal set; }
@@ -194,7 +201,7 @@ namespace ETWAnalyzer.EventDump
             int totalFileCount = 0;
 
             // sort ascending by r+w Size by default or supplied filter and order
-            foreach (var group in aggregatedByDirectory.GroupBy(grouping).SortAscendingGetTopNLast(ordering, null, TopNProcesses))
+            foreach (var group in aggregatedByDirectory.Where(MinMaxFilter).GroupBy(grouping).SortAscendingGetTopNLast(ordering, null, TopNProcesses))
             {
                 bool bPrintOnce = true;
 
@@ -941,6 +948,24 @@ namespace ETWAnalyzer.EventDump
             SortOrders.Time,
             SortOrders.Default,
         };
+
+        bool MinMaxFilter(MatchData data)
+        {
+            bool lret = true;
+
+            lret = MinMaxReadSizeBytes.IsWithin(data.FileReadSizeInBytes) &&
+                   MinMaxWriteSizeBytes.IsWithin(data.FileWriteSizeInBytes) &&
+                   MinMaxTotalSizeBytes.IsWithin((data.FileWriteSizeInBytes + data.FileReadSizeInBytes)) &&
+                   MinMaxReadTimeS.IsWithin(data.FileReadTimeInus / Million) &&
+                   MinMaxWriteTimeS.IsWithin(data.FileWriteTimeInus / Million) &&
+                   MinMaxTotalTimeS.IsWithin((data.FileWriteTimeInus + data.FileReadTimeInus) / Million) &&
+                   MinMaxTotalCount.IsWithin(data.FileCloseCount + data.FileOpenCount + data.FileReadCount + data.FileWriteCount + data.FileSetSecurityCount +
+                                                data.FileDeleteCount + data.FileRenameCount);
+
+
+            return lret;
+        }
+
 
         public class MatchData
         {

@@ -247,6 +247,7 @@ namespace ETWAnalyzer.Commands
         "                                                    Filter for read operation byte size > 1000000 bytes: -MinMax 1000000 -FileOperation Read -SortBy Size" + Environment.NewLine +
         "                                                    Filter for Open Duration > 10 us: -MinMax 10 -FileOperation Open -SortBy Time " + Environment.NewLine +
         "                                                    Filter by file (read+write) size > 1000000 bytes: -MinMax 1000000 -SortBy Length" + Environment.NewLine +
+        "                         -MinMax[Read/Write/Total][Size/Time] and MinMaxTotalCount xx-yy Filter column wise for corresponding data. You can add units for size: B,MB,MiB,GB,GiB,TB, time: s,seconds,ms,us,ns and count does not require any units. E.g. -MinMaxReadSize 100MB-500MB. Fractions use . as decimal separator." + Environment.NewLine +
         "                         -Details                   Show more columns" + Environment.NewLine +
         "                         -ReverseFileName/rfn       Reverse file name. Useful with -Clip to keep output clean (no console wraparound regardless how long the file name is)." + Environment.NewLine +
         "                         -Merge                     Merge all selected Json files into one summary output. Useful to get a merged view of a session consisting of multiple ETL files." + Environment.NewLine +
@@ -448,8 +449,9 @@ namespace ETWAnalyzer.Commands
         "[green]Dump File IO per process for all files in current directory, filter for write operations, and sort by Write Count[/green]" + Environment.NewLine +
         " ETWAnalyzer -dump File -FileOperation Write -SortBy Count -PerProcess" + Environment.NewLine +
         "[green]Show per process totals for all processes. Print process start/stop/duration besides process name.[/green]" + Environment.NewLine +
-        " ETWAnalyzer -dump File -PerProcess -ShowTotal File -ProcessFmt s" + Environment.NewLine;
-
+        " ETWAnalyzer -dump File -PerProcess -ShowTotal File -ProcessFmt s" + Environment.NewLine +
+        "[green]Show File IO per process for all files in current directory with Read Time in range 1-10 ms[/green]" + Environment.NewLine +
+        " ETWAnalyzer -dump File -filedir xx.json -MinMaxReadTime 1ms-10ms -DirLevel 100" + Environment.NewLine;
 
         static readonly string ThreadPoolExamples = ExamplesHelpString +
         "[green]Show .NET ThreadPool starvation events[/green]" + Environment.NewLine +
@@ -764,6 +766,8 @@ namespace ETWAnalyzer.Commands
         public MinMaxRange<decimal> MinMaxWriteTimeS      { get; private set; } = new();
         public MinMaxRange<decimal> MinMaxReadTimeS       { get; private set; } = new();
         public MinMaxRange<decimal> MinMaxTotalTimeS      { get; private set; } = new();
+
+        public MinMaxRange<decimal> MinMaxTotalCount { get; private set; } = new();
 
 
         // Dump File specific flags
@@ -1169,6 +1173,11 @@ namespace ETWAnalyzer.Commands
                         string minmaxtotaltimeStr = GetNextNonArg("-minmaxtotaltime");
                         KeyValuePair<decimal, decimal> minmaxtotalTimeS = minmaxtotaltimeStr.GetMinMaxDecimal(SecondUnit);
                         MinMaxTotalTimeS = new MinMaxRange<decimal>(minmaxtotalTimeS.Key, minmaxtotalTimeS.Value);
+                        break;
+                    case "-minmaxtotalcount":
+                        string minmaxtotalcountStr = GetNextNonArg("-minmaxtotalcount");
+                        KeyValuePair<int, int> minmaxtotalCount = minmaxtotalcountStr.GetMinMax();
+                        MinMaxTotalCount = new MinMaxRange<decimal>(minmaxtotalCount.Key, minmaxtotalCount.Value);
                         break;
                     case "-minmaxworkingsetmib":
                         string minworkingsetmbStr = GetNextNonArg("-minmaxworkingsetmib");
@@ -1713,6 +1722,13 @@ namespace ETWAnalyzer.Commands
                             FileNameFilter = FileNameFilter,
                             Min = Min,
                             Max = Max,
+                            MinMaxReadSizeBytes = MinMaxReadSizeBytes,
+                            MinMaxReadTimeS = MinMaxReadTimeS,
+                            MinMaxWriteSizeBytes = MinMaxWriteSizeBytes,
+                            MinMaxWriteTimeS = MinMaxWriteTimeS,
+                            MinMaxTotalTimeS = MinMaxTotalTimeS,
+                            MinMaxTotalSizeBytes = MinMaxTotalSizeBytes,
+                            MinMaxTotalCount = MinMaxTotalCount,
                             TopN = TopN,
                             TopNProcesses = TopNProcesses,
                             FileOperationValue = FileOperation,
