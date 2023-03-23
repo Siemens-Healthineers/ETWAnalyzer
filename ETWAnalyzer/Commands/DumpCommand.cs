@@ -488,9 +488,9 @@ namespace ETWAnalyzer.Commands
         "[green]Dump all TCP connections for a given port range 32* (substring match).[/green]" + Environment.NewLine +
         " ETWAnalyzer -fd xx.json -dump Tcp  -IpPort *:32*" + Environment.NewLine +
         "[green]Dump all retransmission events into a csv file.[/green]" + Environment.NewLine +
-        " ETWAnalyzer -fd xx.json -dump Tcp  -ShowRetransmit -csv Retransmissions.csv" +
+        " ETWAnalyzer -fd xx.json -dump Tcp  -ShowRetransmit -csv Retransmissions.csv" + Environment.NewLine +
         "[green]Dump all all client retransmission events sorted by delay and omit connections which have no retransmissions in output.[/green]" + Environment.NewLine +
-        " ETWAnalyzer -fd xx.json -dump Tcp -OnlyClientRetransmit -MinMaxRetransCount 1 -ShowRetransmit -SortRetransmitBy Delay";
+        " ETWAnalyzer -fd xx.json -dump Tcp -OnlyClientRetransmit -MinMaxRetransCount 1 -ShowRetransmit -SortRetransmitBy Delay" + Environment.NewLine ;
 
         /// <summary>
         /// Default Helpstring which prints all dump commands
