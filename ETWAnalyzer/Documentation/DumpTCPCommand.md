@@ -32,7 +32,7 @@ to analyze one file, dump the top 3 connection with highest TCP retransmission c
 sort by latency with *-SortRetransmitBy Delay*. 
 
 
-![](Images/DumpTcp.png)
+![](Images/DumpTCP.png)
 
 ## Data Interpretation
 When a TCP connection is initiated Windows Server editions measure the connection latency. Depending on the measured latency value and other factors Windows 
@@ -47,7 +47,7 @@ There are 4 possible values
 The default is Auto which uses for Windows Server editions DataCenter for low latency connections or Internet for the rest. The biggest
 difference is the retransmission timeout which is 300ms for Internet template and 20ms for the Datacenter template. 
 All client Operating systems (Windows 10/11) will always use the Internet Template. 
-As long as you have not hard configured. The TCP Template settings can be seen for existing connection with the powershell command Get-NetTCPConnection
+The TCP Template settings can be seen for existing connection with the powershell command Get-NetTCPConnection
 
 ```
 PS > Get-NetTCPConnection -remoteAddress 146*
