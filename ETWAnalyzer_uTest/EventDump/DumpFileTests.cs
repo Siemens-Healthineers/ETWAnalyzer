@@ -270,5 +270,42 @@ namespace ETWAnalyzer_uTest.EventDump
             Assert.Equal("The -FileOperation Open is not valid. You can either use All or Write.", exWriteTime.Message);
         }
 
+        [Fact]
+        public void MinMaxReadSizeBytes()
+        {
+
+        }
+
+        [Fact]
+        public void MinMaxWriteSizeBytes()
+        {
+
+        }
+        [Fact]
+        public void MinMaxTotalSizeBytes()
+        {
+
+        }
+        [Fact]
+        public void MinMaxReadTimeS()
+        {
+
+        }
+        [Fact]
+        public void MinMaxWriteTimeS()
+        {
+
+        }
+        [Fact]
+        public void MinMaxTotalTimeS()
+        {
+
+        }
+        [Fact]
+        public void MinMaxTotalCount()
+        {
+
+        }
+
     }
 }
