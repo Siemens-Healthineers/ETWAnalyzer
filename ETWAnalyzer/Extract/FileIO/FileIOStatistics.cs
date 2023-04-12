@@ -19,7 +19,7 @@ namespace ETWAnalyzer.Extract.FileIO
         [Flags]
         internal enum FileOperation
         {
-            Invalid = 0,
+            All = 0,
             Read = 1,
             Write = 2,
             Open = 4,
