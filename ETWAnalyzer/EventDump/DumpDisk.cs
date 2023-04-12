@@ -142,7 +142,7 @@ namespace ETWAnalyzer.EventDump
                     $"[magenta]Totals {(totalFlushtimeInus + totalReadTimeInus + totalWriteTimeInus) / Million:F2} s {(totalReadBytes + totalWriteBytes) / Million:N0} MB[/magenta] " +
                     $"[green]r {totalReadTimeInus / Million:F2} s {totalReadBytes / Million:N0} MB[/green] " +
                     $"[yellow]w {totalWriteTimeInus / Million:F2} s {totalWriteBytes / Million:N0} MB[/yellow] " +
-                    $"[cyan]f {totalFlushtimeInus:F2} s[/cyan] " +
+                    $"[cyan]f {totalFlushtimeInus/ Million:F2} s[/cyan] " +
                     $"{byFileOrNoGroup.Count()} accessed file/s. Process Count: {new HashSet<ETWProcess>(byFileOrNoGroup.SelectMany(x => x.Processes)).Count}"
                     );
             }
