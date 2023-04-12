@@ -258,7 +258,7 @@ abstract class ArgParser : ICommand
         }
         catch (ArgumentException ex)
         {
-            throw new ArgumentException($"Valid {context} values are {GetEnumValues<TEnum>(ignoredValues)}. Input value was {input}. ", ex);
+            throw new ArgumentException($"Valid {context} values are {GetEnumValues<TEnum>(ignoredValues)}. Input value was {input ?? "none"}. ", ex);
         }
     }
 
@@ -271,7 +271,7 @@ abstract class ArgParser : ICommand
         }
         catch(ArgumentException ex)
         {
-            throw new ArgumentException($"Valid {context} values are {String.Join(",", allowedValues.Select(x=>x.ToString()).ToArray())}. Input value was {input}.", ex);
+            throw new ArgumentException($"Valid {context} values are {String.Join(",", allowedValues.Select(x=>x.ToString()).ToArray())}. Input value was: {input ?? "none"}.", ex);
         }
     }
 
