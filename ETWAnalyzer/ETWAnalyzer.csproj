@@ -84,6 +84,7 @@
     <PackageReference Include="Microsoft.Windows.EventTracing.Processing.All">
       <Version>1.11.109</Version>
     </PackageReference>
+    <PackageReference Include="Microsoft.Windows.EventTracing.Processing.Toolkit" Version="1.11.0" />
     <PackageReference Include="Newtonsoft.Json">
       <Version>13.0.2</Version>
     </PackageReference>
