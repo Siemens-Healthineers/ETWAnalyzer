@@ -992,7 +992,7 @@ namespace ETWAnalyzer.EventDump
             SortOrders.Default,
         };
 
-        bool MinMaxFilter(MatchData data)
+        internal bool MinMaxFilter(MatchData data)
         {
             bool lret = true;
 
