@@ -199,7 +199,7 @@ namespace ETWAnalyzer.EventDump
                         DiffMb = (long) mem2.CommitInMiB - (long) mem1.CommitInMiB;
                         if ( Math.Abs(DiffMb) >= MinDiffMB)
                         {
-                            ModuleDefinition processModule = ShowModuleInfo ? file.Extract.Modules.FindModule(process.ProcessName, process) : null;
+                            ModuleDefinition processModule = ShowModuleInfo ? file.Extract?.Modules?.FindModule(process.ProcessName, process) : null;
 
                             if( !IsMatchingModule(processModule))
                             {
