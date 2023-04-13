@@ -8,6 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Xunit;
+using static ETWAnalyzer.Commands.DumpCommand;
 using static ETWAnalyzer.EventDump.DumpFile;
 
 namespace ETWAnalyzer_uTest.EventDump
@@ -96,8 +97,8 @@ namespace ETWAnalyzer_uTest.EventDump
 
             dump.SortOrder = ETWAnalyzer.Commands.DumpCommand.SortOrders.Size;
             dump.FileOperationValue = ETWAnalyzer.Extract.FileIO.FileIOStatistics.FileOperation.Delete;
-            decimal countDelete = dump.GetSortValue(groupedData01);
-            Assert.Equal(3000, countDelete);
+            Assert.Equal(3000, dump.GetSortValue(groupedData01));
+            Assert.Equal(SortOrders.Count, dump.SortOrder);
 
             dump.SortOrder = ETWAnalyzer.Commands.DumpCommand.SortOrders.Size;
             dump.FileOperationValue = ETWAnalyzer.Extract.FileIO.FileIOStatistics.FileOperation.Close;
