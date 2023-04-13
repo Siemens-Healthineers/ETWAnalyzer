@@ -1,7 +1,9 @@
 ﻿using ETWAnalyzer.EventDump;
+using ETWAnalyzer.Infrastructure;
 using Microsoft.Windows.EventTracing.Disk;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -94,18 +96,18 @@ namespace ETWAnalyzer_uTest.EventDump
 
             dump.SortOrder = ETWAnalyzer.Commands.DumpCommand.SortOrders.Size;
             dump.FileOperationValue = ETWAnalyzer.Extract.FileIO.FileIOStatistics.FileOperation.Delete;
-            var exDelete = Assert.Throws<ArgumentException>(() => dump.GetSortValue(groupedData01));
-            Assert.Equal($"You need to set -FileOperation to sort by a specific row. Entered value is Delete. Possible values are Read, Write.", exDelete.Message);
+            decimal countDelete = dump.GetSortValue(groupedData01);
+            Assert.Equal(3000, countDelete);
 
             dump.SortOrder = ETWAnalyzer.Commands.DumpCommand.SortOrders.Size;
             dump.FileOperationValue = ETWAnalyzer.Extract.FileIO.FileIOStatistics.FileOperation.Close;
-            var exClose = Assert.Throws<ArgumentException>(() => dump.GetSortValue(groupedData01));
-            Assert.Equal($"You need to set -FileOperation to sort by a specific row. Entered value is Close. Possible values are Read, Write.", exClose.Message);
+            decimal countClose = dump.GetSortValue(groupedData01);
+            Assert.Equal(300, countClose);
 
             dump.SortOrder = ETWAnalyzer.Commands.DumpCommand.SortOrders.Size;
             dump.FileOperationValue = ETWAnalyzer.Extract.FileIO.FileIOStatistics.FileOperation.Open;
-            var exOpen = Assert.Throws<ArgumentException>(() => dump.GetSortValue(groupedData01));
-            Assert.Equal($"You need to set -FileOperation to sort by a specific row. Entered value is Open. Possible values are Read, Write.", exOpen.Message);
+            decimal countOpen = dump.GetSortValue(groupedData01);
+            Assert.Equal(50, countOpen);
 
             dump.SortOrder = ETWAnalyzer.Commands.DumpCommand.SortOrders.Size;
             dump.FileOperationValue = ETWAnalyzer.Extract.FileIO.FileIOStatistics.FileOperation.Read;
@@ -120,13 +122,13 @@ namespace ETWAnalyzer_uTest.EventDump
             //to be checked in dumpfile
             dump.SortOrder = ETWAnalyzer.Commands.DumpCommand.SortOrders.Size;
             dump.FileOperationValue = ETWAnalyzer.Extract.FileIO.FileIOStatistics.FileOperation.SetSecurity;
-            var exSecurity = Assert.Throws<ArgumentException>(() => dump.GetSortValue(groupedData01));
-            Assert.Equal($"You need to set -FileOperation to sort by a specific row. Entered value is SetSecurity. Possible values are Read, Write.", exSecurity.Message);
+            decimal countSetSecurity = dump.GetSortValue(groupedData01);
+            Assert.Equal(900, countSetSecurity);
 
             dump.SortOrder = ETWAnalyzer.Commands.DumpCommand.SortOrders.Size;
             dump.FileOperationValue = ETWAnalyzer.Extract.FileIO.FileIOStatistics.FileOperation.Rename;
-            var exRename = Assert.Throws<ArgumentException>(() => dump.GetSortValue(groupedData01));
-            Assert.Equal($"You need to set -FileOperation to sort by a specific row. Entered value is Rename. Possible values are Read, Write.", exRename.Message);
+            decimal countRename = dump.GetSortValue(groupedData01);
+            Assert.Equal(150, countRename);
         }
 
         [Fact]
@@ -220,7 +222,7 @@ namespace ETWAnalyzer_uTest.EventDump
             dump.SortOrder = ETWAnalyzer.Commands.DumpCommand.SortOrders.Length;
             dump.FileOperationValue = ETWAnalyzer.Extract.FileIO.FileIOStatistics.FileOperation.All;
             decimal lengthAll = dump.GetSortValue(groupedData01);
-            Assert.Equal(1500, lengthAll);
+            Assert.Equal(1000, lengthAll);
         }
 
         [Fact]
@@ -270,41 +272,135 @@ namespace ETWAnalyzer_uTest.EventDump
             Assert.Equal("The -FileOperation Open is not valid. You can either use All or Write.", exWriteTime.Message);
         }
 
+        
         [Fact]
         public void MinMaxReadSizeBytes()
         {
+            DumpFile dump1 = new();
+            MatchData empty = new();
 
+            Assert.True(dump1.MinMaxFilter(empty));
+            empty.FileReadSizeInBytes = 100;
+            Assert.True(dump1.MinMaxFilter(empty));
+
+            dump1.MinMaxReadSizeBytes =  new MinMaxRange<decimal>(101, 200);
+            Assert.False(dump1.MinMaxFilter(empty));
+            empty.FileReadSizeInBytes = 101;
+            Assert.True(dump1.MinMaxFilter(empty));
         }
 
         [Fact]
         public void MinMaxWriteSizeBytes()
         {
+            DumpFile dump1 = new();
+            MatchData empty = new();
 
+            Assert.True(dump1.MinMaxFilter(empty));
+            empty.FileWriteSizeInBytes = 100;
+            Assert.True(dump1.MinMaxFilter(empty));
+
+            dump1.MinMaxWriteSizeBytes = new MinMaxRange<decimal>(101, 200);
+            Assert.False(dump1.MinMaxFilter(empty));
+            empty.FileWriteSizeInBytes = 101;
+            Assert.True(dump1.MinMaxFilter(empty));
         }
         [Fact]
         public void MinMaxTotalSizeBytes()
         {
+            DumpFile dump1 = new();
+            MatchData empty = new();
 
+            Assert.True(dump1.MinMaxFilter(empty));
+            empty.FileReadSizeInBytes = 100;
+            empty.FileWriteSizeInBytes = 100;
+            Assert.True(dump1.MinMaxFilter(empty));
+
+            dump1.MinMaxTotalSizeBytes = new MinMaxRange<decimal>(202, 300);
+            Assert.False(dump1.MinMaxFilter(empty));
+            empty.FileReadSizeInBytes = 101;
+            empty.FileWriteSizeInBytes = 101;
+            Assert.True(dump1.MinMaxFilter(empty));
         }
         [Fact]
         public void MinMaxReadTimeS()
         {
+            DumpFile dump1 = new();
+            MatchData empty = new();
 
+            Assert.True(dump1.MinMaxFilter(empty));
+            empty.FileReadTimeInus = 1_000_000;
+            Assert.True(dump1.MinMaxFilter(empty));
+
+            dump1.MinMaxReadTimeS = new MinMaxRange<decimal>(11, 20);
+            Assert.False(dump1.MinMaxFilter(empty));
+            empty.FileReadTimeInus = 11_000_000;
+            Assert.True(dump1.MinMaxFilter(empty));
         }
         [Fact]
         public void MinMaxWriteTimeS()
         {
+            DumpFile dump1 = new();
+            MatchData empty = new();
 
+            Assert.True(dump1.MinMaxFilter(empty));
+            empty.FileWriteTimeInus = 1_000_000;
+            Assert.True(dump1.MinMaxFilter(empty));
+
+            dump1.MinMaxWriteTimeS = new MinMaxRange<decimal>(11, 20);
+            Assert.False(dump1.MinMaxFilter(empty));
+            empty.FileWriteTimeInus = 11_000_000;
+            Assert.True(dump1.MinMaxFilter(empty));
         }
         [Fact]
         public void MinMaxTotalTimeS()
         {
+            DumpFile dump1 = new();
+            MatchData empty = new();
 
+            Assert.True(dump1.MinMaxFilter(empty));
+            empty.FileReadTimeInus = 1_000_000;
+            empty.FileWriteTimeInus = 1_000_000;
+            Assert.True(dump1.MinMaxFilter(empty));
+
+            dump1.MinMaxTotalTimeS = new MinMaxRange<decimal>(22, 32);
+            Assert.False(dump1.MinMaxFilter(empty));
+            empty.FileReadTimeInus = 11_000_000;
+            empty.FileWriteTimeInus = 11_000_000;
+            Assert.True(dump1.MinMaxFilter(empty));
+
+            empty.FileReadTimeInus = 21_000_000;
+            empty.FileWriteTimeInus = 21_000_000;
+            Assert.False(dump1.MinMaxFilter(empty));
         }
         [Fact]
         public void MinMaxTotalCount()
         {
+            DumpFile dump1 = new();
+            MatchData empty = new();
 
+            Assert.True(dump1.MinMaxFilter(empty));
+            empty.FileOpenCount = 100;
+            empty.FileCloseCount = 200;
+            empty.FileReadCount = 100;
+            empty.FileWriteCount = 250;
+            empty.FileSetSecurityCount = 150;
+            empty.FileDeleteCount = 105;
+            empty.FileRenameCount = 205;
+            Assert.True(dump1.MinMaxFilter(empty));
+
+            dump1.MinMaxTotalCount = new MinMaxRange<decimal>(1000, 5000);
+            Assert.True(dump1.MinMaxFilter(empty));
+
+            dump1.MinMaxTotalCount = new MinMaxRange<decimal>(2000, 5000);
+            Assert.False(dump1.MinMaxFilter(empty));
+            empty.FileOpenCount = 1000;
+            empty.FileCloseCount = 2000;
+            empty.FileReadCount = 100;
+            empty.FileWriteCount = 250;
+            empty.FileSetSecurityCount = 150;
+            empty.FileDeleteCount = 105;
+            empty.FileRenameCount = 205;
+            Assert.True(dump1.MinMaxFilter(empty));
         }
 
     }
