@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Xunit;
+using static ETWAnalyzer.Commands.DumpCommand;
 using static ETWAnalyzer.EventDump.DumpFile;
 
 namespace ETWAnalyzer_uTest.EventDump
@@ -94,8 +95,8 @@ namespace ETWAnalyzer_uTest.EventDump
 
             dump.SortOrder = ETWAnalyzer.Commands.DumpCommand.SortOrders.Size;
             dump.FileOperationValue = ETWAnalyzer.Extract.FileIO.FileIOStatistics.FileOperation.Delete;
-            var exDelete = Assert.Throws<ArgumentException>(() => dump.GetSortValue(groupedData01));
-            Assert.Equal($"You need to set -FileOperation to sort by a specific row. Entered value is Delete. Possible values are Read, Write.", exDelete.Message);
+            Assert.Equal(3000, dump.GetSortValue(groupedData01));
+            Assert.Equal(SortOrders.Count, dump.SortOrder);
 
             dump.SortOrder = ETWAnalyzer.Commands.DumpCommand.SortOrders.Size;
             dump.FileOperationValue = ETWAnalyzer.Extract.FileIO.FileIOStatistics.FileOperation.Close;
@@ -220,7 +221,7 @@ namespace ETWAnalyzer_uTest.EventDump
             dump.SortOrder = ETWAnalyzer.Commands.DumpCommand.SortOrders.Length;
             dump.FileOperationValue = ETWAnalyzer.Extract.FileIO.FileIOStatistics.FileOperation.All;
             decimal lengthAll = dump.GetSortValue(groupedData01);
-            Assert.Equal(1500, lengthAll);
+            Assert.Equal(1000, lengthAll);
         }
 
         [Fact]
