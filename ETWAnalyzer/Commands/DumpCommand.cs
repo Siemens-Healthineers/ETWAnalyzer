@@ -225,28 +225,23 @@ namespace ETWAnalyzer.Commands
         "                         [-ShowFullFileName] refer to help of TestRun and Process. Run \'EtwAnalyzer -help dump\' to get more infos." + Environment.NewLine;
 
         static readonly string FileHelpString =
-        "  File -filedir/fd Extract\\ or xxx.json [-DirLevel dd] [-PerProcess] [-filename *C:*] [-ShowTotal [Total/Process/File]] [-MinMax xx-yy] [-TopN dd nn] [-SortBy order] [-FileOperation op] [-ReverseFileName/rfn] [-Merge] [-Details] [-recursive] " + Environment.NewLine +
+        "  File -filedir/fd Extract\\ or xxx.json [-DirLevel dd] [-PerProcess] [-filename *C:*] [-ShowTotal [Total/Process/File]] [-TopN dd nn] [-SortBy order] [-FileOperation op] [-ReverseFileName/rfn] [-Merge] [-Details] [-recursive] " + Environment.NewLine +
         "                         [-TopNProcesses dd nn] [-csv xxx.csv] [-NoCSVSeparator] [-TimeFmt s,Local,LocalTime,UTC,UTCTime,Here,HereTime] [-ProcessFmt timefmt] [-Clip] [-TestsPerRun dd -SkipNTests dd] " + Environment.NewLine +
         "                         [-TestRunIndex dd -TestRunCount dd] [-MinMaxMsTestTimes xx-yy ...] [-ProcessName/pn xxx.exe(pid)] [-NoCmdLine] [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-CmdLine substring]" + Environment.NewLine +
-        "                         [-ShowFullFileName/-sffn]" + Environment.NewLine +
+        "                         [-ShowFullFileName/-sffn] [-MinMax[Read/Write/Total][Size/Time] xx-yy] [-MinMaxTotalCount xx-yy]" + Environment.NewLine +
         "                         Print File IO metrics to console or to a CSV file if -csv is used. To get output -extract File, All or Default must have been used during extraction." + Environment.NewLine +
         "                         The extracted data is an exact summary per file and process. Unlike Disk IO, File IO tracing captures all file accesses regardless if the data was e.g. read from disk or file system cache." + Environment.NewLine +
         "                         -DirLevel dd               Print File IO per directory up to n levels. Default is 0 which shows summary per drive. -Dirlevel 100 will give a per file summary." + Environment.NewLine +
         "                         -PerProcess                Print File IO per process. If you use -processname as filter you can restrict IO to all files where the process was involved. " + Environment.NewLine +
         "                         -TopNProcesses dd nn       Select top dd (skip nn) processes when -PerProcess is enabled." + Environment.NewLine +
         "                         -FileName *C:*             Filter IO for specific files only. Multiple filters are separated by ;" + Environment.NewLine +
-        "                         -FileOperation op          Filter for rows where only specific file operations are present. " + Environment.NewLine +
-        "                                                    Possible values are " + String.Join(",", Enum.GetNames(typeof(Extract.FileIO.FileIOStatistics.FileOperation)).Where(x => x != "Invalid")) + Environment.NewLine +
-        "                                                    Warning: Other columns than the filtered one can be misleading. " + Environment.NewLine +
-        "                                                    E.g. if you filter for open, only the files which were opened are showing up in read/write metrics. IO for already opened files is suppressed!" + Environment.NewLine +
-        "                         -SortBy order              Console Output Only. Valid values are: Count (Open+Close+Read+Write+SetSecurity),ReadSize,WriteSize,ReadTime,WriteTime,TotalSize and TotalTime (= Open+Close+Read+Write). Default is TotalTime." + Environment.NewLine +
+        "                         -FileOperation op          Filter files for specific operations." + Environment.NewLine +
+        "                                                    Possible values are " + String.Join(",", Enum.GetNames(typeof(Extract.FileIO.FileIOStatistics.FileOperation))) + Environment.NewLine +
+        "                         -SortBy order              Console Output Only. Valid values are: Count (Open+Close+Read+Write+SetSecurity),ReadSize,WriteSize,ReadTime,WriteTime,Length,TotalSize; TotalTime = Time (= Open+Close+Read+Write); OpenCloseTime (= Open+Close).  Default is TotalTime." + Environment.NewLine +
+        "                                                    Depending on sort order a dynamic column is added to show the values by which the sort is performed." + Environment.NewLine + 
         "                         -TopN dd nn                Select top dd files based on current sort order." + Environment.NewLine +
-        "                         -MinMax xx-yy              Console Output Only. Filter for rows which have > xx and < yy. The -FileOperation, -SortBy values define on which values it filters." + Environment.NewLine +
-        "                                                    You can define filters for time,size,length,count of open/close/read/write/setsecurity operations." + Environment.NewLine +
-        "                                                    Filter for read operation Count > 500: -MinMax 500 -FileOperation Read -SortBy Count" + Environment.NewLine +
-        "                                                    Filter for read operation byte size > 1000000 bytes: -MinMax 1000000 -FileOperation Read -SortBy Size" + Environment.NewLine +
-        "                                                    Filter for Open Duration > 10 us: -MinMax 10 -FileOperation Open -SortBy Time " + Environment.NewLine +
-        "                                                    Filter by file (read+write) size > 1000000 bytes: -MinMax 1000000 -SortBy Length" + Environment.NewLine +
+        "                         -MinMax[Read/Write/Total][Size/Time] and MinMaxTotalCount xx-yy Filter column wise for corresponding data. You can add units for size: B,MB,MiB,GB,GiB,TB, time: s,seconds,ms,us,ns, count does not require any units." + Environment.NewLine + 
+        "                                                    E.g. -MinMaxReadSize 100MB-500MB. Fractions use . as decimal separator." + Environment.NewLine +
         "                         -Details                   Show more columns" + Environment.NewLine +
         "                         -ReverseFileName/rfn       Reverse file name. Useful with -Clip to keep output clean (no console wraparound regardless how long the file name is)." + Environment.NewLine +
         "                         -Merge                     Merge all selected Json files into one summary output. Useful to get a merged view of a session consisting of multiple ETL files." + Environment.NewLine +
@@ -440,8 +435,8 @@ namespace ETWAnalyzer.Commands
         " ETWAnalyzer -dump File -filedir xx.json -fileName E:\\lc\\c\\* -processname *Workflow*" + Environment.NewLine +
         "[green]Show File IO per first 3 sub folders of process Workflow below the folder E:\\lc\\c\\* of all extracted files in one metric[/green]" + Environment.NewLine +
         " ETWAnalyzer -dump File -filedir xx.json -Merge -DirLevel 3 -fileName E:\\lc\\c\\* -processname *Workflow*" + Environment.NewLine +
-        "[green]Show File IO at file level where Read+Write > 100 KB. Reverse file name and clip to console buffer width to prevent wraparound if file name is too long[/green]" + Environment.NewLine +
-        " ETWAnalyzer -dump File -filedir xx.json -DirLevel 100 -MinMax 100000 -Clip -ReverseFileName" + Environment.NewLine +
+        "[green]Show File IO at file level where Read+Write > 100 KB (100*1000 bytes or use 100 KiB for 100*1024 bytes). Reverse file name and clip to console buffer width to prevent wraparound if file name is too long[/green]" + Environment.NewLine +
+        " ETWAnalyzer -dump File -filedir xx.json -DirLevel 100 -MinMaxTotalSize 100KB -Clip -ReverseFileName" + Environment.NewLine +
         "[green]Dump File IO data of process Workflow to CSV File. If a directory of files is given all data is dumped into the same CSV[/green]" + Environment.NewLine +
         " ETWAnalyzer -dump File -filedir xx.json -processName *Workflow* -csv Workflow.csv" + Environment.NewLine +
         "[green]Dump File IO per process which is setting File Security. To get the times use the -csv option to export additional data to a file[/green]" + Environment.NewLine +
@@ -449,7 +444,11 @@ namespace ETWAnalyzer.Commands
         "[green]Dump File IO per process for all files in current directory, filter for write operations, and sort by Write Count[/green]" + Environment.NewLine +
         " ETWAnalyzer -dump File -FileOperation Write -SortBy Count -PerProcess" + Environment.NewLine +
         "[green]Show per process totals for all processes. Print process start/stop/duration besides process name.[/green]" + Environment.NewLine +
-        " ETWAnalyzer -dump File -PerProcess -ShowTotal File -ProcessFmt s" + Environment.NewLine;
+        " ETWAnalyzer -dump File -PerProcess -ShowTotal File -ProcessFmt s" + Environment.NewLine +
+        "[green]Show File IO per process for all files in current directory with Read Time in range 1-10 ms[/green]" + Environment.NewLine +
+        " ETWAnalyzer -dump File -filedir xx.json -MinMaxReadTime 1ms-10ms -DirLevel 100" + Environment.NewLine +
+        "[green]Show files with at least 50 read operations (sorted by read count) by filtering for file read data which will null out all other columns.[/green]" + Environment.NewLine +
+        " ETWAnalyzer -dump File -filedir xx.json -FileOperation Read -MinMaxTotalCount 50 -SortBy Count -DirLevel 100" + Environment.NewLine;
 
 
         static readonly string ThreadPoolExamples = ExamplesHelpString +
@@ -522,9 +521,9 @@ namespace ETWAnalyzer.Commands
 
         const decimal ByteUnit = 1.0m;
         const decimal SecondUnit = 1.0m;
-        const decimal MBUnit = 1_000_000m;
         const decimal MiBUnit = 1024m * 1024m;
         const decimal MSUnit = 1/1000m;
+
         /// <summary>
         /// Sort order which can later be added to more and more commands and columns where it makes sense.
         /// Because not all sort orders make sense in for every command we limit the sort order to a list of allowed values per command which 
@@ -555,6 +554,7 @@ namespace ETWAnalyzer.Commands
             WriteSize,
             WriteTime,
             FlushTime,
+            OpenCloseTime,
             TotalSize,
             TotalTime,
 
@@ -571,7 +571,8 @@ namespace ETWAnalyzer.Commands
             MaxRetransmissionTime,
 
             // Retransmit Orders
-            Delay
+            Delay,
+
         }
 
         const string SortRetransmitContext = "-SortRetransmitBy";
@@ -764,11 +765,11 @@ namespace ETWAnalyzer.Commands
         public MinMaxRange<decimal> MinMaxReadTimeS       { get; private set; } = new();
         public MinMaxRange<decimal> MinMaxTotalTimeS      { get; private set; } = new();
 
+        public MinMaxRange<decimal> MinMaxTotalCount { get; private set; } = new();
+
 
         // Dump File specific flags
         public bool ShowAllFiles { get; private set; }
-        public int Min { get; private set; }
-        public int Max { get; private set; }
         public Extract.FileIO.FileIOStatistics.FileOperation FileOperation { get; private set; }
 
 
@@ -1071,7 +1072,7 @@ namespace ETWAnalyzer.Commands
                         break;
                     case "-zerotime":
                     case "-zt":
-                        string zerotimeType = GetNextNonArg("-zerotime");
+                        string zerotimeType = GetNextNonArg("-zerotime", false);
                         ParseEnum<ZeroTimeModes>("ZeroTimeModes", zerotimeType,
                             () => { ZeroTimeMode = (ZeroTimeModes)Enum.Parse(typeof(ZeroTimeModes), zerotimeType, true); },
                             ZeroTimeModes.None);
@@ -1114,12 +1115,6 @@ namespace ETWAnalyzer.Commands
                         string minmaxcount = GetNextNonArg("-minmaxcount");
                         KeyValuePair<int, int> minMaxCount = minmaxcount.GetMinMax();
                         MinMaxCount = new MinMaxRange<int>(minMaxCount.Key, minMaxCount.Value);
-                        break;
-                    case "-minmax":
-                        string minmaxStr = GetNextNonArg("-minmax");
-                        KeyValuePair<int, int> minMaxV = minmaxStr.GetMinMax();
-                        Min = minMaxV.Key;
-                        Max = minMaxV.Value;
                         break;
                     case "-minmaxretransdelayms":
                         string minmaxretransdelaymsStr = GetNextNonArg("-minmaxretransdelayms");
@@ -1175,6 +1170,11 @@ namespace ETWAnalyzer.Commands
                         string minmaxtotaltimeStr = GetNextNonArg("-minmaxtotaltime");
                         KeyValuePair<decimal, decimal> minmaxtotalTimeS = minmaxtotaltimeStr.GetMinMaxDecimal(SecondUnit);
                         MinMaxTotalTimeS = new MinMaxRange<decimal>(minmaxtotalTimeS.Key, minmaxtotalTimeS.Value);
+                        break;
+                    case "-minmaxtotalcount":
+                        string minmaxtotalcountStr = GetNextNonArg("-minmaxtotalcount");
+                        KeyValuePair<int, int> minmaxtotalCount = minmaxtotalcountStr.GetMinMax();
+                        MinMaxTotalCount = new MinMaxRange<decimal>(minmaxtotalCount.Key, minmaxtotalCount.Value);
                         break;
                     case "-minmaxworkingsetmib":
                         string minworkingsetmbStr = GetNextNonArg("-minmaxworkingsetmib");
@@ -1263,26 +1263,26 @@ namespace ETWAnalyzer.Commands
                         MaxMessage = int.Parse(maxMessageStr, CultureInfo.InvariantCulture);
                         break;
                     case "-fileoperation":
-                        string fileOp = GetNextNonArg("-fileoperation");
+                        string fileOp = GetNextNonArg("-fileoperation", false);
                         ParseEnum<Extract.FileIO.FileIOStatistics.FileOperation>("FileOperation values", fileOp,
                             () => { FileOperation = (Extract.FileIO.FileIOStatistics.FileOperation)Enum.Parse(typeof(Extract.FileIO.FileIOStatistics.FileOperation), fileOp, true); },
-                            Extract.FileIO.FileIOStatistics.FileOperation.Invalid);
+                            Extract.FileIO.FileIOStatistics.FileOperation.All);
                         break;
                     case "-sortby":
-                        string sortOrder = GetNextNonArg("-sortby");
+                        string sortOrder = GetNextNonArg("-sortby", false);
                         SortOrder = ParseEnum<SortOrders>(SortByContext, sortOrder, GetValidSortOrders(SortByContext));
                         break;
                     case "-sortretransmitby":
-                        string retransSortOrder = GetNextNonArg("-sortretransmitby");                        
+                        string retransSortOrder = GetNextNonArg("-sortretransmitby", false);                        
                         RetransSortOrder = ParseEnum<SortOrders>(SortRetransmitContext, retransSortOrder, GetValidSortOrders(SortRetransmitContext));
                         break;
                     case "-timefmt":
-                        string timeformatStr = GetNextNonArg("-timefmt");
+                        string timeformatStr = GetNextNonArg("-timefmt", false);
                         ParseEnum<DumpBase.TimeFormats>("Time Format", timeformatStr, 
                             () => { TimeFormat = (DumpBase.TimeFormats)Enum.Parse(typeof(DumpBase.TimeFormats), timeformatStr, true); });
                         break;
                     case "-processfmt":
-                        string processformatStr = GetNextNonArg("-processfmt");
+                        string processformatStr = GetNextNonArg("-processfmt", false);
                         ParseEnum<DumpBase.TimeFormats>("Time Format", processformatStr, 
                            () => { ProcessFormat = (DumpBase.TimeFormats)Enum.Parse(typeof(DumpBase.TimeFormats), processformatStr, true); });
                         break;
@@ -1717,8 +1717,13 @@ namespace ETWAnalyzer.Commands
                             DirectoryLevel = DirectoryLevel,
                             IsPerProcess = IsPerProcess,
                             FileNameFilter = FileNameFilter,
-                            Min = Min,
-                            Max = Max,
+                            MinMaxReadSizeBytes = MinMaxReadSizeBytes,
+                            MinMaxReadTimeS = MinMaxReadTimeS,
+                            MinMaxWriteSizeBytes = MinMaxWriteSizeBytes,
+                            MinMaxWriteTimeS = MinMaxWriteTimeS,
+                            MinMaxTotalTimeS = MinMaxTotalTimeS,
+                            MinMaxTotalSizeBytes = MinMaxTotalSizeBytes,
+                            MinMaxTotalCount = MinMaxTotalCount,
                             TopN = TopN,
                             TopNProcesses = TopNProcesses,
                             FileOperationValue = FileOperation,
