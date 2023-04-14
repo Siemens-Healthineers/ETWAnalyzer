@@ -33,7 +33,7 @@ namespace ETWAnalyzer_uTest.EventDump
                     {
                         CommitedMiB = 100,
                         PerformedAt = new DateTime(2000,1,1),
-                        Process = "test.exe(1)",
+                        Process = new ETWProcess { ProcessName = "test.exe", ProcessID = 1 },
                         ProcessName = "test.exe",
                         TestCase = "MemoryLeakTest",
                         WorkingSetMiB = 500,
