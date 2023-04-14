@@ -81,7 +81,7 @@ namespace ETWAnalyzer.EventDump
             if (IsCSVEnabled)
             {
                 string[] columms = new string[]
-                    {   Col_CSVOptions, "Directory", Col_FileName, Col_Date, Col_TestCase, Col_TestTimeinms, Col_Baseline, Col_Process, Col_ProcessName,
+                    {   Col_CSVOptions, "Directory", Col_FileName, Col_Date, Col_TestCase, Col_TestTimeinms, Col_Baseline, Col_Process, Col_ProcessName, "Start Time", "End Time", "Duration in s",
                         "SourceIP","Source Port", "DestinationIP", "Destination Port", "TCB", "ConnectionIdx", "Sent Packets (Total per connection)", "Sent Bytes (Total per connection)", "Received Packets (Total per connection)", "Received Bytes (Total per connection)",
                         "Retransmitted Packets (Total per connection)", "% Retransmitted Packets (Total per connection)", "TCP Template", "Connection Open Time", "Connection Close Time",
                     };
@@ -115,7 +115,11 @@ namespace ETWAnalyzer.EventDump
                         {
                             WriteCSVLine(CSVOptions, Path.GetDirectoryName(tcpEvent.Session.FileName),
                                 Path.GetFileNameWithoutExtension(tcpEvent.Session.FileName), tcpEvent.Session.SessionStart, tcpEvent.Session.TestName, tcpEvent.Session.TestDurationInMs, tcpEvent.Session.Baseline,
-                                tcpEvent.Process.ProcessWithID, tcpEvent.Process.ProcessNamePretty,
+                                tcpEvent.Process.ProcessWithID, 
+                                tcpEvent.Process.ProcessNamePretty, 
+                                tcpEvent.Process.IsNew ? GetDateTimeString(tcpEvent.Process.StartTime, tcpEvent.Session.AdjustedSessionStart, TimeFormatOption, false) : "",
+                                tcpEvent.Process.HasEnded ?  GetDateTimeString(tcpEvent.Process.EndTime, tcpEvent.Session.AdjustedSessionStart, TimeFormatOption, false) : "",
+                                (tcpEvent.Process.IsNew && tcpEvent.Process.HasEnded) ? (tcpEvent.Process.EndTime - tcpEvent.Process.StartTime).TotalSeconds : "",
                                 tcpEvent.Connection.LocalIpAndPort.Address,
                                 tcpEvent.Connection.LocalIpAndPort.Port,
                                 tcpEvent.Connection.RemoteIpAndPort.Address,
@@ -129,9 +133,9 @@ namespace ETWAnalyzer.EventDump
                                 (first ? tcpEvent.Retransmissions.Count : 0),     
                                 (first ? retransPercent : 0),                                
                                 tcpEvent.Connection.LastTcpTemplate,
-                                GetDateTimeString(tcpEvent.Connection.TimeStampOpen, tcpEvent.Session.SessionStart, TimeFormatOption, false),
-                                GetDateTimeString(tcpEvent.Connection.TimeStampClose, tcpEvent.Session.SessionStart, TimeFormatOption, false),
-                                GetDateTimeString(retrans.RetransmitTime, tcpEvent.Session.SessionStart, TimeFormatOption, false),
+                                GetDateTimeString(tcpEvent.Connection.TimeStampOpen, tcpEvent.Session.AdjustedSessionStart, TimeFormatOption, false),
+                                GetDateTimeString(tcpEvent.Connection.TimeStampClose, tcpEvent.Session.AdjustedSessionStart, TimeFormatOption, false),
+                                GetDateTimeString(retrans.RetransmitTime, tcpEvent.Session.AdjustedSessionStart, TimeFormatOption, false),
                                 (int) retrans.RetransmitDiff().TotalMilliseconds,
                                 retrans.NumBytes,
                                 retrans.SequenceNumber,
@@ -146,6 +150,9 @@ namespace ETWAnalyzer.EventDump
                        WriteCSVLine(CSVOptions, Path.GetDirectoryName(tcpEvent.Session.FileName),
                        Path.GetFileNameWithoutExtension(tcpEvent.Session.FileName), tcpEvent.Session.SessionStart, tcpEvent.Session.TestName, tcpEvent.Session.TestDurationInMs, tcpEvent.Session.Baseline,
                        tcpEvent.Process.ProcessWithID, tcpEvent.Process.ProcessNamePretty,
+                       tcpEvent.Process.IsNew ? GetDateTimeString(tcpEvent.Process.StartTime, tcpEvent.Session.AdjustedSessionStart, TimeFormatOption, false) : "",
+                       tcpEvent.Process.HasEnded ? GetDateTimeString(tcpEvent.Process.EndTime, tcpEvent.Session.AdjustedSessionStart, TimeFormatOption, false) : "",
+                       (tcpEvent.Process.IsNew && tcpEvent.Process.HasEnded) ? (tcpEvent.Process.EndTime - tcpEvent.Process.StartTime).TotalSeconds : "",
                        tcpEvent.Connection.LocalIpAndPort.Address,
                        tcpEvent.Connection.LocalIpAndPort.Port,
                        tcpEvent.Connection.RemoteIpAndPort.Address,
@@ -159,8 +166,8 @@ namespace ETWAnalyzer.EventDump
                        tcpEvent.Retransmissions.Count,
                        retransPercent,
                        tcpEvent.Connection.LastTcpTemplate,
-                       GetDateTimeString(tcpEvent.Connection.TimeStampOpen, tcpEvent.Session.SessionStart, TimeFormatOption, false),
-                       GetDateTimeString(tcpEvent.Connection.TimeStampClose, tcpEvent.Session.SessionStart, TimeFormatOption, false),
+                       GetDateTimeString(tcpEvent.Connection.TimeStampOpen, tcpEvent.Session.AdjustedSessionStart, TimeFormatOption, false),
+                       GetDateTimeString(tcpEvent.Connection.TimeStampClose, tcpEvent.Session.AdjustedSessionStart, TimeFormatOption, false),
                        NoCmdLine ? "" : tcpEvent.Process.CommandLineNoExe);
                     }
                 }
@@ -189,7 +196,15 @@ namespace ETWAnalyzer.EventDump
             int remoteIPLen = allPrinted.Max(x => x.Connection.RemoteIpAndPort.ToString().Length);
             int tcpTemplateLen = allPrinted.Max(x => x.Connection.LastTcpTemplate?.Length) ?? 8;
 
-            string connectionHeadline = "Source IP/Port -> Destination IP/Port".WithWidth(localIPLen+remoteIPLen+4);
+            const string ConnectionHeadlineStr = "Source IP/Port -> Destination IP/Port";
+            int totalIPLen = localIPLen + remoteIPLen + 4;
+
+            if (totalIPLen < ConnectionHeadlineStr.Length ) // increase minimum width if headline is longer than local and remote ip
+            {
+                remoteIPLen += ConnectionHeadlineStr.Length - totalIPLen;
+            }
+
+            string connectionHeadline = ConnectionHeadlineStr.WithWidth(localIPLen+remoteIPLen+4);
             const int PacketCountWidth = 9;
             const int BytesCountWidth = 15;
             const int PercentWidth = 4;
@@ -231,10 +246,10 @@ namespace ETWAnalyzer.EventDump
                         ( ShowDetails ? 
                                       $"[yellow]{"F0".WidthFormat(match.RetransMaxms, RetransMsWidth)} ms {"F0".WidthFormat(match.RetransMedianMs, RetransMsWidth)} ms {"F0".WidthFormat(match.RetransMinMs, RetransMsWidth)} ms [/yellow] " + 
                                       $"{(match.Connection.LastTcpTemplate ?? "-").WithWidth(tcpTemplateLen)} " +
-                                      $"{GetDateTimeString(match.Connection.TimeStampOpen, match.Session.SessionStart, TimeFormatOption,true).WithWidth(timeWidth)} {GetDateTimeString(match.Connection.TimeStampClose, match.Session.SessionStart,TimeFormatOption,true).WithWidth(timeWidth)} " +
+                                      $"{GetDateTimeString(match.Connection.TimeStampOpen, match.Session.AdjustedSessionStart, TimeFormatOption,true).WithWidth(timeWidth)} {GetDateTimeString(match.Connection.TimeStampClose, match.Session.AdjustedSessionStart, TimeFormatOption,true).WithWidth(timeWidth)} " +
                                       $"0x{"X".WidthFormat(match.Connection.Tcb, PointerWidth)} "
                                 : "") +                                      
-                                      $"[magenta]{match.Process.GetProcessWithId(UsePrettyProcessName)}[/magenta]", ConsoleColor.White, true);
+                                      $"[magenta]{match.Process.GetProcessWithId(UsePrettyProcessName)}[/magenta][grey]{GetProcessTags(match.Process, match.Session.AdjustedSessionStart)}[/grey]", ConsoleColor.White, true);
                     ColorConsole.WriteLine(NoCmdLine ? "" : match.Process.CommandLineNoExe, ConsoleColor.DarkCyan);
 
                     if (ShowRetransmit)
@@ -242,7 +257,7 @@ namespace ETWAnalyzer.EventDump
                         foreach (ITcpRetransmission retrans in match.Retransmissions.SortAscendingGetTopNLast(SortRetransmit, null, TopNRetrans))
                         {
                             string clientTransmission = retrans.IsClientRetransmission == null ? "" : $"ClientRetransmission: {retrans.IsClientRetransmission.Value}";
-                            Console.WriteLine($"  {"F0".WidthFormat(retrans.RetransmitDiff().TotalMilliseconds, 10)} ms delay at {GetDateTimeString(retrans.RetransmitTime, match.Session.SessionStart, TimeFormatOption, true)} {"N0".WidthFormat(retrans.NumBytes,7)} bytes " +
+                            Console.WriteLine($"  {"F0".WidthFormat(retrans.RetransmitDiff().TotalMilliseconds, 10)} ms delay at {GetDateTimeString(retrans.RetransmitTime, match.Session.AdjustedSessionStart, TimeFormatOption, true)} {"N0".WidthFormat(retrans.NumBytes,7)} bytes " +
                                               $"SequenceNr: {retrans.SequenceNumber} {clientTransmission}");
                         }
                     }
@@ -366,6 +381,7 @@ namespace ETWAnalyzer.EventDump
                                 TestDurationInMs = file.DurationInMs,
                                 SessionStart = file.Extract.SessionStart,
                                 Baseline = file?.Extract?.MainModuleVersion?.ToString() ?? "",
+                                ZeroTimeS = GetZeroTimeInS(file.Extract),
                             }
                         };
 
@@ -479,9 +495,12 @@ namespace ETWAnalyzer.EventDump
             public MatchData Parent { get; set; }
             public string FileName { get; set; }
             public DateTimeOffset SessionStart { get; set; }
+
+            public DateTimeOffset AdjustedSessionStart { get => SessionStart.AddSeconds(ZeroTimeS); }
             public string Baseline { get; set; }
             public string TestName { get; internal set; }
             public int TestDurationInMs { get; internal set; }
+            public double ZeroTimeS { get; internal set; }
         }
     }
 }
