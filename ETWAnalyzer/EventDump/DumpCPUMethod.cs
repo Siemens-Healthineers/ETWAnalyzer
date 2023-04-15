@@ -455,8 +455,56 @@ namespace ETWAnalyzer.EventDump
                 return lret;
             }
 
+            // When printing data with -topN dd we sort by CPU ascending because in a shell console window we do not want
+            // to scroll back for the highest values
+            // Then we skip the first N entries to show only the last TopNSafe results which are the highest values
 
-            List< KeyValuePair<ProcessKey, uint>> filtered = file.Extract.CPU.PerProcessCPUConsumptionInMs.Where(ProcessFilter).SortAscendingGetTopNLast(x => x.Value, null, TopN).ToList();
+            Dictionary<ProcessKey, ETWProcess> lookupCache = new();
+
+            ETWProcess Lookup(ProcessKey key)
+            {
+                if (!lookupCache.TryGetValue(key, out ETWProcess process))
+                {
+                    process = ProcessExtensions.FindProcessByKey(file, key);
+                    lookupCache[key] = process;
+                }
+
+                return process;
+            }
+
+            List<MatchData> filtered = file.Extract.CPU.PerProcessCPUConsumptionInMs.Where(ProcessFilter).Select(x =>
+            {
+                ETWProcess process = Lookup(x.Key);
+
+                if (process == null)
+                {
+                    return null;
+                }
+
+                ModuleDefinition module = ShowModuleInfo ? file.Extract.Modules.Modules.Where(x => x.Processes.Contains(process)).Where(x => x.ModuleName.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)).FirstOrDefault() : null;
+
+                if (!IsMatchingModule(module)) // filter by module string
+                {
+                    return null;
+                }
+
+                return new MatchData
+                {
+                    TestName = file.TestName,
+                    PerformedAt = file.PerformedAt,
+                    DurationInMs = file.DurationInMs,
+                    CPUMs = x.Value,
+                    BaseLine = file.Extract.MainModuleVersion != null ? file.Extract.MainModuleVersion.ToString() : "",
+                    Method = "",
+                    ProcessAndPid = process.GetProcessWithId(UsePrettyProcessName),
+                    ProcessKey = process,
+                    SourceFile = file.JsonExtractFileWhenPresent,
+                    Process = process,
+                    Module = module,
+
+                };
+            }).Where(x=> x!=null).SortAscendingGetTopNLast(SortBySortOrder, null, TopN).ToList();
+
 
             PrintTotalCPUHeaderOnce();
 
@@ -465,52 +513,19 @@ namespace ETWAnalyzer.EventDump
                 string CpuString = "";
                 if( ShowTotal != TotalModes.None)
                 {
-                    long cpuTotal = filtered.Select(x => (long) x.Value).Sum();
+                    long cpuTotal = filtered.Select(x => (long) x.CPUMs).Sum();
                     CpuString = $" [green]CPU {cpuTotal:N0} ms[/green] ";
                 }
                 PrintFileName(file.JsonExtractFileWhenPresent, CpuString, file.PerformedAt, file.Extract.MainModuleVersion?.ToString());
             }
 
-            // When printing data with -topN dd we sort by CPU ascending because in a shell console window we do not want
-            // to scroll back for the highest values
-            // Then we skip the first N entries to show only the last TopNSafe results which are the highest values
-
-            Dictionary<ProcessKey, ETWProcess> lookupCache = new();
-
+          
             foreach (var cpu in filtered)
             {
-
-                if( !lookupCache.TryGetValue(cpu.Key, out ETWProcess process) )
-                {
-                    process = ProcessExtensions.FindProcessByKey(file, cpu.Key);
-                    lookupCache[cpu.Key] = process;
-                }
-                
-
-                ModuleDefinition module = ShowModuleInfo ? file.Extract.Modules.Modules.Where(x => x.Processes.Contains(process)).Where(x => x.ModuleName.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)).FirstOrDefault() : null;
-
-                if (!IsMatchingModule(module)) // filter by module string
-                {
-                    continue;
-                }
-                matches.Add(new MatchData
-                {
-                    TestName = file.TestName,
-                    PerformedAt = file.PerformedAt,
-                    DurationInMs = file.DurationInMs,
-                    CPUMs = cpu.Value,
-                    BaseLine = file.Extract.MainModuleVersion != null ? file.Extract.MainModuleVersion.ToString() : "",
-                    Method = "",
-                    ProcessAndPid = process.GetProcessWithId(UsePrettyProcessName),
-                    ProcessKey = process.ToProcessKey(),
-                    SourceFile = file.JsonExtractFileWhenPresent,
-                    Process = process,
-                    Module = module,
-                });
-
+                matches.Add(cpu);
                 if (!IsCSVEnabled && !Merge && !(ShowTotal == TotalModes.Total) )
                 {
-                    PrintCPUTotal(cpu.Value, process, Path.GetFileNameWithoutExtension(file.FileName), file.Extract.SessionStart, matches[matches.Count-1].Module);
+                    PrintCPUTotal(cpu.CPUMs, cpu.Process, Path.GetFileNameWithoutExtension(file.FileName), file.Extract.SessionStart, matches[matches.Count-1].Module);
                 }
             }
         }
@@ -1022,8 +1037,8 @@ namespace ETWAnalyzer.EventDump
                 // Upwards in the stack we must reduce the weight of CPU to get an approximate ordering of the methods which consume most CPU.
                 // This can be viewed as a special kind of distance metric in the 2D-space of Time vs StackDepth
                 SortOrders.StackDepth => data.CPUMs > myMaxCPUSortData ? data.CPUMs / Math.Exp(data.StackDepth) : data.CPUMs / Math.Exp(data.StackDepth+10), 
-                SortOrders.First => data.FirstCallTime.Ticks,
-                SortOrders.Last => data.LastCallTime.Ticks,
+                SortOrders.First => IsProcessTotalMode  ? data.Process.StartTime.Ticks : data.FirstCallTime.Ticks,  // in CPU total mode we can sort by process start time with -Sortby First which is useful with -ProcessFmt s
+                SortOrders.Last => IsProcessTotalMode  ?  (data.Process.EndTime == DateTimeOffset.MaxValue ? 0 : data.Process.EndTime.Ticks) : data.LastCallTime.Ticks,     // in CPU total mode we can sort by process end time with -SortBy Last
                 _ => data.CPUMs,  // by default sort by CPU
             };
         }
