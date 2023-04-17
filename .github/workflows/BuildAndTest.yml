@@ -59,7 +59,7 @@ jobs:
                 # We record into a file to capture everything.
                 # Since extraction of a large ETL needs many GB of memory we can run out of memory so it is best
                 # to split longer parts like build and test into separate files which are extracted separately
-                wpr -start MultiProfile.wprp!CSwitch -start MultiProfile.wprp!File -filemode
+                wpr -start MultiProfile.wprp!CSwitch -start MultiProfile.wprp!File -start MultiProfile.wprp!Network -filemode
                 
         # Add  MSBuild to the PATH: https://github.com/microsoft/setup-msbuild
         - name: Setup MSBuild.exe
@@ -95,7 +95,7 @@ jobs:
           run: |
                $startTime = [System.Diagnostics.Stopwatch]::GetTimestamp()
                "ProfilingStartTime=$startTime" >> $env:GITHUB_ENV
-               wpr -start MultiProfile.wprp!CSwitch -start MultiProfile.wprp!File -filemode
+               wpr -start MultiProfile.wprp!CSwitch -start MultiProfile.wprp!File -start MultiProfile.wprp!Network -filemode
                
         # Execute all unit tests in the solution
         - name: Execute unit tests
