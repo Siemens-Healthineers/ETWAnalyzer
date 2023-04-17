@@ -90,7 +90,7 @@ jobs:
           run: |
               .\bin\Release\net6.0-windows\win-x64\ETWAnalyzer -extract all -fd ${{ env.EtlFileName }} -outdir Extract 
           shell: powershell -Command "& '{0}'"
-        # Start Test Profilng
+        # Start Test Profiling
         - name: Start Test Profiling 
           run: |
                $startTime = [System.Diagnostics.Stopwatch]::GetTimestamp()
@@ -113,7 +113,11 @@ jobs:
             "TestRunTimeMs=$($runtimeMs)ms_$($date)" >> $env:GITHUB_ENV
             $fileName = "ProfilingData\TestExecution_$($runtimeMs)ms$($env:ComputerName).$($date).etl"
             wpr -stop $fileName -skipPdbGen
-            .\bin\Release\net6.0-windows\win-x64\ETWAnalyzer -extract all -fd $fileName -outdir Extract
+            "EtlFileName=$fileName" >> $env:GITHUB_ENV
+        - name: Extract Test Profiling Data
+          run: |
+              .\bin\Release\net6.0-windows\win-x64\ETWAnalyzer -extract all -fd ${{ env.EtlFileName }} -outdir Extract 
+          shell: powershell -Command "& '{0}'"
         - name: Upload Profiling Data
           if: always()
           uses: actions/upload-artifact@v3
