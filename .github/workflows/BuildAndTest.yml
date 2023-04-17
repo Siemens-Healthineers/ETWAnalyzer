@@ -85,8 +85,14 @@ jobs:
             mkdir ProfilingData > $null
             mkdir Extract > $null
             wpr -stop $fileName -skipPdbGen
-            .\bin\Release\net6.0-windows\win-x64\ETWAnalyzer -extract all -fd $fileName -outdir Extract 
-           
+            try
+            {
+              .\bin\Release\net6.0-windows\win-x64\ETWAnalyzer -extract all -fd $fileName -outdir Extract 
+            }
+            catch
+            {
+               Write-Output "::warning ::Extract Build did fail"
+            }
         # Start Test Profilng
         - name: Start Test Profiling 
           run: |
@@ -110,20 +116,26 @@ jobs:
             "TestRunTimeMs=$($runtimeMs)ms_$($date)" >> $env:GITHUB_ENV
             $fileName = "ProfilingData\TestExecution_$($runtimeMs)ms$($env:ComputerName).$($date).etl"
             wpr -stop $fileName -skipPdbGen
-            .\bin\Release\net6.0-windows\win-x64\ETWAnalyzer -extract all -fd $fileName -outdir Extract
-            
+            try
+            {
+               .\bin\Release\net6.0-windows\win-x64\ETWAnalyzer -extract all -fd $fileName -outdir Extract
+            }
+            catch
+            {
+               Write-Output "::warning ::Extract did fail"
+            }
         - name: Upload Profiling Data
+          if: always()
           uses: actions/upload-artifact@v3
           with:
             name: ProfilingData_${{ env.TestRunTimeMs }}
             path: ProfilingData
             retention-days: 90
-
         - name: Upload Profiling Extract Data
+          if: always()
           uses: actions/upload-artifact@v3
           with:
             name: Extract_${{ env.TestRunTimeMs }}
             path: Extract
             retention-days: 90
-
-
+         
