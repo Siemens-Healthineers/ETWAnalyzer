@@ -451,6 +451,8 @@ namespace ETWAnalyzer_uTest.EventDump
             }
         }
 
+
+        //CLI Arg Tests
         [Fact]
         public void MinMaxSizeFilter()
         {
