@@ -165,7 +165,7 @@ namespace ETWAnalyzer.Commands
         "  Memory    -filedir/fd Extract\\ or xxx.json [-recursive] [-csv xxx.csv] [-NoCSVSeparator] [-TopN dd nn] [-TimeFmt s,Local,LocalTime,UTC,UTCTime,Here,HereTime] [-ProcessFmt timefmt] [-TotalMemory] [-MinDiffMB dd] " + Environment.NewLine +
         "                           [-SortBy Commit/WorkingSet/SharedCommit/Diff] [-GlobalDiffMB dd] [-MinMaxWorkingSetMiB xx-yy] [-MinMaxCommitMiB xx-yy] [-MinMaxSharedCommitMiB xx-yy] [-Clip] [-NoCmdLine] " + Environment.NewLine +
         "                           [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd] [-MinMaxMsTestTimes xx-yy ...] [-ProcessName/pn xxx.exe(pid)] [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-CmdLine substring]" + Environment.NewLine +
-        "                           [-ShowFullFileName/-sffn] [-ShowModuleInfo [Driver] or [filter]]" + Environment.NewLine +
+        "                           [-ShowFullFileName/-sffn] [-ShowModuleInfo [Driver] or [filter]] [-ProcessFmt timefmt] " + Environment.NewLine +
         "                         Print memory (Working Set, Committed Memory) of all or some processes from extracted Json files. To get output -extract Memory, All or Default must have been used during extraction." + Environment.NewLine +
         "                         -SortBy Commit/SharedCommit Sort by Committed/Shared Committed (this is are memory mapped files, or page file allocated file mappings). " + Environment.NewLine + "" +
         "                                 WorkingSet/Diff    Sort by working set or committed memory difference" + Environment.NewLine +
@@ -304,7 +304,7 @@ namespace ETWAnalyzer.Commands
         "  Tcp -filedir/fd Extract\\ or xxx.json [-IpPort xxx] [-ShowRetransmits]  [-TopN dd nn] [-SortBy ReceivedCount/SentCount/ReceivedSize/SentSize/TotalCount/TotalSize/ConnectTime/DisconnectTime/RetransmissionCount/RetransmissionTime/MaxRetransmissionTime]   " + Environment.NewLine +
         "       [-SortRetransmitBy Delay/Time] [-MinMaxRetransDelayMs xx-yy] [-MinMaxRetransBytes xx-yy] [-MinMaxRetransCount xx-yy] [-MinMaxSentBytes xx-yy] [-MinMaxReceivedBytes xx-yy] [-TopNRetrans dd nn] [-OnlyClientRetransmit] [-Details] [-Tcb 0xdddddd] " + Environment.NewLine + 
         "       [-TimeFmt s,Local,LocalTime,UTC,UTCTime,Here,HereTime] [-csv xxx.csv] [-NoCSVSeparator] [-NoCmdLine] [-Clip] [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd] [-MinMaxMsTestTimes xx-yy ...] [-ProcessName/pn xxx.exe(pid)] " + Environment.NewLine +
-        "       [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-CmdLine substring] [-recursive]" + Environment.NewLine +
+        "       [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-CmdLine substring] [-recursive] [-ZeroTime/zt Marker/First/Last/ProcessStart filter] [-ZeroProcessName/zpn filter] [-ProcessFmt timefmt] " + Environment.NewLine +
         "                         Print TCP summary and retransmit metrics. To see data you need to enable the Microsoft-Windows-TCPIP ETW provider. Data is sorted by retransmission count by default." + Environment.NewLine +
         "                         It can detect send retransmissions and duplicate received packets which show up as client retransmission events." + Environment.NewLine + 
         "                         -IpPort xxx                Filter for substrings in source/destination IP and port." + Environment.NewLine +
@@ -1790,6 +1790,7 @@ namespace ETWAnalyzer.Commands
                             NoCSVSeparator = NoCSVSeparator,
                             TimeFormatOption = TimeFormat,
                             ProcessNameFilter = ProcessNameFilter,
+                            ProcessFormatOption = ProcessFormat,
                             CommandLineFilter = CmdLineFilter,
                             NewProcessFilter = NewProcess,
                             UsePrettyProcessName = UsePrettyProcessName,
@@ -1825,6 +1826,7 @@ namespace ETWAnalyzer.Commands
                             NoCSVSeparator = NoCSVSeparator,
                             TimeFormatOption = TimeFormat,
                             ProcessNameFilter = ProcessNameFilter,
+                            ProcessFormatOption = ProcessFormat,
                             CommandLineFilter = CmdLineFilter,
                             NewProcessFilter = NewProcess,
                             UsePrettyProcessName = UsePrettyProcessName,
@@ -1985,6 +1987,7 @@ namespace ETWAnalyzer.Commands
                             CSVFile = CSVFile,
                             NoCSVSeparator = NoCSVSeparator,
                             ProcessNameFilter = ProcessNameFilter,
+                            ProcessFormatOption = ProcessFormat,
                             CommandLineFilter = CmdLineFilter,
                             NewProcessFilter = NewProcess,
                             UsePrettyProcessName = UsePrettyProcessName,
@@ -2005,6 +2008,9 @@ namespace ETWAnalyzer.Commands
                             OnlyClientRetransmit = OnlyClientRetransmit,
                             MinMaxRetransCount = MinMaxRetransCount,
                             TcbFilter = TcbFilter,
+                            ZeroTimeMode = ZeroTimeMode,
+                            ZeroTimeFilter = ZeroTimeFilter,
+                            ZeroTimeProcessNameFilter = ZeroTimeProcessNameFilter,
                         };
                         break;
                     case DumpCommands.None:

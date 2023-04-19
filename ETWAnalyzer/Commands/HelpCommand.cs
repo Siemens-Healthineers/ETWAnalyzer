@@ -17,7 +17,7 @@ namespace ETWAnalyzer.Commands
         private static readonly string HelpString =
            $"ETWAnalyzer {FileVersionInfo.GetVersionInfo(Process.GetCurrentProcess().MainModule.FileName).FileVersion}" + Environment.NewLine +
             " ETWAnalyzer [green]-help[/green] [Extract, Dump, Convert or LoadSymbol]  Get further information about the specific sub command" + Environment.NewLine +
-            " ETWAnalyzer [green]-Extract[/green] [All or CPU Disk File Module Memory Exception Stacktag ThreadPool PMC Dns] -filedir inEtlOrZip [-outDir xxxxx] [-symServer [MS, syngo or NtSymbolPath] [-keepTemp] [-symFolder bbbb]" + Environment.NewLine +
+            " ETWAnalyzer [green]-Extract[/green] [All or Cpu Disk File Module Memory Exception Stacktag ThreadPool Pmc Dns Tcp] -filedir inEtlOrZip [-outDir xxxxx] [-symServer [MS, syngo or NtSymbolPath] [-keepTemp] [-symFolder bbbb]" + Environment.NewLine +
             "        Extract data from etl file/s and write summary data into json files." + Environment.NewLine +
             " ETWAnalyzer [green]-LoadSymbol[/green] -filedir xxx.json -symserver ..." + Environment.NewLine +
             "        Resolve method names from an extracted Json file." + Environment.NewLine +
