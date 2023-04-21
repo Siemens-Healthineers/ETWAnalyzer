@@ -411,6 +411,8 @@ namespace ETWAnalyzer_uTest.EventDump
         {
             KeyValuePair<string, MinMaxRange<decimal>>[] RangeValues = new KeyValuePair<string, MinMaxRange<decimal>>[]
                 {
+                    new KeyValuePair<string, MinMaxRange<decimal>>("1ms", new MinMaxRange<decimal>(1000/ Million, decimal.MaxValue)),
+                    new KeyValuePair<string, MinMaxRange<decimal>>("0.5s", new MinMaxRange<decimal>(500_000/ Million, decimal.MaxValue)),
                     new KeyValuePair<string, MinMaxRange<decimal>>("1s-1000s", new MinMaxRange <decimal>(1, 1000)),
                     new KeyValuePair<string, MinMaxRange<decimal>>("1000ms-2000ms", new MinMaxRange <decimal>(1000_000/ Million, 2000_000/Million)),
                     new KeyValuePair<string, MinMaxRange<decimal>>("1000ms-2000s", new MinMaxRange <decimal>(1000_000/ Million, 2000)),
@@ -458,6 +460,10 @@ namespace ETWAnalyzer_uTest.EventDump
         {
             KeyValuePair<string, MinMaxRange<decimal>>[] RangeValues = new KeyValuePair<string, MinMaxRange<decimal>>[]
                 {
+                    new KeyValuePair<string, MinMaxRange<decimal>>("1Bytes", new MinMaxRange<decimal>(1, decimal.MaxValue)),
+                    new KeyValuePair<string, MinMaxRange<decimal>>("1KB", new MinMaxRange<decimal>(1000, decimal.MaxValue)),
+                    new KeyValuePair<string, MinMaxRange<decimal>>("1GB", new MinMaxRange<decimal>(1000_000_000, decimal.MaxValue)),
+                    new KeyValuePair<string, MinMaxRange<decimal>>("1TB", new MinMaxRange<decimal>(1000_000_000_000, decimal.MaxValue)),
                     new KeyValuePair<string, MinMaxRange<decimal>>("1000Bytes-2000Bytes", new MinMaxRange <decimal>(1000, 2000)),
                     new KeyValuePair<string, MinMaxRange<decimal>>("1KB-1000KB", new MinMaxRange <decimal>(1000, 1000_000)),
                     new KeyValuePair<string, MinMaxRange<decimal>>("1GB-2GB", new MinMaxRange <decimal>(1000_000_000, 2000_000_000)),
@@ -501,10 +507,11 @@ namespace ETWAnalyzer_uTest.EventDump
         [Fact]
         public void MinMaxCountFilter()
         {
-            KeyValuePair<string, MinMaxRange<decimal>>[] RangeValues = new KeyValuePair<string, MinMaxRange<decimal>>[]
+            KeyValuePair<string, MinMaxRange<int>>[] RangeValues = new KeyValuePair<string, MinMaxRange<int>>[]
                 {
-                    new KeyValuePair<string, MinMaxRange<decimal>>("0-1000", new MinMaxRange <decimal>(0, 1000)),
-                    new KeyValuePair<string, MinMaxRange<decimal>>("10-200", new MinMaxRange <decimal>(10, 200)),
+                    new KeyValuePair<string, MinMaxRange<int>>("100", new MinMaxRange<int>(100, int.MaxValue)),
+                    new KeyValuePair<string, MinMaxRange<int>>("0-1000", new MinMaxRange <int>(0, 1000)),
+                    new KeyValuePair<string, MinMaxRange<int>>("10-200", new MinMaxRange <int>(10, 200)),
                 };
             foreach (var input in RangeValues)
             {
