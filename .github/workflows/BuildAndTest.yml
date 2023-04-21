@@ -59,7 +59,7 @@ jobs:
                 # We record into a file to capture everything.
                 # Since extraction of a large ETL needs many GB of memory we can run out of memory so it is best
                 # to split longer parts like build and test into separate files which are extracted separately
-                wpr -start MultiProfile.wprp!CSwitch -start MultiProfile.wprp!File -filemode
+                wpr -start MultiProfile.wprp!CSwitch -start MultiProfile.wprp!File -start MultiProfile.wprp!Network -filemode
                 
         # Add  MSBuild to the PATH: https://github.com/microsoft/setup-msbuild
         - name: Setup MSBuild.exe
@@ -85,14 +85,17 @@ jobs:
             mkdir ProfilingData > $null
             mkdir Extract > $null
             wpr -stop $fileName -skipPdbGen
-            .\bin\Release\net6.0-windows\win-x64\ETWAnalyzer -extract all -fd $fileName -outdir Extract 
-           
-        # Start Test Profilng
+            "EtlFileName=$fileName" >> $env:GITHUB_ENV
+        - name: Extract
+          run: |
+              .\bin\Release\net6.0-windows\win-x64\ETWAnalyzer -extract all -fd ${{ env.EtlFileName }} -outdir Extract 
+          shell: powershell -Command "& '{0}'"
+        # Start Test Profiling
         - name: Start Test Profiling 
           run: |
                $startTime = [System.Diagnostics.Stopwatch]::GetTimestamp()
                "ProfilingStartTime=$startTime" >> $env:GITHUB_ENV
-               wpr -start MultiProfile.wprp!CSwitch -start MultiProfile.wprp!File -filemode
+               wpr -start MultiProfile.wprp!CSwitch -start MultiProfile.wprp!File -start MultiProfile.wprp!Network -filemode
                
         # Execute all unit tests in the solution
         - name: Execute unit tests
@@ -110,20 +113,23 @@ jobs:
             "TestRunTimeMs=$($runtimeMs)ms_$($date)" >> $env:GITHUB_ENV
             $fileName = "ProfilingData\TestExecution_$($runtimeMs)ms$($env:ComputerName).$($date).etl"
             wpr -stop $fileName -skipPdbGen
-            .\bin\Release\net6.0-windows\win-x64\ETWAnalyzer -extract all -fd $fileName -outdir Extract
-            
+            "EtlFileName=$fileName" >> $env:GITHUB_ENV
+        - name: Extract Test Profiling Data
+          run: |
+              .\bin\Release\net6.0-windows\win-x64\ETWAnalyzer -extract all -fd ${{ env.EtlFileName }} -outdir Extract 
+          shell: powershell -Command "& '{0}'"
         - name: Upload Profiling Data
+          if: always()
           uses: actions/upload-artifact@v3
           with:
             name: ProfilingData_${{ env.TestRunTimeMs }}
             path: ProfilingData
             retention-days: 90
-
         - name: Upload Profiling Extract Data
+          if: always()
           uses: actions/upload-artifact@v3
           with:
             name: Extract_${{ env.TestRunTimeMs }}
             path: Extract
             retention-days: 90
-
-
+         
