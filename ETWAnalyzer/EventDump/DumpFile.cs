@@ -126,7 +126,7 @@ namespace ETWAnalyzer.EventDump
                                 times,
                                 stats?.Delete?.Count,
                                 stats?.Rename?.Count,
-                                stats?.Open.Durationus + stats?.Close.Durationus
+                                (stats?.Open?.Durationus).GetValueOrDefault() + (stats?.Close?.Durationus).GetValueOrDefault()
                         );
                 }
             }
