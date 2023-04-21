@@ -414,7 +414,7 @@ namespace ETWAnalyzer_uTest.EventDump
                     new KeyValuePair<string, MinMaxRange<decimal>>("1ms", new MinMaxRange<decimal>(1000/ Million, decimal.MaxValue)),
                     new KeyValuePair<string, MinMaxRange<decimal>>("0.5s", new MinMaxRange<decimal>(500_000/ Million, decimal.MaxValue)),
                     new KeyValuePair<string, MinMaxRange<decimal>>("1s-1000s", new MinMaxRange <decimal>(1, 1000)),
-                    new KeyValuePair<string, MinMaxRange<decimal>>("1000ms-2000ms", new MinMaxRange <decimal>(1000_000/ Million, 2000_000/Million)),
+                    new KeyValuePair<string, MinMaxRange<decimal>>("1000ms-2000ms", new MinMaxRange <decimal>(1, 2)),
                     new KeyValuePair<string, MinMaxRange<decimal>>("1000ms-2000s", new MinMaxRange <decimal>(1000_000/ Million, 2000)),
                 };
             foreach (var input in RangeValues)
