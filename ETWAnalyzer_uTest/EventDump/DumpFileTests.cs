@@ -1,4 +1,5 @@
-﻿using ETWAnalyzer.EventDump;
+﻿using ETWAnalyzer.Commands;
+using ETWAnalyzer.EventDump;
 using ETWAnalyzer.Infrastructure;
 using Microsoft.Windows.EventTracing.Disk;
 using System;
@@ -42,7 +43,7 @@ namespace ETWAnalyzer_uTest.EventDump
             dump.SortOrder = ETWAnalyzer.Commands.DumpCommand.SortOrders.Count;
             dump.FileOperationValue = ETWAnalyzer.Extract.FileIO.FileIOStatistics.FileOperation.All;
             // You need to set -FileOperation to sort by a specific row. Possible values are Enum.GetNames(typeof(FileIOoper...=
-            var values = Enum.GetNames<FileOperation>().Where(x => x!= "Invalid").ToArray();
+            var values = Enum.GetNames<FileOperation>().Where(x => x != "Invalid").ToArray();
             string valuesList = String.Join(", ", values);
             decimal countAll = dump.GetSortValue(groupedData01);
             Assert.Equal(5400, countAll);
@@ -273,7 +274,7 @@ namespace ETWAnalyzer_uTest.EventDump
             Assert.Equal("The -FileOperation Open is not valid. You can either use All or Write.", exWriteTime.Message);
         }
 
-        
+
         [Fact]
         public void MinMaxReadSizeBytes()
         {
@@ -284,7 +285,7 @@ namespace ETWAnalyzer_uTest.EventDump
             empty.FileReadSizeInBytes = 100;
             Assert.True(dump1.MinMaxFilter(empty));
 
-            dump1.MinMaxReadSizeBytes =  new MinMaxRange<decimal>(101, 200);
+            dump1.MinMaxReadSizeBytes = new MinMaxRange<decimal>(101, 200);
             Assert.False(dump1.MinMaxFilter(empty));
             empty.FileReadSizeInBytes = 101;
             Assert.True(dump1.MinMaxFilter(empty));
@@ -404,5 +405,125 @@ namespace ETWAnalyzer_uTest.EventDump
             Assert.True(dump1.MinMaxFilter(empty));
         }
 
+        
+        [Fact]
+        public void MinMaxTimeFilter()
+        {
+            KeyValuePair<string, MinMaxRange<decimal>>[] RangeValues = new KeyValuePair<string, MinMaxRange<decimal>>[]
+                {
+                    new KeyValuePair<string, MinMaxRange<decimal>>("1ms", new MinMaxRange<decimal>(1000/ Million, decimal.MaxValue)),
+                    new KeyValuePair<string, MinMaxRange<decimal>>("0.5s", new MinMaxRange<decimal>(500_000/ Million, decimal.MaxValue)),
+                    new KeyValuePair<string, MinMaxRange<decimal>>("1s-1000s", new MinMaxRange <decimal>(1, 1000)),
+                    new KeyValuePair<string, MinMaxRange<decimal>>("1000ms-2000ms", new MinMaxRange <decimal>(1, 2)),
+                    new KeyValuePair<string, MinMaxRange<decimal>>("1000ms-2000s", new MinMaxRange <decimal>(1, 2000)),
+                };
+            foreach (var input in RangeValues)
+            {
+                var args = new string[] { "-dump", "file", "-MinMaxTotalTime", input.Key };
+                DumpCommand dump = (DumpCommand)CommandFactory.CreateCommand(args);
+                dump.Parse();
+                dump.Run();
+                DumpFile fileDumper = (DumpFile)dump.myCurrentDumper;
+
+                Assert.Equal(input.Value.Min, fileDumper.MinMaxTotalTimeS.Min);
+                Assert.Equal(input.Value.Max, fileDumper.MinMaxTotalTimeS.Max);
+            }
+
+            foreach (var input in RangeValues)
+            {
+                var args = new string[] { "-dump", "file", "-MinMaxReadTime", input.Key };
+                DumpCommand dump = (DumpCommand)CommandFactory.CreateCommand(args);
+                dump.Parse();
+                dump.Run();
+                DumpFile fileDumper = (DumpFile)dump.myCurrentDumper;
+
+                Assert.Equal(input.Value.Min, fileDumper.MinMaxReadTimeS.Min);
+                Assert.Equal(input.Value.Max, fileDumper.MinMaxReadTimeS.Max);
+            }
+            foreach (var input in RangeValues)
+            {
+                var args = new string[] { "-dump", "file", "-MinMaxWriteTime", input.Key };
+                DumpCommand dump = (DumpCommand)CommandFactory.CreateCommand(args);
+                dump.Parse();
+                dump.Run();
+                DumpFile fileDumper = (DumpFile)dump.myCurrentDumper;
+
+                Assert.Equal(input.Value.Min, fileDumper.MinMaxWriteTimeS.Min);
+                Assert.Equal(input.Value.Max, fileDumper.MinMaxWriteTimeS.Max);
+            }
+        }
+
+
+        //CLI Arg Tests
+        [Fact]
+        public void MinMaxSizeFilter()
+        {
+            KeyValuePair<string, MinMaxRange<decimal>>[] RangeValues = new KeyValuePair<string, MinMaxRange<decimal>>[]
+                {
+                    new KeyValuePair<string, MinMaxRange<decimal>>("1Bytes", new MinMaxRange<decimal>(1, decimal.MaxValue)),
+                    new KeyValuePair<string, MinMaxRange<decimal>>("1KB", new MinMaxRange<decimal>(1000, decimal.MaxValue)),
+                    new KeyValuePair<string, MinMaxRange<decimal>>("1GB", new MinMaxRange<decimal>(1000_000_000, decimal.MaxValue)),
+                    new KeyValuePair<string, MinMaxRange<decimal>>("1TB", new MinMaxRange<decimal>(1000_000_000_000, decimal.MaxValue)),
+                    new KeyValuePair<string, MinMaxRange<decimal>>("1000Bytes-2000Bytes", new MinMaxRange <decimal>(1000, 2000)),
+                    new KeyValuePair<string, MinMaxRange<decimal>>("1KB-1000KB", new MinMaxRange <decimal>(1000, 1000_000)),
+                    new KeyValuePair<string, MinMaxRange<decimal>>("1GB-2GB", new MinMaxRange <decimal>(1000_000_000, 2000_000_000)),
+                    new KeyValuePair<string, MinMaxRange<decimal>>("1KB-2GB", new MinMaxRange <decimal>(1000, 2000_000_000)),
+                };
+            foreach (var input in RangeValues)
+            {
+                var args = new string[] { "-dump", "file", "-MinMaxTotalSize", input.Key };
+                DumpCommand dump = (DumpCommand)CommandFactory.CreateCommand(args);
+                dump.Parse();
+                dump.Run();
+                DumpFile fileDumper = (DumpFile)dump.myCurrentDumper;
+
+                Assert.Equal(input.Value.Min, fileDumper.MinMaxTotalSizeBytes.Min);
+                Assert.Equal(input.Value.Max, fileDumper.MinMaxTotalSizeBytes.Max);
+            }
+            foreach (var input in RangeValues)
+            {
+                var args = new string[] { "-dump", "file", "-MinMaxReadSize", input.Key };
+                DumpCommand dump = (DumpCommand)CommandFactory.CreateCommand(args);
+                dump.Parse();
+                dump.Run();
+                DumpFile fileDumper = (DumpFile)dump.myCurrentDumper;
+
+                Assert.Equal(input.Value.Min, fileDumper.MinMaxReadSizeBytes.Min);
+                Assert.Equal(input.Value.Max, fileDumper.MinMaxReadSizeBytes.Max);
+            }
+            foreach (var input in RangeValues)
+            {
+                var args = new string[] { "-dump", "file", "-MinMaxWriteSize", input.Key };
+                DumpCommand dump = (DumpCommand)CommandFactory.CreateCommand(args);
+                dump.Parse();
+                dump.Run();
+                DumpFile fileDumper = (DumpFile)dump.myCurrentDumper;
+
+                Assert.Equal(input.Value.Min, fileDumper.MinMaxWriteSizeBytes.Min);
+                Assert.Equal(input.Value.Max, fileDumper.MinMaxWriteSizeBytes.Max);
+            }
+        }
+
+        [Fact]
+        public void MinMaxCountFilter()
+        {
+            KeyValuePair<string, MinMaxRange<int>>[] RangeValues = new KeyValuePair<string, MinMaxRange<int>>[]
+                {
+                    new KeyValuePair<string, MinMaxRange<int>>("100", new MinMaxRange<int>(100, int.MaxValue)),
+                    new KeyValuePair<string, MinMaxRange<int>>("0-1000", new MinMaxRange <int>(0, 1000)),
+                    new KeyValuePair<string, MinMaxRange<int>>("10-200", new MinMaxRange <int>(10, 200)),
+                };
+            foreach (var input in RangeValues)
+            {
+                var args = new string[] { "-dump", "file", "-MinMaxTotalCount", input.Key };
+                DumpCommand dump = (DumpCommand)CommandFactory.CreateCommand(args);
+                dump.Parse();
+                dump.Run();
+                DumpFile fileDumper = (DumpFile)dump.myCurrentDumper;
+
+                Assert.Equal(input.Value.Min, fileDumper.MinMaxTotalCount.Min);
+                Assert.Equal(input.Value.Max, fileDumper.MinMaxTotalCount.Max);
+            }
+        }
     }
 }
