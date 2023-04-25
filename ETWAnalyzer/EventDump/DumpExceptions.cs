@@ -42,11 +42,6 @@ namespace ETWAnalyzer.EventDump
         /// </summary>
         public bool ShowTime { get; internal set; }
 
-        string myPreviousProcess = null;
-
-        string myPreviousMsg = null;
-
-        string myPreviousType = null;
 
         public class MatchData
         {
@@ -295,91 +290,28 @@ namespace ETWAnalyzer.EventDump
             string previousProcess = null;
             string previousMessage = null;
 
+            const string SameString = "...";
+
             foreach (var item in byFile.OrderBy(match => match.TimeStamp))
             {
                 string timeStr = GetDateTimeString(item.TimeStamp, item.SessionStart, TimeFormatOption).WithWidth(timeWidth);
                 string currentProcess = item.Process.GetProcessWithId(UsePrettyProcessName);
                 string currentMessage = item.Message;
                 string currentExceptiontype = item.Type;
-                string tobePrintedMsg = currentMessage;
-                string tobePrintedType = currentExceptiontype;
-                string tobePrintedProcess = currentProcess;
 
-                if (currentProcess == previousProcess)
-                {
-                    tobePrintedProcess = "...";
-                } 
-                string replacedProcess = ReplaceToCurrentProcess(item.Process.GetProcessWithId(UsePrettyProcessName));
+                string tobePrintedMsg = currentMessage == previousMessage ? SameString : currentMessage;
+                string tobePrintedType = currentExceptiontype == previousExceptionType ? SameString : item.Type;
+                string tobePrintedProcess = currentProcess == previousProcess ? SameString : currentProcess; ;
+
+                previousMessage = currentMessage;
+                previousExceptionType = currentExceptiontype;
                 previousProcess = currentProcess;
 
-                if (currentMessage == previousMessage)
-                {
-                    tobePrintedMsg = "...";
-                }
-                string replacedMsg = ReplaceToCurrentMsg(item.Message);
-                previousMessage = currentMessage;
-
-                if (currentExceptiontype == previousExceptionType)
-                {
-                    tobePrintedType = "...";
-                }
-                string replacedType = ReplaceToCurrentType(item.Type);
-                previousExceptionType = currentExceptiontype;
-
-                if ((replacedType != "...") || (tobePrintedProcess != "..."))
-                {
-                    replacedProcess = tobePrintedProcess;
-                }
-                else
-                {
-                    replacedProcess = "...";
-                }
-
-                ColorConsole.WriteEmbeddedColorLine($"{timeStr} [magenta]{replacedProcess,processWidth}[/magenta] [green]{replacedType,expTypeWidth}[/green] {replacedMsg,expmsgWidth}");
-
+                ColorConsole.WriteEmbeddedColorLine($"{timeStr} [magenta]{tobePrintedProcess,processWidth}[/magenta] [green]{tobePrintedType,expTypeWidth}[/green] {tobePrintedMsg,expmsgWidth}");
             }
         }
         
-        string ReplaceToCurrentProcess(string currentProcess)
-        {
-            if (currentProcess == myPreviousProcess)
-            {
-                return "...";
-            }
-            else
-            {
-                myPreviousProcess = currentProcess;
-                return currentProcess;
-            }
-        }
-        
-        string ReplaceToCurrentMsg(string currentMsg)
-        {
-            if (currentMsg == myPreviousMsg)
-            {
-                return "...";
-            }
-            else
-            {
-                myPreviousMsg = currentMsg;
-                return currentMsg;
-            }
-        }
-
-        string ReplaceToCurrentType(string currentType)
-        {
-            if (currentType == myPreviousType)
-            {
-                return "...";
-            }
-            else
-            {
-                myPreviousType = currentType;
-                return currentType;
-            }
-        }
-
-        private void PrintByFileAndProcess(List<MatchData> matches)
+         private void PrintByFileAndProcess(List<MatchData> matches)
         {
             foreach (var processExceptions in matches.GroupBy(x => x.Process))
             {
