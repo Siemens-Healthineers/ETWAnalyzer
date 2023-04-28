@@ -1,13 +1,17 @@
 ﻿//// SPDX-FileCopyrightText:  © 2022 Siemens Healthcare GmbH
 //// SPDX-License-Identifier:   MIT
 
+using ETWAnalyzer.Analyzers;
 using ETWAnalyzer.Commands;
 using ETWAnalyzer.Extract;
 using ETWAnalyzer.Extract.FileIO;
+using ETWAnalyzer.Extract.Modules;
 using ETWAnalyzer.Infrastructure;
 using ETWAnalyzer.ProcessTools;
+using Microsoft.Diagnostics.Tracing.StackSources;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using static ETWAnalyzer.Commands.DumpCommand;
@@ -108,13 +112,20 @@ namespace ETWAnalyzer.EventDump
                                   "SetSecurity Times",
                                   "File Delete Count",
                                   "File Rename Count",
-                                  "File Open Close Time Duration (us)"
+                                  "File Open Close Time Duration (us)",
+                                  Col_FileVersion, Col_VersionString, Col_ProductVersion, Col_ProductName, Col_Description, Col_Directory
                                   );
 
                 foreach (var fileIO in data)
                 {
                     var stats = fileIO.Stats;
                     string times = String.Join(";", stats?.SetSecurity?.Times?.Select(x => base.GetDateTimeString(x, fileIO.SessionStart, TimeFormatOption)) ?? Array.Empty<string>());
+                    string fileVersion = fileIO.FileModule?.Fileversion?.ToString()?.Trim() ?? "";
+                    string versionString = fileIO.FileModule?.FileVersionStr?.Trim() ?? "";
+                    string productVersion = fileIO.FileModule?.ProductVersionStr?.Trim() ?? "";
+                    string productName = fileIO.FileModule?.ProductName?.Trim() ?? "";
+                    string description = fileIO.FileModule?.Description?.Trim() ?? "";
+                    string directory = fileIO.FileModule?.ModulePath ?? "";
                     WriteCSVLine(CSVOptions, fileIO.DataFile.PerformedAt, Path.GetDirectoryName(fileIO.DataFile.FileName), Path.GetFileNameWithoutExtension(fileIO.DataFile.FileName), fileIO.DataFile.TestName, fileIO.DataFile.DurationInMs,
                                 fileIO.BaseLine, fileIO.Process.GetProcessName(UsePrettyProcessName), fileIO.Process.GetProcessWithId(UsePrettyProcessName), fileIO.Process.StartTime, NoCmdLine ? "" : fileIO.Process.CommandLineNoExe,
                                 Path.GetDirectoryName(fileIO.FileName), Path.GetFileName(fileIO.FileName),
@@ -126,7 +137,8 @@ namespace ETWAnalyzer.EventDump
                                 times,
                                 stats?.Delete?.Count,
                                 stats?.Rename?.Count,
-                                (stats?.Open?.Durationus).GetValueOrDefault() + (stats?.Close?.Durationus).GetValueOrDefault()
+                                (stats?.Open?.Durationus).GetValueOrDefault() + (stats?.Close?.Durationus).GetValueOrDefault(),
+                                fileVersion, versionString, productVersion, productName, description, directory
                         );
                 }
             }
@@ -257,6 +269,13 @@ namespace ETWAnalyzer.EventDump
                     if (IsPerProcess && bPrintOnce && !IsTotalMode)
                     {
                         ColorConsole.WriteEmbeddedColorLine($"[grey]{group.Key.GetProcessWithId(UsePrettyProcessName)}{GetProcessTags(group.Key, group.First().SessionStart)}[/grey] {(NoCmdLine ? "" : group.Key.CmdLine)}", ConsoleColor.DarkCyan);
+                        
+                        ModuleDefinition fileModule = group.First().FileModule;
+                        string moduleInfo = fileModule != null ? GetModuleString(fileModule, true) : "";
+                        if (moduleInfo!="")
+                        {
+                            ColorConsole.WriteEmbeddedColorLine($"[red]{moduleInfo}[/red]");
+                        }
                         bPrintOnce = false;
                     }
 
@@ -678,6 +697,7 @@ namespace ETWAnalyzer.EventDump
                         SourceFileName = String.Join(" ", group.Select(x => x.SourceFileName).ToHashSet().ToArray()),
                         BaseLine = String.Join(",", group.Select(x => x.BaseLine).ToHashSet()),
                         SessionStart = (group.FirstOrDefault()?.SessionStart).GetValueOrDefault(),
+                        FileModule = group.First()?.FileModule,
                     };
 
                    
@@ -810,6 +830,12 @@ namespace ETWAnalyzer.EventDump
                             continue;
                         }
 
+                        ModuleDefinition fileModule = ShowModuleInfo ? file.Extract.Modules.FindModule(fileEvent.Process.ProcessName, fileEvent.Process) : null;
+
+                        if (!IsMatchingModule(fileModule))
+                        {
+                            continue;
+                        }
                         lret.Add(new MatchData
                         {
                             SourceFileName = file.FileName,
@@ -819,6 +845,7 @@ namespace ETWAnalyzer.EventDump
                             DataFile = file,
                             BaseLine = file.Extract.MainModuleVersion != null ? file.Extract.MainModuleVersion.ToString() : "",
                             SessionStart = file.Extract.SessionStart,
+                            FileModule = fileModule,
                         });
                     }
                 }
@@ -1106,6 +1133,10 @@ namespace ETWAnalyzer.EventDump
             public long FileRenameCount { get; internal set; }
             public DateTimeOffset SessionStart { get; internal set; }
             public int InputFileCountUsedForGrouping { get; internal set; }
+            /// <summary>
+            /// Module data of the executable when -smi is used
+            /// </summary>
+            public ModuleDefinition FileModule { get; internal set; }
         }
     }
 }

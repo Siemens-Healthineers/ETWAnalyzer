@@ -228,7 +228,7 @@ namespace ETWAnalyzer.Commands
         "  File -filedir/fd Extract\\ or xxx.json [-DirLevel dd] [-PerProcess] [-filename *C:*] [-ShowTotal [Total/Process/File]] [-TopN dd nn] [-SortBy order] [-FileOperation op] [-ReverseFileName/rfn] [-Merge] [-Details] [-recursive] " + Environment.NewLine +
         "                         [-TopNProcesses dd nn] [-csv xxx.csv] [-NoCSVSeparator] [-TimeFmt s,Local,LocalTime,UTC,UTCTime,Here,HereTime] [-ProcessFmt timefmt] [-Clip] [-TestsPerRun dd -SkipNTests dd] " + Environment.NewLine +
         "                         [-TestRunIndex dd -TestRunCount dd] [-MinMaxMsTestTimes xx-yy ...] [-ProcessName/pn xxx.exe(pid)] [-NoCmdLine] [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-CmdLine substring]" + Environment.NewLine +
-        "                         [-ShowFullFileName/-sffn] [-MinMax[Read/Write/Total][Size/Time] xx-yy] [-MinMaxTotalCount xx-yy]" + Environment.NewLine +
+        "                         [-ShowFullFileName/-sffn] [-MinMax[Read/Write/Total][Size/Time] xx-yy] [-MinMaxTotalCount xx-yy] [-ShowModuleInfo [filter]]" + Environment.NewLine +
         "                         Print File IO metrics to console or to a CSV file if -csv is used. To get output -extract File, All or Default must have been used during extraction." + Environment.NewLine +
         "                         The extracted data is an exact summary per file and process. Unlike Disk IO, File IO tracing captures all file accesses regardless if the data was e.g. read from disk or file system cache." + Environment.NewLine +
         "                         -DirLevel dd               Print File IO per directory up to n levels. Default is 0 which shows summary per drive. -Dirlevel 100 will give a per file summary." + Environment.NewLine +
@@ -444,6 +444,8 @@ namespace ETWAnalyzer.Commands
         "[green]Dump File IO per process for all files in current directory, filter for write operations, and sort by Write Count[/green]" + Environment.NewLine +
         " ETWAnalyzer -dump File -FileOperation Write -SortBy Count -PerProcess" + Environment.NewLine +
         "[green]Show per process totals for all processes. Print process start/stop/duration besides process name.[/green]" + Environment.NewLine +
+        " ETWAnalyzer -dump File -FileOperation Write -SortBy Count -PerProcess -smi *microsoft*" + Environment.NewLine +
+        "[green]Show per process totals for all processes with show module information (exclusively to be used perprocess only). Print process start/stop/duration besides process name with information details exclusively for Microsoft processes.[/green]" + Environment.NewLine +
         " ETWAnalyzer -dump File -PerProcess -ShowTotal File -ProcessFmt s" + Environment.NewLine +
         "[green]Show File IO per process for all files in current directory with Read Time in range 1-10 ms[/green]" + Environment.NewLine +
         " ETWAnalyzer -dump File -filedir xx.json -MinMaxReadTime 1ms-10ms -DirLevel 100" + Environment.NewLine +
@@ -1730,6 +1732,8 @@ namespace ETWAnalyzer.Commands
                             SortOrder = SortOrder,
                             ShowAllFiles = ShowAllFiles,
                             ShowDetails = ShowDetails,
+                            ShowModuleInfo = ShowModuleInfo,
+                            ShowModuleFilter = ShowModuleFilter,
                             ReverseFileName = ReverseFileName,
                         };
                         break;
