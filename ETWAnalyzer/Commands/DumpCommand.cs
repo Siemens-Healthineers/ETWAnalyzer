@@ -444,13 +444,13 @@ namespace ETWAnalyzer.Commands
         "[green]Dump File IO per process for all files in current directory, filter for write operations, and sort by Write Count[/green]" + Environment.NewLine +
         " ETWAnalyzer -dump File -FileOperation Write -SortBy Count -PerProcess" + Environment.NewLine +
         "[green]Show per process totals for all processes. Print process start/stop/duration besides process name.[/green]" + Environment.NewLine +
-        " ETWAnalyzer -dump File -FileOperation Write -SortBy Count -PerProcess -smi *microsoft*" + Environment.NewLine +
-        "[green]Show per process totals for all processes with show module information (exclusively to be used perprocess only). Print process start/stop/duration besides process name with information details exclusively for Microsoft processes.[/green]" + Environment.NewLine +
         " ETWAnalyzer -dump File -PerProcess -ShowTotal File -ProcessFmt s" + Environment.NewLine +
         "[green]Show File IO per process for all files in current directory with Read Time in range 1-10 ms[/green]" + Environment.NewLine +
         " ETWAnalyzer -dump File -filedir xx.json -MinMaxReadTime 1ms-10ms -DirLevel 100" + Environment.NewLine +
         "[green]Show files with at least 50 read operations (sorted by read count) by filtering for file read data which will null out all other columns.[/green]" + Environment.NewLine +
-        " ETWAnalyzer -dump File -filedir xx.json -FileOperation Read -MinMaxTotalCount 50 -SortBy Count -DirLevel 100" + Environment.NewLine;
+        " ETWAnalyzer -dump File -filedir xx.json -FileOperation Read -MinMaxTotalCount 50 -SortBy Count -DirLevel 100" + Environment.NewLine +
+        "[green]Show per process totals for all processes with show module information (exclusively to be used perprocess only). Print process start/stop/duration besides process name with information details exclusively for Microsoft processes.[/green]" + Environment.NewLine +
+        " ETWAnalyzer -dump File -FileOperation Write -SortBy Count -PerProcess -smi *microsoft*" + Environment.NewLine;
 
 
         static readonly string ThreadPoolExamples = ExamplesHelpString +
