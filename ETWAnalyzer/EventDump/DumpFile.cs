@@ -268,13 +268,12 @@ namespace ETWAnalyzer.EventDump
 
                     if (IsPerProcess && bPrintOnce && !IsTotalMode)
                     {
-                        ColorConsole.WriteEmbeddedColorLine($"[grey]{group.Key.GetProcessWithId(UsePrettyProcessName)}{GetProcessTags(group.Key, group.First().SessionStart)}[/grey] {(NoCmdLine ? "" : group.Key.CmdLine)}", ConsoleColor.DarkCyan);
-                        
                         ModuleDefinition fileModule = group.First().FileModule;
-                        string moduleInfo = fileModule != null ? GetModuleString(fileModule, true) : "";
+                        string moduleInfo = fileModule != null ? GetModuleString(fileModule, true) : ""; 
+                        ColorConsole.WriteEmbeddedColorLine($"[grey]{group.Key.GetProcessWithId(UsePrettyProcessName)}{GetProcessTags(group.Key, group.First().SessionStart)}[/grey] {(NoCmdLine ? "" : group.Key.CmdLine)}", ConsoleColor.DarkCyan, fileModule != null ? true: false);
                         if (moduleInfo!="")
                         {
-                            ColorConsole.WriteEmbeddedColorLine($"[red]{moduleInfo}[/red]");
+                            ColorConsole.WriteEmbeddedColorLine($"[red] {moduleInfo}[/red]");
                         }
                         bPrintOnce = false;
                     }
