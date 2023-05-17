@@ -236,11 +236,7 @@ namespace ETWAnalyzer.EventDump
                 ulong totalBytesReceived = 0;
                 ulong totalBytesSent = 0;
                 int totalRetransmissionsCount = 0;
-                float totalRetransPercent = 0;
                 double totalSumRetransDelay = 0;
-                double totalRetransMaxms = 0;
-                double totalRetransMedianMs = 0;
-                double totalRetransMinMs = 0;
 
                 foreach (var match in file.SortAscendingGetTopNLast(SortBy, x => x.Connection.BytesReceived + x.Connection.BytesSent, null, TopN) )
                 {
@@ -295,7 +291,7 @@ namespace ETWAnalyzer.EventDump
 
                     ColorConsole.WriteEmbeddedColorLine($"{"N0".WidthFormat("", emptyWidth)}[Red]{fileDatagramsReceived} {fileBytesReceived} Bytes[/Red]" + 
                             $"[cyan]{fileDatagramsSent} {fileBytesSent} Bytes[/cyan]" +
-                            $" [magenta]{fileRetransmissionsCount} {fileSumRetransDelay} ms[/magenta]");
+                            $" [magenta]{fileRetransmissionsCount} {"N0".WidthFormat("", 6)} {fileSumRetransDelay} ms[/magenta]");
                 }
             }
         }
