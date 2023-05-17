@@ -249,11 +249,7 @@ namespace ETWAnalyzer.EventDump
                     totalBytesReceived += match.Connection.BytesReceived;
                     totalBytesSent += match.Connection.BytesSent;
                     totalRetransmissionsCount += match.Retransmissions.Count;
-                    totalRetransPercent += 100.0f * match.Retransmissions.Where(x => x.IsClientRetransmission.GetValueOrDefault() == false).Count() / match.Connection.DatagramsSent;
                     totalSumRetransDelay += match.Retransmissions.Sum(x => x.RetransmitDiff().TotalMilliseconds);
-                    totalRetransMaxms += match.RetransMaxms;
-                    totalRetransMedianMs += match.RetransMedianMs;
-                    totalRetransMinMs += match.RetransMinMs;
 
                     // retransmission % can only be calculated by sent packets and retransmission events excluding client retransmissions
                     string retransPercent = "N0".WidthFormat(100.0f * match.Retransmissions.Where(x=>x.IsClientRetransmission.GetValueOrDefault() == false).Count() / match.Connection.DatagramsSent, PercentWidth);
@@ -295,15 +291,11 @@ namespace ETWAnalyzer.EventDump
                     string fileBytesReceived = $"{"N0".WidthFormat(totalBytesReceived, BytesCountWidth)}";
                     string fileBytesSent = $"{"N0".WidthFormat(totalBytesSent, BytesCountWidth)}";
                     string fileRetransmissionsCount = $"{"N0".WidthFormat(totalRetransmissionsCount, PacketCountWidth)}";
-                    string fileRetransPercent = $"{"N0".WidthFormat(totalRetransPercent, PercentWidth)}";
                     string fileSumRetransDelay = $"{"N0".WidthFormat(totalSumRetransDelay, PacketCountWidth)}";
 
                     ColorConsole.WriteEmbeddedColorLine($"{"N0".WidthFormat("", emptyWidth)}[Red]{fileDatagramsReceived} {fileBytesReceived} Bytes[/Red]" + 
                             $"[cyan]{fileDatagramsSent} {fileBytesSent} Bytes[/cyan]" +
-                            $" [magenta]{fileRetransmissionsCount} {fileRetransPercent} % {fileSumRetransDelay} ms[/magenta]" +
-                        (ShowDetails ?
-                            $"  [magenta]{"F0".WidthFormat(totalRetransMaxms, RetransMsWidth)} ms {"F0".WidthFormat(totalRetransMedianMs, RetransMsWidth)} ms {"F0".WidthFormat(totalRetransMinMs, RetransMsWidth)} ms[/magenta]"
-                                    : ""));
+                            $" [magenta]{fileRetransmissionsCount} {fileSumRetransDelay} ms[/magenta]");
                 }
             }
         }
