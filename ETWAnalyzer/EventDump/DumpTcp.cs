@@ -288,7 +288,7 @@ namespace ETWAnalyzer.EventDump
 
                 //show per file totals always
                 {
-                    const int emptyWidth = 44;
+                    const int emptyWidth = 44; //hide the port data
                     string fileDatagramsReceived = $"{"N0".WidthFormat(totalDatagramsReceived, PacketCountWidth)}";
                     string fileDatagramsSent = $"{"N0".WidthFormat(totalDatagramsSent, PacketCountWidth)}";
                     string fileBytesReceived = $"{"N0".WidthFormat(totalBytesReceived, BytesCountWidth)}";
