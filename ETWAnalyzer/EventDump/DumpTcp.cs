@@ -230,6 +230,7 @@ namespace ETWAnalyzer.EventDump
             {
                 ColorConsole.WriteEmbeddedColorLine($"{file.First().Session.SessionStart,-22} {GetPrintFileName(file.Key)} {file.First().Session.Baseline}", ConsoleColor.Cyan);
 
+                // for total calculations
                 int totalDatagramsReceived = 0;
                 int totalDatagramsSent = 0;
                 ulong totalBytesReceived = 0;
@@ -288,7 +289,7 @@ namespace ETWAnalyzer.EventDump
 
                 //show per file totals always
                 {
-                    const int emptyWidth = 44; //hide the port data
+                    const int emptyWidth = 44; //hide the port data always
                     string fileDatagramsReceived = $"{"N0".WidthFormat(totalDatagramsReceived, PacketCountWidth)}";
                     string fileDatagramsSent = $"{"N0".WidthFormat(totalDatagramsSent, PacketCountWidth)}";
                     string fileBytesReceived = $"{"N0".WidthFormat(totalBytesReceived, BytesCountWidth)}";
