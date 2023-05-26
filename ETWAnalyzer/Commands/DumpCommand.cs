@@ -737,7 +737,7 @@ namespace ETWAnalyzer.Commands
         public bool FirstLastDuration { get; private set; }
         public DumpBase.TimeFormats? FirstTimeFormat { get; private set; }
         public DumpBase.TimeFormats? LastTimeFormat { get; private set; }
-        public TotalModes ShowTotal { get; private set; }
+        public TotalModes? ShowTotal { get; private set; }
 
         // Dump Memory specific Flags
         public bool TotalMemory { get; private set; }
