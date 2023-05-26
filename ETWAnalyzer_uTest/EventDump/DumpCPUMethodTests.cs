@@ -300,9 +300,9 @@ namespace ETWAnalyzer_uTest.EventDump
             Func<IGrouping<string, DumpCPUMethod.MatchData>, decimal> sorter = dumper.CreateFileSorter(fileTotals);
 
             List<IGrouping<string, DumpCPUMethod.MatchData>> fileGroups = data.GroupBy(x => x.SourceFile).OrderBy(sorter).ToList();
-            Assert.Equal(File1, fileGroups[0].Key);
-            Assert.Equal(File2, fileGroups[1].Key);
-            Assert.Equal(File3, fileGroups[2].Key);
+            Assert.Equal(File3, fileGroups[0].Key);
+            Assert.Equal(File1, fileGroups[1].Key);
+            Assert.Equal(File2, fileGroups[2].Key);
         }
 
         [Fact]
