@@ -50,6 +50,16 @@ namespace ETWAnalyzer.EventDump
         public DumpCommand.SortOrders SortOrder { get; internal set; }
         public bool NoCmdLine { get; internal set; }
 
+        public TotalModes? ShowTotal { get; internal set; }
+        /// <summary>
+        /// Show Summary row at the end, exclusively to handle None enum and null for TotalModes
+        /// </summary>
+        bool IsSummary => ShowTotal switch
+        {
+            TotalModes.None => false,
+            _ => true,
+        };
+
         public class Match
         {
             public ETWProcess Process;
@@ -362,7 +372,10 @@ namespace ETWAnalyzer.EventDump
                     ColorConsole.WriteEmbeddedColorLine($"[yellow]{m.Process.GetProcessWithId(UsePrettyProcessName)}[/yellow][grey]{GetProcessTags(m.Process, m.SessionStart)}[/grey] {(NoCmdLine ? "" : m.CmdLine)} ", ConsoleColor.DarkCyan, true);
                     ColorConsole.WriteEmbeddedColorLine($"[red]{moduleInfo}[/red]");
                 }
-                ColorConsole.WriteEmbeddedColorLine($"[cyan]Memory Total per File:[/cyan] [{GetTrendColor(totalDiff)}]TotalDiff: {totalDiff} [/{GetTrendColor(totalDiff)}] [{GetColorTotal(totalCommitedMemMiB)}] TotalCommitedMem: {totalCommitedMemMiB} MiB [/{GetColorTotal(totalCommitedMemMiB)}] [Darkyellow] Number of Involved Processes: {processCount} [/Darkyellow]");
+                if (IsSummary)
+                {
+                    ColorConsole.WriteEmbeddedColorLine($"[cyan]Memory Total per File:[/cyan] [{GetTrendColor(totalDiff)}]TotalDiff: {totalDiff} [/{GetTrendColor(totalDiff)}] [{GetColorTotal(totalCommitedMemMiB)}] TotalCommitedMem: {totalCommitedMemMiB} MiB [/{GetColorTotal(totalCommitedMemMiB)}] [Darkyellow] Number of Involved Processes: {processCount} [/Darkyellow]");
+                }
             }
         }
     }

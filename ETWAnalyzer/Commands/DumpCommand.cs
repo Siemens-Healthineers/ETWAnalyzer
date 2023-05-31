@@ -167,6 +167,7 @@ namespace ETWAnalyzer.Commands
         "                           [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd] [-MinMaxMsTestTimes xx-yy ...] [-ProcessName/pn xxx.exe(pid)] [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-CmdLine substring]" + Environment.NewLine +
         "                           [-ShowFullFileName/-sffn] [-ShowModuleInfo [Driver] or [filter]] [-ProcessFmt timefmt] " + Environment.NewLine +
         "                         Print memory (Working Set, Committed Memory) of all or some processes from extracted Json files. To get output -extract Memory, All or Default must have been used during extraction." + Environment.NewLine +
+        "                         -ShowTotal [None]          Show totals will be for the complete File if the filter is not mentioned. None will explicitly off the Summary." + Environment.NewLine +
         "                         -SortBy Commit/SharedCommit Sort by Committed/Shared Committed (this is are memory mapped files, or page file allocated file mappings). " + Environment.NewLine + "" +
         "                                 WorkingSet/Diff    Sort by working set or committed memory difference" + Environment.NewLine +
         "                         -TopN dd nn                Select top dd processes. Optional nn skips the first nn lines of top list" + Environment.NewLine +
@@ -245,7 +246,7 @@ namespace ETWAnalyzer.Commands
         "                         -Details                   Show more columns" + Environment.NewLine +
         "                         -ReverseFileName/rfn       Reverse file name. Useful with -Clip to keep output clean (no console wraparound regardless how long the file name is)." + Environment.NewLine +
         "                         -Merge                     Merge all selected Json files into one summary output. Useful to get a merged view of a session consisting of multiple ETL files." + Environment.NewLine +
-        "                         -ShowTotal [Total/Process/File] Show totals for the complete File/per process but skip aggregated directory metrics/per process but show also original aggregated directory metrics." + Environment.NewLine +
+        "                         -ShowTotal [Total/Process/File/None] Show totals for the complete File/per process but skip aggregated directory metrics/per process but show also original aggregated directory metrics. None will explicitly off the Summary" + Environment.NewLine +
         "                         For other options [-recursive] [-csv] [-NoCSVSeparator] [-NoCmdLine] [-TimeFmt] [-TestsPerRun] [-SkipNTests] [-TestRunIndex] [-TestRunCount] [-MinMaxMsTestTimes] [-ProcessName/pn] [-NewProcess] [-CmdLine]" + Environment.NewLine +
         "                         [-ShowFullFileName] refer to help of TestRun, Process and CPU (-ProcessFmt). Run \'EtwAnalyzer -help dump\' to get more infos." + Environment.NewLine;
 
@@ -308,6 +309,7 @@ namespace ETWAnalyzer.Commands
         "                         Print TCP summary and retransmit metrics. To see data you need to enable the Microsoft-Windows-TCPIP ETW provider. Data is sorted by retransmission count by default." + Environment.NewLine +
         "                         It can detect send retransmissions and duplicate received packets which show up as client retransmission events." + Environment.NewLine + 
         "                         -IpPort xxx                Filter for substrings in source/destination IP and port." + Environment.NewLine +
+        "                         -ShowTotal [None]          Show totals will be for the complete File if the filter is not mentioned. None will explicitly off the Summary." + Environment.NewLine +
         "                         -TopN dd nn                Show top n connection by current sort order" + Environment.NewLine +
         "                         -TopNRetrans dd nn         Show top n retransmission events when -ShowRetransmit is used" + Environment.NewLine +
         "                         -SortBy [...]              Default sort order is total bytes. Valid sort orders are ReceivedCount/SentCount/ReceivedSize/SentSize/TotalCount/TotalSize/ConnectTime/DisconnectTime/RetransmissionCount/RetransmissionTime/MaxRetransmissionTime" + Environment.NewLine +
@@ -398,7 +400,9 @@ namespace ETWAnalyzer.Commands
         "[green]Print memory consumption of all non Microsoft and Windows processes. You can also search for a given path where the executable is located. [/green]" + Environment.NewLine +
         " ETWAnalyzer -dump memory -fd C:\\Extract\\TestRuns -smi !*Microsoft*;!*Windows*" + Environment.NewLine +
         "[green]Print top 5 processes having highest diff (diff can be memory growth or loss).[/green]" + Environment.NewLine +
-        " ETWAnalyzer -dump Memory -SortBy Diff -TopN 5" + Environment.NewLine;
+        " ETWAnalyzer -dump Memory -SortBy Diff -TopN 5" + Environment.NewLine +
+        "[green]Summary is not printed.[/green]" + Environment.NewLine +
+        " ETWAnalyzer -dump Memory -ShowTotal None" + Environment.NewLine;
 
         static readonly string ExceptionExamples = ExamplesHelpString +
         "[green]Show all exceptions which did pass the exception filter during extraction, grouped by process, exception type and message.[/green]" + Environment.NewLine +
@@ -484,6 +488,8 @@ namespace ETWAnalyzer.Commands
         static readonly string TcpExamples = ExamplesHelpString +
         "[green]Dump all TCP connections and summary metrics sorted by retransmission count.[/green]" + Environment.NewLine +
         " ETWAnalyzer -fd xx.json -dump Tcp" + Environment.NewLine +
+        "[green]Dump all TCP connections and the summary metrics is not displayed.[/green]" + Environment.NewLine +
+        " ETWAnalyzer -fd xx.json -dump Tcp -ShowTotal None" + Environment.NewLine +
         "[green]Dump all TCP connections which have sent 4MB - 500MB data sorted by sent bytes.[/green]" + Environment.NewLine +
         " ETWAnalyzer -fd xx.json -dump Tcp  -SortBy SentSize -MinMaxSentBytes 4MB-500MB" + Environment.NewLine +
         "[green]Dump all TCP connections for a given port range 32* (substring match).[/green]" + Environment.NewLine +
@@ -1801,6 +1807,7 @@ namespace ETWAnalyzer.Commands
                             ShowModuleInfo = ShowModuleInfo,
                             ShowModuleFilter = ShowModuleFilter,
 
+                            ShowTotal = ShowTotal,
                             TopN = TopN,
                             SortOrder = SortOrder,
                             MinDiffMB = MinDiffMB,
@@ -1997,6 +2004,7 @@ namespace ETWAnalyzer.Commands
                             UsePrettyProcessName = UsePrettyProcessName,
                             TimeFormatOption = TimeFormat,
 
+                            ShowTotal = ShowTotal,
                             NoCmdLine = NoCmdLine,
                             TopN = TopN,
                             ShowDetails = ShowDetails,
