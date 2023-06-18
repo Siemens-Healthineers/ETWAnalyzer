@@ -229,8 +229,24 @@ namespace ETWAnalyzer.EventDump
             foreach (var file in byFile)
             {
                 ColorConsole.WriteEmbeddedColorLine($"{file.First().Session.SessionStart,-22} {GetPrintFileName(file.Key)} {file.First().Session.Baseline}", ConsoleColor.Cyan);
+
+                // for total calculations
+                int totalDatagramsReceived = 0;
+                int totalDatagramsSent = 0;
+                ulong totalBytesReceived = 0;
+                ulong totalBytesSent = 0;
+                int totalRetransmissionsCount = 0;
+                double totalSumRetransDelay = 0;
+
                 foreach (var match in file.SortAscendingGetTopNLast(SortBy, x => x.Connection.BytesReceived + x.Connection.BytesSent, null, TopN) )
                 {
+                    totalDatagramsReceived += match.Connection.DatagramsReceived;
+                    totalDatagramsSent += match.Connection.DatagramsSent;
+                    totalBytesReceived += match.Connection.BytesReceived;
+                    totalBytesSent += match.Connection.BytesSent;
+                    totalRetransmissionsCount += match.Retransmissions.Count;
+                    totalSumRetransDelay += match.Retransmissions.Sum(x => x.RetransmitDiff().TotalMilliseconds);
+
                     // retransmission % can only be calculated by sent packets and retransmission events excluding client retransmissions
                     string retransPercent = "N0".WidthFormat(100.0f * match.Retransmissions.Where(x=>x.IsClientRetransmission.GetValueOrDefault() == false).Count() / match.Connection.DatagramsSent, PercentWidth);
 
@@ -261,6 +277,32 @@ namespace ETWAnalyzer.EventDump
                                               $"SequenceNr: {retrans.SequenceNumber} {clientTransmission}");
                         }
                     }
+                }
+
+                //show per file totals always
+                {
+                    int emptyWidth = totalIPLen + 1; //hide the port data always
+                    const int totalTotalColumnWidth = 23;
+                    string fileDatagramsReceived = $"{"N0".WidthFormat(totalDatagramsReceived, PacketCountWidth)}";
+                    string fileDatagramsSent = $"{"N0".WidthFormat(totalDatagramsSent, PacketCountWidth)}";
+                    string fileBytesReceived = $"{"N0".WidthFormat(totalBytesReceived, BytesCountWidth)}";
+                    string fileBytesSent = $"{"N0".WidthFormat(totalBytesSent, BytesCountWidth)}";
+                    string fileRetransmissionsCount = $"{"N0".WidthFormat(totalRetransmissionsCount, PacketCountWidth)}";
+                    string fileSumRetransDelay = $"{"N0".WidthFormat(totalSumRetransDelay, PacketCountWidth)}";
+                    string totalGetTotalString(int width)
+                    {
+                        return SortOrder switch
+                        {
+                            SortOrders.TotalCount => "N0".WidthFormat(totalDatagramsReceived + totalDatagramsSent, width),
+                            SortOrders.TotalSize => $"{totalBytesReceived + totalBytesSent:N0} Bytes".WithWidth(width),
+                            _ => ""
+                        };
+                    }
+
+                    ColorConsole.WriteEmbeddedColorLine($"{"N0".WidthFormat("", emptyWidth)}[Red]{fileDatagramsReceived} {fileBytesReceived} Bytes[/Red]" + 
+                            $" [cyan]{fileDatagramsSent} {fileBytesSent} Bytes[/cyan]" +
+                            $"[green]{totalGetTotalString(totalTotalColumnWidth)}[/green]"+
+                            $" [magenta]{fileRetransmissionsCount} {"N0".WidthFormat("", 6)} {fileSumRetransDelay} ms[/magenta]");
                 }
             }
         }

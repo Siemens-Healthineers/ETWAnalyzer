@@ -188,6 +188,11 @@ namespace ETWAnalyzer.Extractors.TCP
             foreach (var retrans in myRetransmits)
             {
                 retrans.Connection = LocateConnection(retrans.Tcb, retrans.Timestamp, results, ref connectionsByTcb);
+                if( retrans.Connection == null )
+                {
+                    continue;
+                }
+
                 foreach (var sent in sentByConnection[retrans.Connection].OrderBy(x => x.Timestamp))
                 {
                     if (sent.SequenceNr == retrans.SndUna)
