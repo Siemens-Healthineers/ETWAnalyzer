@@ -4,7 +4,7 @@
     <Tag Name="Windows">
         <Tag Name="Trim Working Set">
             <Entrypoint Module="ntoskrnl.exe" Method="MiTrimWorkingSet*"/>
-        </Tag>
+        </Tag>		
         <Tag Name="Read Ahead into File System Cache">
             <Entrypoint Module="ntoskrnl.exe" Method="CcPerformReadAhead*"/>
         </Tag>
@@ -28,13 +28,13 @@
         <Tag Name="NTFS Close File">
             <Entrypoint Module="ntfs.sys" Method="NtfsFspClose*"/>
         </Tag>
-        <Tag Name="ReadDirectoryChanges">
-            <Entrypoint Module="KernelBase.dll" Method="ReadDirectoryChangesW*"/>
-        </Tag>
-        <Tag Name="NtfsReportDirNotify - Delays File operations when someone is listening to directory change events via ReadDirectoryChanges">
-            <Entrypoint Module="Ntfs.sys" Method="NtfsReportDirNotify*"/>
-        </Tag>
-        <Tag Name="Windows Overlay FileSystem\Decompress WIM file (mostly during boot). See https://devblogs.microsoft.com/oldnewthing/20190618-00/?p=102597" >
+		<Tag Name="ReadDirectoryChanges">
+			<Entrypoint Module="KernelBase.dll" Method="ReadDirectoryChangesW*"/>
+		</Tag>
+		<Tag Name="NtfsReportDirNotify - Delays File operations when someone is listening to directory change events via ReadDirectoryChanges">
+			<Entrypoint Module="Ntfs.sys" Method="NtfsReportDirNotify*"/>
+		</Tag>		
+		<Tag Name="Windows Overlay FileSystem\Decompress WIM file (mostly during boot). See https://devblogs.microsoft.com/oldnewthing/20190618-00/?p=102597" >
             <Entrypoint Module="Wof.sys" Method="*"/>
         </Tag>
         <Tag Name="Code Integrity (Device Guard) Overhead\This slows down dll loads and is an issue if it is high" Priority="1000">
@@ -203,6 +203,7 @@
   <Tag Name="Nexthink Driver Overhead">
     <Entrypoint Module="nxtrdrv.sys" Method="*" />
   </Tag>
+
 
 
     <Tag Name="Antivirus - AppLocker" Priority="1">
@@ -405,7 +406,7 @@
         </Tag>
     </Tag>
 
-	
+
 	<Tag Name="DWM Render">
         <Entrypoint Module="dwmcore.dll" Method="CPartitionVerticalBlankScheduler::ProcessFrame*"/>
   </Tag>
@@ -723,7 +724,12 @@
     </Tag>
   </Tag>
   <Tag Name=".NET">
-    <Tag Name="XAML Load" Priority="1" >
+	  <Tag Name="zlib Decompress">
+		  <Entrypoint Module="System.ni.dll" Method="System.IO.Compression.InflaterZlib.Inflate*"/>
+		  <Entrypoint Module="System.dll" Method="System.IO.Compression.InflaterZlib::Inflate*"/>
+	  </Tag>
+
+	  <Tag Name="XAML Load" Priority="1" >
       <Entrypoint Module="PresentationFramework.ni.dll" Method="System.Windows.Markup.XamlReader.Load*"/>
       <Entrypoint Module="PresentationFramework.dll" Method="System.Windows.Markup.XamlReader::Load*"/>
     </Tag>
@@ -1148,6 +1154,9 @@
       <Tag Name="Modified Page Writer">
         <Entrypoint Module="ntoskrnl.exe" Method="MiModifiedPageWriter"/>
       </Tag>
+	  <Tag Name="WaitForWork">
+		  <Entrypoint Module="*" Method="*::WaitForWork"/>
+	  </Tag>
       <Tag Name="OS Wait" Priority="-1">
         <Entrypoint Module="ntoskrnl.exe" Method="KiSystemServiceCopyEnd*"/>
       </Tag>
@@ -1210,6 +1219,9 @@
         <Entrypoint Module="ws2_32.dll" Method="select*"/>
       </Tag>
     </Tag>
+    <Tag Name="DoWork">
+		  <Entrypoint Module="*" Method="*::DoWork"/>
+	</Tag>
     <Tag Name="WCF IO Completion Wait" Priority="-9">
       <Entrypoint Module="System.ServiceModel.Internals.ni.dll" Method="System.Runtime.IOThreadScheduler+ScheduledOverlapped.IOCallback*"/>
       <Entrypoint Module="System.ServiceModel.Internals.dll" Method="System.Runtime.IOThreadScheduler+ScheduledOverlapped::IOCallback*"/>
@@ -1224,43 +1236,5 @@
     <Tag Name="COM Cross Apartment Call Wait" Priority="-9">
       <Entrypoint Module="combase.dll" Method="MTAThreadDispatchCrossApartmentCall*"/>
     </Tag>
-
-
-
-
-
-
-
   </Tag>
-  <Tag Name="Tracing Overhead">
-    <Tag Name="ETW Stackwalks">
-      <Entrypoint Module="ntoskrnl.exe" Method="EtwpTraceStackWalk*"/>
-      <Entrypoint Module="ntkrnlpa.exe" Method="EtwpTraceStackWalk*"/>
-      <Entrypoint Module="ntoskrnl.exe" Method="EtwpStackTraceDispatcher*"/>
-      <Entrypoint Module="ntkrnlpa.exe" Method="EtwpStackTraceDispatcher*"/>
-      <Entrypoint Module="*clr.dll" Method="EtwCallout*"/>
-    </Tag>
-      </Tag>
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 </Tag>
