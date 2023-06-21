@@ -91,7 +91,7 @@ namespace ETWAnalyzer.EventDump
         /// <summary>
         /// When present print method totals
         /// </summary>
-        public TotalModes ShowTotal { get; internal set; }
+        public TotalModes? ShowTotal { get; internal set; }
 
         /// <summary>
         /// Used by -FirstLastDuration x

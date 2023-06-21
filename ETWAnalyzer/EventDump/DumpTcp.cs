@@ -69,6 +69,17 @@ namespace ETWAnalyzer.EventDump
         public bool OnlyClientRetransmit { get; internal set; }
         public MinMaxRange<int> MinMaxRetransCount { get; internal set; } = new();
 
+        public TotalModes? ShowTotal { get; internal set; }
+
+        /// <summary>
+        /// Show Summary row at the end, exclusively to handle None enum and null for TotalModes
+        /// </summary>
+        bool IsSummary => ShowTotal switch
+        {
+            TotalModes.None => false,
+            _ => true,
+        };
+
 
         /// <summary>
         /// Unit testing only. ReadFileData will return this list instead of real data
@@ -299,10 +310,13 @@ namespace ETWAnalyzer.EventDump
                         };
                     }
 
-                    ColorConsole.WriteEmbeddedColorLine($"{"N0".WidthFormat("", emptyWidth)}[Red]{fileDatagramsReceived} {fileBytesReceived} Bytes[/Red]" + 
+                    if (IsSummary)
+                    {
+                        ColorConsole.WriteEmbeddedColorLine($"{"N0".WidthFormat("", emptyWidth)}[Red]{fileDatagramsReceived} {fileBytesReceived} Bytes[/Red]" +
                             $" [cyan]{fileDatagramsSent} {fileBytesSent} Bytes[/cyan]" +
-                            $"[green]{totalGetTotalString(totalTotalColumnWidth)}[/green]"+
+                            $"[green]{totalGetTotalString(totalTotalColumnWidth)}[/green]" +
                             $" [magenta]{fileRetransmissionsCount} {"N0".WidthFormat("", 6)} {fileSumRetransDelay} ms[/magenta]");
+                    }
                 }
             }
         }

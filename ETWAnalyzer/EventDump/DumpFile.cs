@@ -9,6 +9,7 @@ using ETWAnalyzer.Extract.Modules;
 using ETWAnalyzer.Infrastructure;
 using ETWAnalyzer.ProcessTools;
 using Microsoft.Diagnostics.Tracing.StackSources;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -43,7 +44,7 @@ namespace ETWAnalyzer.EventDump
         public bool NoCmdLine { get; internal set; }
         public bool ShowDetails { get; internal set; }
         public bool ReverseFileName { get; internal set; }
-        public TotalModes ShowTotal { get; internal set; }
+        public TotalModes? ShowTotal { get; internal set; }
 
         /// <summary>
         /// Show per process totals but skip headers and grouped output
@@ -67,6 +68,29 @@ namespace ETWAnalyzer.EventDump
         bool IsFileTotalMode
         {
             get => ShowTotal == TotalModes.File;
+        }
+
+        /// <summary>
+        /// Show everything, but show totals at the end exclusively to handle None enum and null for TotalModes
+        /// </summary>
+        bool IsSummary
+        {
+            get
+            {
+                switch(ShowTotal)
+                {
+                    case TotalModes.Process:
+                        return true;
+                    case TotalModes.Total:
+                        return true;
+                    case TotalModes.File: 
+                        return true;
+                    case TotalModes.None: 
+                        return false;
+                    default:
+                        return true;
+                }
+            }
         }
 
         /// <summary>
@@ -350,23 +374,26 @@ namespace ETWAnalyzer.EventDump
 
             // Show per file totals always
             {
-                string dynamicTotalString = FormatDynamicColumnTotal(dynamicColumnTotal);
-                dynamicTotalString = sortOrderHeadline != null ?  $"{dynamicTotalString, sortOrderColumnWidth-1} " : "";
-
-                string fileReadKB = $"{totalFileReadSizeInBytes / Kilo:N0}";
-                string fileReadTimeS = $"{totalFileReadTimeInus / Million:F5}";
-                string fileWriteKB = $"{totalFileWriteSizeInBytes / Kilo:N0}";
-                string fileWriteTimeS = $"{totalFileWriteTimeInus / Million:F5}";
-                string fileOpenCloseTimeS = $"{totalFileOpenCloseTimeInus / Million:F5}";
-                string fileTotalTimeS = $"{(totalFileReadTimeInus + totalFileWriteTimeInus + totalFileOpenCloseTimeInus) / Million:F5}";
-
-                if (ShowDetails)
+                if (IsSummary)
                 {
-                    ColorConsole.WriteEmbeddedColorLine($"[cyan]{dynamicTotalString}[/cyan][red]r {fileReadKB,12} KB {fileReadTimeS,10} s {totalFileReadCount,6}[/red] [magenta]w {fileWriteKB,12} KB {fileWriteTimeS,10} s {totalFileWriteCount,6} [/magenta] [yellow] O+C {fileOpenCloseTimeS,10} s Open: {totalFileOpenCount,6} Close: {totalFileCloseCount,6} SetSecurity: {totalFileSetSecurityCount,6} Del: {totalFileDeleteCount,5}, Ren: {totalFileRenameCount,5}[/yellow] [magenta]TotalTime: {fileTotalTimeS} s[/magenta] File/s Total with {totalFileCount} accessed file/s. Process Count: {processes.Count}");
-                }
-                else
-                {
-                    ColorConsole.WriteEmbeddedColorLine($"[cyan]{dynamicTotalString}[/cyan][red]r {fileReadKB,12} KB {fileReadTimeS,10} s {totalFileReadCount,6}[/red] [magenta]w {fileWriteKB,12} KB {fileWriteTimeS,10} s {totalFileWriteCount,6} [/magenta] [yellow] O+C {fileOpenCloseTimeS,10} s Open: {totalFileOpenCount,6} Close: {totalFileCloseCount,6}[/yellow] [magenta]TotalTime: {fileTotalTimeS} s[/magenta] File/s Total with {totalFileCount} accessed file/s. Process Count: {processes.Count}");
+                    string dynamicTotalString = FormatDynamicColumnTotal(dynamicColumnTotal);
+                    dynamicTotalString = sortOrderHeadline != null ? $"{dynamicTotalString,sortOrderColumnWidth - 1} " : "";
+
+                    string fileReadKB = $"{totalFileReadSizeInBytes / Kilo:N0}";
+                    string fileReadTimeS = $"{totalFileReadTimeInus / Million:F5}";
+                    string fileWriteKB = $"{totalFileWriteSizeInBytes / Kilo:N0}";
+                    string fileWriteTimeS = $"{totalFileWriteTimeInus / Million:F5}";
+                    string fileOpenCloseTimeS = $"{totalFileOpenCloseTimeInus / Million:F5}";
+                    string fileTotalTimeS = $"{(totalFileReadTimeInus + totalFileWriteTimeInus + totalFileOpenCloseTimeInus) / Million:F5}";
+
+                    if (ShowDetails)
+                    {
+                        ColorConsole.WriteEmbeddedColorLine($"[cyan]{dynamicTotalString}[/cyan][red]r {fileReadKB,12} KB {fileReadTimeS,10} s {totalFileReadCount,6}[/red] [magenta]w {fileWriteKB,12} KB {fileWriteTimeS,10} s {totalFileWriteCount,6} [/magenta] [yellow] O+C {fileOpenCloseTimeS,10} s Open: {totalFileOpenCount,6} Close: {totalFileCloseCount,6} SetSecurity: {totalFileSetSecurityCount,6} Del: {totalFileDeleteCount,5}, Ren: {totalFileRenameCount,5}[/yellow] [magenta]TotalTime: {fileTotalTimeS} s[/magenta] File/s Total with {totalFileCount} accessed file/s. Process Count: {processes.Count}");
+                    }
+                    else
+                    {
+                        ColorConsole.WriteEmbeddedColorLine($"[cyan]{dynamicTotalString}[/cyan][red]r {fileReadKB,12} KB {fileReadTimeS,10} s {totalFileReadCount,6}[/red] [magenta]w {fileWriteKB,12} KB {fileWriteTimeS,10} s {totalFileWriteCount,6} [/magenta] [yellow] O+C {fileOpenCloseTimeS,10} s Open: {totalFileOpenCount,6} Close: {totalFileCloseCount,6}[/yellow] [magenta]TotalTime: {fileTotalTimeS} s[/magenta] File/s Total with {totalFileCount} accessed file/s. Process Count: {processes.Count}");
+                    }
                 }
             }
         }
