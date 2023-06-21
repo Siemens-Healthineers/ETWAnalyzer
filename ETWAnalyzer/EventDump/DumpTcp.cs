@@ -72,7 +72,7 @@ namespace ETWAnalyzer.EventDump
         public TotalModes? ShowTotal { get; internal set; }
 
         /// <summary>
-        /// Show Summary row at the end, exclusively to handle None enum and null for TotalModes
+        /// Show per file totals
         /// </summary>
         bool IsSummary => ShowTotal switch
         {
