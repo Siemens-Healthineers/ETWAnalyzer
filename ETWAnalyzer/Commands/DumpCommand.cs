@@ -454,7 +454,9 @@ namespace ETWAnalyzer.Commands
         "[green]Show files with at least 50 read operations (sorted by read count) by filtering for file read data which will null out all other columns.[/green]" + Environment.NewLine +
         " ETWAnalyzer -dump File -filedir xx.json -FileOperation Read -MinMaxTotalCount 50 -SortBy Count -DirLevel 100" + Environment.NewLine +
         "[green]Show per process totals for all processes with show module information (exclusively to be used perprocess only). Print process start/stop/duration besides process name with information details exclusively for Microsoft processes.[/green]" + Environment.NewLine +
-        " ETWAnalyzer -dump File -FileOperation Write -SortBy Count -PerProcess -smi *microsoft*" + Environment.NewLine;
+        " ETWAnalyzer -dump File -FileOperation Write -SortBy Count -PerProcess -smi *microsoft*" + Environment.NewLine +
+        "[green]Dump files and the summary metrics is not displayed.[/green]" + Environment.NewLine +
+        " ETWAnalyzer -fd xx.json -dump File -ShowTotal None" + Environment.NewLine;
 
 
         static readonly string ThreadPoolExamples = ExamplesHelpString +
