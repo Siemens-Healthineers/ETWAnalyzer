@@ -12,6 +12,8 @@ using System.Collections.Generic;
 using System.Linq;
 using ETWAnalyzer.Extract.Modules;
 using System.Diagnostics;
+using ETWAnalyzer.Commands;
+using static ETWAnalyzer.Commands.DumpCommand;
 
 namespace ETWAnalyzer.EventDump
 {
@@ -30,6 +32,11 @@ namespace ETWAnalyzer.EventDump
             Dll,
             Pdb
         }
+
+        public SkipTakeRange TopN { get; internal set; }
+
+        public DumpCommand.SortOrders SortOrder { get; internal set; }
+
 
         public PrintMode Mode { get; set; }
 
@@ -146,7 +153,7 @@ namespace ETWAnalyzer.EventDump
         List<MatchData> GetAndPrintVersions(IETWExtract data, TestDataFile sourceFile)
         {
             var lret = new List<MatchData>();
-
+            
             if (data.Modules == null)
             {
                 ColorConsole.WriteError($"No extracted module data found for file {myCurrentFile}");
@@ -252,13 +259,10 @@ namespace ETWAnalyzer.EventDump
         private void ExtractDllData(IETWExtract data, TestDataFile sourceFile, List<MatchData> lret)
         {
             foreach (var processGroup in data.Modules.Modules.Where(x => DllFilter.Value(x.ModuleName))
-                     .SelectMany(m => m.Processes.Select(p => new KeyValuePair<ModuleDefinition, ETWProcess>(m, p))).ToLookup(x => x.Value, x => x.Key))
+                     .SelectMany(m => m.Processes.Select(p => new KeyValuePair<ModuleDefinition, ETWProcess>(m, p))).ToLookup(x => x.Value, x => x.Key)
+                     .Where(x => ProcessNameFilter(x.Key.GetProcessWithId(UsePrettyProcessName))).SortAscendingGetTopNLast(x => x.Key.ProcessName, null, TopN))
             {
-                if (!ProcessNameFilter(processGroup.Key.GetProcessWithId(UsePrettyProcessName)))
-                {
-                    continue;
-                }
-
+                
                 bool bHeaderPrinted = false;
                 foreach (var module in processGroup.OrderBy(x => x.ModuleName))
                 {
@@ -282,7 +286,6 @@ namespace ETWAnalyzer.EventDump
 
                             ColorConsole.WriteLine($"    {module.ModuleName} {moduleString}");
                         }
-
                         lret.Add(
                                 new MatchData
                                 {
