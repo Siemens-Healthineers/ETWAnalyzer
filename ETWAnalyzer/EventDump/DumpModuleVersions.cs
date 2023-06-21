@@ -318,19 +318,6 @@ namespace ETWAnalyzer.EventDump
             return ModuleFilter(version.Module);
         }
 
-        static internal readonly SortOrders[] ValidSortOrders = new[]
-        {
-            SortOrders.Time,
-            SortOrders.Default,
-        };
-        int SortByValue(MatchData data)
-        {
-            return SortOrder switch
-            {
-                SortOrders.Time => data.Duration,
-                _ => data.Duration,
-            };
-        }
 
         internal class MatchData : IEquatable<MatchData>
         {
