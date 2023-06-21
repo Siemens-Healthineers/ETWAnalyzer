@@ -1565,6 +1565,8 @@ namespace ETWAnalyzer.Commands
                             DllFilter = DllFilter,
                             MissingPdbFilter = MissingPdbFilter,
                             VersionFilter = VersionFilter,
+                            TopN = TopN,
+                            SortOrder = SortOrder,
                         };
                         break;
                     case DumpCommands.Process:
