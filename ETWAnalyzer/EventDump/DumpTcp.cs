@@ -194,7 +194,8 @@ namespace ETWAnalyzer.EventDump
 
         private void PrintMatches(List<MatchData> data)
         {
-            if( data.Count == 0 )
+
+            if ( data.Count == 0 )
             {
                 return;
             }
@@ -240,6 +241,7 @@ namespace ETWAnalyzer.EventDump
             foreach (var file in byFile)
             {
                 ColorConsole.WriteEmbeddedColorLine($"{file.First().Session.SessionStart,-22} {GetPrintFileName(file.Key)} {file.First().Session.Baseline}", ConsoleColor.Cyan);
+                int printedFiles = 0;
 
                 // for total calculations
                 int totalDatagramsReceived = 0;
@@ -278,6 +280,7 @@ namespace ETWAnalyzer.EventDump
                                 : "") +                                      
                                       $"[magenta]{match.Process.GetProcessWithId(UsePrettyProcessName)}[/magenta][grey]{GetProcessTags(match.Process, match.Session.AdjustedSessionStart)}[/grey]", ConsoleColor.White, true);
                     ColorConsole.WriteLine(NoCmdLine ? "" : match.Process.CommandLineNoExe, ConsoleColor.DarkCyan);
+                    printedFiles++;
 
                     if (ShowRetransmit)
                     {
@@ -310,7 +313,7 @@ namespace ETWAnalyzer.EventDump
                         };
                     }
 
-                    if (IsSummary)
+                    if (IsSummary && printedFiles > 1)
                     {
                         ColorConsole.WriteEmbeddedColorLine($"{"N0".WidthFormat("", emptyWidth)}[Red]{fileDatagramsReceived} {fileBytesReceived} Bytes[/Red]" +
                             $" [cyan]{fileDatagramsSent} {fileBytesSent} Bytes[/cyan]" +
