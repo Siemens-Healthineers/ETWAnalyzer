@@ -37,9 +37,10 @@ namespace ETWAnalyzer.Commands
         static readonly string VersionHelpString =
         "   Version  -filedir/fd x.etl/.json [-dll xxxx.dll] [-VersionFilter xxx] [-MissingPdb [xxx.pdb]] [-ModuleFilter xxx] [-ProcessName/pn xxx.exe(pid)] [-NoCmdLine] [-csv xx.csv]" + Environment.NewLine +
         "                           [-Clip] [-PlainProcessNames] [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd] [-MinMaxMsTestTimes xx-yy ...]" + Environment.NewLine +
-        "                           [-ShowFullFileName/-sffn]" + Environment.NewLine +
+        "                           [-ShowFullFileName/-sffn] [-topn dd nn]" + Environment.NewLine +
         "                         Dump module versions of given ETL or Json. For Json files the option -extract Module All or Default must be used during extraction to get with -dll version information." + Environment.NewLine +
         "                         -dll xxx.dll              All file versions of that dll are printed. If -dll * is used all file versions are printed." + Environment.NewLine +
+        "                         -topn dd [nn]             Valid when -dll ... is used. Limit output to last dd processes where optionally nn are skipped from alphabetically sorted list." + Environment.NewLine + 
         "                         -MissingPdb filter        Print a filtered summary of all unresolved pdbs which could not be resolved during extraction." + Environment.NewLine +
         "                         -VersionFilter filter     Filter against module path and version strings. Multiple filters are separated by ;. Wildcards are * and ?. Exclusion filters start with !" + Environment.NewLine +
         "                         -ModuleFilter  filter     Extracted data from Config\\DllToBuildMapping.json. Print only version information for module. Multiple filters are separated by ;. Wildcards are * and ?. Exclusion filters start with !" + Environment.NewLine;
