@@ -82,11 +82,10 @@
       <Version>3.0.6</Version>
     </PackageReference>
     <PackageReference Include="Microsoft.Windows.EventTracing.Processing.All">
-      <Version>1.11.109</Version>
+      <Version>1.12.9</Version>
     </PackageReference>
-    <PackageReference Include="Microsoft.Windows.EventTracing.Processing.Toolkit" Version="1.11.0" />
     <PackageReference Include="Newtonsoft.Json">
-      <Version>13.0.2</Version>
+      <Version>13.0.3</Version>
     </PackageReference>
     <PackageReference Include="System.Configuration.ConfigurationManager" Version="5.0.0" />
   </ItemGroup>
