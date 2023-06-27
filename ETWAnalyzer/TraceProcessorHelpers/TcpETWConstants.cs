@@ -68,6 +68,10 @@ namespace ETWAnalyzer.TraceProcessorHelpers
         public const int TcpCloseTcbRequest = 1038;
 
         /// <summary>
+        /// Fields: Tcb:Pointer, LocalAddressLength, LocalAddress:Binary, RemoteAddressLength, RemoteAddress:Binary, NewState, RexmitCount
+        /// </summary>
+        public const int TcpConnectTcbFailedRcvdRst = 1183;
+        /// <summary>
         /// Fields: Tcb, LocalAddress, RemoteAddress, NewState 
         /// </summary>
         public const int TcpDataTransferRestransmit = 1187;
@@ -103,6 +107,11 @@ namespace ETWAnalyzer.TraceProcessorHelpers
         public const string LocalAddressField = "LocalAddress";
 
         /// <summary>
+        /// New State field name
+        /// </summary>
+        public const string NewStateField = "NewState";
+
+        /// <summary>
         /// Remote address
         /// </summary>
         public const string RemoteAddressField = "RemoteAddress";
@@ -126,5 +135,26 @@ namespace ETWAnalyzer.TraceProcessorHelpers
         /// Process Id
         /// </summary>
         public const string PidField = "Pid";
+
+        /// <summary>
+        /// Bytes Sent field
+        /// </summary>
+        public const string BytesSentField = "BytesSent";
+
+        /// <summary>
+        /// Sequence Number field
+        /// </summary>
+        public const string SeqNoField = "SeqNo";
+
+        /// <summary>
+        /// Number of received bytes
+        /// </summary>
+        public const string NumBytesField = "NumBytes";
+
+        /// <summary>
+        /// Send Unacknowledged Data
+        /// </summary>
+        public const string SndUnaField = "SndUna";
+
     }
 }

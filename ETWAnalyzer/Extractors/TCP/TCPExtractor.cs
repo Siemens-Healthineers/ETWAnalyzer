@@ -69,7 +69,14 @@ namespace ETWAnalyzer.Extractors.TCP
                 return;
             }
 
-            foreach (var ev in myGenericEvents.Result.Events.Where(IsValidTcpEvent).OrderBy(x => x.Timestamp).ToArray())
+            IGenericEvent[] events = myGenericEvents.Result.Events.Where(IsValidTcpEvent).OrderBy(x => x.Timestamp).ToArray();
+            ExtractFromGenericEvents(results, events);
+
+        }
+
+        internal void ExtractFromGenericEvents(ETWExtract results, IGenericEvent[] events)
+        {
+            foreach (var ev in events)
             {
                 switch (ev.Id)
                 {
@@ -94,6 +101,9 @@ namespace ETWAnalyzer.Extractors.TCP
                     case TcpETWConstants.TcpConnectionSummary:
                         OnTcpConnectionSummary(ev);
                         break;
+                    case TcpETWConstants.TcpConnectTcbFailedRcvdRst:
+                        OnTcpConnectTcbFailedRcvdRst(ev);
+                        break;
                     case TcpETWConstants.TcpConnectionRundown:
                         OnTcpConnectionRundown(ev);
                         break;
@@ -112,10 +122,10 @@ namespace ETWAnalyzer.Extractors.TCP
 
             ILookup<ulong, TcpRequestConnect> connectionsByTcb = myConnections.ToLookup(x => x.Tcb);
 
-            
-            foreach(TcpDataSend send in mySendEvents)
+
+            foreach (TcpDataSend send in mySendEvents)
             {
-               send.Connection = LocateConnection(send.Tcb, send.Timestamp, results, ref connectionsByTcb);
+                send.Connection = LocateConnection(send.Tcb, send.Timestamp, results, ref connectionsByTcb);
             }
 
             ILookup<TcpRequestConnect, TcpDataSend> sentByConnection = mySendEvents.ToLookup(x => x.Connection);
@@ -127,7 +137,7 @@ namespace ETWAnalyzer.Extractors.TCP
 
             ILookup<TcpRequestConnect, TcpDataTransferReceive> receivedByConnection = myReceiveEvents.ToLookup(x => x.Connection);
 
-            foreach(TcpTemplateChanged templateChange in myTemplateChangedEvents)
+            foreach (TcpTemplateChanged templateChange in myTemplateChangedEvents)
             {
                 templateChange.Connection = LocateConnection(templateChange.Tcb, templateChange.Timestamp, results, ref connectionsByTcb);
             }
@@ -139,20 +149,18 @@ namespace ETWAnalyzer.Extractors.TCP
 
 
             // Store connections in ETWExtract
-            foreach (TcpRequestConnect tcpconnection in connectionsByTcb.SelectMany(x=>x).OrderBy(x=>x.RemoteIpAndPort.Address) )
+            foreach (TcpRequestConnect tcpconnection in connectionsByTcb.SelectMany(x => x).OrderBy(x => x.RemoteIpAndPort.Address))
             {
                 List<string> templates = new();
-                foreach(var change in byConnectionTemplateChanges[tcpconnection].OrderBy(x=>x.Timestamp))
+                foreach (var change in byConnectionTemplateChanges[tcpconnection].OrderBy(x => x.Timestamp))
                 {
                     templates.Add(change.TemplateType.ToString());
                 }
 
-                var filterConnection = (IGenericTcpEvent ev) => ev.Connection == tcpconnection;
-
-                ulong bytesReceived = (ulong) receivedByConnection[tcpconnection].Sum(x => (decimal) ((TcpDataTransferReceive) x).NumBytes);
+                ulong bytesReceived = (ulong)receivedByConnection[tcpconnection].Sum(x => (decimal)((TcpDataTransferReceive)x).NumBytes);
 
 
-                ulong bytesSent = (ulong)sentByConnection[tcpconnection].Sum(x => (decimal) ((TcpDataSend) x).BytesSent);
+                ulong bytesSent = (ulong)sentByConnection[tcpconnection].Sum(x => (decimal)((TcpDataSend)x).BytesSent);
                 int datagramsReceived = receivedByConnection[tcpconnection].Count();
                 int datagramsSent = sentByConnection[tcpconnection].Count();
 
@@ -188,7 +196,7 @@ namespace ETWAnalyzer.Extractors.TCP
             foreach (var retrans in myRetransmits)
             {
                 retrans.Connection = LocateConnection(retrans.Tcb, retrans.Timestamp, results, ref connectionsByTcb);
-                if( retrans.Connection == null )
+                if (retrans.Connection == null)
                 {
                     continue;
                 }
@@ -201,9 +209,28 @@ namespace ETWAnalyzer.Extractors.TCP
                     }
                 }
             }
-
         }
 
+        readonly List<TcpConnectTcbFailedRcvdRst> myTcpConnectTcbFailedRcvdRst = new();
+
+        private void OnTcpConnectTcbFailedRcvdRst(IGenericEvent ev)
+        {
+            TcpConnectTcbFailedRcvdRst rst = new(ev);
+            myTcpConnectTcbFailedRcvdRst.Add(rst);
+
+            ulong tcb = (ulong)ev.Fields[TcpETWConstants.TcbField].AsAddress.Value;
+
+            // connection open did fail. There is no close event
+            foreach (var connect in myConnections.OrderByDescending(x => x.TimeStampOpen))
+            {
+                if (connect.Tcb == tcb && connect.TimeStampOpen < rst.Timestamp && connect.TimeStampClose == null)
+                {
+                    connect.TimeStampClose = rst.Timestamp;
+                    break;
+                }
+            }
+
+        }
 
         readonly List<TcpTemplateChanged> myTemplateChangedEvents = new();
 
@@ -250,7 +277,7 @@ namespace ETWAnalyzer.Extractors.TCP
 
         private void OnClose(IGenericEvent ev)
         {
-            ulong tcb =  (ulong) ev.Fields["Tcb"].AsAddress.Value;
+            ulong tcb =  (ulong) ev.Fields[TcpETWConstants.TcbField].AsAddress.Value;
             foreach(var connect in myConnections.OrderByDescending(x=>x.TimeStampOpen))
             {
                 if( connect.Tcb == tcb )

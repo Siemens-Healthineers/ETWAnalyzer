@@ -19,7 +19,7 @@ namespace ETWAnalyzer.Extract.Network.Tcp
     /// <summary>
     /// Serializable socket connection class
     /// </summary>
-    public class SocketConnection
+    public class SocketConnection : IEquatable<SocketConnection>
     {
         /// <summary>
         /// IPV4 e.g. 10.81.1.34 or IPV6 e.g. [::1] address
@@ -76,6 +76,41 @@ namespace ETWAnalyzer.Extract.Network.Tcp
         public override string ToString()
         {
             return $"{Address}:{Port}";
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="other"></param>
+        /// <returns></returns>
+        public bool Equals(SocketConnection other)
+        {
+            if( other == null )
+            {
+                return false;
+            }
+
+            if(this.Port == other.Port &&
+               this.Address == other.Address )
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public override int GetHashCode()
+        {
+            int hashCode = -1935525472;
+            hashCode = hashCode * -1521134295 + Port;
+            hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(Address);
+            return hashCode;
         }
     }
 
