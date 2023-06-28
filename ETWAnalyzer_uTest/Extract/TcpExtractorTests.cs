@@ -41,6 +41,8 @@ namespace ETWAnalyzer_uTest.Extract
         {
             T0_1 =   100_0000,
             T0_2 =   200_0000,
+            T0_3 =   300_0000,
+            T0_4 =   400_0000,
             T0_5 =   500_0000,
             T0_9 =   900_0000,
             T1_0 = 1_000_0000,
@@ -141,6 +143,57 @@ namespace ETWAnalyzer_uTest.Extract
             return retransEv.Object;
         }
 
+
+        [Fact]
+        public void CorrectlyAssignRetransmits_To_First_SentPacket()
+        {
+            TCPExtractor extractor = new TCPExtractor();
+            ETWExtract extract = CreateExtract();
+
+            const string Remote1 = "20.20.20.20:40000";
+            const string SrcIpPort = "10.10.10.10:100";
+
+            IGenericEvent[] events = new IGenericEvent[]
+            {
+                CreateConnect(   Time.T0_1, Pid.OneDrive,     TCB.One, SrcIpPort, Remote1),
+                CreateSend(      Time.T0_2, Pid.OneDrive,     TCB.One, SequenceNr.S_1000, 100),
+                CreateSend(      Time.T0_3, Pid.OneDrive,     TCB.One, SequenceNr.S_2000, 100),
+                CreateRetransmit(Time.T0_3, Pid.OneDrive,     TCB.One, SequenceNr.S_2000),
+                CreateSend(      Time.T0_4, Pid.OneDrive,     TCB.One, SequenceNr.S_2000, 100),
+                CreateRetransmit(Time.T0_4, Pid.OneDrive,     TCB.One, SequenceNr.S_2000),
+                CreateSend(      Time.T0_5, Pid.OneDrive,     TCB.One, SequenceNr.S_2000, 100),
+                CreateRetransmit(Time.T0_5, Pid.OneDrive,     TCB.One, SequenceNr.S_2000),
+                CreateDisconnect(Time.T4_0, Pid.OneDrive,     TCB.One),
+            };
+
+            extractor.ExtractFromGenericEvents(extract, events);
+
+            IETWExtract iExtract = (IETWExtract)extract;
+            var tcpData = iExtract.Network.TcpData;
+
+            Assert.Equal(1, tcpData.Connections.Count);
+            Assert.Equal(3, tcpData.Retransmissions.Count);
+
+            var retrans0 = tcpData.Retransmissions[0];
+            Assert.Equal(100, retrans0.NumBytes);
+            Assert.Equal((uint)SequenceNr.S_2000, retrans0.SequenceNumber);
+            Assert.Equal((long) Time.T0_3, retrans0.RetransmitTime.Ticks);
+            Assert.Equal((long)Time.T0_3, retrans0.SendTime.Ticks);
+
+            var retrans1 = tcpData.Retransmissions[1];
+            Assert.Equal(100, retrans1.NumBytes);
+            Assert.Equal((uint)SequenceNr.S_2000, retrans1.SequenceNumber);
+            Assert.Equal((long)Time.T0_4, retrans1.RetransmitTime.Ticks);
+            Assert.Equal((long)Time.T0_3, retrans1.SendTime.Ticks);
+
+            var retrans2 = tcpData.Retransmissions[2];
+            Assert.Equal(100, retrans2.NumBytes);
+            Assert.Equal((uint)SequenceNr.S_2000, retrans2.SequenceNumber);
+            Assert.Equal((long)Time.T0_5, retrans2.RetransmitTime.Ticks);
+            Assert.Equal((long)Time.T0_3, retrans2.SendTime.Ticks);
+        }
+
+
         [Fact]
         public void Can_ExtractConnection_With_Failed_Connects()
         {
@@ -184,7 +237,7 @@ namespace ETWAnalyzer_uTest.Extract
             Assert.Equal(400, retrans0.NumBytes);
             Assert.Equal((uint)SequenceNr.S_1001, retrans0.SequenceNumber);
         }
-
+         
         [Fact]
         public void Can_ExtractConnection_With_Retransmits()
         {

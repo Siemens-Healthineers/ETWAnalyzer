@@ -187,7 +187,6 @@ namespace ETWAnalyzer.Extractors.TCP
                             results.Network.TcpData.Retransmissions.Add(clientRetrans);
                         }
                     }
-
                 }
 
             }
@@ -201,12 +200,17 @@ namespace ETWAnalyzer.Extractors.TCP
                     continue;
                 }
 
-                foreach (var sent in sentByConnection[retrans.Connection].OrderBy(x => x.Timestamp))
+                // Get all sent packets just before the current retransmit event
+                // we need the last sent packet because the first packet often was an ACK with 0 send size
+                List<TcpDataSend> retransmittedSent = sentByConnection[retrans.Connection].Where(x => x.SequenceNr == retrans.SndUna && x.Timestamp < retrans.Timestamp)
+                                                    .OrderBy(x => x.Timestamp).ToList();
+
+                if( retransmittedSent.Count > 0)
                 {
-                    if (sent.SequenceNr == retrans.SndUna)
-                    {
-                        results.Network.TcpData.Retransmissions.Add(new TcpRetransmission(connect2Idx[retrans.Connection], retrans.Timestamp, sent.Timestamp, sent.SequenceNr, sent.BytesSent));
-                    }
+                    // store retransmit event with send time of first sent packet. It might be an ACK packet but for now the heuristics should be good enough
+                    // to be useful.
+                    results.Network.TcpData.Retransmissions.Add(new TcpRetransmission(connect2Idx[retrans.Connection], retrans.Timestamp,
+                        retransmittedSent[0].Timestamp, retransmittedSent[0].SequenceNr, retransmittedSent[retransmittedSent.Count-1].BytesSent));
                 }
             }
         }
@@ -216,20 +220,22 @@ namespace ETWAnalyzer.Extractors.TCP
         private void OnTcpConnectTcbFailedRcvdRst(IGenericEvent ev)
         {
             TcpConnectTcbFailedRcvdRst rst = new(ev);
-            myTcpConnectTcbFailedRcvdRst.Add(rst);
-
-            ulong tcb = (ulong)ev.Fields[TcpETWConstants.TcbField].AsAddress.Value;
-
-            // connection open did fail. There is no close event
-            foreach (var connect in myConnections.OrderByDescending(x => x.TimeStampOpen))
+            if (TCBFilter(rst.Tcb))
             {
-                if (connect.Tcb == tcb && connect.TimeStampOpen < rst.Timestamp && connect.TimeStampClose == null)
+                myTcpConnectTcbFailedRcvdRst.Add(rst);
+
+                ulong tcb = (ulong)ev.Fields[TcpETWConstants.TcbField].AsAddress.Value;
+
+                // connection open did fail. There is no close event
+                foreach (var connect in myConnections.OrderByDescending(x => x.TimeStampOpen))
                 {
-                    connect.TimeStampClose = rst.Timestamp;
-                    break;
+                    if (connect.Tcb == tcb && connect.TimeStampOpen < rst.Timestamp && connect.TimeStampClose == null)
+                    {
+                        connect.TimeStampClose = rst.Timestamp;
+                        break;
+                    }
                 }
             }
-
         }
 
         readonly List<TcpTemplateChanged> myTemplateChangedEvents = new();
@@ -237,26 +243,38 @@ namespace ETWAnalyzer.Extractors.TCP
         private void OnTcpTemplateChanged(IGenericEvent ev)
         {
             TcpTemplateChanged changed = new(ev);
-            myTemplateChangedEvents.Add(changed);
+            if (TCBFilter(changed.Tcb))
+            {
+                myTemplateChangedEvents.Add(changed);
+            }
         }
 
         private void OnTcpDataTransferReceive(IGenericEvent ev)
         {
             TcpDataTransferReceive receive = new(ev);
-            myReceiveEvents.Add(receive);
+            if (TCBFilter(receive.Tcb))
+            {
+                myReceiveEvents.Add(receive);
+            }
         }
   
         private void OnTcpAcceptListenerComplete(IGenericEvent ev)
         {
             TcpAcceptListenerComplete complete = new(ev);
-            myAcceptListenerCompletes.Add(complete);
+            if (TCBFilter(complete.Tcb))
+            {
+                myAcceptListenerCompletes.Add(complete);
+            }
         }
 
         private void OnTailLossProbe(IGenericEvent ev)
         {
             TcpTailLossProbe probe = new(ev);
-            TcpRetransmit resend = new(probe.Tcb, probe.SndUna, probe.Timestamp);
-            myRetransmits.Add(resend);
+            if (TCBFilter(probe.Tcb))
+            {
+                TcpRetransmit resend = new(probe.Tcb, probe.SndUna, probe.Timestamp);
+                myRetransmits.Add(resend);
+            }
         }
 
         readonly List<TcpConnectionRundown> myTcpConnectionRundowns = new();
@@ -272,18 +290,24 @@ namespace ETWAnalyzer.Extractors.TCP
         private void OnTcpConnectionSummary(IGenericEvent ev)
         {
             TcpConnectionSummary summary = new(ev);
-            myTcpConnectionSummaries.Add(summary);
+            if (TCBFilter(summary.Tcb))
+            {
+                myTcpConnectionSummaries.Add(summary);
+            }
         }
 
         private void OnClose(IGenericEvent ev)
         {
             ulong tcb =  (ulong) ev.Fields[TcpETWConstants.TcbField].AsAddress.Value;
-            foreach(var connect in myConnections.OrderByDescending(x=>x.TimeStampOpen))
+            if (TCBFilter(tcb))
             {
-                if( connect.Tcb == tcb )
+                foreach (var connect in myConnections.OrderByDescending(x => x.TimeStampOpen))
                 {
-                    connect.TimeStampClose = ev.Timestamp.DateTimeOffset;
-                    break;
+                    if (connect.Tcb == tcb)
+                    {
+                        connect.TimeStampClose = ev.Timestamp.DateTimeOffset;
+                        break;
+                    }
                 }
             }
         }
@@ -292,19 +316,38 @@ namespace ETWAnalyzer.Extractors.TCP
         {
             ETWProcessIndex idx = extract.GetProcessIndexByPidAtTime(ev.Process.Id, ev.Timestamp.DateTimeOffset);
             TcpRequestConnect conn = new(ev, idx);
-            myConnections.Add(conn);
+            if (TCBFilter(conn.Tcb))
+            {
+                myConnections.Add(conn);
+            }
         }
 
         private void OnRetransmit(IGenericEvent ev)
         {
             TcpRetransmit retrans = new(ev);
-            myRetransmits.Add(retrans);
+            if (TCBFilter(retrans.Tcb))
+            {
+                myRetransmits.Add(retrans);
+            }
+        }
+
+        /// <summary>
+        /// Used for debugging a specific connection
+        /// </summary>
+        /// <param name="tcb"></param>
+        /// <returns></returns>
+        bool TCBFilter(ulong tcb)
+        {
+            return true;
         }
 
         private void OnTpcDataTransferSend(IGenericEvent ev)
         {
             TcpDataSend sentPacket = new(ev);
-            mySendEvents.Add(sentPacket);
+            if (TCBFilter(sentPacket.Tcb))
+            {
+                mySendEvents.Add(sentPacket);
+            }
         }
 
         private bool IsValidTcpEvent(IGenericEvent ev)
