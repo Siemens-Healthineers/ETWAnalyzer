@@ -78,5 +78,14 @@ namespace ETWAnalyzer.Extract.Network.Tcp
                            :this(connectionIdx,retransmitTime,sendTime,sequenceNumber, numBytes, null)
         {
         }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public override string ToString()
+        {
+            return $"ConnectionIdx: {ConnectionIdx}, RetransmitTime: {RetransmitTime.ToString(TcpConnection.TimeFmt)} SendTime {SendTime.ToString(TcpConnection.TimeFmt)} Bytes: {NumBytes}, IsClientRetransmission {IsClientRetransmission}";
+        }
     }
 }

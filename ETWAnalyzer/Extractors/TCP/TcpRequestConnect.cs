@@ -5,12 +5,14 @@
 using ETWAnalyzer.Extract;
 using ETWAnalyzer.Extract.Network.Tcp;
 using ETWAnalyzer.TraceProcessorHelpers;
+using Microsoft.Windows.EventTracing;
 using Microsoft.Windows.EventTracing.Events;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace ETWAnalyzer.Extractors.TCP
@@ -39,6 +41,14 @@ namespace ETWAnalyzer.Extractors.TCP
             Timestamp = ev.Timestamp.DateTimeOffset;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public override string ToString()
+        {
+            return $"Local: {LocalIpAndPort} Remote: {RemoteIpAndPort} TimeStamp: {Timestamp.ToString(TcpRequestConnect.TimeFmt)}, TCB: 0x{Tcb:X}";
+        }
     }
 
     /// <summary>
@@ -76,7 +86,7 @@ namespace ETWAnalyzer.Extractors.TCP
 
     }
 
-    internal class TcpRequestConnect
+    internal class TcpRequestConnect : IEquatable<TcpRequestConnect>
     {
         // Tcb,  LocalAddress,  RemoteAddress
 
@@ -111,7 +121,6 @@ namespace ETWAnalyzer.Extractors.TCP
             ProcessIdx = processIdx;
         }
 
-
         /// <summary>
         /// Check if tcb value matches connection start/end times
         /// </summary>
@@ -127,11 +136,62 @@ namespace ETWAnalyzer.Extractors.TCP
         }
 
 
-        const string TimeFmt = "HH:mm:ss.fff";
+        internal const string TimeFmt = "HH:mm:ss.fff";
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
         public override string ToString()
         {
             return $"Local: {LocalIpAndPort} Remote: {RemoteIpAndPort} Open: {TimeStampOpen?.ToString(TimeFmt)} Close: {TimeStampClose?.ToString(TimeFmt)}";
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="other"></param>
+        /// <returns></returns>
+        public bool Equals(TcpRequestConnect other)
+        {
+            if( other == null )
+            {
+                return false;
+            }
+
+            if( this.Tcb == other.Tcb &&
+                this.TimeStampOpen == other.TimeStampOpen &&
+                this.TimeStampClose == other.TimeStampClose &&
+                this.LocalIpAndPort == other.LocalIpAndPort &&
+                this.RemoteIpAndPort == other.RemoteIpAndPort
+              )
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public override int GetHashCode()
+        {
+            int hashCode = -1935525472;
+            hashCode = hashCode * -1521134295 + EqualityComparer<ulong>.Default.GetHashCode(Tcb);
+            hashCode = hashCode * -1521134295 + EqualityComparer<DateTimeOffset?>.Default.GetHashCode(TimeStampOpen);
+            hashCode = hashCode * -1521134295 + EqualityComparer<DateTimeOffset?>.Default.GetHashCode(TimeStampClose);
+            hashCode = hashCode * -1521134295 + EqualityComparer<SocketConnection>.Default.GetHashCode(LocalIpAndPort);
+            hashCode = hashCode * -1521134295 + EqualityComparer<SocketConnection>.Default.GetHashCode(RemoteIpAndPort);
+            return hashCode;
+        }
+
+        public override bool Equals(object obj)
+        {
+            return Equals(obj as TcpRequestConnect);
         }
     }
 }

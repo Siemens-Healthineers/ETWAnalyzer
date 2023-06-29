@@ -374,7 +374,7 @@ namespace ETWAnalyzer.EventDump
 
             // Show per file totals always - will be ignored if result is one file only
             {
-                if (IsSummary)
+                if (IsSummary && printedFiles > 1)
                 {
                     string dynamicTotalString = FormatDynamicColumnTotal(dynamicColumnTotal);
                     dynamicTotalString = sortOrderHeadline != null ? $"{dynamicTotalString,sortOrderColumnWidth - 1} " : "";

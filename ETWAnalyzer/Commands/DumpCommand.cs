@@ -37,9 +37,10 @@ namespace ETWAnalyzer.Commands
         static readonly string VersionHelpString =
         "   Version  -filedir/fd x.etl/.json [-dll xxxx.dll] [-VersionFilter xxx] [-MissingPdb [xxx.pdb]] [-ModuleFilter xxx] [-ProcessName/pn xxx.exe(pid)] [-NoCmdLine] [-csv xx.csv]" + Environment.NewLine +
         "                           [-Clip] [-PlainProcessNames] [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd] [-MinMaxMsTestTimes xx-yy ...]" + Environment.NewLine +
-        "                           [-ShowFullFileName/-sffn]" + Environment.NewLine +
+        "                           [-ShowFullFileName/-sffn] [-topn dd nn]" + Environment.NewLine +
         "                         Dump module versions of given ETL or Json. For Json files the option -extract Module All or Default must be used during extraction to get with -dll version information." + Environment.NewLine +
         "                         -dll xxx.dll              All file versions of that dll are printed. If -dll * is used all file versions are printed." + Environment.NewLine +
+        "                         -topn dd [nn]             Valid when -dll ... is used. Limit output to last dd processes where optionally nn are skipped from alphabetically sorted list." + Environment.NewLine + 
         "                         -MissingPdb filter        Print a filtered summary of all unresolved pdbs which could not be resolved during extraction." + Environment.NewLine +
         "                         -VersionFilter filter     Filter against module path and version strings. Multiple filters are separated by ;. Wildcards are * and ?. Exclusion filters start with !" + Environment.NewLine +
         "                         -ModuleFilter  filter     Extracted data from Config\\DllToBuildMapping.json. Print only version information for module. Multiple filters are separated by ;. Wildcards are * and ?. Exclusion filters start with !" + Environment.NewLine;
@@ -454,7 +455,9 @@ namespace ETWAnalyzer.Commands
         "[green]Show files with at least 50 read operations (sorted by read count) by filtering for file read data which will null out all other columns.[/green]" + Environment.NewLine +
         " ETWAnalyzer -dump File -filedir xx.json -FileOperation Read -MinMaxTotalCount 50 -SortBy Count -DirLevel 100" + Environment.NewLine +
         "[green]Show per process totals for all processes with show module information (exclusively to be used perprocess only). Print process start/stop/duration besides process name with information details exclusively for Microsoft processes.[/green]" + Environment.NewLine +
-        " ETWAnalyzer -dump File -FileOperation Write -SortBy Count -PerProcess -smi *microsoft*" + Environment.NewLine;
+        " ETWAnalyzer -dump File -FileOperation Write -SortBy Count -PerProcess -smi *microsoft*" + Environment.NewLine +
+        "[green]Dump files and the summary metrics is not displayed.[/green]" + Environment.NewLine +
+        " ETWAnalyzer -fd xx.json -dump File -ShowTotal None" + Environment.NewLine;
 
 
         static readonly string ThreadPoolExamples = ExamplesHelpString +

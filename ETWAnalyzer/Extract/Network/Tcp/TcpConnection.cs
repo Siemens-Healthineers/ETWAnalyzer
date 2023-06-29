@@ -74,7 +74,7 @@ namespace ETWAnalyzer.Extract.Network.Tcp
         /// <summary>
         /// Socket connect/disconnect time format string
         /// </summary>
-        const string TimeFmt = "HH:mm:ss.fff";
+        internal const string TimeFmt = "HH:mm:ss.fff";
 
 
         /// <summary>

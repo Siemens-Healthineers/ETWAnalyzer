@@ -28,7 +28,7 @@ namespace ETWAnalyzer.Extractors.TCP
         public TcpRetransmit(IGenericEvent ev)
         {
             Tcb = (ulong) ev.Fields[TcpETWConstants.TcbField].AsAddress.Value;
-            SndUna = ev.Fields["SndUna"].AsUInt32;
+            SndUna = ev.Fields[TcpETWConstants.SndUnaField].AsUInt32;
             Timestamp = ev.Timestamp.DateTimeOffset;
         }
 

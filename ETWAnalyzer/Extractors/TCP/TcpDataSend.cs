@@ -2,6 +2,7 @@
 //// SPDX-License-Identifier:   MIT
 
 using ETWAnalyzer.Extract;
+using ETWAnalyzer.TraceProcessorHelpers;
 using Microsoft.Windows.EventTracing.Events;
 using System;
 using System.Collections.Generic;
@@ -37,9 +38,10 @@ namespace ETWAnalyzer.Extractors.TCP
 
         public TcpDataSend(IGenericEvent ev)
         {
-            Tcb = (ulong)ev.Fields["Tcb"].AsAddress.Value;
-            BytesSent = (int)ev.Fields["BytesSent"].AsUInt32;
-            SequenceNr = ev.Fields["SeqNo"].AsUInt32;
+            
+            Tcb = (ulong)ev.Fields[TcpETWConstants.TcbField].AsAddress.Value;
+            BytesSent = (int)ev.Fields[TcpETWConstants.BytesSentField].AsUInt32;
+            SequenceNr = ev.Fields[TcpETWConstants.SeqNoField].AsUInt32;
             Timestamp = ev.Timestamp.DateTimeOffset;
         }
     }

@@ -355,6 +355,7 @@ namespace ETWAnalyzer.EventDump
 
         private void Print(List<Match> matches)
         {
+            int printedFiles = 0;
             foreach (var fileGroup in matches.GroupBy(x=>x.SourceFile).OrderBy(x=>x.First().SessionEnd))
             {
                 PrintFileName(fileGroup.Key, null, fileGroup.First().PerformedAt, fileGroup.First().Baseline);
@@ -372,11 +373,14 @@ namespace ETWAnalyzer.EventDump
                     ColorConsole.WriteEmbeddedColorLine($"[darkcyan]{GetDateTimeString(m.SessionEnd, m.SessionStart, TimeFormatOption)}[/darkcyan] [{GetColor(m.DiffMb)}]Diff: {m.DiffMb,4}[/{GetColor(m.DiffMb)}] [{GetColorTotal(m.CommitedMiB)}]Commit {m.CommitedMiB,4} MiB[/{GetColorTotal(m.CommitedMiB)}] [{GetColorTotal(m.WorkingSetMiB)}]WorkingSet {m.WorkingSetMiB,4} MiB[/{GetColorTotal(m.WorkingSetMiB)}] [{GetColorTotal(m.SharedCommitInMiB)}]Shared Commit: {m.SharedCommitInMiB,4} MiB [/{GetColorTotal(m.SharedCommitInMiB)}] ", null, true);
                     ColorConsole.WriteEmbeddedColorLine($"[yellow]{m.Process.GetProcessWithId(UsePrettyProcessName)}[/yellow][grey]{GetProcessTags(m.Process, m.SessionStart)}[/grey] {(NoCmdLine ? "" : m.CmdLine)} ", ConsoleColor.DarkCyan, true);
                     ColorConsole.WriteEmbeddedColorLine($"[red]{moduleInfo}[/red]");
+                    printedFiles++;
                 }
-                if (IsSummary)
+
+                if (IsSummary && printedFiles > 1)
                 {
                     ColorConsole.WriteEmbeddedColorLine($"[cyan]Memory Total per File:[/cyan] [{GetTrendColor(totalDiff)}]TotalDiff: {totalDiff} [/{GetTrendColor(totalDiff)}] [{GetColorTotal(totalCommitedMemMiB)}] TotalCommitedMem: {totalCommitedMemMiB} MiB [/{GetColorTotal(totalCommitedMemMiB)}] [Darkyellow] Number of Involved Processes: {processCount} [/Darkyellow]");
                 }
+
             }
         }
     }

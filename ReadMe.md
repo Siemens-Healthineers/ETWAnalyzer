@@ -26,6 +26,9 @@ An ETW Json file is typically a few MB while the input .etl file including PDBs 
 ## Contributing
 You want to contribute, miss specific data, or want to add your specific dump command? Check out [Contributing](ETWAnalyzer/Documentation/Contributing.md) to get started.
 
+## Documentation
+See [Documentation Folder in Repo](https://github.com/Siemens-Healthineers/ETWAnalyzer/tree/2.5.10.0/ETWAnalyzer/Documentation)
+
 ## Data Generation
 There is a sample .wprp profile located at [MultiProfile.wprp](https://github.com/Alois-xx/FileWriter/blob/master/MultiProfile.wprp) to record ETW data in the way ETWAnalyzer likes best. To generate data in automated regression tests see the other example project [https://github.com/Alois-xx/FileWriter](https://github.com/Alois-xx/FileWriter).
 
@@ -121,6 +124,13 @@ After adding "-stacktags *" to the command line we get all stacktags. If you add
 
 From the stacktag CPU consumption we find as top match "Windows\Windows Firewall" which proves that we have hit the same issue again. 
 
+**This is a known Windows 10 Bug which was fixed in the June 2023 KB5027293 Update which can happen in large AD Domains**
+```
+Windows Filtering Platform forces reauthorization of every packet of an existing session when there is a profile change 
+(like change from public profile to domain profile). The authenticate / classification is an expensive operation and 
+reauthorization of every packet has a high performance impact on the system.
+```
+
 From the WPA stacktrace we know that these calls are executed as [DPCs (Deferred Procedure Calls)](https://en.wikipedia.org/wiki/Deferred_Procedure_Call) which are normally issued for longer running tasks from 
 an interrupt handler. The DPCs for all network packets consume up to all 4 cores on my machine which compete with the mouse interrupt handling
 resulting in a slow, sluggish system. It is time to call Microsoft Support to ask where this is coming from. To check which dll version 
@@ -140,7 +150,7 @@ so you can later find systematic deviations with a simple query. Issues which we
 too much work to track down are now a simple query. If your test is e.g. 3/30 times 20% slower you can query all tests for common patterns to 
 see if e.g. a running Windows Installer did have an effect to your test execution time or if that did occur in other fast tests as well. 
 
-The currently supported dump commands are
+## Dump Commands
 - [CPU](ETWAnalyzer/Documentation/DumpCPUCommand.md) 
 - [Disk](ETWAnalyzer/Documentation/DumpDiskCommand.md) 
 - [File](ETWAnalyzer/Documentation/DumpFileCommand.md) 
@@ -157,7 +167,7 @@ The currently supported dump commands are
 - [Dns](ETWAnalyzer/Documentation/DumpDNSCommand.md)
 - [TCP](ETWAnalyzer/Documentation/DumpTCPCommand.md)
 
-which all support -filedir and an extensive command line help what you can dump from the extracted data. 
+They all support -filedir and an extensive command line help what you can dump from the extracted data. 
 
 
 
