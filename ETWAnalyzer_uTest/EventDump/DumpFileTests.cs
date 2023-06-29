@@ -564,8 +564,8 @@ namespace ETWAnalyzer_uTest.EventDump
                 },
                 new DumpFile.MatchData
                 {
-                    Process = myCmdProcess2,
-                    Processes = new HashSet<ETWProcess> {myCmdProcess2},
+                    Process = myCmdProcess,
+                    Processes = new HashSet<ETWProcess> {myCmdProcess},
                     SourceFileName = File2,
                     FileName = FileName2
                 },
@@ -619,6 +619,7 @@ namespace ETWAnalyzer_uTest.EventDump
 
             testOutput.Add(writer.ToString());
             string[] lines = writer.ToString().Split(myNewLineSplitChars, StringSplitOptions.RemoveEmptyEntries);
+
             Assert.Equal(7, lines.Length);
         }
 
@@ -642,6 +643,7 @@ namespace ETWAnalyzer_uTest.EventDump
 
             testOutput.Add(writer.ToString());
             string[] lines = writer.ToString().Split(myNewLineSplitChars, StringSplitOptions.RemoveEmptyEntries);
+
             Assert.Equal(8, lines.Length);
             Assert.Contains("Process Count: 2", lines[7]);
             Assert.Contains("TotalTime: 0.00000 s", lines[7]);
@@ -667,6 +669,7 @@ namespace ETWAnalyzer_uTest.EventDump
 
             testOutput.Add(writer.ToString());
             string[] lines = writer.ToString().Split(myNewLineSplitChars, StringSplitOptions.RemoveEmptyEntries);
+
             Assert.Equal(8, lines.Length);
             Assert.Contains("Process Count: 2", lines[7]);
             Assert.Contains("TotalTime: 0.00000 s", lines[7]);
@@ -675,7 +678,7 @@ namespace ETWAnalyzer_uTest.EventDump
 
 
         [Fact]
-        public void PrintIsSummaryTotalsSingleLineTest()
+        public void PrintNoIsSummaryTotalsSingleLineTest()
         {
             using var testOutput = new ExceptionalPrinter(myWriter);
             var data = CreateTestData();
@@ -689,14 +692,17 @@ namespace ETWAnalyzer_uTest.EventDump
             StringWriter writer = new();
             Console.SetOut(writer);
 
-            fileDumper.PrintData(data);
+            fileDumper.PrintData((List<MatchData>)data.Where(x => x.FileName == FileName2).Where(x => x.Process == myCmdProcess2).ToList());
 
             testOutput.Add(writer.ToString());
             string[] lines = writer.ToString().Split(myNewLineSplitChars, StringSplitOptions.RemoveEmptyEntries);
-            Assert.Equal(8, lines.Length);
-            Assert.Contains("Process Count: 2", lines[7]);
-            Assert.Contains("TotalTime: 0.00000 s", lines[7]);
-            Assert.Contains("File/s Total with 0 accessed file/s", lines[7]);
+
+            Assert.Contains("Read (Size, Duration, Count)", lines[0]);
+            Assert.Contains("Write (Size, Duration, Count)", lines[0]);
+            Assert.Contains("Open+Close Duration, Open, Close", lines[0]);
+            Assert.Contains("Directory or File if -dirLevel 100 is used", lines[0]);
+            Assert.Equal(2, lines.Length);
+
         }
 
         [Fact]
