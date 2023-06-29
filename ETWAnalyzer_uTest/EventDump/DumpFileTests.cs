@@ -1,19 +1,21 @@
 ﻿using ETWAnalyzer.Commands;
 using ETWAnalyzer.EventDump;
+using ETWAnalyzer.Extract;
 using ETWAnalyzer.Infrastructure;
+using ETWAnalyzer_uTest.TestInfrastructure;
 using Microsoft.Windows.EventTracing.Disk;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Xunit;
+using Xunit.Abstractions;
 using static ETWAnalyzer.Commands.DumpCommand;
 using static ETWAnalyzer.EventDump.DumpFile;
 
 namespace ETWAnalyzer_uTest.EventDump
 {
+
     public class DumpFileTests
     {
         DumpFile dump = new();
@@ -35,6 +37,19 @@ namespace ETWAnalyzer_uTest.EventDump
             FileDeleteCount = 3000,
             FileRenameCount = 150,
         };
+
+        public List<string> Messages { get; set; } = new List<string>();
+
+        private ITestOutputHelper myWriter;
+        public DumpFileTests(ITestOutputHelper myWriter)
+        {
+            this.myWriter = myWriter;
+        }
+
+        internal void Add(string message)
+        {
+            Messages.Add(message);
+        }
 
         [Fact]
 
@@ -502,6 +517,145 @@ namespace ETWAnalyzer_uTest.EventDump
                 Assert.Equal(input.Value.Min, fileDumper.MinMaxWriteSizeBytes.Min);
                 Assert.Equal(input.Value.Max, fileDumper.MinMaxWriteSizeBytes.Max);
             }
+        }
+
+        const string File1 = "File1.json";
+        const string File2 = "File2.json";
+        const string File3 = "File3.json";
+        
+        const string FileName1 = "FileName1";
+        const string FileName2 = "FileName2";
+
+        static readonly ETWProcess myCmdProcess = new ETWProcess
+        {
+            ProcessID = 1234,
+            ProcessName = "cmd.exe",
+            CmdLine = "hello",
+        };
+
+        static readonly ProcessKey myCmdProcessKey = myCmdProcess.ToProcessKey();
+
+        static readonly ETWProcess myCmdProcess2 = new ETWProcess
+        {
+            ProcessID = 6666,
+            ProcessName = "6666.exe",
+            CmdLine = "hello",
+        };
+        static readonly ProcessKey myCmdProcessKey2 = myCmdProcess2.ToProcessKey();
+
+        List<DumpFile.MatchData> CreateTestData()
+        {
+            List<DumpFile.MatchData> data = new List<DumpFile.MatchData>
+            {
+                new DumpFile.MatchData
+                {
+                    Process = myCmdProcess,
+                    Processes = new HashSet<ETWProcess> {myCmdProcess},
+                    SourceFileName = File1,
+                    FileName = FileName1
+                },
+                new DumpFile.MatchData
+                {
+                    Process = myCmdProcess,
+                    Processes = new HashSet<ETWProcess> {myCmdProcess},
+                    SourceFileName = File1,
+                    FileName = FileName1
+                },
+                new DumpFile.MatchData
+                {
+                    Process = myCmdProcess2,
+                    Processes = new HashSet<ETWProcess> {myCmdProcess2},
+                    SourceFileName = File2,
+                    FileName = FileName2
+                },
+                new DumpFile.MatchData
+                {
+                    Process = myCmdProcess2,
+                    Processes = new HashSet<ETWProcess> {myCmdProcess2},
+                    SourceFileName = File2,
+                    FileName = FileName2
+
+                },
+                new DumpFile.MatchData
+                {
+                    Process = myCmdProcess,
+                    Processes = new HashSet<ETWProcess> {myCmdProcess},
+                    SourceFileName = File3,
+                    FileName = FileName1
+                },
+                new DumpFile.MatchData
+                {
+                    Process = myCmdProcess2,
+                    Processes = new HashSet<ETWProcess> {myCmdProcess2},
+                    SourceFileName = File3,
+                    FileName = FileName1
+                },
+            };
+
+            return data;
+        }
+
+        static char[] myNewLineSplitChars = Environment.NewLine.ToArray();
+
+        [Fact]
+        public void PrintIsSummaryTotalsNone()
+        {
+            using var testOutput = new ExceptionalPrinter(myWriter);
+            var data = CreateTestData();
+            DumpFile fileDumper = new()
+            {
+                TopN = new SkipTakeRange(),
+                TopNProcesses = new SkipTakeRange(),
+                ShowTotal = TotalModes.None
+            };
+            StringWriter writer = new();
+            Console.SetOut(writer);
+            fileDumper.PrintData(data);
+            testOutput.Add(writer.ToString());
+            string[] lines = writer.ToString().Split(myNewLineSplitChars, StringSplitOptions.RemoveEmptyEntries);
+            Assert.Equal(7, lines.Length);
+        }
+        [Fact]
+        public void PrintIsSummaryTotals()
+        {
+            using var testOutput = new ExceptionalPrinter(myWriter);
+            var data = CreateTestData();
+            DumpFile fileDumper = new()
+            {
+                TopN = new SkipTakeRange(),
+                TopNProcesses = new SkipTakeRange(),
+                ShowTotal = TotalModes.File
+            };
+            StringWriter writer = new();
+            Console.SetOut(writer);
+            fileDumper.PrintData(data);
+            testOutput.Add(writer.ToString());
+            string[] lines = writer.ToString().Split(myNewLineSplitChars, StringSplitOptions.RemoveEmptyEntries);
+            Assert.Equal(8, lines.Length);
+            Assert.Contains("Process Count: 2", lines[7]);
+            Assert.Contains("TotalTime: 0.00000 s", lines[7]);
+            Assert.Contains("File/s Total with 0 accessed file/s", lines[7]);
+        }
+
+        [Fact]
+        public void PrintIsSummaryTotalsNullFileMode()
+        {
+            using var testOutput = new ExceptionalPrinter(myWriter);
+            var data = CreateTestData();
+            DumpFile fileDumper = new()
+            {
+                TopN = new SkipTakeRange(),
+                TopNProcesses = new SkipTakeRange(),
+            };
+            StringWriter writer = new();
+            Console.SetOut(writer);
+            fileDumper.PrintData(data);
+            testOutput.Add(writer.ToString());
+            string[] lines = writer.ToString().Split(myNewLineSplitChars, StringSplitOptions.RemoveEmptyEntries);
+            Assert.Equal(8, lines.Length);
+            Assert.Contains("Process Count: 2", lines[7]);
+            Assert.Contains("TotalTime: 0.00000 s", lines[7]);
+            Assert.Contains("File/s Total with 0 accessed file/s", lines[7]);
         }
 
         [Fact]

@@ -194,7 +194,7 @@ namespace ETWAnalyzer.EventDump
             }
         }
 
-        void PrintData(List<MatchData> aggregatedByDirectory)
+        internal void PrintData(List<MatchData> aggregatedByDirectory)
         {
             HashSet<ETWProcess> processes = new();
 
@@ -372,7 +372,7 @@ namespace ETWAnalyzer.EventDump
                 totalFileSetSecurityCount += totalPerProcessFileSetSecurityCount;
             }
 
-            // Show per file totals always
+            // Show per file totals always - will be ignored if result is one file only
             {
                 if (IsSummary)
                 {
@@ -644,7 +644,7 @@ namespace ETWAnalyzer.EventDump
             }
         }
 
-        private List<MatchData> AggregateByDirectory(List<MatchData> data, int level)
+        internal List<MatchData> AggregateByDirectory(List<MatchData> data, int level)
         {
             List<MatchData> aggregatedByDirectory = new();
 
