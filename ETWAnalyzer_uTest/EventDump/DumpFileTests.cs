@@ -41,6 +41,7 @@ namespace ETWAnalyzer_uTest.EventDump
         public List<string> Messages { get; set; } = new List<string>();
 
         private ITestOutputHelper myWriter;
+
         public DumpFileTests(ITestOutputHelper myWriter)
         {
             this.myWriter = myWriter;
@@ -597,38 +598,48 @@ namespace ETWAnalyzer_uTest.EventDump
 
         static char[] myNewLineSplitChars = Environment.NewLine.ToArray();
 
+
         [Fact]
         public void PrintIsSummaryTotalsNone()
         {
             using var testOutput = new ExceptionalPrinter(myWriter);
             var data = CreateTestData();
+
             DumpFile fileDumper = new()
             {
                 TopN = new SkipTakeRange(),
                 TopNProcesses = new SkipTakeRange(),
                 ShowTotal = TotalModes.None
             };
+
             StringWriter writer = new();
             Console.SetOut(writer);
+
             fileDumper.PrintData(data);
+
             testOutput.Add(writer.ToString());
             string[] lines = writer.ToString().Split(myNewLineSplitChars, StringSplitOptions.RemoveEmptyEntries);
             Assert.Equal(7, lines.Length);
         }
+
         [Fact]
         public void PrintIsSummaryTotals()
         {
             using var testOutput = new ExceptionalPrinter(myWriter);
             var data = CreateTestData();
+
             DumpFile fileDumper = new()
             {
                 TopN = new SkipTakeRange(),
                 TopNProcesses = new SkipTakeRange(),
                 ShowTotal = TotalModes.File
             };
+
             StringWriter writer = new();
             Console.SetOut(writer);
+
             fileDumper.PrintData(data);
+
             testOutput.Add(writer.ToString());
             string[] lines = writer.ToString().Split(myNewLineSplitChars, StringSplitOptions.RemoveEmptyEntries);
             Assert.Equal(8, lines.Length);
@@ -642,14 +653,44 @@ namespace ETWAnalyzer_uTest.EventDump
         {
             using var testOutput = new ExceptionalPrinter(myWriter);
             var data = CreateTestData();
+
             DumpFile fileDumper = new()
             {
                 TopN = new SkipTakeRange(),
                 TopNProcesses = new SkipTakeRange(),
             };
+
             StringWriter writer = new();
             Console.SetOut(writer);
+
             fileDumper.PrintData(data);
+
+            testOutput.Add(writer.ToString());
+            string[] lines = writer.ToString().Split(myNewLineSplitChars, StringSplitOptions.RemoveEmptyEntries);
+            Assert.Equal(8, lines.Length);
+            Assert.Contains("Process Count: 2", lines[7]);
+            Assert.Contains("TotalTime: 0.00000 s", lines[7]);
+            Assert.Contains("File/s Total with 0 accessed file/s", lines[7]);
+        }
+
+
+        [Fact]
+        public void PrintIsSummaryTotalsSingleLineTest()
+        {
+            using var testOutput = new ExceptionalPrinter(myWriter);
+            var data = CreateTestData();
+
+            DumpFile fileDumper = new()
+            {
+                TopN = new SkipTakeRange(),
+                TopNProcesses = new SkipTakeRange(),
+            };
+
+            StringWriter writer = new();
+            Console.SetOut(writer);
+
+            fileDumper.PrintData(data);
+
             testOutput.Add(writer.ToString());
             string[] lines = writer.ToString().Split(myNewLineSplitChars, StringSplitOptions.RemoveEmptyEntries);
             Assert.Equal(8, lines.Length);
