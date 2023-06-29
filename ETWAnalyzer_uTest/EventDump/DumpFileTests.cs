@@ -674,6 +674,7 @@ namespace ETWAnalyzer_uTest.EventDump
             Assert.Contains("Process Count: 2", lines[7]);
             Assert.Contains("TotalTime: 0.00000 s", lines[7]);
             Assert.Contains("File/s Total with 0 accessed file/s", lines[7]);
+            
         }
 
 
@@ -702,6 +703,9 @@ namespace ETWAnalyzer_uTest.EventDump
             Assert.Contains("Open+Close Duration, Open, Close", lines[0]);
             Assert.Contains("Directory or File if -dirLevel 100 is used", lines[0]);
             Assert.Equal(2, lines.Length);
+            Assert.DoesNotContain("Process Count: 2", lines[1]);
+            Assert.DoesNotContain("TotalTime: 0.00000 s", lines[1]);
+            Assert.DoesNotContain("File/s Total with 0 accessed file/s", lines[1]);
 
         }
 
