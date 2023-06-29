@@ -678,7 +678,7 @@ namespace ETWAnalyzer_uTest.EventDump
 
 
         [Fact]
-        public void PrintNoIsSummaryTotalsSingleLineTest()
+        public void PrintNullIsSummaryTotalsSingleLineTest()
         {
             using var testOutput = new ExceptionalPrinter(myWriter);
             var data = CreateTestData();
