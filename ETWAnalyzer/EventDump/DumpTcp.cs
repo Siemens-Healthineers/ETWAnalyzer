@@ -60,7 +60,7 @@ namespace ETWAnalyzer.EventDump
         /// </summary>
         public MinMaxRange<int> MinMaxRetransDelayMs { get; internal set; }
         public MinMaxRange<int> MinMaxRetransBytes { get; internal set; }
-        public MinMaxRange<int> MinMaxConnectionDurationS { get; internal set; } = new();
+        public MinMaxRange<double> MinMaxConnectionDurationS { get; internal set; } = new();
         public bool ShowRetransmit { get; internal set; }
         public KeyValuePair<string, Func<string, bool>> TcbFilter { get; internal set; } = new KeyValuePair<string, Func<string, bool>>(null, x => true);
         public SortOrders RetransSortOrder { get; internal set; }
@@ -316,17 +316,15 @@ namespace ETWAnalyzer.EventDump
                         };
                     }
 
-                    if (IsSummary && printedFiles > 1)
+                    if (IsSummary && printedFiles > 1 && totalConnectCounter > 1)
                     {
                         ColorConsole.WriteEmbeddedColorLine(
-                            $"{"N0".WidthFormat("", emptyWidth)}[green]Received Total's: [/green]" +
-                            $"[cyan]{fileDatagramsReceived} {fileBytesReceived} Bytes [/cyan]" +
-                            $"[red]Sent Total's: [/red]" +
-                            $" [cyan]{fileDatagramsSent} {fileBytesSent} Bytes [/cyan]" +
+                            $"{"N0".WidthFormat("", emptyWidth-8)}[red]Total's:[/red]" +
+                            $"[green]{fileDatagramsReceived} {fileBytesReceived} Bytes [/green]" +
+                            $"[red]{fileDatagramsSent} {fileBytesSent} Bytes [/red]" +
                             $"[cyan]{totalGetTotalString(totalTotalColumnWidth)}[/cyan]" +
-                            $"[yellow]Retrans Total's: [/yellow]" +
-                            $" [cyan]{fileRetransmissionsCount} {"N0".WidthFormat("", 5)}- {fileSumRetransDelay} ms[/cyan]" +
-                            $"[white] Total Connection's accessed:[/white]" +
+                            $"[yellow]{fileRetransmissionsCount} {"N0".WidthFormat("", 5)}- {fileSumRetransDelay} ms[/yellow]" +
+                            $"[red] Total Connection's accessed: [/red]" +
                             $"[cyan]{totalConnectCounter}[/cyan]")
                             ;
                     }
@@ -550,13 +548,11 @@ namespace ETWAnalyzer.EventDump
 
         internal bool MinMaxFilter(MatchData data)
         {
-            bool lret = true;
-            long startTime = data.Connection.TimeStampOpen.HasValue ? data.Connection.TimeStampOpen.Value.ToUnixTimeSeconds() : 0;
-            long endTime = data.Connection.TimeStampClose.HasValue ? data.Connection.TimeStampClose.Value.ToUnixTimeSeconds() : 0;
-            if (startTime != 0 && endTime != 0 && endTime - startTime > 0)
-            {
-                lret = MinMaxConnectionDurationS.IsWithin((int)(endTime - startTime));
-            }
+            bool lret = false;
+            DateTimeOffset startTime = data.Connection.TimeStampOpen.HasValue ? data.Connection.TimeStampOpen.Value : DateTimeOffset.MinValue;
+            DateTimeOffset endTime = data.Connection.TimeStampClose.HasValue ? data.Connection.TimeStampClose.Value : DateTimeOffset.MaxValue;
+            
+            lret = MinMaxConnectionDurationS.IsWithin((endTime - startTime).TotalSeconds);
 
             return lret;
         }

@@ -736,7 +736,7 @@ namespace ETWAnalyzer.Commands
         public MinMaxRange<double> MinMaxLastS { get; private set; } = new();
         public MinMaxRange<double> MinMaxDurationS { get; private set; } = new();
 
-        public MinMaxRange<int> MinMaxConnectionDurationS { get; private set; } = new();
+        public MinMaxRange<double> MinMaxConnectionDurationS { get; private set; } = new();
 
         public int MethodCutStart { get; private set; }
         public int MethodCutLength { get; private set; } = int.MaxValue;
@@ -1118,9 +1118,10 @@ namespace ETWAnalyzer.Commands
                         MinMaxCPUMs = new MinMaxRange<int>(minMax.Key.ConvertToInt(1 / MSUnit), minMax.Value.ConvertToInt(1 / MSUnit));
                         break;
                     case "-minmaxconnectiondurations":
-                        string minMaxConnectionDurationS = GetNextNonArg("-minmaxconnectiondurations");
-                        KeyValuePair<decimal, decimal> minMaxConnection = minMaxConnectionDurationS.GetMinMaxDecimal(MSUnit);
-                        MinMaxConnectionDurationS = new MinMaxRange<int>(minMaxConnection.Key.ConvertToInt(1 / MSUnit), minMaxConnection.Value.ConvertToInt(1 / MSUnit));
+                        string minConnectionDurationS = GetNextNonArg("-minmaxconnectiondurations");
+                        string maxConnectionDurationS = GetNextNonArg("-minmaxconnectiondurations");
+                        Tuple<double, double> minMaxConnectionDinS = minConnectionDurationS.GetMinMaxDouble(maxConnectionDurationS, SecondUnit);
+                        MinMaxFirstS = new MinMaxRange<double>(minMaxConnectionDinS.Item1, minMaxConnectionDinS.Item2);
                         break;
                     case "-minmaxwaitms":
                         string minMaxWaitms = GetNextNonArg("-minmaxwaitms");
