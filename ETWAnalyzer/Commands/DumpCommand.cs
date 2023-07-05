@@ -322,7 +322,8 @@ namespace ETWAnalyzer.Commands
         "                         -MinMaxRetransBytes xx-yy  Filter every retransmission event by retransmission size (sent/received) in bytes. Default is > 1 bytes because 0 and 1 byte packets are often just ACKs or timer based ping packets." + Environment.NewLine +
         "                         -MinMaxRetransCount xx-yy  Show only connections which have at least xx retransmission events" + Environment.NewLine + 
         "                         -MinMaxSentBytes xx-yy     Filter connections which have sent at least xx bytes." + Environment.NewLine + 
-        "                         -MinMaxReceivedBytes xx-yy Filter connections which have received at least xx bytes." + Environment.NewLine + 
+        "                         -MinMaxReceivedBytes xx-yy Filter connections which have received at least xx bytes." + Environment.NewLine +
+        "                         -MinMaxConnectionDurationS xx-yy Filter connections which have duration of at least xx-yy seconds." + Environment.NewLine +
         "                         -Details                   Show retransmit Max/Median/Min, connect/disconnect time, used TCP template setting, TCB pointer." + Environment.NewLine +
         "                         -Tcb 0xdddddd              Filter by \"connection\" which is actually the Transfer Control Block pointer. Its value can be reused for new connections."+ Environment.NewLine + 
             Environment.NewLine
@@ -499,6 +500,8 @@ namespace ETWAnalyzer.Commands
         " ETWAnalyzer -fd xx.json -dump Tcp  -IpPort *:32*" + Environment.NewLine +
         "[green]Dump all retransmission events into a csv file.[/green]" + Environment.NewLine +
         " ETWAnalyzer -fd xx.json -dump Tcp  -ShowRetransmit -csv Retransmissions.csv" + Environment.NewLine +
+        "[green]Dump all TCP connections with duration ranging from 0-10s.[/green]" + Environment.NewLine +
+        " ETWAnalyzer -fd xx.json -dump Tcp  -MinMaxConnectionDurationS 0-10s" + Environment.NewLine +
         "[green]Dump all all client retransmission events sorted by delay and omit connections which have no retransmissions in output.[/green]" + Environment.NewLine +
         " ETWAnalyzer -fd xx.json -dump Tcp -OnlyClientRetransmit -MinMaxRetransCount 1 -ShowRetransmit -SortRetransmitBy Delay" + Environment.NewLine ;
 
@@ -732,6 +735,8 @@ namespace ETWAnalyzer.Commands
         public MinMaxRange<double> MinMaxFirstS { get; private set; } = new();
         public MinMaxRange<double> MinMaxLastS { get; private set; } = new();
         public MinMaxRange<double> MinMaxDurationS { get; private set; } = new();
+
+        public MinMaxRange<int> MinMaxConnectionDurationS { get; private set; } = new();
 
         public int MethodCutStart { get; private set; }
         public int MethodCutLength { get; private set; } = int.MaxValue;
@@ -1110,7 +1115,12 @@ namespace ETWAnalyzer.Commands
                     case "-minmaxcpums":
                         string minMaxCPUms = GetNextNonArg("-minmaxcpums");
                         KeyValuePair<decimal, decimal> minMax = minMaxCPUms.GetMinMaxDecimal(MSUnit);
-                        MinMaxCPUMs = new MinMaxRange<int>(minMax.Key.ConvertToInt(1/MSUnit),  minMax.Value.ConvertToInt(1/MSUnit) );
+                        MinMaxCPUMs = new MinMaxRange<int>(minMax.Key.ConvertToInt(1 / MSUnit), minMax.Value.ConvertToInt(1 / MSUnit));
+                        break;
+                    case "-minmaxconnectiondurations":
+                        string minMaxConnectionDurationS = GetNextNonArg("-minmaxconnectiondurations");
+                        KeyValuePair<decimal, decimal> minMaxConnection = minMaxConnectionDurationS.GetMinMaxDecimal(MSUnit);
+                        MinMaxConnectionDurationS = new MinMaxRange<int>(minMaxConnection.Key.ConvertToInt(1 / MSUnit), minMaxConnection.Value.ConvertToInt(1 / MSUnit));
                         break;
                     case "-minmaxwaitms":
                         string minMaxWaitms = GetNextNonArg("-minmaxwaitms");
@@ -2021,6 +2031,7 @@ namespace ETWAnalyzer.Commands
                             MinMaxRetransBytes = MinMaxRetransBytes,
                             MinMaxSentBytes = MinMaxSentBytes,
                             MinMaxReceivedBytes = MinMaxReceivedBytes,
+                            MinMaxConnectionDurationS = MinMaxConnectionDurationS,
                             ShowRetransmit = ShowRetransmit,
                             OnlyClientRetransmit = OnlyClientRetransmit,
                             MinMaxRetransCount = MinMaxRetransCount,

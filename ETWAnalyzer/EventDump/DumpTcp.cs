@@ -60,6 +60,7 @@ namespace ETWAnalyzer.EventDump
         /// </summary>
         public MinMaxRange<int> MinMaxRetransDelayMs { get; internal set; }
         public MinMaxRange<int> MinMaxRetransBytes { get; internal set; }
+        public MinMaxRange<int> MinMaxConnectionDurationS { get; internal set; } = new();
         public bool ShowRetransmit { get; internal set; }
         public KeyValuePair<string, Func<string, bool>> TcbFilter { get; internal set; } = new KeyValuePair<string, Func<string, bool>>(null, x => true);
         public SortOrders RetransSortOrder { get; internal set; }
@@ -200,7 +201,7 @@ namespace ETWAnalyzer.EventDump
                 return;
             }
 
-            var byFile = data.GroupBy(x => x.Session.FileName).OrderBy(x => x.First().Session.SessionStart);
+            var byFile = data.Where(MinMaxFilter).GroupBy(x => x.Session.FileName).OrderBy(x => x.First().Session.SessionStart);
 
             MatchData[] allPrinted = byFile.SelectMany(x => x.SortAscendingGetTopNLast(SortBy, x=>x.Connection.BytesReceived+x.Connection.BytesSent, null, TopN)).ToArray(); 
 
@@ -250,8 +251,9 @@ namespace ETWAnalyzer.EventDump
                 ulong totalBytesSent = 0;
                 int totalRetransmissionsCount = 0;
                 double totalSumRetransDelay = 0;
+                int totalConnectCounter = 0;
 
-                foreach (var match in file.SortAscendingGetTopNLast(SortBy, x => x.Connection.BytesReceived + x.Connection.BytesSent, null, TopN) )
+                foreach (var match in file.Where(MinMaxFilter).SortAscendingGetTopNLast(SortBy, x => x.Connection.BytesReceived + x.Connection.BytesSent, null, TopN) )
                 {
                     totalDatagramsReceived += match.Connection.DatagramsReceived;
                     totalDatagramsSent += match.Connection.DatagramsSent;
@@ -259,6 +261,7 @@ namespace ETWAnalyzer.EventDump
                     totalBytesSent += match.Connection.BytesSent;
                     totalRetransmissionsCount += match.Retransmissions.Count;
                     totalSumRetransDelay += match.Retransmissions.Sum(x => x.RetransmitDiff().TotalMilliseconds);
+                    totalConnectCounter += match.InputConnectionCount;
 
                     // retransmission % can only be calculated by sent packets and retransmission events excluding client retransmissions
                     string retransPercent = "N0".WidthFormat(100.0f * match.Retransmissions.Where(x=>x.IsClientRetransmission.GetValueOrDefault() == false).Count() / match.Connection.DatagramsSent, PercentWidth);
@@ -275,7 +278,7 @@ namespace ETWAnalyzer.EventDump
                         ( ShowDetails ? 
                                       $"[yellow]{"F0".WidthFormat(match.RetransMaxms, RetransMsWidth)} ms {"F0".WidthFormat(match.RetransMedianMs, RetransMsWidth)} ms {"F0".WidthFormat(match.RetransMinMs, RetransMsWidth)} ms [/yellow] " + 
                                       $"{(match.Connection.LastTcpTemplate ?? "-").WithWidth(tcpTemplateLen)} " +
-                                      $"{GetDateTimeString(match.Connection.TimeStampOpen, match.Session.AdjustedSessionStart, TimeFormatOption,true).WithWidth(timeWidth)} {GetDateTimeString(match.Connection.TimeStampClose, match.Session.AdjustedSessionStart, TimeFormatOption,true).WithWidth(timeWidth)} " +
+                                      $"{GetDateTimeString(match.Connection.TimeStampOpen, match.Session.AdjustedSessionStart, TimeFormatOption, true).WithWidth(timeWidth)} {GetDateTimeString(match.Connection.TimeStampClose, match.Session.AdjustedSessionStart, TimeFormatOption, true).WithWidth(timeWidth)} " +
                                       $"0x{"X".WidthFormat(match.Connection.Tcb, PointerWidth)} "
                                 : "") +                                      
                                       $"[magenta]{match.Process.GetProcessWithId(UsePrettyProcessName)}[/magenta][grey]{GetProcessTags(match.Process, match.Session.AdjustedSessionStart)}[/grey]", ConsoleColor.White, true);
@@ -315,10 +318,17 @@ namespace ETWAnalyzer.EventDump
 
                     if (IsSummary && printedFiles > 1)
                     {
-                        ColorConsole.WriteEmbeddedColorLine($"{"N0".WidthFormat("", emptyWidth)}[Red]{fileDatagramsReceived} {fileBytesReceived} Bytes[/Red]" +
-                            $" [cyan]{fileDatagramsSent} {fileBytesSent} Bytes[/cyan]" +
-                            $"[green]{totalGetTotalString(totalTotalColumnWidth)}[/green]" +
-                            $" [magenta]{fileRetransmissionsCount} {"N0".WidthFormat("", 6)} {fileSumRetransDelay} ms[/magenta]");
+                        ColorConsole.WriteEmbeddedColorLine(
+                            $"{"N0".WidthFormat("", emptyWidth)}[green]Received Total's: [/green]" +
+                            $"[cyan]{fileDatagramsReceived} {fileBytesReceived} Bytes [/cyan]" +
+                            $"[red]Sent Total's: [/red]" +
+                            $" [cyan]{fileDatagramsSent} {fileBytesSent} Bytes [/cyan]" +
+                            $"[cyan]{totalGetTotalString(totalTotalColumnWidth)}[/cyan]" +
+                            $"[yellow]Retrans Total's: [/yellow]" +
+                            $" [cyan]{fileRetransmissionsCount} {"N0".WidthFormat("", 5)}- {fileSumRetransDelay} ms[/cyan]" +
+                            $"[white] Total Connection's accessed:[/white]" +
+                            $"[cyan]{totalConnectCounter}[/cyan]")
+                            ;
                     }
                 }
             }
@@ -441,7 +451,8 @@ namespace ETWAnalyzer.EventDump
                                 SessionStart = file.Extract.SessionStart,
                                 Baseline = file?.Extract?.MainModuleVersion?.ToString() ?? "",
                                 ZeroTimeS = GetZeroTimeInS(file.Extract),
-                            }
+                            },
+                            InputConnectionCount = 1,
                         };
 
                         data.Session.Parent = data;
@@ -537,6 +548,19 @@ namespace ETWAnalyzer.EventDump
             };
         }
 
+        internal bool MinMaxFilter(MatchData data)
+        {
+            bool lret = true;
+            long startTime = data.Connection.TimeStampOpen.HasValue ? data.Connection.TimeStampOpen.Value.ToUnixTimeSeconds() : 0;
+            long endTime = data.Connection.TimeStampClose.HasValue ? data.Connection.TimeStampClose.Value.ToUnixTimeSeconds() : 0;
+            if (startTime != 0 && endTime != 0 && endTime - startTime > 0)
+            {
+                lret = MinMaxConnectionDurationS.IsWithin((int)(endTime - startTime));
+            }
+
+            return lret;
+        }
+
         public class MatchData
         {
             public List<ITcpRetransmission> Retransmissions { get; internal set; } = new();
@@ -547,6 +571,7 @@ namespace ETWAnalyzer.EventDump
             public double RetransMedianMs { get; internal set; }
             public double RetransMinMs { get; internal set; }
             public double RetransMaxms { get; internal set; }
+            public int InputConnectionCount { get; internal set; }
         }
 
         public class ETWSession
