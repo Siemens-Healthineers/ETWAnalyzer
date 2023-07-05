@@ -52,6 +52,7 @@ namespace ETWAnalyzer_uTest.Extract
             T2_0 = 2_000_0000,
             T2_1 = 2_100_0000,
             T2_5 = 2_500_0000,
+            T2_8 = 2_800_0000,
             T2_9 = 2_900_0000,
             T3_0 = 3_000_0000,
             T3_1 = 3_100_0000,
@@ -172,25 +173,19 @@ namespace ETWAnalyzer_uTest.Extract
             var tcpData = iExtract.Network.TcpData;
 
             Assert.Equal(1, tcpData.Connections.Count);
-            Assert.Equal(3, tcpData.Retransmissions.Count);
+            Assert.Equal(2, tcpData.Retransmissions.Count);
 
             var retrans0 = tcpData.Retransmissions[0];
             Assert.Equal(100, retrans0.NumBytes);
             Assert.Equal((uint)SequenceNr.S_2000, retrans0.SequenceNumber);
-            Assert.Equal((long) Time.T0_3, retrans0.RetransmitTime.Ticks);
+            Assert.Equal((long)Time.T0_4, retrans0.RetransmitTime.Ticks);
             Assert.Equal((long)Time.T0_3, retrans0.SendTime.Ticks);
 
             var retrans1 = tcpData.Retransmissions[1];
             Assert.Equal(100, retrans1.NumBytes);
             Assert.Equal((uint)SequenceNr.S_2000, retrans1.SequenceNumber);
-            Assert.Equal((long)Time.T0_4, retrans1.RetransmitTime.Ticks);
+            Assert.Equal((long)Time.T0_5, retrans1.RetransmitTime.Ticks);
             Assert.Equal((long)Time.T0_3, retrans1.SendTime.Ticks);
-
-            var retrans2 = tcpData.Retransmissions[2];
-            Assert.Equal(100, retrans2.NumBytes);
-            Assert.Equal((uint)SequenceNr.S_2000, retrans2.SequenceNumber);
-            Assert.Equal((long)Time.T0_5, retrans2.RetransmitTime.Ticks);
-            Assert.Equal((long)Time.T0_3, retrans2.SendTime.Ticks);
         }
 
 
@@ -256,7 +251,8 @@ namespace ETWAnalyzer_uTest.Extract
                 CreateSend(      Time.T0_2, Pid.OneDrive,     TCB.One, SequenceNr.S_2000, 100),
                 CreateReceive(   Time.T0_2, Pid.OneDrive,     TCB.One, SequenceNr.S_1001, 400),
                 CreateReceive(   Time.T0_2, Pid.OneDrive,     TCB.One, SequenceNr.S_1001, 400),
-                CreateRetransmit(Time.T0_2, Pid.OneDrive,     TCB.One, SequenceNr.S_2000),
+                CreateSend(      Time.T0_3, Pid.OneDrive,     TCB.One, SequenceNr.S_2000, 100),
+                CreateRetransmit(Time.T0_5, Pid.OneDrive,     TCB.One, SequenceNr.S_2000),
                 CreateDisconnect(Time.T0_5, Pid.OneDrive,     TCB.One),
 
                 CreateConnect(   Time.T1_0, Pid.OneDrive,     TCB.One, SrcIpPort_1, Remote1),
@@ -267,7 +263,8 @@ namespace ETWAnalyzer_uTest.Extract
                 CreateConnect(   Time.T2_0, Pid.SettingsHost, TCB.One, SrcIpPort_2, Remote1),
                 CreateSend(      Time.T2_5, Pid.SettingsHost, TCB.One, SequenceNr.S_2000, 600),
                 CreateSend(      Time.T2_5, Pid.SettingsHost, TCB.One, SequenceNr.S_3000, 600),
-                CreateRetransmit(Time.T2_5, Pid.SettingsHost, TCB.One, SequenceNr.S_3000),
+                CreateSend(      Time.T2_8, Pid.SettingsHost, TCB.One, SequenceNr.S_3000, 600),
+                CreateRetransmit(Time.T2_8, Pid.SettingsHost, TCB.One, SequenceNr.S_3000),
                 CreateDisconnect(Time.T3_0, Pid.SettingsHost, TCB.One),
             };
 
@@ -279,7 +276,7 @@ namespace ETWAnalyzer_uTest.Extract
 
             ITcpConnection con0 = iExtract.Network.TcpData.Connections[0];
 
-            Assert.Equal(200ul, con0.BytesSent);
+            Assert.Equal(300ul, con0.BytesSent);
             Assert.Equal(Remote1, con0.RemoteIpAndPort.ToString());
             Assert.Equal(SrcIpPort, con0.LocalIpAndPort.ToString());
             Assert.Equal(800ul, con0.BytesReceived);
@@ -295,7 +292,7 @@ namespace ETWAnalyzer_uTest.Extract
 
             ITcpConnection con2 = iExtract.Network.TcpData.Connections[2];
 
-            Assert.Equal(1200ul, con2.BytesSent);
+            Assert.Equal(1800ul, con2.BytesSent);
             Assert.Equal(Remote1, con2.RemoteIpAndPort.ToString());
             Assert.Equal(SrcIpPort_2, con2.LocalIpAndPort.ToString());
             Assert.Equal(0ul, con2.BytesReceived);
@@ -320,7 +317,7 @@ namespace ETWAnalyzer_uTest.Extract
             Assert.Null(retrans2.IsClientRetransmission);
             Assert.Equal((uint) SequenceNr.S_3000, retrans2.SequenceNumber);
             Assert.Equal(600, retrans2.NumBytes);
-            Assert.Equal((long) Time.T2_5, retrans2.RetransmitTime.Ticks);
+            Assert.Equal((long) Time.T2_8, retrans2.RetransmitTime.Ticks);
             Assert.Equal((long) Time.T2_5, retrans2.SendTime.Ticks);
         }
 
