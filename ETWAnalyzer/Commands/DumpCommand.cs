@@ -1119,9 +1119,10 @@ namespace ETWAnalyzer.Commands
                         break;
                     case "-minmaxconnectiondurations":
                         string minConnectionDurationS = GetNextNonArg("-minmaxconnectiondurations");
-                        string maxConnectionDurationS = GetNextNonArg("-minmaxconnectiondurations");
+                        string maxConnectionDurationS = GetNextNonArg("-minmaxconnectiondurations", false);
                         Tuple<double, double> minMaxConnectionDinS = minConnectionDurationS.GetMinMaxDouble(maxConnectionDurationS, SecondUnit);
                         MinMaxFirstS = new MinMaxRange<double>(minMaxConnectionDinS.Item1, minMaxConnectionDinS.Item2);
+                        Console.WriteLine($"{MinMaxFirstS.Min} {MinMaxFirstS.Max}");
                         break;
                     case "-minmaxwaitms":
                         string minMaxWaitms = GetNextNonArg("-minmaxwaitms");

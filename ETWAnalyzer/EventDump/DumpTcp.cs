@@ -201,7 +201,7 @@ namespace ETWAnalyzer.EventDump
                 return;
             }
 
-            var byFile = data.Where(MinMaxFilter).GroupBy(x => x.Session.FileName).OrderBy(x => x.First().Session.SessionStart);
+            var byFile = data.GroupBy(x => x.Session.FileName).OrderBy(x => x.First().Session.SessionStart);
 
             MatchData[] allPrinted = byFile.SelectMany(x => x.SortAscendingGetTopNLast(SortBy, x=>x.Connection.BytesReceived+x.Connection.BytesSent, null, TopN)).ToArray(); 
 
@@ -253,7 +253,7 @@ namespace ETWAnalyzer.EventDump
                 double totalSumRetransDelay = 0;
                 int totalConnectCounter = 0;
 
-                foreach (var match in file.Where(MinMaxFilter).SortAscendingGetTopNLast(SortBy, x => x.Connection.BytesReceived + x.Connection.BytesSent, null, TopN) )
+                foreach (var match in file.SortAscendingGetTopNLast(SortBy, x => x.Connection.BytesReceived + x.Connection.BytesSent, null, TopN) )
                 {
                     totalDatagramsReceived += match.Connection.DatagramsReceived;
                     totalDatagramsSent += match.Connection.DatagramsSent;
@@ -391,6 +391,11 @@ namespace ETWAnalyzer.EventDump
                         }
 
                         if( !MinMaxSentBytes.IsWithin(connection.BytesSent))
+                        {
+                            continue;
+                        }
+
+                        if (!MinMaxConnectionDurationFilter(connection.TimeStampOpen, connection.TimeStampClose))
                         {
                             continue;
                         }
@@ -546,14 +551,14 @@ namespace ETWAnalyzer.EventDump
             };
         }
 
-        internal bool MinMaxFilter(MatchData data)
+        internal bool MinMaxConnectionDurationFilter(DateTimeOffset ? connectTime, DateTimeOffset ? closeTime)
         {
             bool lret = false;
-            DateTimeOffset startTime = data.Connection.TimeStampOpen.HasValue ? data.Connection.TimeStampOpen.Value : DateTimeOffset.MinValue;
-            DateTimeOffset endTime = data.Connection.TimeStampClose.HasValue ? data.Connection.TimeStampClose.Value : DateTimeOffset.MaxValue;
+            DateTimeOffset startTime = connectTime.HasValue ? connectTime.Value : DateTimeOffset.MinValue;
+            DateTimeOffset endTime = closeTime.HasValue ? closeTime.Value : DateTimeOffset.MaxValue;
             
             lret = MinMaxConnectionDurationS.IsWithin((endTime - startTime).TotalSeconds);
-
+            Console.WriteLine($"{lret} {(endTime - startTime).TotalSeconds} {endTime - startTime} {startTime} {endTime}");
             return lret;
         }
 
