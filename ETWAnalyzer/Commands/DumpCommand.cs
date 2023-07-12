@@ -501,7 +501,7 @@ namespace ETWAnalyzer.Commands
         "[green]Dump all retransmission events into a csv file.[/green]" + Environment.NewLine +
         " ETWAnalyzer -fd xx.json -dump Tcp  -ShowRetransmit -csv Retransmissions.csv" + Environment.NewLine +
         "[green]Dump all TCP connections with duration ranging from 0-10s.[/green]" + Environment.NewLine +
-        " ETWAnalyzer -fd xx.json -dump Tcp  -MinMaxConnectionDurationS 0-10s" + Environment.NewLine +
+        " ETWAnalyzer -fd xx.json -dump Tcp  -MinMaxConnectionDurationS 0 10s" + Environment.NewLine +
         "[green]Dump all all client retransmission events sorted by delay and omit connections which have no retransmissions in output.[/green]" + Environment.NewLine +
         " ETWAnalyzer -fd xx.json -dump Tcp -OnlyClientRetransmit -MinMaxRetransCount 1 -ShowRetransmit -SortRetransmitBy Delay" + Environment.NewLine ;
 
@@ -1121,8 +1121,7 @@ namespace ETWAnalyzer.Commands
                         string minConnectionDurationS = GetNextNonArg("-minmaxconnectiondurations");
                         string maxConnectionDurationS = GetNextNonArg("-minmaxconnectiondurations", false);
                         Tuple<double, double> minMaxConnectionDinS = minConnectionDurationS.GetMinMaxDouble(maxConnectionDurationS, SecondUnit);
-                        MinMaxFirstS = new MinMaxRange<double>(minMaxConnectionDinS.Item1, minMaxConnectionDinS.Item2);
-                        Console.WriteLine($"{MinMaxFirstS.Min} {MinMaxFirstS.Max}");
+                        MinMaxConnectionDurationS = new MinMaxRange<double>(minMaxConnectionDinS.Item1, minMaxConnectionDinS.Item2);
                         break;
                     case "-minmaxwaitms":
                         string minMaxWaitms = GetNextNonArg("-minmaxwaitms");

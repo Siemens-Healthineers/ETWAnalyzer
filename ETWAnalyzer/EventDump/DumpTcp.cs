@@ -558,7 +558,6 @@ namespace ETWAnalyzer.EventDump
             DateTimeOffset endTime = closeTime.HasValue ? closeTime.Value : DateTimeOffset.MaxValue;
             
             lret = MinMaxConnectionDurationS.IsWithin((endTime - startTime).TotalSeconds);
-            Console.WriteLine($"{lret} {(endTime - startTime).TotalSeconds} {endTime - startTime} {startTime} {endTime}");
             return lret;
         }
 
