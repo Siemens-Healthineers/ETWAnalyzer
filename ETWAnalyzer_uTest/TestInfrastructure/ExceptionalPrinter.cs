@@ -55,7 +55,7 @@ namespace ETWAnalyzer_uTest.TestInfrastructure
         /// Get all strings as single line strings. Multi line output is splitted at the newling character
         /// </summary>
         /// <returns>List of single lines</returns>
-        public List<string> GetSingleLines()
+        public IReadOnlyList<string> GetSingleLines()
         {
             
             List<string> lret = new();

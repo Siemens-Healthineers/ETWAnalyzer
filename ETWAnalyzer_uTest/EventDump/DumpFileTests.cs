@@ -602,31 +602,31 @@ namespace ETWAnalyzer_uTest.EventDump
         [Fact]
         public void PrintIsSummaryTotalsNone()
         {
-            using var testOutput = new ExceptionalPrinter(myWriter);
+            using var testOutput = new ExceptionalPrinter(myWriter, true);
             var data = CreateTestData();
 
             DumpFile fileDumper = new()
             {
                 TopN = new SkipTakeRange(),
                 TopNProcesses = new SkipTakeRange(),
-                ShowTotal = TotalModes.None
+                ShowTotal = TotalModes.None,
+                // prevent parsing random json files in test directory
+                FileOrDirectoryQueries = new List<string> { "dummy" },
             };
 
-            StringWriter writer = new();
-            Console.SetOut(writer);
 
             fileDumper.PrintData(data);
 
-            testOutput.Add(writer.ToString());
-            string[] lines = writer.ToString().Split(myNewLineSplitChars, StringSplitOptions.RemoveEmptyEntries);
+            testOutput.Flush();
+            IReadOnlyList<string> lines = testOutput.GetSingleLines();
 
-            Assert.Equal(7, lines.Length);
+            Assert.Equal(7, lines.Count);
         }
 
         [Fact]
         public void PrintIsSummaryTotals()
         {
-            using var testOutput = new ExceptionalPrinter(myWriter);
+            using var testOutput = new ExceptionalPrinter(myWriter, true);
             var data = CreateTestData();
 
             DumpFile fileDumper = new()
@@ -636,15 +636,12 @@ namespace ETWAnalyzer_uTest.EventDump
                 ShowTotal = TotalModes.File
             };
 
-            StringWriter writer = new();
-            Console.SetOut(writer);
-
             fileDumper.PrintData(data);
 
-            testOutput.Add(writer.ToString());
-            string[] lines = writer.ToString().Split(myNewLineSplitChars, StringSplitOptions.RemoveEmptyEntries);
+            testOutput.Flush();
+            var lines = testOutput.GetSingleLines();
 
-            Assert.Equal(8, lines.Length);
+            Assert.Equal(8, lines.Count);
             Assert.Contains("Process Count: 2", lines[7]);
             Assert.Contains("TotalTime: 0.00000 s", lines[7]);
             Assert.Contains("File/s Total with 0 accessed file/s", lines[7]);
@@ -653,24 +650,23 @@ namespace ETWAnalyzer_uTest.EventDump
         [Fact]
         public void PrintIsSummaryTotalsNullFileMode()
         {
-            using var testOutput = new ExceptionalPrinter(myWriter);
+            using var testOutput = new ExceptionalPrinter(myWriter, true);
             var data = CreateTestData();
 
             DumpFile fileDumper = new()
             {
                 TopN = new SkipTakeRange(),
                 TopNProcesses = new SkipTakeRange(),
-            };
-
-            StringWriter writer = new();
-            Console.SetOut(writer);
+                // prevent parsing random json files in test directory
+                FileOrDirectoryQueries = new List<string> { "dummy" },
+        };
 
             fileDumper.PrintData(data);
 
-            testOutput.Add(writer.ToString());
-            string[] lines = writer.ToString().Split(myNewLineSplitChars, StringSplitOptions.RemoveEmptyEntries);
+            testOutput.Flush();
+            var lines = testOutput.GetSingleLines();
 
-            Assert.Equal(8, lines.Length);
+            Assert.Equal(8, lines.Count);
             Assert.Contains("Process Count: 2", lines[7]);
             Assert.Contains("TotalTime: 0.00000 s", lines[7]);
             Assert.Contains("File/s Total with 0 accessed file/s", lines[7]);
@@ -681,7 +677,7 @@ namespace ETWAnalyzer_uTest.EventDump
         [Fact]
         public void PrintNullIsSummaryTotalsSingleLineTest()
         {
-            using var testOutput = new ExceptionalPrinter(myWriter);
+            using var testOutput = new ExceptionalPrinter(myWriter, true);
             var data = CreateTestData();
 
             DumpFile fileDumper = new()
@@ -690,19 +686,16 @@ namespace ETWAnalyzer_uTest.EventDump
                 TopNProcesses = new SkipTakeRange(),
             };
 
-            StringWriter writer = new();
-            Console.SetOut(writer);
-
             fileDumper.PrintData((List<MatchData>)data.Where(x => x.FileName == FileName2).Where(x => x.Process == myCmdProcess2).ToList());
 
-            testOutput.Add(writer.ToString());
-            string[] lines = writer.ToString().Split(myNewLineSplitChars, StringSplitOptions.RemoveEmptyEntries);
+            testOutput.Flush();
+            var lines = testOutput.GetSingleLines();
 
             Assert.Contains("Read (Size, Duration, Count)", lines[0]);
             Assert.Contains("Write (Size, Duration, Count)", lines[0]);
             Assert.Contains("Open+Close Duration, Open, Close", lines[0]);
             Assert.Contains("Directory or File if -dirLevel 100 is used", lines[0]);
-            Assert.Equal(2, lines.Length);
+            Assert.Equal(2, lines.Count);
             Assert.DoesNotContain("Process Count: 2", lines[1]);
             Assert.DoesNotContain("TotalTime: 0.00000 s", lines[1]);
             Assert.DoesNotContain("File/s Total with 0 accessed file/s", lines[1]);

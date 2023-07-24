@@ -748,6 +748,9 @@ namespace ETWAnalyzer_uTest.EventDump
             using ExceptionalPrinter redirect = new(myWriter, true);
 
             DumpCPUMethod dumper = new();
+            // prevent parsing random json files in test directory
+            dumper.FileOrDirectoryQueries = new List<string> { "dummy" };
+
             dumper.ShowTotal = TotalModes.Total;
 
             List<DumpCPUMethod.MatchData> matches = new();
@@ -774,6 +777,8 @@ namespace ETWAnalyzer_uTest.EventDump
             using ExceptionalPrinter redirect = new(myWriter, true);
 
             DumpCPUMethod dumper = new();
+            // prevent parsing random json files in test directory
+            dumper.FileOrDirectoryQueries = new List<string> { "dummy" };
             dumper.ShowTotal = TotalModes.Process;
 
             List<DumpCPUMethod.MatchData> matches = new();
@@ -801,6 +806,9 @@ namespace ETWAnalyzer_uTest.EventDump
             using ExceptionalPrinter redirect = new(myWriter, true);
 
             DumpCPUMethod dumper = new();
+            // prevent parsing random json files in test directory
+            dumper.FileOrDirectoryQueries = new List<string> { "dummy" };
+
             dumper.ShowTotal = null;
             dumper.MethodFilter = new KeyValuePair<string, Func<string, bool>>("x", x => true);
 
@@ -853,6 +861,9 @@ namespace ETWAnalyzer_uTest.EventDump
             using ExceptionalPrinter redirect = new(myWriter, true);
 
             DumpCPUMethod dumper = new();
+            // prevent parsing random json files in test directory
+            dumper.FileOrDirectoryQueries = new List<string> { "dummy" };
+
             dumper.ShowTotal = TotalModes.Method;
             dumper.MethodFilter = new KeyValuePair<string, Func<string, bool>>("x", x => true);
 
@@ -880,6 +891,8 @@ namespace ETWAnalyzer_uTest.EventDump
             using ExceptionalPrinter redirect = new(myWriter, true);
 
             DumpCPUMethod dumper = new();
+            // prevent parsing random json files in test directory
+            dumper.FileOrDirectoryQueries = new List<string> { "dummy" };
             dumper.ShowTotal = TotalModes.Total;
             dumper.MethodFilter = new KeyValuePair<string, Func<string, bool>>("x", x => true);
 

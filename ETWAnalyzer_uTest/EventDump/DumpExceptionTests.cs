@@ -40,23 +40,21 @@ namespace ETWAnalyzer_uTest.EventDump
         [Fact]
         public void Print_Default()
         {
-            using var testOutput = new ExceptionalPrinter(myWriter);
+            using var testOutput = new ExceptionalPrinter(myWriter, true);
 
             DumpExceptions printer = new DumpExceptions();
+            printer.FileOrDirectoryQueries = new List<string> { "Dummy" };
 
             List<DumpExceptions.MatchData> exceptions = CreateTestData();
 
-            StringWriter writer = new StringWriter();
-            Console.SetOut(writer);
-
             printer.PrintMatches(exceptions);
 
-            testOutput.Add(writer.ToString());
+            testOutput.Flush();
 
-            string[] lines = writer.ToString().Split(myNewLineSplitChars, StringSplitOptions.RemoveEmptyEntries);
+            IReadOnlyList<string> lines = testOutput.GetSingleLines();
             var lines1 = lines[0];
 
-            Assert.Equal(4, lines.Length);
+            Assert.Equal(4, lines.Count);
             Assert.Contains(Baseline, lines[0]);
             Assert.Contains(Exe1, lines[1]);
             Assert.Contains(ExceptionType1, lines[2]);
@@ -67,23 +65,20 @@ namespace ETWAnalyzer_uTest.EventDump
         [Fact]
         public void Print_Stacks()
         {
-            using var testOutput = new ExceptionalPrinter(myWriter);
+            using var testOutput = new ExceptionalPrinter(myWriter, true);
 
             DumpExceptions printer = new DumpExceptions();
             printer.ShowStack = true;
             
             List<DumpExceptions.MatchData> exceptions = CreateTestData();
 
-            StringWriter writer = new StringWriter();
-            Console.SetOut(writer);
-
             printer.PrintMatches(exceptions);
 
-            testOutput.Add(writer.ToString());
+            testOutput.Flush();
 
-            string[] lines = writer.ToString().Split(myNewLineSplitChars, StringSplitOptions.RemoveEmptyEntries);
+            IReadOnlyList<string> lines = testOutput.GetSingleLines();
 
-            Assert.Equal(5, lines.Length);
+            Assert.Equal(5, lines.Count);
             Assert.Contains(Baseline, lines[0]);
             Assert.Contains(Exe1, lines[1]);
             Assert.Contains(ExceptionType1, lines[2]);
@@ -94,23 +89,22 @@ namespace ETWAnalyzer_uTest.EventDump
         [Fact]
         public void Print_ShowTime()
         {
-            using var testOutput = new ExceptionalPrinter(myWriter);
+            using var testOutput = new ExceptionalPrinter(myWriter, true);
 
             DumpExceptions printer = new DumpExceptions();
             printer.ShowTime = true;
+            // prevent parsing random json files in test directory
+            printer.FileOrDirectoryQueries = new List<string> { "dummy" };
 
             List<DumpExceptions.MatchData> exceptions = CreateTestData();
 
-            StringWriter writer = new StringWriter();
-            Console.SetOut(writer);
-
             printer.PrintMatches(exceptions);
 
-            testOutput.Add(writer.ToString());
+            testOutput.Flush();
 
-            string[] lines = writer.ToString().Split(myNewLineSplitChars, StringSplitOptions.RemoveEmptyEntries);
+            IReadOnlyList<string> lines = testOutput.GetSingleLines();
 
-            Assert.Equal(4, lines.Length);
+            Assert.Equal(4, lines.Count);
             Assert.Contains(Baseline, lines[0]);
             Assert.Contains(Exe1, lines[1]);
             Assert.Contains(ExceptionType1, lines[2]);
@@ -120,14 +114,13 @@ namespace ETWAnalyzer_uTest.EventDump
         [Fact]
         public void Print_ByTime()
         {
-            using var testOutput = new ExceptionalPrinter(myWriter);
+            using var testOutput = new ExceptionalPrinter(myWriter, true);
 
             DumpExceptions printer = new DumpExceptions();
 
             printer.SortOrder = ETWAnalyzer.Commands.DumpCommand.SortOrders.Time;
 
             List<DumpExceptions.MatchData> exceptions = CreateTestData();
-            //DumpExceptions.MatchData other = exceptions[0].Clone();
 
             ETWProcess otherprocess = new ETWProcess
             {
@@ -135,20 +128,14 @@ namespace ETWAnalyzer_uTest.EventDump
                 ProcessID = 2000,
             };
 
-            //other.Process = otherprocess;
-
-            //exceptions.Add(other);
-
-            StringWriter writer = new StringWriter();
-            Console.SetOut(writer);
 
             printer.PrintMatches(exceptions);
 
-            testOutput.Add(writer.ToString());
+            testOutput.Flush();
 
-            string[] lines = writer.ToString().Split(myNewLineSplitChars, StringSplitOptions.RemoveEmptyEntries);
+            IReadOnlyList<string> lines = testOutput.GetSingleLines();
 
-            Assert.Equal(3, lines.Length);
+            Assert.Equal(3, lines.Count);
             Assert.Contains(Baseline, lines[0]);
             Assert.Contains(Process, lines[1]);
             Assert.Contains(ExceptionMessage1, lines[2]);
