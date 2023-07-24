@@ -415,7 +415,13 @@ namespace ETWAnalyzer.EventDump
             }
         }
 
-        private void AddAndPrintTotalStats(List<MatchData> matches, TestDataFile file)
+        /// <summary>
+        /// Extract data from TestData, but also print CPU totals while file is traversed to be able
+        /// to print data while data is still read.
+        /// </summary>
+        /// <param name="matches">Current list of matches</param>
+        /// <param name="file">Current file to process</param>
+        internal void AddAndPrintTotalStats(List<MatchData> matches, TestDataFile file)
         {
             if (file.Extract?.CPU?.PerProcessCPUConsumptionInMs == null)
             {
@@ -511,7 +517,7 @@ namespace ETWAnalyzer.EventDump
             if (!Merge)
             {
                 string CpuString = "";
-                if( ShowTotal != TotalModes.None)
+                if( (ShowTotal != null && ShowTotal != TotalModes.None))
                 {
                     long cpuTotal = filtered.Select(x => (long) x.CPUMs).Sum();
                     CpuString = $" [green]CPU {cpuTotal:N0} ms[/green] ";
@@ -568,7 +574,7 @@ namespace ETWAnalyzer.EventDump
             }
         }
 
-        private List<MatchData> PrintMatches(List<MatchData> matches)
+        internal List<MatchData> PrintMatches(List<MatchData> matches)
         {
             List<MatchData> printed = new();
 
@@ -635,7 +641,7 @@ namespace ETWAnalyzer.EventDump
                 string fileTotalString = null;
                 int totalWidth = 12;
 
-                if (!IsCSVEnabled && ShowTotal != TotalModes.None)
+                if (!IsCSVEnabled && (ShowTotal != null && ShowTotal != TotalModes.None))
                 {
                     FileTotals total = fileTotals[GetFileGroupName(firstFileGroup)];
                     overallCPUTotal += total.CPUMs;
@@ -741,7 +747,7 @@ namespace ETWAnalyzer.EventDump
                 }
             }
 
-            if (ShowTotal != TotalModes.None && !IsCSVEnabled)
+            if ((ShowTotal != null && ShowTotal != TotalModes.None) && !IsCSVEnabled)
             {
                 string crossFileTotal =  (overallWaitTotal == 0 ? "Total " : $"[magenta]Total {overallCPUTotal + overallWaitTotal:N0} ms[/magenta] ") +
                                                                        $"[green]CPU {overallCPUTotal:N0} ms[/green] " +
@@ -1055,7 +1061,7 @@ namespace ETWAnalyzer.EventDump
             {
                 MatchData data = x.First();
                 decimal lret = data.PerformedAt.Ticks; // default is sort by file time
-                if (ShowTotal != TotalModes.None) // when totals are printed we sort cross file by file totals to show the highest total
+                if( (ShowTotal != null && ShowTotal != TotalModes.None) ) // when totals are printed we sort cross file by file totals to show the highest total
                 {
                     FileTotals ftotal = fileTotals[GetFileGroupName(data)];
                     lret = SortOrder switch

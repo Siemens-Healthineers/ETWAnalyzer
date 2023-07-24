@@ -5,8 +5,11 @@ using ETWAnalyzer;
 using ETWAnalyzer.Commands;
 using ETWAnalyzer.EventDump;
 using ETWAnalyzer.Extract;
+using ETWAnalyzer.Extractors.CPU;
 using ETWAnalyzer.Helper;
 using ETWAnalyzer.Infrastructure;
+using ETWAnalyzer_uTest.TestInfrastructure;
+using Microsoft.Windows.EventTracing;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -14,6 +17,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Xunit;
+using Xunit.Abstractions;
 using static ETWAnalyzer.Commands.DumpCommand;
 
 namespace ETWAnalyzer_uTest.EventDump
@@ -22,11 +26,18 @@ namespace ETWAnalyzer_uTest.EventDump
     {
         const string DummyMethod = "DummyMethod";
 
+        private readonly ITestOutputHelper myWriter;
+
+        public DumpCPUMethodTests(ITestOutputHelper myWriter)
+        {
+            this.myWriter = myWriter;
+        }
+
         [Fact]
         public void ZeroPoint_ProcessEnd_Shifts_Time_Correctly()
         {
             using ITempOutput tempDir = TempDir.Create();
-            DumpCPUMethod processEndDump = new DumpCPUMethod()
+            DumpCPUMethod processEndDump = new()
             {
                 ZeroTimeMode = ETWAnalyzer.Commands.DumpCommand.ZeroTimeModes.ProcessEnd,
                 ZeroTimeProcessNameFilter = p => p == "cmd.exe(1234)",
@@ -48,7 +59,7 @@ namespace ETWAnalyzer_uTest.EventDump
         public void ZeroPoint_ProcessStart_Shifts_Time_Correctly()
         {
             using ITempOutput tempDir = TempDir.Create();
-            DumpCPUMethod processStart = new DumpCPUMethod()
+            DumpCPUMethod processStart = new()
             {
                 ZeroTimeMode = ETWAnalyzer.Commands.DumpCommand.ZeroTimeModes.ProcessStart,
                 ZeroTimeProcessNameFilter = p => p == "cmd.exe(1234)",
@@ -70,7 +81,7 @@ namespace ETWAnalyzer_uTest.EventDump
         public void ZeroPoint_MethodLast_Shifts_Time_Correctly()
         {
             using ITempOutput tempDir = TempDir.Create();
-            DumpCPUMethod dumpLast = new DumpCPUMethod()
+            DumpCPUMethod dumpLast = new()
             {
                 ZeroTimeMode = ETWAnalyzer.Commands.DumpCommand.ZeroTimeModes.Last,
                 ZeroTimeProcessNameFilter = p => p == "cmd.exe(1234)",
@@ -93,7 +104,7 @@ namespace ETWAnalyzer_uTest.EventDump
         public void ZeroPoint_MethodFirst_Shifts_Time_Correctly()
         {
             using ITempOutput tempDir = TempDir.Create();
-            DumpCPUMethod dumpFirst = new DumpCPUMethod()
+            DumpCPUMethod dumpFirst = new()
             {
                 ZeroTimeMode = ETWAnalyzer.Commands.DumpCommand.ZeroTimeModes.First,
                 ZeroTimeProcessNameFilter = p => p == "cmd.exe(1234)",
@@ -116,7 +127,7 @@ namespace ETWAnalyzer_uTest.EventDump
         public void Unshifted_Methods_Have_Right_Time()
         {
             using ITempOutput tempDir = TempDir.Create();
-            DumpCPUMethod dumpFirst = new DumpCPUMethod()
+            DumpCPUMethod dumpFirst = new()
             {
                 ZeroTimeMode = ETWAnalyzer.Commands.DumpCommand.ZeroTimeModes.None,
                 ZeroTimeProcessNameFilter = p => p == "cmd.exe(1234)",
@@ -147,14 +158,14 @@ namespace ETWAnalyzer_uTest.EventDump
             string fileName = Path.Combine(directory, "test.json");
             File.WriteAllText(fileName, "Hi world"); // create file
 
-            TestDataFile file = new TestDataFile("Test", fileName, new DateTime(2000, 1, 1), 5000, 100, "TestMachine", "None", true);
-            DateTimeOffset TenClock = new DateTimeOffset(2000, 1, 1, 10, 0, 0, TimeSpan.Zero); // start at 10:00:00
+            TestDataFile file = new("Test", fileName, new DateTime(2000, 1, 1), 5000, 100, "TestMachine", "None", true);
+            DateTimeOffset TenClock = new(2000, 1, 1, 10, 0, 0, TimeSpan.Zero); // start at 10:00:00
             var extract = new ETWExtract()
             {
                 SessionStart = TenClock,
             };
 
-            ETWProcess newCmd = new ETWProcess
+            ETWProcess newCmd = new()
             {
                 ProcessID = 1234,
                 ProcessName = "cmd.exe",
@@ -167,7 +178,7 @@ namespace ETWAnalyzer_uTest.EventDump
             extract.Processes.Add(newCmd);
             ProcessKey newCmdKey = newCmd.ToProcessKey();
 
-            List<string> MethodListForString = new List<string>
+            List<string> MethodListForString = new()
             {
                 DummyMethod,
             };
@@ -188,13 +199,13 @@ namespace ETWAnalyzer_uTest.EventDump
 
             file.Extract = extract;
 
-            SingleTest t = new SingleTest(new TestDataFile[] { file });
+            SingleTest t = new(new TestDataFile[] { file });
 
             return t;
         }
 
 
-        static readonly ETWProcess myCmdProcess = new ETWProcess
+        static readonly ETWProcess myCmdProcess = new()
         {
             ProcessID = 1234,
             ProcessName = "cmd.exe",
@@ -203,7 +214,7 @@ namespace ETWAnalyzer_uTest.EventDump
 
         static readonly ProcessKey myCmdProcessKey = myCmdProcess.ToProcessKey();
 
-        static readonly ETWProcess myCmdProcess2 = new ETWProcess
+        static readonly ETWProcess myCmdProcess2 = new()
         {
             ProcessID = 2222,
             ProcessName = "2222.exe",
@@ -219,8 +230,11 @@ namespace ETWAnalyzer_uTest.EventDump
         List<DumpCPUMethod.MatchData> CreateTestData()
         {
 
+            DateTime time_500 = new DateTime(500, 1, 1);
+            DateTime time_1000 = new DateTime(1000, 1, 1);
+            DateTime time_1500 = new DateTime(1500, 1, 1);
 
-            List<DumpCPUMethod.MatchData> data = new List<DumpCPUMethod.MatchData>
+            List<DumpCPUMethod.MatchData> data = new()
             {
                 new DumpCPUMethod.MatchData
                 {
@@ -230,7 +244,8 @@ namespace ETWAnalyzer_uTest.EventDump
                     Method = "Wait100MsMethod_1msCPU",
                     Process = myCmdProcess,
                     ProcessKey = myCmdProcessKey,
-                    SourceFile = File1
+                    SourceFile = File1,
+                    PerformedAt = time_1500,
                 },
                 new DumpCPUMethod.MatchData
                 {
@@ -240,7 +255,8 @@ namespace ETWAnalyzer_uTest.EventDump
                     Method = "Wait200MsMethod_5msCPU",
                     Process = myCmdProcess,
                     ProcessKey = myCmdProcessKey,
-                    SourceFile = File1
+                    SourceFile = File1,
+                    PerformedAt = time_1500,
                 },
                 new DumpCPUMethod.MatchData
                 {
@@ -250,7 +266,8 @@ namespace ETWAnalyzer_uTest.EventDump
                     Method = "Wait900MsMethod_15000msCPU",
                     Process = myCmdProcess2,
                     ProcessKey = myCmdProcessKey2,
-                    SourceFile = File2
+                    SourceFile = File2,
+                    PerformedAt = time_1500,
                 },
                 new DumpCPUMethod.MatchData
                 {
@@ -260,8 +277,8 @@ namespace ETWAnalyzer_uTest.EventDump
                     Method = "Wait5000MsMethod_1000msCPU",
                     Process = myCmdProcess2,
                     ProcessKey = myCmdProcessKey2,
-                    SourceFile = File2
-
+                    SourceFile = File2,
+                    PerformedAt = time_1500,
                 },
                 new DumpCPUMethod.MatchData
                 {
@@ -271,7 +288,8 @@ namespace ETWAnalyzer_uTest.EventDump
                     Method = "Wait1MsMethod_1msCPU",
                     Process = myCmdProcess,
                     ProcessKey = myCmdProcessKey,
-                    SourceFile = File3
+                    SourceFile = File3,
+                    PerformedAt = time_500,
                 },
                 new DumpCPUMethod.MatchData
                 {
@@ -281,7 +299,8 @@ namespace ETWAnalyzer_uTest.EventDump
                     Method = "Wait1MsMethod_1msCPU",
                     Process = myCmdProcess2,
                     ProcessKey = myCmdProcessKey2,
-                    SourceFile = File3
+                    SourceFile = File3,
+                    PerformedAt = time_500,
 
                 },
             };
@@ -294,7 +313,7 @@ namespace ETWAnalyzer_uTest.EventDump
         {
             DumpCPUMethod dumper = new();
 
-            var data = CreateTestData();
+            List<DumpCPUMethod.MatchData> data = CreateTestData();
 
             var (fileTotals, processTotals) = dumper.GetFileAndProcessTotals(data);
             Func<IGrouping<string, DumpCPUMethod.MatchData>, decimal> sorter = dumper.CreateFileSorter(fileTotals);
@@ -468,16 +487,15 @@ namespace ETWAnalyzer_uTest.EventDump
             Assert.Equal(1, fileTotals[File3].WaitMs);
         }
 
-
-        KeyValuePair<string, MinMaxRange<int>>[] RangeValues = new KeyValuePair<string, MinMaxRange<int>>[]
-            {
-                new KeyValuePair<string, MinMaxRange<int>>("1", new MinMaxRange<int>(1, int.MaxValue)),
-                new KeyValuePair<string, MinMaxRange<int>>("1ms", new MinMaxRange<int>(1, int.MaxValue)),
-                new KeyValuePair<string, MinMaxRange<int>>("0.5s", new MinMaxRange<int>(500, int.MaxValue)),
-                new KeyValuePair<string, MinMaxRange<int>>("1s-2s", new MinMaxRange<int>(1000, 2000)),
-                new KeyValuePair<string, MinMaxRange<int>>("1ms-5000", new MinMaxRange<int>(1, 5000)),
-                new KeyValuePair<string, MinMaxRange<int>>("500-1000", new MinMaxRange<int>(500, 1000)),
-            };
+        readonly KeyValuePair<string, MinMaxRange<int>>[] RangeValues = new KeyValuePair<string, MinMaxRange<int>>[]
+        {
+            new KeyValuePair<string, MinMaxRange<int>>("1", new MinMaxRange<int>(1, int.MaxValue)),
+            new KeyValuePair<string, MinMaxRange<int>>("1ms", new MinMaxRange<int>(1, int.MaxValue)),
+            new KeyValuePair<string, MinMaxRange<int>>("0.5s", new MinMaxRange<int>(500, int.MaxValue)),
+            new KeyValuePair<string, MinMaxRange<int>>("1s-2s", new MinMaxRange<int>(1000, 2000)),
+            new KeyValuePair<string, MinMaxRange<int>>("1ms-5000", new MinMaxRange<int>(1, 5000)),
+            new KeyValuePair<string, MinMaxRange<int>>("500-1000", new MinMaxRange<int>(500, 1000)),
+        };
 
 
         [Fact]
@@ -641,5 +659,245 @@ namespace ETWAnalyzer_uTest.EventDump
             Assert.Equal(140, fileTotals[File2].ReadyMs);
             Assert.Equal(5000, fileTotals[File3].ReadyMs);
         }
+
+        List<TestDataFile> GetTestData()
+        {
+
+            List<TestDataFile> files = new();
+
+            CPUPerProcessMethodList methodList = new();
+            ProcessKey proc1 = new("test1.exe", 1024, DateTimeOffset.MinValue);
+            ProcessKey proc2 = new("test2.exe", 2000, DateTimeOffset.MinValue);
+
+            methodList.AddMethod(proc1, "Z", new CpuData(new Duration(100_000_000), new Duration(101_000_000), 5m, 6m, 10, 5), cutOffMs: 0);
+            methodList.AddMethod(proc1, "Y", new CpuData(new Duration(90_000_000),  new Duration(91_000_000), 4m, 5m, 20, 4), cutOffMs: 0);
+            methodList.AddMethod(proc1, "X", new CpuData(new Duration(80_000_000),  new Duration(81_000_000), 3m, 5m, 30, 3), cutOffMs: 0);
+            methodList.AddMethod(proc1, "B", new CpuData(new Duration(20_000_000),  new Duration(21_000_000), 2m, 5m, 40, 2), cutOffMs: 0);
+            methodList.AddMethod(proc1, "A", new CpuData(new Duration(9_000_000),   new Duration(11_000_000), 1m, 5m, 50, 1), cutOffMs: 0);  
+            methodList.AddMethod(proc1, "A0", new CpuData(new Duration(5_000_000),  new Duration(5_000_000), 1m, 5m, 50, 1), cutOffMs: 0);
+
+            methodList.AddMethod(proc2, "Z", new CpuData(new Duration(200_000_000), new Duration(101_000_000), 5m, 6m, 10, 5), cutOffMs: 0);
+            methodList.AddMethod(proc2, "Y", new CpuData(new Duration(180_000_000), new Duration(91_000_000), 4m, 5m, 20, 4), cutOffMs: 0);
+            methodList.AddMethod(proc2, "X", new CpuData(new Duration(160_000_000), new Duration(81_000_000), 3m, 5m, 30, 3), cutOffMs: 0);
+            methodList.AddMethod(proc2, "B", new CpuData(new Duration(40_000_000),  new Duration(21_000_000), 2m, 5m, 40, 2), cutOffMs: 0);
+            methodList.AddMethod(proc2, "A", new CpuData(new Duration(18_000_000),  new Duration(11_000_000), 1m, 5m, 50, 1), cutOffMs: 0);
+            methodList.AddMethod(proc2, "A0", new CpuData(new Duration(10_000_000), new Duration(5_000_000), 1m, 5m, 50, 1), cutOffMs: 0);
+
+
+            TestDataFile file = new("Test", "test.json", new DateTime(2000, 1, 1), 500, 1000, "TestMachine", null);
+            file.Extract = new ETWExtract
+            {
+                Processes = new List<ETWProcess>
+                {
+                    new ETWProcess
+                    {
+                        ProcessName = "test1.exe",
+                        ProcessID = 1024,
+                    },
+                    new ETWProcess
+                    {
+                        ProcessName = "test2.exe",
+                        ProcessID = 2000,
+                    }
+                },
+                CPU = new CPUStats(new Dictionary<ProcessKey, uint>
+                    {
+                        { proc1, 5000 },
+                        { proc2, 6000 },
+                    },
+                    methodList,
+                    null)
+            };
+
+            files.Add(file);
+
+            return files;
+        }
+
+
+       [Fact]
+        public void TotalMode_Not_SetMeans_It_Is_Off_CPU_Summary()
+        {
+            using ExceptionalPrinter redirect = new(myWriter,true);
+
+            DumpCPUMethod dumper = new();
+            dumper.ShowTotal = null;
+
+            List<DumpCPUMethod.MatchData> matches = new();
+
+            List<TestDataFile> files = GetTestData();
+
+            foreach (var file in files)
+            {
+                dumper.AddAndPrintTotalStats(matches, file);
+            }
+
+            redirect.Flush();
+            var lines = redirect.GetSingleLines();
+            Assert.Equal(4, lines.Count);
+            Assert.Equal("\t      CPU ms Process Name        ",    lines[0]);
+            Assert.Equal("1/1/2000 12:00:00 AM    ",               lines[1] );
+            Assert.Equal("\t    5,000 ms test1.exe(1024)        ", lines[2]);
+            Assert.Equal("\t    6,000 ms test2.exe(2000)        ", lines[3]);
+        }
+
+
+        [Fact]
+        public void TotalMode_Total_CPU_Summary()
+        {
+            using ExceptionalPrinter redirect = new(myWriter, true);
+
+            DumpCPUMethod dumper = new();
+            dumper.ShowTotal = TotalModes.Total;
+
+            List<DumpCPUMethod.MatchData> matches = new();
+
+            List<TestDataFile> files = GetTestData();
+
+            foreach (var file in files)
+            {
+                dumper.AddAndPrintTotalStats(matches, file);
+            }
+
+            redirect.Flush();
+            var lines = redirect.GetSingleLines();
+
+            Assert.Equal(2, lines.Count);
+            Assert.Equal("\t      CPU ms Process Name        ",     lines[0]);
+            Assert.Equal("1/1/2000 12:00:00 AM    CPU 11,000 ms  ", lines[1]);
+        }
+
+
+        [Fact]
+        public void TotalMode_Process_CPU_Summary()
+        {
+            using ExceptionalPrinter redirect = new(myWriter, true);
+
+            DumpCPUMethod dumper = new();
+            dumper.ShowTotal = TotalModes.Process;
+
+            List<DumpCPUMethod.MatchData> matches = new();
+
+            List<TestDataFile> files = GetTestData();
+
+            foreach (var file in files)
+            {
+                dumper.AddAndPrintTotalStats(matches, file);
+            }
+
+            redirect.Flush();
+            var lines = redirect.GetSingleLines();
+
+            Assert.Equal(4, lines.Count);
+            Assert.Equal("\t      CPU ms Process Name        ",     lines[0]);
+            Assert.Equal("1/1/2000 12:00:00 AM    CPU 11,000 ms  ", lines[1]);
+            Assert.Equal("\t    5,000 ms test1.exe(1024)        ",  lines[2]);
+            Assert.Equal("\t    6,000 ms test2.exe(2000)        ",  lines[3]);
+        }
+
+        [Fact]
+        public void TotalMode_NotSet_None_CPU_MethodLevel()
+        {
+            using ExceptionalPrinter redirect = new(myWriter, true);
+
+            DumpCPUMethod dumper = new();
+            dumper.ShowTotal = null;
+            dumper.MethodFilter = new KeyValuePair<string, Func<string, bool>>("x", x => true);
+
+            var matches = CreateTestData();
+            
+
+            dumper.PrintMatches(matches);
+
+            redirect.Flush();
+            var lines = redirect.GetSingleLines();
+
+
+            Assert.Equal(13, lines.Count);
+            Assert.Equal("1/1/0500 12:00:00 AM   File3 ",                             lines[0]);
+            Assert.Equal("   2222.exe(2222) hi",                                      lines[1]);
+            Assert.Equal("           1 ms          1 ms Wait1MsMethod_1msCPU ",       lines[2]);
+            Assert.Equal("   cmd.exe(1234) hi",                                       lines[3]);
+            Assert.Equal("      15,000 ms        900 ms Wait900MsMethod_15000msCPU ", lines[12]);
+            
+        }
+
+        [Fact]
+        public void TotalMode_Process_CPU_MethodLevel()
+        {
+            using ExceptionalPrinter redirect = new(myWriter, true);
+
+            DumpCPUMethod dumper = new();
+            dumper.ShowTotal = TotalModes.Process;
+            dumper.MethodFilter = new KeyValuePair<string, Func<string, bool>>("x", x => true);
+
+            var matches = CreateTestData();
+
+
+            dumper.PrintMatches(matches);
+
+            redirect.Flush();
+            var lines = redirect.GetSingleLines();
+
+
+            Assert.Equal(8, lines.Count);
+            Assert.Equal("1/1/0500 12:00:00 AM    CPU            2 ms Wait            2 ms Total            4 ms File3 ", lines[0]);
+            Assert.Equal("   CPU            1 ms Wait:            1 ms Total:            2 ms 2222.exe(2222) hi",         lines[1]);
+            Assert.Equal("   CPU            1 ms Wait:            1 ms Total:            2 ms cmd.exe(1234) hi",          lines[2]);
+            Assert.Equal("Total 22,210 ms CPU 16,008 ms Wait 6,202 ms",                                                   lines[7]);
+        }
+
+        [Fact]
+        public void TotalMode_Method_CPU_MethodLevel()
+        {
+            using ExceptionalPrinter redirect = new(myWriter, true);
+
+            DumpCPUMethod dumper = new();
+            dumper.ShowTotal = TotalModes.Method;
+            dumper.MethodFilter = new KeyValuePair<string, Func<string, bool>>("x", x => true);
+
+            var matches = CreateTestData();
+
+
+            dumper.PrintMatches(matches);
+
+            redirect.Flush();
+            var lines = redirect.GetSingleLines();
+
+
+            Assert.Equal(15, lines.Count);
+            Assert.Equal("         CPU ms       Wait msMethod", lines[0]);
+            Assert.Equal("1/1/0500 12:00:00 AM    CPU            2 ms Wait            2 ms Total            4 ms File3 ", lines[1]);
+            Assert.Equal("   CPU            1 ms Wait:            1 ms Total:            2 ms 2222.exe(2222) hi"        , lines[2]);
+            Assert.Equal("           1 ms          1 ms Wait1MsMethod_1msCPU "                                          , lines[3]);
+            Assert.Equal("   CPU            1 ms Wait:            1 ms Total:            2 ms cmd.exe(1234) hi",          lines[4]);
+            Assert.Equal("Total 22,210 ms CPU 16,008 ms Wait 6,202 ms"                                                  , lines[14]);
+        }
+
+        [Fact]
+        public void TotalMode_Total_CPU_MethodLevel()
+        {
+            using ExceptionalPrinter redirect = new(myWriter, true);
+
+            DumpCPUMethod dumper = new();
+            dumper.ShowTotal = TotalModes.Total;
+            dumper.MethodFilter = new KeyValuePair<string, Func<string, bool>>("x", x => true);
+
+            var matches = CreateTestData();
+
+
+            dumper.PrintMatches(matches);
+
+            redirect.Flush();
+            var lines = redirect.GetSingleLines();
+
+
+            Assert.Equal(4, lines.Count);
+            Assert.Equal("1/1/0500 12:00:00 AM    CPU            2 ms Wait            2 ms Total            4 ms File3 ", lines[0]);
+            Assert.Equal("1/1/1500 12:00:00 AM    CPU            6 ms Wait          300 ms Total          306 ms File1 ", lines[1]);
+            Assert.Equal("1/1/1500 12:00:00 AM    CPU       16,000 ms Wait        5,900 ms Total       21,900 ms File2 ", lines[2]);
+            Assert.Equal("Total 22,210 ms CPU 16,008 ms Wait 6,202 ms", lines[3]);
+        }
+
     }
 }
