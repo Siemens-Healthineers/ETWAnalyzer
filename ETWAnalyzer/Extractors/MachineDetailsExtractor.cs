@@ -59,8 +59,8 @@ namespace ETWAnalyzer.Extractors
                 IProcessor proc = meta?.Processors?.FirstOrDefault();
                 if (proc != null)
                 {
-                    results.CPUName = proc.Name;
-                    results.CPUVendor = proc.Vendor;
+                    results.CPUName = proc.Name?.Trim();
+                    results.CPUVendor = proc.Vendor?.Trim();
                     results.CPUHyperThreadingEnabled = proc.IsSimultaneousMultithreadingEnabled;
                 }
             }
