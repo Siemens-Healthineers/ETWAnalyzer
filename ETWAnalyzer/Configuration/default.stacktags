@@ -1,6 +1,70 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <Tag Name="">
+    <Tag Name="Network">
+        <Tag Name="HTTP.sys Memory Copy">
+            <Entrypoint Module="HTTP.sys" Method="memcpy*"/>
+        </Tag>
+        <Tag Name="Windows Firewall" Priority="1000">
+            <Entrypoint Module="NETIO.SYS" Method="Wfp*"/>
+            <Entrypoint Module="NETIO.SYS" Method="Kfd*"/>
+        </Tag>
+        <Tag Name="TLS Encryption">
+            <Entrypoint Module="ksecdd.sys" Method="EncryptMessage*"/>
+        </Tag>
+        <Tag Name="TLS Decryption">
+            <Entrypoint Module="ksecdd.sys" Method="DecryptMessage*"/>
+        </Tag>
+        <Tag Name="Transport Security">
+            <Tag Name="sspicli EncryptMesssage">
+                <Entrypoint Module="sspicli.dll" Method="EncryptMessage*"/>
+            </Tag>
+            <Tag Name="sspicli DecryptMesssage">
+                <Entrypoint Module="sspicli.dll" Method="DecryptMessage*"/>
+            </Tag>
+        </Tag>
+        <Tag Name="TCP Receive">
+            <Entrypoint Module="tcpip.sys" Method="TcpReceive*"/>
+        </Tag>
+        <Tag Name="TCP Send">
+            <Entrypoint Module="tcpip.sys" Method="TcpTcbSend*"/>
+        </Tag>
+        <Tag Name="Socket">
+            <Tag Name="TCP ConnectionReceive" Priority="2">
+                <Entrypoint Module="tcpip.sys" Method="TcpTlConnectionReceive*"/>
+            </Tag>
+            <Tag Name="Socket Send">
+                <Entrypoint Module="ws2_32.dll" Method="send*"/>
+            </Tag>
+            <Tag Name="Socket Receive">
+                <Entrypoint Module="ws2_32.dll" Method="recv*"/>
+            </Tag>
+            <Tag Name="HttpSendResponseEntityBody">
+                <Entrypoint Module="httpapi.dll" Method="HttpSendResponseEntityBody*"/>
+            </Tag>
+            <Tag Name="Socket Receive Wait" Priority="1">
+                <Entrypoint Module="mswsock.dll" Method="WSPRecv*"/>
+            </Tag>
+            <Tag Name="Socket Send Wait" Priority="1">
+                <Entrypoint Module="mswsock.dll" Method="WSPSend*"/>
+            </Tag>
+            <Tag Name="Socket Select" Priority="1">
+                <Entrypoint Module="mswsock.dll" Method="WSPSelect"/>
+            </Tag>
+        </Tag>
+        <Tag Name="Socket Select Wait">
+            <Entrypoint Module="ws2_32.dll" Method="select*"/>
+        </Tag>
+        <Tag Name="SSL Read">
+            <Entrypoint Module="chrome.dll" Method="SSL_read*"/>
+            <Entrypoint Module="MsEdge.dll" Method="SSL_read*"/>
+        </Tag>
+        <Tag Name="SSL Write">
+            <Entrypoint Module="chrome.dll" Method="SSL_write*"/>
+            <Entrypoint Module="MsEdge.dll" Method="SSL_write*"/>
+        </Tag>
+    </Tag>
+    
     <Tag Name="Windows">
         <Tag Name="Trim Working Set">
             <Entrypoint Module="ntoskrnl.exe" Method="MiTrimWorkingSet*"/>
@@ -28,21 +92,17 @@
         <Tag Name="NTFS Close File">
             <Entrypoint Module="ntfs.sys" Method="NtfsFspClose*"/>
         </Tag>
-		<Tag Name="ReadDirectoryChanges">
-			<Entrypoint Module="KernelBase.dll" Method="ReadDirectoryChangesW*"/>
-		</Tag>
-		<Tag Name="NtfsReportDirNotify - Delays File operations when someone is listening to directory change events via ReadDirectoryChanges">
-			<Entrypoint Module="Ntfs.sys" Method="NtfsReportDirNotify*"/>
-		</Tag>		
-		<Tag Name="Windows Overlay FileSystem\Decompress WIM file (mostly during boot). See https://devblogs.microsoft.com/oldnewthing/20190618-00/?p=102597" >
+        <Tag Name="ReadDirectoryChanges">
+            <Entrypoint Module="KernelBase.dll" Method="ReadDirectoryChangesW*"/>
+        </Tag>
+        <Tag Name="NtfsReportDirNotify - Delays File operations when someone is listening to directory change events via ReadDirectoryChanges">
+            <Entrypoint Module="Ntfs.sys" Method="NtfsReportDirNotify*"/>
+        </Tag>		
+        <Tag Name="Windows Overlay FileSystem\Decompress WIM file (mostly during boot). See https://devblogs.microsoft.com/oldnewthing/20190618-00/?p=102597" >
             <Entrypoint Module="Wof.sys" Method="*"/>
         </Tag>
         <Tag Name="Code Integrity (Device Guard) Overhead\This slows down dll loads and is an issue if it is high" Priority="1000">
             <Entrypoint Module="CI.dll" Method="*"/>
-        </Tag>
-        <Tag Name="Windows Firewall" Priority="1000">
-            <Entrypoint Module="NETIO.SYS" Method="Wfp*"/>
-            <Entrypoint Module="NETIO.SYS" Method="Kfd*"/>
         </Tag>
         <Tag Name="Service Main Entry Point">
             <Entrypoint Module="sysmain.dll" Method="SysMtServiceMain*"/>
@@ -81,12 +141,6 @@
 
         <Tag Name="Crypto Algos" Priority="-1">
             <Entrypoint Module="bcryptprimitives.dll" Method="*"/>
-        </Tag>
-        <Tag Name="TLS Encryption">
-            <Entrypoint Module="ksecdd.sys" Method="EncryptMessage*"/>
-        </Tag>
-        <Tag Name="TLS Decryption">
-            <Entrypoint Module="ksecdd.sys" Method="DecryptMessage*"/>
         </Tag>
         <Tag Name="Disk Encryption">
             <Tag Name="ReadDecrypt">
@@ -188,14 +242,6 @@
     <Tag Name="RebuildLargePages">
       <Entrypoint Module="ntoskrnl.exe" Method="MiRebuildLargePages*"/>
     </Tag>
-    <Tag Name="Transport Security">
-      <Tag Name="sspicli EncryptMesssage">
-        <Entrypoint Module="sspicli.dll" Method="EncryptMessage*"/>
-      </Tag>
-      <Tag Name="sspicli DecryptMesssage">
-        <Entrypoint Module="sspicli.dll" Method="DecryptMessage*"/>
-      </Tag>
-    </Tag>
     <Tag Name="DllUnload">
       <Entrypoint Module="ntdll.dll" Method="LdrUnloadDll*"/>
     </Tag>
@@ -203,7 +249,9 @@
   <Tag Name="Nexthink Driver Overhead">
     <Entrypoint Module="nxtrdrv.sys" Method="*" />
   </Tag>
-
+  <Tag Name="FlatBuffer Overhead">
+      <Entrypoint Module="FlatBuffers.dll" Method="*"/>
+  </Tag>
 
 
     <Tag Name="Antivirus - AppLocker" Priority="1">
@@ -433,6 +481,27 @@
     </Tag>
   </Tag>
   <Tag Name="Chrome">
+    <Tag Name="WASM MemoryCopy">
+        <Entrypoint Module="chrome.dll" Method="v8::internal::wasm::memory_copy_wrapper*"/>
+    </Tag>
+    <Tag Name="WebSocket SendPendingDataFrames">
+        <Entrypoint Module="chrome.dll" Method="network::WebSocket::SendPendingDataFrames*"/>
+    </Tag>
+    <Tag Name="TexImage2D">
+        <Entrypoint Module="chrome.dll" Method="gpu::gles2::GLES2Implementation::TexImage2D*"/>
+    </Tag>
+    <Tag Name="DOM ArrayBuffer Create">
+        <Entrypoint Module="chrome.dll" Method="blink::DOMArrayBuffer::Create*"/>
+    </Tag>
+    <Tag Name="WebSocket Append">
+        <Entrypoint Module="chrome.dll" Method="blink::WebSocketMessageChunkAccumulator::Append*"/>
+    </Tag>
+    <Tag Name="CopyElementsFromTypedArray">
+        <Entrypoint Module="chrome.dll" Method="v8::internal::`anonymous namespace*CopyElementsFromTypedArray"/>
+    </Tag>
+    <Tag Name="JavaScript Method Call">
+        <Entrypoint Module="chrome.dll" Method="v8::internal::Execution::Call*"/>
+    </Tag>
     <Tag Name="BeginMainFrame">
       <Entrypoint Module="chrome.dll" Method="cc::ProxyMain::BeginMainFrame*"/>
     </Tag>
@@ -502,16 +571,111 @@
         <Entrypoint Module="chrome.dll" Method="gpu::GpuChannel::HandleMessage*"/>
       </Tag>
     </Tag>
-    <Tag Name="SSL Read">
-      <Entrypoint Module="chrome.dll" Method="SSL_read*"/>
-    </Tag>
-    <Tag Name="SSL Write">
-      <Entrypoint Module="chrome.dll" Method="SSL_write*"/>
-    </Tag>
     <Tag Name="OnHandleReply">
       <Entrypoint Module="chrome.dll" Method="mojo::SimpleWatcher::OnHandleReady*"/>
     </Tag>
   </Tag>
+  <Tag Name="Edge">
+      <Tag Name="WASM MemoryCopy">
+          <Entrypoint Module="msedge.dll" Method="v8::internal::wasm::memory_copy_wrapper*"/>
+      </Tag>
+      <Tag Name="WebSocket SendPendingDataFrames">
+          <Entrypoint Module="msedge.dll" Method="network::WebSocket::SendPendingDataFrames*"/>
+      </Tag>
+      <Tag Name="TexImage2D">
+          <Entrypoint Module="msedge.dll" Method="gpu::gles2::GLES2Implementation::TexImage2D*"/>
+      </Tag>
+      <Tag Name="Texture SetData">
+          <Entrypoint Module="libGLESv2.dll" Method="rx::TextureStorage11::setData*"/>
+      </Tag>
+      <Tag Name="DOM ArrayBuffer Create">
+          <Entrypoint Module="msedge.dll" Method="blink::DOMArrayBuffer::Create*"/>
+      </Tag>
+      <Tag Name="WebSocket Append">
+          <Entrypoint Module="msedge.dll" Method="blink::WebSocketMessageChunkAccumulator::Append*"/>
+      </Tag>
+      <Tag Name="CopyElementsFromTypedArray">
+          <Entrypoint Module="msedge.dll" Method="v8::internal::`anonymous namespace*CopyElementsFromTypedArray"/>
+      </Tag>
+      <Tag Name="JavaScript Method Call">
+          <Entrypoint Module="msedge.dll" Method="v8::internal::Execution::Call*"/>
+      </Tag>
+      <Tag Name="Texture Conversion LoadLA8ToRGBA8">
+          <Entrypoint Module="libGLESv2.dll" Method="angle::LoadLA8ToRGBA8*"/>
+      </Tag>
+      <Tag Name="BeginMainFrame">
+       <Entrypoint Module="MsEdge.dll" Method="cc::ProxyMain::BeginMainFrame*"/>
+      </Tag>
+      <Tag Name="DevTools FlushProtocolNotifications">
+        <Entrypoint Module="MsEdge.dll" Method="blink::DevToolsAgent::FlushProtocolNotifications*"/>
+      </Tag>
+      <Tag Name="JavaScriptMethodExecuteRequest">
+        <Entrypoint Module="MsEdge.dll" Method="blink::LocalFrameMojoHandler::JavaScriptMethodExecuteRequest*"/>
+      </Tag>
+      <Tag Name="Waits">
+      <Tag Name="WorkerThread WaitForWork">
+        <Entrypoint Module="MsEdge.dll" Method="base::internal::WorkerThread::Delegate::WaitForWork*"/>
+      </Tag>
+      <Tag Name="WaitableEvent TimedWait" Priority="-1">
+        <Entrypoint Module="MsEdge.dll" Method="base::WaitableEvent::TimedWait*"/>
+      </Tag>
+      <Tag Name="WaitForVSync">
+        <Entrypoint Module="MsEdge.dll" Method="gl::VSyncThreadWin::WaitForVSync*"/>
+      </Tag>
+      </Tag>
+    <Tag Name="GC">
+      <Tag Name="Mark">
+        <Entrypoint Module="MsEdge.dll" Method="v8::internal::ConcurrentMarking::Run*"/>
+        <Entrypoint Module="MsEdge.dll" Method="v8::internal::IncrementalMarking::AdvanceWithDeadline*"/>
+        <Entrypoint Module="MsEdge.dll" Method="v8::internal::Heap::FinalizeIncrementalMarkingIfComplete*"/>
+        <Entrypoint Module="MsEdge.dll" Method="blink::ThreadState::PerformConcurrentMark*"/>
+        <Entrypoint Module="MsEdge.dll" Method="blink::ThreadState::IncrementalMarkingScheduler::Dispatch*"/>
+      </Tag>
+      <Tag Name="Sweep">
+        <Entrypoint Module="MsEdge.dll" Method="v8::internal::Sweeper::ParallelSweepPage*"/>
+        <Entrypoint Module="MsEdge.dll" Method="blink::ThreadState::PerformConcurrentSweep*"/>
+      </Tag>
+    </Tag>
+    <Tag Name="Pump IO Completion">
+      <Entrypoint Module="MsEdge.dll" Method="base::MessagePumpForIO::WaitForIOCompletion*"/>
+    </Tag>
+    <Tag Name ="WebSocket">
+      <Tag Name="WebSocket Consume Pending Data Frames">
+        <Entrypoint Module="MsEdge.dll" Method="blink::WebSocketChannelImpl::ConsumePendingDataFrames*"/>
+      </Tag>
+      <Tag Name="WebSocket SendDataFrame">
+        <Entrypoint Module="MsEdge.dll" Method="network::WebSocket::SendDataFrame*"/>
+      </Tag>
+      <Tag Name="WebSocket ReadFrame">
+        <Entrypoint Module="MsEdge.dll" Method="net::WebSocketChannel::ReadFrames*"/>
+      </Tag>
+    </Tag>
+    <Tag Name="Encryption">
+      <Tag Name="Encrypt">
+        <Entrypoint Module="MsEdge.dll" Method="vpaes_ctr32_encrypt_blocks*"/>
+      </Tag>
+      <Tag Name="Decrypt">
+        <Entrypoint Module="MsEdge.dll" Method="aesni_gcm_decrypt*"/>
+      </Tag>
+    </Tag>
+    <Tag Name="MainThread IdleTask">
+      <Entrypoint Module="MsEdge.dll" Method="blink::scheduler::MainThreadSchedulerImpl::RunIdleTask*"/>
+    </Tag>
+    <Tag Name="GPU Process">
+      <Tag Name="GPU CommmandBuffer Flush">
+        <Entrypoint Module="MsEdge.dll" Method="gpu::CommandBufferService::Flush*"/>
+      </Tag>
+      <Tag Name="SwapBuffers">
+        <Entrypoint Module="MsEdge.dll" Method="viz::SkiaOutputSurfaceImplOnGpu::SwapBuffers*"/>
+      </Tag>
+      <Tag Name="GpuChannel HandleMessage">
+        <Entrypoint Module="MsEdge.dll" Method="gpu::GpuChannel::HandleMessage*"/>
+      </Tag>
+    </Tag>
+    <Tag Name="OnHandleReply">
+      <Entrypoint Module="MsEdge.dll" Method="mojo::SimpleWatcher::OnHandleReady*"/>
+    </Tag>
+  </Tag>  
   <Tag Name="Chromium Embedded\https://bitbucket.org/chromiumembedded/cef/wiki/GeneralUsage.md#markdown-header-introduction">
     <Entrypoint Module="libcef.dll" Method="**"/>
   </Tag>
@@ -715,14 +879,7 @@
   <Tag Name="CreateThread">
     <Entrypoint Module="ntdll.dll" Method="ZwCreateThread*"/>
   </Tag>
-  <Tag Name="Network">
-    <Tag Name="Socket Send">
-      <Entrypoint Module="ws2_32.dll" Method="send*"/>
-    </Tag>
-    <Tag Name="Socket Receive">
-      <Entrypoint Module="ws2_32.dll" Method="recv*"/>
-    </Tag>
-  </Tag>
+
   <Tag Name=".NET">
 	  <Tag Name="zlib Decompress">
 		  <Entrypoint Module="System.ni.dll" Method="System.IO.Compression.InflaterZlib.Inflate*"/>
@@ -1101,20 +1258,7 @@
     <Tag Name=".NET Thread Join">
       <Entrypoint Module="*clr.dll" Method="Thread::JoinEx*"/>
     </Tag>
-    <Tag Name="Socket">
-      <Tag Name="HttpSendResponseEntityBody">
-        <Entrypoint Module="httpapi.dll" Method="HttpSendResponseEntityBody*"/>
-      </Tag>
-      <Tag Name="Socket Receive Wait" Priority="1">
-        <Entrypoint Module="mswsock.dll" Method="WSPRecv*"/>
-      </Tag>
-      <Tag Name="Socket Send Wait" Priority="1">
-        <Entrypoint Module="mswsock.dll" Method="WSPSend*"/>
-      </Tag>
-      <Tag Name="Socket Select" Priority="1">
-        <Entrypoint Module="mswsock.dll" Method="WSPSelect"/>
-      </Tag>
-    </Tag>
+
     <Tag Name="UI">
       <Tag Name="MsgWaitForMultipleObjects" Priority="-9">
         <Entrypoint Module="user32.dll" Method="MsgWaitForMultipleObjectsEx*"/>
@@ -1215,9 +1359,6 @@
       <Tag Name="WPF Wait for Work" Priority="-9">
         <Entrypoint Module="wpfgfx_v0400.dll" Method="CPartitionManager::GetWork*"/>
       </Tag>
-      <Tag Name="Socket Select Wait">
-        <Entrypoint Module="ws2_32.dll" Method="select*"/>
-      </Tag>
     </Tag>
     <Tag Name="DoWork">
 		  <Entrypoint Module="*" Method="*::DoWork"/>
@@ -1236,5 +1377,23 @@
     <Tag Name="COM Cross Apartment Call Wait" Priority="-9">
       <Entrypoint Module="combase.dll" Method="MTAThreadDispatchCrossApartmentCall*"/>
     </Tag>
+
+      <Tag Name="Tracing Overhead">
+        <Tag Name="ETW Stackwalks">
+          <Entrypoint Module="ntoskrnl.exe" Method="EtwpTraceStackWalk*"/>
+          <Entrypoint Module="ntkrnlpa.exe" Method="EtwpTraceStackWalk*"/>
+          <Entrypoint Module="ntoskrnl.exe" Method="EtwpStackTraceDispatcher*"/>
+          <Entrypoint Module="ntkrnlpa.exe" Method="EtwpStackTraceDispatcher*"/>
+          <Entrypoint Module="*clr.dll" Method="EtwCallout*"/>
+        </Tag>
+        <Tag Name="ETW Rundown">
+          <Entrypoint Module="*clr.dll" Method="ETW::EnumerationLog::StartRundown*"/>
+        </Tag>
+        <Tag Name="ETW ProcessShutdown">
+          <Entrypoint Module="*clr.dll" Method="ETW::EnumerationLog::ProcessShutdown*"/>
+        </Tag>
+      </Tag>
+
   </Tag>
+
 </Tag>
