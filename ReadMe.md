@@ -124,7 +124,7 @@ After adding "-stacktags *" to the command line we get all stacktags. If you add
 
 From the stacktag CPU consumption we find as top match "Windows\Windows Firewall" which proves that we have hit the same issue again. 
 
-**This is a known Windows 10 Bug which was fixed in the June 2023 KB5027293 Update which can happen in large AD Domains**
+**This is a known Windows 10 Bug which was fixed in the July 2023 KB5028166 Update which can happen in large AD Domains**
 ```
 Windows Filtering Platform forces reauthorization of every packet of an existing session when there is a profile change 
 (like change from public profile to domain profile). The authenticate / classification is an expensive operation and 
