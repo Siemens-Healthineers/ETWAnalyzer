@@ -551,7 +551,7 @@ namespace ETWAnalyzer.EventDump
             };
         }
 
-        internal bool MinMaxConnectionDurationFilter(DateTimeOffset ? connectTime, DateTimeOffset ? closeTime)
+        internal bool MinMaxConnectionDurationFilter(DateTimeOffset? connectTime, DateTimeOffset? closeTime)
         {
             bool lret = false;
             DateTimeOffset startTime = connectTime.HasValue ? connectTime.Value : DateTimeOffset.MinValue;
