@@ -53,57 +53,37 @@ namespace ETWAnalyzer_uTest.EventDump
             Messages.Add(message);
         }
 
-        static readonly SocketConnection ipRemPort = new("123.205.91.10", 10000);
-        static readonly SocketConnection ipSrcPort = new("123.456.789.10", 100);
-
-        static readonly DateTimeOffset timeStampOpen = new DateTimeOffset(2023, 8, 11, 10, 05, 00, TimeSpan.Zero);
-        static readonly DateTimeOffset timeStampClose = new DateTimeOffset(2023, 8, 11, 10, 05, 00, TimeSpan.Zero);
-        static readonly DateTimeOffset timeStampClose1 = new DateTimeOffset(2023, 8, 11, 10, 05, 10, TimeSpan.Zero);
-        static readonly DateTimeOffset timeStampClose2 = new DateTimeOffset(2023, 8, 11, 10, 05, 20, TimeSpan.Zero);
-        static readonly TcpConnection tcpConnection = new(123, ipRemPort, ipSrcPort, timeStampOpen, timeStampClose, "", 100, 120, 100, 100, ETWProcessIndex.Invalid);
-        static readonly TcpConnection tcpConnection1 = new(456, ipRemPort, ipSrcPort, timeStampOpen, timeStampClose1, "", 100, 120, 100, 100, ETWProcessIndex.Invalid);
-        static readonly TcpConnection tcpConnection2 = new(789, ipRemPort, ipSrcPort, timeStampOpen, timeStampClose2, "", 100, 120, 100, 100, ETWProcessIndex.Invalid);
         
-        
+        static readonly DateTimeOffset connect_0s = new DateTimeOffset(2023, 8, 11, 10, 05, 00, TimeSpan.Zero);
+        static readonly DateTimeOffset connect_5s = connect_0s + TimeSpan.FromSeconds(5);
+        static readonly DateTimeOffset connect_10s = connect_0s + TimeSpan.FromSeconds(10);
+        static readonly DateTimeOffset connect_11s = connect_0s + TimeSpan.FromSeconds(11);
 
-        List<DumpTcp.MatchData> CreateTestData()
-        {
-            List<DumpTcp.MatchData> data = new List<DumpTcp.MatchData>
-            { 
-                new DumpTcp.MatchData
-                {
-                    Connection = tcpConnection,
-                },
-                new DumpTcp.MatchData
-                {
-                    Connection = tcpConnection1,
-                },
-                new DumpTcp.MatchData
-                {
-                    Connection = tcpConnection2,
-                }
-            };
-
-            return data;
-        }
 
         [Fact]
-        public void MinMaxConnectionDurationFilterTest()
+        public void MinMaxConnectionDurationFilterTest_Match()
         {
             DumpTcp tcpDumper = new();
             
-            var data = CreateTestData();
-         
             tcpDumper.MinMaxConnectionDurationS = new MinMaxRange<double>(0, 10);
 
-            Assert.True(tcpDumper.MinMaxConnectionDurationFilter(data[0].Connection.TimeStampOpen, data[0].Connection.TimeStampClose));
-            Assert.Equal(0, data[0].Connection.TimeStampClose.Value.Second - data[0].Connection.TimeStampOpen.Value.Second);
+            Assert.True(tcpDumper.MinMaxConnectionDurationFilter(connect_0s, connect_5s));
+            Assert.Equal(5, connect_5s.Second - connect_0s.Second);
 
-            Assert.True(tcpDumper.MinMaxConnectionDurationFilter(data[1].Connection.TimeStampOpen, data[1].Connection.TimeStampClose));
-            Assert.Equal(10, data[1].Connection.TimeStampClose.Value.Second - data[1].Connection.TimeStampOpen.Value.Second);
+            Assert.True(tcpDumper.MinMaxConnectionDurationFilter(connect_0s, connect_10s));
+            Assert.Equal(10, connect_10s.Second - connect_0s.Second);
 
-            Assert.False(tcpDumper.MinMaxConnectionDurationFilter(data[2].Connection.TimeStampOpen, data[2].Connection.TimeStampClose));
-            Assert.Equal(20, data[2].Connection.TimeStampClose.Value.Second - data[2].Connection.TimeStampOpen.Value.Second);
+        }
+
+        [Fact]
+        public void MinMaxConnectionDurationFilterTest_NoMatch()
+        {
+            DumpTcp tcpDumper = new();
+
+            tcpDumper.MinMaxConnectionDurationS = new MinMaxRange<double>(0, 10);
+
+            Assert.False(tcpDumper.MinMaxConnectionDurationFilter(connect_0s, connect_11s));
+            Assert.Equal(11, connect_11s.Second - connect_0s.Second);
 
         }
 
