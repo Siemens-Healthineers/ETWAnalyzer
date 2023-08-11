@@ -60,6 +60,7 @@ namespace ETWAnalyzer.EventDump
         /// </summary>
         public MinMaxRange<int> MinMaxRetransDelayMs { get; internal set; }
         public MinMaxRange<int> MinMaxRetransBytes { get; internal set; }
+        public MinMaxRange<double> MinMaxConnectionDurationS { get; internal set; } = new();
         public bool ShowRetransmit { get; internal set; }
         public KeyValuePair<string, Func<string, bool>> TcbFilter { get; internal set; } = new KeyValuePair<string, Func<string, bool>>(null, x => true);
         public SortOrders RetransSortOrder { get; internal set; }
@@ -250,6 +251,7 @@ namespace ETWAnalyzer.EventDump
                 ulong totalBytesSent = 0;
                 int totalRetransmissionsCount = 0;
                 double totalSumRetransDelay = 0;
+                int totalConnectCounter = 0;
 
                 foreach (var match in file.SortAscendingGetTopNLast(SortBy, x => x.Connection.BytesReceived + x.Connection.BytesSent, null, TopN) )
                 {
@@ -259,6 +261,7 @@ namespace ETWAnalyzer.EventDump
                     totalBytesSent += match.Connection.BytesSent;
                     totalRetransmissionsCount += match.Retransmissions.Count;
                     totalSumRetransDelay += match.Retransmissions.Sum(x => x.RetransmitDiff().TotalMilliseconds);
+                    totalConnectCounter += match.InputConnectionCount;
 
                     // retransmission % can only be calculated by sent packets and retransmission events excluding client retransmissions
                     string retransPercent = "N0".WidthFormat(100.0f * match.Retransmissions.Where(x=>x.IsClientRetransmission.GetValueOrDefault() == false).Count() / match.Connection.DatagramsSent, PercentWidth);
@@ -275,7 +278,7 @@ namespace ETWAnalyzer.EventDump
                         ( ShowDetails ? 
                                       $"[yellow]{"F0".WidthFormat(match.RetransMaxms, RetransMsWidth)} ms {"F0".WidthFormat(match.RetransMedianMs, RetransMsWidth)} ms {"F0".WidthFormat(match.RetransMinMs, RetransMsWidth)} ms [/yellow] " + 
                                       $"{(match.Connection.LastTcpTemplate ?? "-").WithWidth(tcpTemplateLen)} " +
-                                      $"{GetDateTimeString(match.Connection.TimeStampOpen, match.Session.AdjustedSessionStart, TimeFormatOption,true).WithWidth(timeWidth)} {GetDateTimeString(match.Connection.TimeStampClose, match.Session.AdjustedSessionStart, TimeFormatOption,true).WithWidth(timeWidth)} " +
+                                      $"{GetDateTimeString(match.Connection.TimeStampOpen, match.Session.AdjustedSessionStart, TimeFormatOption, true).WithWidth(timeWidth)} {GetDateTimeString(match.Connection.TimeStampClose, match.Session.AdjustedSessionStart, TimeFormatOption, true).WithWidth(timeWidth)} " +
                                       $"0x{"X".WidthFormat(match.Connection.Tcb, PointerWidth)} "
                                 : "") +                                      
                                       $"[magenta]{match.Process.GetProcessWithId(UsePrettyProcessName)}[/magenta][grey]{GetProcessTags(match.Process, match.Session.AdjustedSessionStart)}[/grey]", ConsoleColor.White, true);
@@ -313,12 +316,17 @@ namespace ETWAnalyzer.EventDump
                         };
                     }
 
-                    if (IsSummary && printedFiles > 1)
+                    if (IsSummary && printedFiles > 1 && totalConnectCounter > 1)
                     {
-                        ColorConsole.WriteEmbeddedColorLine($"{"N0".WidthFormat("", emptyWidth)}[Red]{fileDatagramsReceived} {fileBytesReceived} Bytes[/Red]" +
-                            $" [cyan]{fileDatagramsSent} {fileBytesSent} Bytes[/cyan]" +
-                            $"[green]{totalGetTotalString(totalTotalColumnWidth)}[/green]" +
-                            $" [magenta]{fileRetransmissionsCount} {"N0".WidthFormat("", 6)} {fileSumRetransDelay} ms[/magenta]");
+                        ColorConsole.WriteEmbeddedColorLine(
+                            $"{"N0".WidthFormat("", emptyWidth-8)}[red]Total's:[/red]" +
+                            $"[green]{fileDatagramsReceived} {fileBytesReceived} Bytes [/green]" +
+                            $"[red]{fileDatagramsSent} {fileBytesSent} Bytes [/red]" +
+                            $"[cyan]{totalGetTotalString(totalTotalColumnWidth)}[/cyan]" +
+                            $"[yellow]{fileRetransmissionsCount} {"N0".WidthFormat("", 5)}- {fileSumRetransDelay} ms[/yellow]" +
+                            $"[red] Total Connection's accessed: [/red]" +
+                            $"[cyan]{totalConnectCounter}[/cyan]")
+                            ;
                     }
                 }
             }
@@ -387,6 +395,11 @@ namespace ETWAnalyzer.EventDump
                             continue;
                         }
 
+                        if (!MinMaxConnectionDurationFilter(connection.TimeStampOpen, connection.TimeStampClose))
+                        {
+                            continue;
+                        }
+
                         var retransmissionsForConnection = retransByConnections[connection];
 
                         foreach (var retransmission in retransmissionsForConnection)
@@ -441,7 +454,8 @@ namespace ETWAnalyzer.EventDump
                                 SessionStart = file.Extract.SessionStart,
                                 Baseline = file?.Extract?.MainModuleVersion?.ToString() ?? "",
                                 ZeroTimeS = GetZeroTimeInS(file.Extract),
-                            }
+                            },
+                            InputConnectionCount = 1,
                         };
 
                         data.Session.Parent = data;
@@ -537,6 +551,16 @@ namespace ETWAnalyzer.EventDump
             };
         }
 
+        internal bool MinMaxConnectionDurationFilter(DateTimeOffset? connectTime, DateTimeOffset? closeTime)
+        {
+            bool lret = false;
+            DateTimeOffset startTime = connectTime.HasValue ? connectTime.Value : DateTimeOffset.MinValue;
+            DateTimeOffset endTime = closeTime.HasValue ? closeTime.Value : DateTimeOffset.MaxValue;
+            
+            lret = MinMaxConnectionDurationS.IsWithin((endTime - startTime).TotalSeconds);
+            return lret;
+        }
+
         public class MatchData
         {
             public List<ITcpRetransmission> Retransmissions { get; internal set; } = new();
@@ -547,6 +571,7 @@ namespace ETWAnalyzer.EventDump
             public double RetransMedianMs { get; internal set; }
             public double RetransMinMs { get; internal set; }
             public double RetransMaxms { get; internal set; }
+            public int InputConnectionCount { get; internal set; }
         }
 
         public class ETWSession
