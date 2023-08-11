@@ -81,7 +81,15 @@ namespace ETWAnalyzer_uTest.EventDump
             tcpDumper.MinMaxConnectionDurationS = new MinMaxRange<double>(0, 10);
 
             Assert.False(tcpDumper.MinMaxConnectionDurationFilter(connect_0s, connect_11s));
-            Assert.Equal(11, connect_11s.Second - connect_0s.Second);
+
+        }
+
+        [Fact]
+        public void MinMaxConnectionDurationFilterTest()
+        {
+            DumpTcp tcpDumper = new();
+
+            Assert.True(tcpDumper.MinMaxConnectionDurationFilter(connect_0s, connect_11s));
 
         }
 
