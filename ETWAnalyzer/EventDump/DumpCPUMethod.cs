@@ -609,15 +609,12 @@ namespace ETWAnalyzer.EventDump
 
             GetHeaderFormatter(matches, ref cpuHeader, ref cpuFormatter, ref firstlastDurationHeader, ref firstLastFormatter, ref waitHeader, ref waitFormatter, ref readyHeader, ref readyFormatter);
 
-            if (!IsCSVEnabled || ShowTotal == TotalModes.Total)
+            // The header is omitted when total or process mode is active
+            if (!IsCSVEnabled && !(ShowTotal == TotalModes.Total || ShowTotal == TotalModes.Process))
             {
-                // Show header only when we do not print totals or no per method totals
-                if ( ShowTotal == TotalModes.None || ShowTotal == TotalModes.Method || ShowTotal == null )
-                {
-                    ColorConsole.WriteEmbeddedColorLine($"[green]{cpuHeader}[/green][yellow]{waitHeader}[/yellow][red]{readyHeader}[/red]{threadCountHeader}{firstlastDurationHeader}Method");
-                }
-
+                ColorConsole.WriteEmbeddedColorLine($"[green]{cpuHeader}[/green][yellow]{waitHeader}[/yellow][red]{readyHeader}[/red]{threadCountHeader}{firstlastDurationHeader}Method");
             }
+
             
 
             decimal overallCPUTotal = 0;
