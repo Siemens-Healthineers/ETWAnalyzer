@@ -849,12 +849,11 @@ namespace ETWAnalyzer_uTest.EventDump
             var lines = redirect.GetSingleLines();
 
 
-            Assert.Equal(9, lines.Count);
-            Assert.Equal("         CPU ms       Wait msMethod"                                                          ,lines[0]);
-            Assert.Equal("1/1/0500 12:00:00 AM    CPU            2 ms Wait            2 ms Total            4 ms File3 ", lines[1]);
-            Assert.Equal("   CPU            1 ms Wait:            1 ms Total:            2 ms 2222.exe(2222) hi",         lines[2]);
-            Assert.Equal("   CPU            1 ms Wait:            1 ms Total:            2 ms cmd.exe(1234) hi",          lines[3]);
-            Assert.Equal("Total 22,210 ms CPU 16,008 ms Wait 6,202 ms",                                                   lines[8]);
+            Assert.Equal(8, lines.Count);
+            Assert.Equal("1/1/0500 12:00:00 AM    CPU            2 ms Wait            2 ms Total            4 ms File3 ", lines[0]);
+            Assert.Equal("   CPU            1 ms Wait:            1 ms Total:            2 ms 2222.exe(2222) hi",         lines[1]);
+            Assert.Equal("   CPU            1 ms Wait:            1 ms Total:            2 ms cmd.exe(1234) hi",          lines[2]);
+            Assert.Equal("Total 22,210 ms CPU 16,008 ms Wait 6,202 ms",                                                   lines[7]);
         }
 
         [Fact]
@@ -907,12 +906,11 @@ namespace ETWAnalyzer_uTest.EventDump
             var lines = redirect.GetSingleLines();
 
 
-            Assert.Equal(5, lines.Count);
-            Assert.Equal("         CPU ms       Wait msMethod"                                                          , lines[0]);
-            Assert.Equal("1/1/0500 12:00:00 AM    CPU            2 ms Wait            2 ms Total            4 ms File3 ", lines[1]);
-            Assert.Equal("1/1/1500 12:00:00 AM    CPU            6 ms Wait          300 ms Total          306 ms File1 ", lines[2]);
-            Assert.Equal("1/1/1500 12:00:00 AM    CPU       16,000 ms Wait        5,900 ms Total       21,900 ms File2 ", lines[3]);
-            Assert.Equal("Total 22,210 ms CPU 16,008 ms Wait 6,202 ms", lines[4]);
+            Assert.Equal(4, lines.Count);
+            Assert.Equal("1/1/0500 12:00:00 AM    CPU            2 ms Wait            2 ms Total            4 ms File3 ", lines[0]);
+            Assert.Equal("1/1/1500 12:00:00 AM    CPU            6 ms Wait          300 ms Total          306 ms File1 ", lines[1]);
+            Assert.Equal("1/1/1500 12:00:00 AM    CPU       16,000 ms Wait        5,900 ms Total       21,900 ms File2 ", lines[2]);
+            Assert.Equal("Total 22,210 ms CPU 16,008 ms Wait 6,202 ms", lines[3]);
         }
 
     }
