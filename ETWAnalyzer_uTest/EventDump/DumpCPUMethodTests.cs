@@ -821,12 +821,13 @@ namespace ETWAnalyzer_uTest.EventDump
             var lines = redirect.GetSingleLines();
 
 
-            Assert.Equal(13, lines.Count);
-            Assert.Equal("1/1/0500 12:00:00 AM   File3 ",                             lines[0]);
-            Assert.Equal("   2222.exe(2222) hi",                                      lines[1]);
-            Assert.Equal("           1 ms          1 ms Wait1MsMethod_1msCPU ",       lines[2]);
-            Assert.Equal("   cmd.exe(1234) hi",                                       lines[3]);
-            Assert.Equal("      15,000 ms        900 ms Wait900MsMethod_15000msCPU ", lines[12]);
+            Assert.Equal(14, lines.Count);
+            Assert.Equal("         CPU ms       Wait msMethod",                    lines[0]);
+            Assert.Equal("1/1/0500 12:00:00 AM   File3 ",                             lines[1]);
+            Assert.Equal("   2222.exe(2222) hi",                                      lines[2]);
+            Assert.Equal("           1 ms          1 ms Wait1MsMethod_1msCPU ",       lines[3]);
+            Assert.Equal("   cmd.exe(1234) hi",                                       lines[4]);
+            Assert.Equal("      15,000 ms        900 ms Wait900MsMethod_15000msCPU ", lines[13]);
             
         }
 
@@ -877,7 +878,7 @@ namespace ETWAnalyzer_uTest.EventDump
 
 
             Assert.Equal(15, lines.Count);
-            Assert.Equal("         CPU ms       Wait msMethod", lines[0]);
+            Assert.Equal("         CPU ms       Wait msMethod"                                                          ,lines[0]);
             Assert.Equal("1/1/0500 12:00:00 AM    CPU            2 ms Wait            2 ms Total            4 ms File3 ", lines[1]);
             Assert.Equal("   CPU            1 ms Wait:            1 ms Total:            2 ms 2222.exe(2222) hi"        , lines[2]);
             Assert.Equal("           1 ms          1 ms Wait1MsMethod_1msCPU "                                          , lines[3]);
