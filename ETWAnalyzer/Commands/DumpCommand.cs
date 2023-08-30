@@ -363,7 +363,7 @@ namespace ETWAnalyzer.Commands
         " ETWAnalyzer -dump Process -fd xx.etl/.json -NewProcess 1 -timefmt s -ZeroTime ProcessStart -ZeroProcessName 43188" + Environment.NewLine +
         "[green]Dump process of all extracted files in current directory ordered by start time instead of grouped by process name. Print time as UTC.[/green]" + Environment.NewLine +
         " ETWAnalyzer -dump Process -sortby time -timefmt utc" + Environment.NewLine +
-        "[green]Dump processes and filter with Parent Process IDs.Substrings (e.g. *x*) are supported.[/green]" + Environment.NewLine +
+        "[green]Dump processes and filter with Parent Process IDs (e.g. -parent 123;*456*).[/green]" + Environment.NewLine +
         " ETWAnalyzer -dump Process -fd xx.etl/.json -parent dd;dd2;dd5;... " + Environment.NewLine;
 
         static readonly string TestRunExamples = ExamplesHelpString +
