@@ -29,6 +29,8 @@ namespace ETWAnalyzer.EventDump
         public bool ShowAllProcesses { get; internal set; }
 
         public bool Crash { get; internal set; }
+        public Func<string, bool> Parent { get; set; } = _ => true;
+
         public DumpCommand.SortOrders SortOrder { get; internal set; }
         public bool Merge { get; internal set; }
         public bool NoCmdLine { get; internal set; }
@@ -255,7 +257,7 @@ namespace ETWAnalyzer.EventDump
             foreach (var processGroup in extract.Processes.GroupBy(x => x.GetProcessName(UsePrettyProcessName)).OrderBy(x => x.Key))
             {
                 // then order by start time and if not present by process id
-                foreach (var process in processGroup.OrderBy(x => x.StartTime).ThenBy(x => x.ProcessID).Where(ProcessFilter))
+                foreach (var process in processGroup.OrderBy(x => x.StartTime).ThenBy(x => x.ProcessID).Where(ProcessFilter).Where(ParentFilter))
                 {
                     string cmdLine = String.IsNullOrEmpty(process.CmdLine) ? process.GetProcessName(UsePrettyProcessName) : process.GetProcessName(UsePrettyProcessName) + " " + process.CommandLineNoExe;
 
@@ -309,7 +311,7 @@ namespace ETWAnalyzer.EventDump
             foreach (var processGroup in processes.Result.Processes.GroupBy(x => x.ImageName).OrderBy(x => x.Key))
             {
                 // then order by start time and if not present by process id
-                foreach (var process in processGroup.OrderBy(x => x.CreateTime).ThenBy(x => x.Id).Where(ProcessFilter))
+                foreach (var process in processGroup.OrderBy(x => x.CreateTime).ThenBy(x => x.Id).Where(ProcessFilter).Where(ParentFilter))
                 {
                     string cmdLine = String.IsNullOrEmpty(process.CommandLine) ? process.ImageName : process.CommandLine;
                     string ret = process.ExitCode.HasValue ? process.ExitCode.Value.ToString(CultureInfo.InvariantCulture) : "";
@@ -433,11 +435,28 @@ namespace ETWAnalyzer.EventDump
              ) &&
              CommandLineFilter(process.CommandLine) &&
              process.IsMatch(NewProcessFilter)   // If new process filter is set check flags
-            ;
+             ;
 
             return lret;
         }
 
+        internal bool ParentFilter(ETWProcess  process)
+        {
+            bool lret =
+                (
+                Parent(process.ParentPid.ToString()))
+                ;
+            return lret;
+        }
+
+        internal bool ParentFilter(IProcess process)
+        {
+            bool lret =
+                (
+                Parent(process.ParentId.ToString()))
+                ;
+            return lret;
+        }
 
         public class MatchData : IEquatable<MatchData>
         {

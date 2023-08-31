@@ -91,6 +91,8 @@ namespace ETWAnalyzer.Commands
         "                         -MinMaxStart minS [maxS]   Select processes which did start after minS seconds." + Environment.NewLine +
         "                         -ShowFileOnLine            Show etl file name on each printed line." + Environment.NewLine +
         "                         -Crash                     Show potentially crashed processes with unusual return codes, or did trigger Windows Error Reporting." + Environment.NewLine +
+        "                         -Parent                    Filter the Processes with Parent Process ids. Multiple filters are separated by ;" + Environment.NewLine +
+        "                                                    E.g. dd;dd2 will filter for all dd instances and dd2. The wildcards * and ? are supported for all filter strings." + Environment.NewLine +
         "                         For other options [-TestsPerRun] [-SkipNTests] [-TestRunIndex] [-TestRunCount] [-MinMaxMsTestTimes]" + Environment.NewLine +
         "                         [-ShowFullFileName] refer to help of TestRun. Run \'EtwAnalyzer -help dump\' to get more infos." + Environment.NewLine;
         static readonly string TestRunHelpString =
@@ -360,7 +362,9 @@ namespace ETWAnalyzer.Commands
         "[green]Show process start times relative to the start of process with id 43188[/green]" + Environment.NewLine +
         " ETWAnalyzer -dump Process -fd xx.etl/.json -NewProcess 1 -timefmt s -ZeroTime ProcessStart -ZeroProcessName 43188" + Environment.NewLine +
         "[green]Dump process of all extracted files in current directory ordered by start time instead of grouped by process name. Print time as UTC.[/green]" + Environment.NewLine +
-        " ETWAnalyzer -dump Process -sortby time -timefmt utc" + Environment.NewLine;
+        " ETWAnalyzer -dump Process -sortby time -timefmt utc" + Environment.NewLine +
+        "[green]Dump processes and filter with Parent Process IDs (e.g. -parent 123;*456*).[/green]" + Environment.NewLine +
+        " ETWAnalyzer -dump Process -fd xx.etl/.json -parent dd;dd2;dd5;... " + Environment.NewLine;
 
         static readonly string TestRunExamples = ExamplesHelpString +
         "[green]Dump TestRuns from a given directory. Works with ETL and Extracted Json files[green]" + Environment.NewLine +
@@ -719,6 +723,7 @@ namespace ETWAnalyzer.Commands
         public bool Crash { get; private set; }
         public bool ShowUser { get; private set; }
         public MinMaxRange<double> MinMaxStart { get; private set; } = new();
+        public Func<string, bool> Parent { get; private set; } = _ => true;
 
         // Dump CPU specific Flags
         public KeyValuePair<string, Func<string, bool>> StackTagFilter { get; private set; }
@@ -1026,6 +1031,9 @@ namespace ETWAnalyzer.Commands
                     case "-processname":
                     case "-pn":
                         ProcessNameFilter = Matcher.CreateMatcher(GetNextNonArg("-processname"), MatchingMode.CaseInsensitive, pidFilterFormat:true);
+                        break;
+                    case "-parent":
+                        Parent =            Matcher.CreateMatcher(GetNextNonArg("-parent"));
                         break;
                     case "-zeroprocessname":
                     case "-zpn":
@@ -1613,8 +1621,8 @@ namespace ETWAnalyzer.Commands
                             SortOrder = SortOrder,
                             Merge = Merge,
                             MinMaxDurationS = MinMaxDurationS,
-
                             NewProcessFilter = NewProcess,
+                            Parent = Parent,
                             ShowFileOnLine = ShowFileOnLine,
                             ShowAllProcesses = ShowAllProcesses,
                             Crash = Crash,
