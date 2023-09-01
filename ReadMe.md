@@ -33,6 +33,8 @@ See [Documentation Folder in Repo](https://github.com/Siemens-Healthineers/ETWAn
 There is a sample .wprp profile located at [MultiProfile.wprp](https://github.com/Alois-xx/FileWriter/blob/master/MultiProfile.wprp) to record ETW data in the way ETWAnalyzer likes best. To generate data in automated regression tests see the other example project [https://github.com/Alois-xx/FileWriter](https://github.com/Alois-xx/FileWriter).
 
 ## Use Cases
+ - [Profiler Driven Development](https://aloiskraus.wordpress.com/2022/07/25/pdd-profiler-driven-development/)
+ - [Run tests with ETW Profiling](https://github.com/Alois-xx/SerializerTests)
  - [Build Profiling At Scale At Github](ETWAnalyzer/Documentation/BuildProfiling.md)
 
 ## Data Extraction
