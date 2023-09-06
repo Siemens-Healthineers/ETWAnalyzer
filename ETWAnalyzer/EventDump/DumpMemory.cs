@@ -53,11 +53,22 @@ namespace ETWAnalyzer.EventDump
         public TotalModes? ShowTotal { get; internal set; }
 
         /// <summary>
+        /// Show everything, but show totals at the end
+        /// </summary>
+        bool IsFileTotalMode
+        {
+            get => ShowTotal == TotalModes.File;
+        }
+
+        /// <summary>
         /// Show per file summary
         /// </summary>
         bool IsSummary => ShowTotal switch
         {
             TotalModes.None => false,
+            TotalModes.File => true,
+            TotalModes.Total => true,
+            TotalModes.Process => true,
             _ => true,
         };
 
@@ -362,23 +373,37 @@ namespace ETWAnalyzer.EventDump
 
                 long totalDiff = 0;
                 ulong totalCommitedMemMiB = 0;
+                ulong totalWorkingSetMemMiB = 0;
+                ulong totalSharedCommitInMemMiB = 0;
                 int processCount = 0;
 
                 foreach (var m in fileGroup.SortAscendingGetTopNLast(SortByValue, null, TopN))
                 {
                     totalDiff += m.DiffMb;
                     totalCommitedMemMiB += m.CommitedMiB;
+                    totalWorkingSetMemMiB += m.WorkingSetMiB;
+                    totalSharedCommitInMemMiB += m.SharedCommitInMiB;
                     processCount ++;
                     string moduleInfo = m.Module != null ? GetModuleString(m.Module, true) : "";
-                    ColorConsole.WriteEmbeddedColorLine($"[darkcyan]{GetDateTimeString(m.SessionEnd, m.SessionStart, TimeFormatOption)}[/darkcyan] [{GetColor(m.DiffMb)}]Diff: {m.DiffMb,4}[/{GetColor(m.DiffMb)}] [{GetColorTotal(m.CommitedMiB)}]Commit {m.CommitedMiB,4} MiB[/{GetColorTotal(m.CommitedMiB)}] [{GetColorTotal(m.WorkingSetMiB)}]WorkingSet {m.WorkingSetMiB,4} MiB[/{GetColorTotal(m.WorkingSetMiB)}] [{GetColorTotal(m.SharedCommitInMiB)}]Shared Commit: {m.SharedCommitInMiB,4} MiB [/{GetColorTotal(m.SharedCommitInMiB)}] ", null, true);
-                    ColorConsole.WriteEmbeddedColorLine($"[yellow]{m.Process.GetProcessWithId(UsePrettyProcessName)}[/yellow][grey]{GetProcessTags(m.Process, m.SessionStart)}[/grey] {(NoCmdLine ? "" : m.CmdLine)} ", ConsoleColor.DarkCyan, true);
-                    ColorConsole.WriteEmbeddedColorLine($"[red]{moduleInfo}[/red]");
+                    if (!IsFileTotalMode)
+                    {
+                        ColorConsole.WriteEmbeddedColorLine($"[darkcyan]{GetDateTimeString(m.SessionEnd, m.SessionStart, TimeFormatOption)}[/darkcyan] [{GetColor(m.DiffMb)}]Diff: {m.DiffMb,4}[/{GetColor(m.DiffMb)}] [{GetColorTotal(m.CommitedMiB)}]Commit {m.CommitedMiB,4} MiB[/{GetColorTotal(m.CommitedMiB)}] [{GetColorTotal(m.WorkingSetMiB)}]WorkingSet {m.WorkingSetMiB,4} MiB[/{GetColorTotal(m.WorkingSetMiB)}] [{GetColorTotal(m.SharedCommitInMiB)}]Shared Commit: {m.SharedCommitInMiB,4} MiB [/{GetColorTotal(m.SharedCommitInMiB)}] ", null, true);
+                        ColorConsole.WriteEmbeddedColorLine($"[yellow]{m.Process.GetProcessWithId(UsePrettyProcessName)}[/yellow][grey]{GetProcessTags(m.Process, m.SessionStart)}[/grey] {(NoCmdLine ? "" : m.CmdLine)} ", ConsoleColor.DarkCyan, true);
+                        ColorConsole.WriteEmbeddedColorLine($"[red]{moduleInfo}[/red]");
+                    }
+                    
                     printedFiles++;
                 }
 
                 if (IsSummary && printedFiles > 1)
                 {
-                    ColorConsole.WriteEmbeddedColorLine($"[cyan]Memory Total per File:[/cyan] [{GetTrendColor(totalDiff)}]TotalDiff: {totalDiff} [/{GetTrendColor(totalDiff)}] [{GetColorTotal(totalCommitedMemMiB)}] TotalCommitedMem: {totalCommitedMemMiB} MiB [/{GetColorTotal(totalCommitedMemMiB)}] [Darkyellow] Number of Involved Processes: {processCount} [/Darkyellow]");
+                    ColorConsole.WriteEmbeddedColorLine($"[cyan]Memory Total per File:[/cyan] [{GetTrendColor(totalDiff)}]" +
+                        $"TotalDiff: {totalDiff} [/{GetTrendColor(totalDiff)}] " +
+                        $"[{GetColorTotal(totalCommitedMemMiB)}] TotalCommitedMem: {totalCommitedMemMiB} MiB [/{GetColorTotal(totalCommitedMemMiB)}] " +
+                        (IsFileTotalMode ? 
+                         $"[{GetColorTotal(totalWorkingSetMemMiB)}] TotalWorkingSetMem: {totalWorkingSetMemMiB} MiB [/{GetColorTotal(totalWorkingSetMemMiB)}]" +
+                         $"[{GetColorTotal(totalSharedCommitInMemMiB)}] TotalSharedCommitMem: {totalSharedCommitInMemMiB} MiB [/{GetColorTotal(totalSharedCommitInMemMiB)}]" : $"") +
+                        $"[Darkyellow] Number of Involved Processes: {processCount} [/Darkyellow]");
                 }
 
             }
