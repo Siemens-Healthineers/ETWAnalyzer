@@ -400,9 +400,6 @@ namespace ETWAnalyzer.EventDump
                     ColorConsole.WriteEmbeddedColorLine($"[cyan]Memory Total per File:[/cyan] [{GetTrendColor(totalDiff)}]" +
                         $"TotalDiff: {totalDiff} [/{GetTrendColor(totalDiff)}] " +
                         $"[{GetColorTotal(totalCommitedMemMiB)}] TotalCommitedMem: {totalCommitedMemMiB} MiB [/{GetColorTotal(totalCommitedMemMiB)}] " +
-                        (IsFileTotalMode ? 
-                         $"[{GetColorTotal(totalWorkingSetMemMiB)}] TotalWorkingSetMem: {totalWorkingSetMemMiB} MiB [/{GetColorTotal(totalWorkingSetMemMiB)}]" +
-                         $"[{GetColorTotal(totalSharedCommitInMemMiB)}] TotalSharedCommitMem: {totalSharedCommitInMemMiB} MiB [/{GetColorTotal(totalSharedCommitInMemMiB)}]" : $"") +
                         $"[Darkyellow] Number of Involved Processes: {processCount} [/Darkyellow]");
                 }
 
