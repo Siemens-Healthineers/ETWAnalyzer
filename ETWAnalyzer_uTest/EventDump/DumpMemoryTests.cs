@@ -44,7 +44,7 @@ namespace ETWAnalyzer_uTest.EventDump
 
             string[] lines = File.ReadAllLines(csvFile);
             Assert.Equal(3, lines.Length);
-            Assert.Contains("0001-01-01 00:00:00.000;test.exe(1);test.exe;100;0;500;;;MemoryLeakTest;0;;;1.0.100.1;File Version of 1.dll;Product Version of 1.dll;Product Name of 1.dll;Description of 1.dll;C:\\Windows", lines[2]);
+            Assert.Contains("0001-01-01 00:00:00.000;test.exe(1);test.exe;100;0;500;0;;;MemoryLeakTest;0;;;1.0.100.1;File Version of 1.dll;Product Version of 1.dll;Product Name of 1.dll;Description of 1.dll;C:\\Windows", lines[2]);
         }
 
         [Fact]
