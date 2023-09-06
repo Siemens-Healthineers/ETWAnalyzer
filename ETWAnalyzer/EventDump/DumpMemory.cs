@@ -50,6 +50,8 @@ namespace ETWAnalyzer.EventDump
 
         public DumpCommand.SortOrders SortOrder { get; internal set; }
         public bool NoCmdLine { get; internal set; }
+        public bool ShowDetails { get; internal set; }
+
 
         public TotalModes? ShowTotal { get; internal set; }
 
@@ -304,7 +306,7 @@ namespace ETWAnalyzer.EventDump
 
         internal void WriteToCSV(List<Match> matches)
         {
-            OpenCSVWithHeader(Col_CSVOptions, Col_Time, Col_Process, Col_ProcessName, "Commit MiB", "Shared CommitMiB", "Working Set MiB", "Working set Private Mem",
+            OpenCSVWithHeader(Col_CSVOptions, Col_Time, Col_Process, Col_ProcessName, "Commit MiB", "Shared CommitMiB", "Working Set MiB", "Working Set Private MiB",
                 Col_CommandLine, Col_Baseline, Col_TestCase, Col_TestTimeinms, Col_SourceJsonFile, "Machine", 
                 Col_FileVersion, Col_VersionString, Col_ProductVersion, Col_ProductName, Col_Description, Col_Directory);
 
@@ -394,7 +396,7 @@ namespace ETWAnalyzer.EventDump
                             $"[{GetColor(m.DiffMb)}]Diff: {m.DiffMb,4}[/{GetColor(m.DiffMb)}] " +
                             $"[{GetColorTotal(m.CommitedMiB)}]Commit {m.CommitedMiB,4} MiB[/{GetColorTotal(m.CommitedMiB)}] " +
                             $"[{GetColorTotal(m.WorkingSetMiB)}]WorkingSet {m.WorkingSetMiB,4} MiB[/{GetColorTotal(m.WorkingSetMiB)}] " +
-                            $"[{GetColorTotal(m.WorkingsetPrivateMiB)}]WorkingsetPrivate {m.WorkingsetPrivateMiB,4} MiB[/{GetColorTotal(m.WorkingsetPrivateMiB)}] " +
+                            (ShowDetails ? $"[{GetColorTotal(m.WorkingsetPrivateMiB)}]WorkingsetPrivate {m.WorkingsetPrivateMiB,4} MiB[/{GetColorTotal(m.WorkingsetPrivateMiB)}] " : "") +
                             $"[{GetColorTotal(m.SharedCommitInMiB)}]Shared Commit: {m.SharedCommitInMiB,4} MiB [/{GetColorTotal(m.SharedCommitInMiB)}] ", null, true);
                         ColorConsole.WriteEmbeddedColorLine($"[yellow]{m.Process.GetProcessWithId(UsePrettyProcessName)}[/yellow][grey]{GetProcessTags(m.Process, m.SessionStart)}[/grey] {(NoCmdLine ? "" : m.CmdLine)} ", ConsoleColor.DarkCyan, true);
                         ColorConsole.WriteEmbeddedColorLine($"[red]{moduleInfo}[/red]");
@@ -407,9 +409,9 @@ namespace ETWAnalyzer.EventDump
                 {
                     ColorConsole.WriteEmbeddedColorLine($"[cyan]Memory Total per File:[/cyan] [{GetTrendColor(totalDiff)}]" +
                         $"TotalDiff: {totalDiff} [/{GetTrendColor(totalDiff)}] " +
-                        $"[{GetColorTotal(totalCommitedMemMiB)}] TotalCommitedMem: {totalCommitedMemMiB} MiB [/{GetColorTotal(totalCommitedMemMiB)}] " +
+                        $"[{GetColorTotal(totalCommitedMemMiB)}] TotalCommited: {totalCommitedMemMiB} MiB [/{GetColorTotal(totalCommitedMemMiB)}] " +
                         (IsFileTotalMode ? 
-                            $"[{GetColorTotal(totalWorkingsetPrivateMemMiB)}] TotalWorkingsetPrivateMem: {totalWorkingsetPrivateMemMiB} MiB [/{GetColorTotal(totalWorkingsetPrivateMemMiB)}]" : 
+                            $"[{GetColorTotal(totalWorkingsetPrivateMemMiB)}] TotalWorkingsetPrivate: {totalWorkingsetPrivateMemMiB} MiB [/{GetColorTotal(totalWorkingsetPrivateMemMiB)}]" : 
                             "")+
                         $"[Darkyellow] Number of Involved Processes: {processCount} [/Darkyellow]");
                 }
