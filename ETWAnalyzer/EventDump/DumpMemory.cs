@@ -373,16 +373,12 @@ namespace ETWAnalyzer.EventDump
 
                 long totalDiff = 0;
                 ulong totalCommitedMemMiB = 0;
-                ulong totalWorkingSetMemMiB = 0;
-                ulong totalSharedCommitInMemMiB = 0;
                 int processCount = 0;
 
                 foreach (var m in fileGroup.SortAscendingGetTopNLast(SortByValue, null, TopN))
                 {
                     totalDiff += m.DiffMb;
                     totalCommitedMemMiB += m.CommitedMiB;
-                    totalWorkingSetMemMiB += m.WorkingSetMiB;
-                    totalSharedCommitInMemMiB += m.SharedCommitInMiB;
                     processCount ++;
                     string moduleInfo = m.Module != null ? GetModuleString(m.Module, true) : "";
                     if (!IsFileTotalMode)
