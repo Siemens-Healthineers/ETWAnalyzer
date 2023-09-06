@@ -166,16 +166,17 @@ namespace ETWAnalyzer.Commands
 
         static readonly string MemoryHelpString =
         "  Memory    -filedir/fd Extract\\ or xxx.json [-recursive] [-csv xxx.csv] [-NoCSVSeparator] [-TopN dd nn] [-TimeFmt s,Local,LocalTime,UTC,UTCTime,Here,HereTime] [-ProcessFmt timefmt] [-TotalMemory] [-MinDiffMB dd] " + Environment.NewLine +
-        "                           [-SortBy Commit/WorkingSet/SharedCommit/Diff] [-GlobalDiffMB dd] [-MinMaxWorkingSetMiB xx-yy] [-MinMaxCommitMiB xx-yy] [-MinMaxSharedCommitMiB xx-yy] [-Clip] [-NoCmdLine] " + Environment.NewLine +
+        "                           [-SortBy Commit/WorkingSet/SharedCommit/Diff] [-GlobalDiffMB dd] [-MinMaxWorkingSetMiB xx-yy] [-MinMaxWorkingSetPrivateMiB xx-yy] [-MinMaxCommitMiB xx-yy] [-MinMaxSharedCommitMiB xx-yy] [-Clip] [-NoCmdLine] [-Details] " + Environment.NewLine +
         "                           [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd] [-MinMaxMsTestTimes xx-yy ...] [-ProcessName/pn xxx.exe(pid)] [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-CmdLine substring]" + Environment.NewLine +
         "                           [-ShowFullFileName/-sffn] [-ShowModuleInfo [Driver] or [filter]] [-ShowTotal [File,None]] [-ProcessFmt timefmt] " + Environment.NewLine +
         "                         Print memory (Working Set, Committed Memory) of all or some processes from extracted Json files. To get output -extract Memory, All or Default must have been used during extraction." + Environment.NewLine +
-        "                         -ShowTotal [File,None]      Show totals per file. Default is File. None will turn off totals." + Environment.NewLine +
+        "                         -ShowTotal [File, None, Process, Total]      Show totals per file. Default is Process. None will turn off totals. File mode will turn off the processes." + Environment.NewLine +
         "                         -SortBy Commit/SharedCommit Sort by Committed/Shared Committed (this is are memory mapped files, or page file allocated file mappings). " + Environment.NewLine + "" +
         "                                 WorkingSet/Diff    Sort by working set or committed memory difference" + Environment.NewLine +
         "                         -TopN dd nn                Select top dd processes. Optional nn skips the first nn lines of top list" + Environment.NewLine +
         "                         -TotalMemory               Show System wide commit and active memory metrics. Useful to check if machine was in a bad memory situation." + Environment.NewLine +
         "                         -MinMaxWorkingSetMiB xx-yy  Only include processes which had at least a working set xx-yy MiB (=1024*1024) at trace end. Numbers can have units like Bytes,KiB,MiB,GiB e.g. 500MiB." + Environment.NewLine +
+        "                         -MinMaxWorkingSetPrivateMiB xx-yy  Only include processes which had at least a working set private xx-yy MiB (=1024*1024) at trace end. Numbers can have units like Bytes,KiB,MiB,GiB e.g. 500MiB." + Environment.NewLine +
         "                         -MinMaxCommitMiB xx-yy      Only include processes which had at last committed xx-yy MiB at trace end." + Environment.NewLine + 
         "                         -MinMaxSharedCommitMiB xx-yy Only include processes which had at least a shared commit of xx-yy MiB at trace end." + Environment.NewLine + 
         "                         -MinDiffMB    dd           Include processes which have gained inside one Json file more than xx MB of committed memory." + Environment.NewLine +
@@ -407,8 +408,14 @@ namespace ETWAnalyzer.Commands
         " ETWAnalyzer -dump memory -fd C:\\Extract\\TestRuns -smi !*Microsoft*;!*Windows*" + Environment.NewLine +
         "[green]Print top 5 processes having highest diff (diff can be memory growth or loss).[/green]" + Environment.NewLine +
         " ETWAnalyzer -dump Memory -SortBy Diff -TopN 5" + Environment.NewLine +
+        "[green]WorkingsetPrivate MiB is printed for each process in Details mode for all the processes in a File.[/green]" + Environment.NewLine +
+        " ETWAnalyzer -dump Memory -fd xxx.json -Details" + Environment.NewLine +
+        "[green]Only file Summary is printed omitting all the processes details.[/green]" + Environment.NewLine +
+        " ETWAnalyzer -dump Memory -fd xxx.json -ShowTotal File" + Environment.NewLine +
+        "[green]Filter all the details with WorkingsetPrivate memory with 10MiB-100MiB default.Numbers can have units like Bytes, KiB, MiB, GiB e.g. 500MiB.[/green]" + Environment.NewLine +
+        " ETWAnalyzer -dump Memory -fd xxx.json -MinMaxWorkingSetPrivateMiB 10-100" + Environment.NewLine +
         "[green]Summary is not printed.[/green]" + Environment.NewLine +
-        " ETWAnalyzer -dump Memory -ShowTotal None" + Environment.NewLine;
+        " ETWAnalyzer -dump Memory -fd xxx.json -ShowTotal None" + Environment.NewLine;
 
         static readonly string ExceptionExamples = ExamplesHelpString +
         "[green]Show all exceptions which did pass the exception filter during extraction, grouped by process, exception type and message.[/green]" + Environment.NewLine +
@@ -764,6 +771,7 @@ namespace ETWAnalyzer.Commands
         public MinMaxRange<decimal> MinMaxWorkingSetMiB { get; private set; } = new();
         public MinMaxRange<decimal> MinMaxCommitMiB { get; private set; } = new();
         public MinMaxRange<decimal> MinMaxSharedCommitMiB { get; private set; } = new();
+        public MinMaxRange<decimal> MinMaxWorkingsetPrivateMiB { get; private set; } = new();
         public int MinDiffMB { get; private set; } 
         public int GlobalDiffMB { get; private set; }
 
@@ -1220,6 +1228,11 @@ namespace ETWAnalyzer.Commands
                         string minmaxsharedcommitMBStr = GetNextNonArg("-minmaxsharedcommitmib");
                         KeyValuePair<decimal, decimal> minmaxsharedcommit = minmaxsharedcommitMBStr.GetMinMaxDecimal(MiBUnit);
                         MinMaxSharedCommitMiB = new MinMaxRange<decimal>(minmaxsharedcommit.Key / MiBUnit, minmaxsharedcommit.Value / MiBUnit);
+                        break;
+                    case "-minmaxworkingsetprivatemib":
+                        string minmaxworkingsetprivateMiBStr = GetNextNonArg("-minmaxworkingsetprivatemib");
+                        KeyValuePair<decimal, decimal> minmaxworkingsetprivate = minmaxworkingsetprivateMiBStr.GetMinMaxDecimal(MiBUnit);
+                        MinMaxWorkingsetPrivateMiB = new MinMaxRange<decimal>(minmaxworkingsetprivate.Key / MiBUnit, minmaxworkingsetprivate.Value / MiBUnit);
                         break;
                     case "-minmaxfirst":
                         string minFirst = GetNextNonArg("-minmaxfirst");
@@ -1840,7 +1853,9 @@ namespace ETWAnalyzer.Commands
                             MinMaxWorkingSetMiB = MinMaxWorkingSetMiB,
                             MinMaxCommitMiB = MinMaxCommitMiB,
                             MinMaxSharedCommitMiB = MinMaxSharedCommitMiB,
+                            MinMaxWorkingsetPrivateMiB = MinMaxWorkingsetPrivateMiB,
                             NoCmdLine = NoCmdLine,
+                            ShowDetails = ShowDetails,
                            
                         };
                         break;
