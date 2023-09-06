@@ -64,6 +64,12 @@ namespace ETWAnalyzer.Extract
         /// </summary>
         public string Identity { get; set; }
 
+        /// <summary>
+        /// Session Id of process
+        /// </summary>
+        public int SessionId { get; set; }
+
+
         string myProcessNamePretty;
 
         /// <summary>

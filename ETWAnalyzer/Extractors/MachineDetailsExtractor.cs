@@ -395,6 +395,7 @@ namespace ETWAnalyzer.Extractors
                     IsNew = data.CreateTime != null,
                     ReturnCode = data.ExitCode,
                     ParentPid = data.ParentId,
+                    SessionId = data.SessionId,
                     HasEnded = data.ExitTime != null,
                     Identity = userName,
                 };
