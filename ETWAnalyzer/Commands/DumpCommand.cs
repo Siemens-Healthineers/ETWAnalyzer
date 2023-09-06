@@ -764,6 +764,7 @@ namespace ETWAnalyzer.Commands
         public MinMaxRange<decimal> MinMaxWorkingSetMiB { get; private set; } = new();
         public MinMaxRange<decimal> MinMaxCommitMiB { get; private set; } = new();
         public MinMaxRange<decimal> MinMaxSharedCommitMiB { get; private set; } = new();
+        public MinMaxRange<decimal> MinMaxWorkingsetPrivateMiB { get; private set; } = new();
         public int MinDiffMB { get; private set; } 
         public int GlobalDiffMB { get; private set; }
 
@@ -1840,6 +1841,7 @@ namespace ETWAnalyzer.Commands
                             MinMaxWorkingSetMiB = MinMaxWorkingSetMiB,
                             MinMaxCommitMiB = MinMaxCommitMiB,
                             MinMaxSharedCommitMiB = MinMaxSharedCommitMiB,
+                            MinMaxWorkingsetPrivateMiB = MinMaxWorkingsetPrivateMiB,
                             NoCmdLine = NoCmdLine,
                            
                         };
