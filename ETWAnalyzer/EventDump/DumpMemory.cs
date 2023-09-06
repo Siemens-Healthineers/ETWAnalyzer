@@ -408,10 +408,10 @@ namespace ETWAnalyzer.EventDump
                 if (IsSummary && printedFiles > 1)
                 {
                     ColorConsole.WriteEmbeddedColorLine($"[cyan]Memory Total per File:[/cyan] [{GetTrendColor(totalDiff)}]" +
-                        $"TotalDiff: {totalDiff} [/{GetTrendColor(totalDiff)}] " +
-                        $"[{GetColorTotal(totalCommitedMemMiB)}] TotalCommited: {totalCommitedMemMiB} MiB [/{GetColorTotal(totalCommitedMemMiB)}] " +
+                        $"TotalDiff: {totalDiff, 6} [/{GetTrendColor(totalDiff)}] " +
+                        $"[{GetColorTotal(totalCommitedMemMiB)}] TotalCommited: {totalCommitedMemMiB, 6} MiB [/{GetColorTotal(totalCommitedMemMiB)}] " +
                         (IsFileTotalMode ? 
-                            $"[{GetColorTotal(totalWorkingsetPrivateMemMiB)}] TotalWorkingsetPrivate: {totalWorkingsetPrivateMemMiB} MiB [/{GetColorTotal(totalWorkingsetPrivateMemMiB)}]" : 
+                            $"[{GetColorTotal(totalWorkingsetPrivateMemMiB)}] TotalWorkingsetPrivate: {totalWorkingsetPrivateMemMiB, 6} MiB [/{GetColorTotal(totalWorkingsetPrivateMemMiB)}]" : 
                             "")+
                         $"[Darkyellow] Number of Involved Processes: {processCount} [/Darkyellow]");
                 }
