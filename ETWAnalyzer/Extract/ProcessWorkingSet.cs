@@ -10,7 +10,7 @@ namespace ETWAnalyzer.Extract
     /// <summary>
     /// When the ETW trace contains sampled workingset data 
     /// </summary>
-    public class ProcessWorkingSet
+    public class ProcessWorkingSet : IProcessWorkingSet
     {
         /// <summary>
         /// Working Set in MiB = bytes/(1024*1024) rounded to next bigger MiB when greater x.5
@@ -42,7 +42,7 @@ namespace ETWAnalyzer.Extract
         /// </summary>
         public ulong SharedCommitSizeInMiB
         {
-            get;set;
+            get; set;
         }
 
         /// <summary>
@@ -91,7 +91,7 @@ namespace ETWAnalyzer.Extract
         /// <param name="workingsetPrivate"></param>
         /// <param name="sharedCommitSize"></param>
         internal ProcessWorkingSet(IProcess process, DataSize commit, DataSize workingset, DataSize workingsetPrivate, DataSize sharedCommitSize)
-                        :this(CheckProcess(process),          commit,          workingset,          workingsetPrivate,          sharedCommitSize)
+                        : this(CheckProcess(process), commit, workingset, workingsetPrivate, sharedCommitSize)
         {
         }
 
