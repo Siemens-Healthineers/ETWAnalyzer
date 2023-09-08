@@ -30,10 +30,11 @@ namespace ETWAnalyzer.EventDump
 
         public bool Crash { get; internal set; }
         public Func<string, bool> Parent { get; set; } = _ => true;
-
+        public Func<string, bool> Session { get; set; } = _ => true;
         public DumpCommand.SortOrders SortOrder { get; internal set; }
         public bool Merge { get; internal set; }
         public bool NoCmdLine { get; internal set; }
+        public bool ShowDetails { get; internal set; }
         public MinMaxRange<double> MinMaxDurationS { get; internal set; } = new MinMaxRange<double>();
         public bool ShowUser { get; set; }
         public MinMaxRange<double> MinMaxStart { get; internal set; } = new MinMaxRange<double>();
@@ -140,8 +141,18 @@ namespace ETWAnalyzer.EventDump
                     cmdLine = String.IsNullOrEmpty(m.CmdLine) ? m.ProcessName : m.CmdLine;
                 }
 
+                int sessionId = m.SessionId;
+                if (!ShowDetails)
+                {
+                    sessionId = m.SessionId;
+                }
 
-                string str = $"PID: [yellow]{m.ProcessId,-6}[/yellow] Start: [green]{startTime.WithWidth(startTimeWidth)}[/green] Stop: [darkcyan]{stopTime.WithWidth(stopTimeWidth)} Duration: {m.LifeTimeString.WithWidth(lifeTimeWidth)}[/darkcyan] RCode: {m.ReturnCodeString.WithWidth(returnCodeWidth)} Parent: {m.ParentProcessId,5} [yellow]{user}[/yellow]{cmdLine} {fileName}";
+                string str = $"PID: [yellow]{m.ProcessId,-6}[/yellow] " +
+                             $"Start: [green]{startTime.WithWidth(startTimeWidth)}[/green] " +
+                             $"Stop: [darkcyan]{stopTime.WithWidth(stopTimeWidth)} Duration: {m.LifeTimeString.WithWidth(lifeTimeWidth)}[/darkcyan] " +
+                             $"RCode: {m.ReturnCodeString.WithWidth(returnCodeWidth)} ParentPID: {m.ParentProcessId,5} " +
+                             $"SessionId: [yellow]{sessionId, 5}[/yellow] " +
+                             $"[yellow]{user}[/yellow]{cmdLine} {fileName}";
                 ColorConsole.WriteEmbeddedColorLine(str);
             }
         }
@@ -257,7 +268,7 @@ namespace ETWAnalyzer.EventDump
             foreach (var processGroup in extract.Processes.GroupBy(x => x.GetProcessName(UsePrettyProcessName)).OrderBy(x => x.Key))
             {
                 // then order by start time and if not present by process id
-                foreach (var process in processGroup.OrderBy(x => x.StartTime).ThenBy(x => x.ProcessID).Where(ProcessFilter).Where(ParentFilter))
+                foreach (var process in processGroup.OrderBy(x => x.StartTime).ThenBy(x => x.ProcessID).Where(ProcessFilter).Where(ParentFilter).Where(SessionIdFilter))
                 {
                     string cmdLine = String.IsNullOrEmpty(process.CmdLine) ? process.GetProcessName(UsePrettyProcessName) : process.GetProcessName(UsePrettyProcessName) + " " + process.CommandLineNoExe;
 
@@ -279,6 +290,7 @@ namespace ETWAnalyzer.EventDump
                         TestCase = json.TestName,
                         ReturnCode = process.ReturnCode,
                         ParentProcessId = process.ParentPid,
+                        SessionId = process.SessionId,
                         User = process.Identity ?? "",
                         SourceFile = json.FileName,
                         StartTime = process.StartTime == DateTimeOffset.MinValue ? (DateTimeOffset?)null : process.StartTime.AddSeconds((-1.0d)*zeroS),
@@ -311,7 +323,7 @@ namespace ETWAnalyzer.EventDump
             foreach (var processGroup in processes.Result.Processes.GroupBy(x => x.ImageName).OrderBy(x => x.Key))
             {
                 // then order by start time and if not present by process id
-                foreach (var process in processGroup.OrderBy(x => x.CreateTime).ThenBy(x => x.Id).Where(ProcessFilter).Where(ParentFilter))
+                foreach (var process in processGroup.OrderBy(x => x.CreateTime).ThenBy(x => x.Id).Where(ProcessFilter).Where(ParentFilter).Where(SessionIdFilter))
                 {
                     string cmdLine = String.IsNullOrEmpty(process.CommandLine) ? process.ImageName : process.CommandLine;
                     string ret = process.ExitCode.HasValue ? process.ExitCode.Value.ToString(CultureInfo.InvariantCulture) : "";
@@ -330,6 +342,7 @@ namespace ETWAnalyzer.EventDump
                         User = process.User.Value ?? "",
 #pragma warning restore CA1416
                         ParentProcessId = process.ParentId,
+                        SessionId = process.SessionId,
                         SourceFile = etlFile,
                         StartTime = process.CreateTime.HasValue ? process.CreateTime.Value.DateTimeOffset : (DateTimeOffset?)null,
                         EndTime = process.ExitTime.HasValue ? process.ExitTime.Value.DateTimeOffset : (DateTimeOffset?)null,
@@ -394,10 +407,10 @@ namespace ETWAnalyzer.EventDump
 
         private void WriteToCSV(List<MatchData> rowData)
         {
-            OpenCSVWithHeader(Col_CSVOptions, Col_TestCase, "TestDate", Col_ProcessName, "ProcessName(pid)", "Parent ProcessId", "Return Code", "NewProcess", "Start Time", "End Time", "LifeTime in minutes", "User", Col_CommandLine, Col_Baseline, "SourceFile");
+            OpenCSVWithHeader(Col_CSVOptions, Col_TestCase, "TestDate", Col_ProcessName, "ProcessName(pid)", "Parent ProcessId", "Session Id", "Return Code", "NewProcess", "Start Time", "End Time", "LifeTime in minutes", "User", Col_CommandLine, Col_Baseline, "SourceFile");
             foreach (var data in rowData)
             {
-                WriteCSVLine(CSVOptions, data.TestCase, data.PerformedAt, data.ProcessName, data.ProcessWithPid, data.ParentProcessId, ETWProcess.GetReturnString(data.ReturnCode, out bool bCrash), Convert.ToInt32(data.IsNewProcess),
+                WriteCSVLine(CSVOptions, data.TestCase, data.PerformedAt, data.ProcessName, data.ProcessWithPid, data.ParentProcessId, data.SessionId, ETWProcess.GetReturnString(data.ReturnCode, out bool bCrash), Convert.ToInt32(data.IsNewProcess),
                             GetDateTimeString(data.StartTime, data.SessionStart, TimeFormatOption), GetDateTimeString(data.EndTime, data.SessionStart, TimeFormatOption), GetDurationInMinutes(data.LifeTime), data.User, 
                             data.CmdLine, data.BaseLine, data.SourceFile);
             }
@@ -458,6 +471,19 @@ namespace ETWAnalyzer.EventDump
             return lret;
         }
 
+        internal bool SessionIdFilter(ETWProcess process)
+        {
+            bool lret =
+                (Session(process.SessionId.ToString()));
+            return lret;
+        }
+        internal bool SessionIdFilter(IProcess process)
+        {
+            bool lret =
+                (Session(process.SessionId.ToString()));
+            return lret;
+        }
+
         public class MatchData : IEquatable<MatchData>
         {
             public DateTimeOffset? StartTime;
@@ -506,6 +532,7 @@ namespace ETWAnalyzer.EventDump
             private string processName;
             public string ProcessWithPid;
             public int ParentProcessId;
+            public int SessionId;
             internal int ProcessId;
             internal string User;
 
@@ -552,6 +579,7 @@ namespace ETWAnalyzer.EventDump
                 hash = hash * 31 + (CmdLine ?? "").GetHashCode();
                 hash = hash * 31 + ProcessWithPid.GetHashCode();
                 hash = hash * 31 + ParentProcessId;
+                hash = hash * 31 + SessionId;
                 return hash;
             }
 
@@ -564,7 +592,8 @@ namespace ETWAnalyzer.EventDump
                        other.CmdLine == CmdLine &&
                        other.IsNewProcess == IsNewProcess &&
                        other.ProcessWithPid == ProcessWithPid &&
-                       other.ParentProcessId == ParentProcessId;
+                       other.ParentProcessId == ParentProcessId &&
+                       other.SessionId == SessionId;
             }
 
             public override bool Equals(object obj)
