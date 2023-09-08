@@ -144,13 +144,13 @@ namespace ETWAnalyzer.EventDump
                 string sessionId = "";
                 if (ShowDetails)
                 {
-                    sessionId = ShowDetails ? string.Join(" ", "SessionId:", m.SessionId) : "";
+                    sessionId = ShowDetails ? $" Session: { m.SessionId, 2}" : "";
                 }
 
                 string str = $"PID: [yellow]{m.ProcessId,-6}[/yellow] " +
                              $"Start: [green]{startTime.WithWidth(startTimeWidth)}[/green] " +
                              $"Stop: [darkcyan]{stopTime.WithWidth(stopTimeWidth)} Duration: {m.LifeTimeString.WithWidth(lifeTimeWidth)}[/darkcyan] " +
-                             $"RCode: {m.ReturnCodeString.WithWidth(returnCodeWidth)} ParentPID: {m.ParentProcessId,5} " +
+                             $"RCode: {m.ReturnCodeString.WithWidth(returnCodeWidth)} Parent: {m.ParentProcessId, 5} " +
                              $"[yellow]{sessionId}[/yellow] " +
                              $"[yellow]{user}[/yellow]{cmdLine} {fileName}";
                 ColorConsole.WriteEmbeddedColorLine(str);
