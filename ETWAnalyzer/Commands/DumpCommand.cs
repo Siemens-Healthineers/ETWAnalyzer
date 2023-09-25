@@ -46,7 +46,7 @@ namespace ETWAnalyzer.Commands
         "                         -ModuleFilter  filter     Extracted data from Config\\DllToBuildMapping.json. Print only version information for module. Multiple filters are separated by ;. Wildcards are * and ?. Exclusion filters start with !" + Environment.NewLine;
         static readonly string ProcessHelpString =
         "   Process  -filedir/fd x.etl/.json [-recursive] [-csv xxx.csv] [-NoCSVSeparator] [-TimeFmt s,Local,LocalTime,UTC,UTCTime,Here,HereTime] [-ProcessName/pn xxx.exe(pid)] [-CmdLine *xxx*] [-Crash] " + Environment.NewLine +
-        "            [-ShowUser] [-ZeroTime/zt Marker/First/Last/ProcessStart filter] [-ZeroProcessName/zpn filter]" + Environment.NewLine +
+        "            [-ShowUser] [-Session dd] [-SortBy Time/StopTime/Default] [-ZeroTime/zt Marker/First/Last/ProcessStart filter] [-ZeroProcessName/zpn filter]" + Environment.NewLine +
         "            [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-MinMaxStart xx-yy] [-ShowFileOnLine] [-ShowAllProcesses] [-NoCmdLine] [-Details] [-Clip] [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd] [-MinMaxMsTestTimes xx-yy ...]" + Environment.NewLine +
         "            [-ShowFullFileName/-sffn]" + Environment.NewLine +
         "                         Print process name, pid, command line, start/stop time return code and parent process id" + Environment.NewLine +
@@ -80,7 +80,7 @@ namespace ETWAnalyzer.Commands
         "                                                    2 Processes which have been started but not stopped during the trace. " + Environment.NewLine +
         "                                                   -2 Processes which are stopped but not started during the trace." + Environment.NewLine +
         "                         -ShowUser                  Show user name und which the process was started. If extraction is done on a different machine the user sids are displayed." + Environment.NewLine +
-        "                         -SortBy[Time / Default]    Sort processes by start time or group by process and then sort by start time (default)." + Environment.NewLine +
+        "                         -SortBy[Time/StopTime/Default] Sort processes by start/stop time or group by process name and then sort by start time (default)." + Environment.NewLine +
         "                         -PlainProcessNames         Default is to use pretty process names based on rename rules in Configuration\\ProcessRenameRules.xml. If you do not want this use this flag." + Environment.NewLine +
         "                         -NoCmdLine                 Omit process command line string in output. Default is to print the full exe with command line." + Environment.NewLine +
         "                         -Clip                      Clip printed output to console buffer width to prevent wraparound to keep output readable" + Environment.NewLine +
@@ -93,7 +93,7 @@ namespace ETWAnalyzer.Commands
         "                         -Crash                     Show potentially crashed processes with unusual return codes, or did trigger Windows Error Reporting." + Environment.NewLine +
         "                         -Parent                    Filter the Processes with Parent Process ids. Multiple filters are separated by ;" + Environment.NewLine +
         "                                                    E.g. dd;dd2 will filter for all dd instances and dd2. The wildcards * and ? are supported for all filter strings." + Environment.NewLine +
-        "                         -Session                   Filter the Processes with SessionId. Multiple filters are separated by ;" + Environment.NewLine +
+        "                         -Session dd;yy             Filter processes by Windows session id. Multiple filters are separated by ;" + Environment.NewLine +
         "                                                    E.g. dd;dd2 will filter for all dd instances and dd2. The wildcards * and ? are supported for all filter strings." + Environment.NewLine +
         "                         For other options [-TestsPerRun] [-SkipNTests] [-TestRunIndex] [-TestRunCount] [-MinMaxMsTestTimes]" + Environment.NewLine +
         "                         [-ShowFullFileName] refer to help of TestRun. Run \'EtwAnalyzer -help dump\' to get more infos." + Environment.NewLine;
@@ -368,8 +368,8 @@ namespace ETWAnalyzer.Commands
         " ETWAnalyzer -dump Process -sortby time -timefmt utc" + Environment.NewLine +
         "[green]Dump processes and filter with Parent Process IDs (e.g. -parent 123;*456*).[/green]" + Environment.NewLine +
         " ETWAnalyzer -dump Process -fd xx.etl/.json -parent dd;dd2;dd5;... " + Environment.NewLine +
-        "[green]Dump processes and filter with SessionId'S (e.g. -session 0;*-1*;2;8. SessionId -1 should be mentioned as *-1*).[/green]" + Environment.NewLine +
-        " ETWAnalyzer -dump Process -fd xx.etl/.json -session dd;dd2;dd5;... " + Environment.NewLine +
+        "[green]Dump processes and filter by Windows session ids. Session -1 must be *-1*, otherwise it would be interpreted as an argument switch.[/green]" + Environment.NewLine +
+        " ETWAnalyzer -dump Process -fd xx.etl/.json -session 1;*-1*;13" + Environment.NewLine +
         "[green]Dump processes and display SessionIds.[/green]" + Environment.NewLine +
         " ETWAnalyzer -dump Process -fd xx.etl/.json -details" + Environment.NewLine;
 
@@ -588,6 +588,9 @@ namespace ETWAnalyzer.Commands
             OpenCloseTime,
             TotalSize,
             TotalTime,
+
+            // Process sort order
+            StopTime,
 
             // TCP sort orders
             ReceivedCount,

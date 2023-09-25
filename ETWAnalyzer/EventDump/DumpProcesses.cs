@@ -73,6 +73,7 @@ namespace ETWAnalyzer.EventDump
         static readonly internal SortOrders[] ValidSortOrders = new[]
         {
             SortOrders.Time,
+            SortOrders.StopTime,
             SortOrders.Default,
         };
 
@@ -94,6 +95,16 @@ namespace ETWAnalyzer.EventDump
                 data = nostartEnd.ToList();
                 data.AddRange(endedbutnotStarted);
                 data.AddRange(started);
+            }
+            else if( SortOrder == DumpCommand.SortOrders.StopTime)
+            {
+                // sort by time or by alphabet if no time info is there
+                var nostartEnd = data.Where(x => x.StartTime == null && x.EndTime == null).OrderBy(x => x.ProcessName);
+                var ended = data.Where(x => x.EndTime != null).OrderBy(x => x.EndTime);
+                var startedbutnotEnded = data.Where(x => x.StartTime != null && x.EndTime != null).OrderBy(x => x.StartTime);
+                data = nostartEnd.ToList();
+                data.AddRange(startedbutnotEnded);
+                data.AddRange(ended);
             }
 
             int userWidth = data.Max(x => x.User.Length);
