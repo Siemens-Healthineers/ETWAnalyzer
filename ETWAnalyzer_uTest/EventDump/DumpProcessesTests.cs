@@ -136,6 +136,64 @@ namespace ETWAnalyzer_uTest.EventDump
         }
 
 
+        [Fact]
+        public void Process_Filter_DisplaysJustMatchingProcesses_When_ParentFilter_Is_NotActive()
+        {
+            using var testOutput = new ExceptionalPrinter(myWriter, true);
+            DumpProcesses dumper = new DumpProcesses()
+            {
+                ProcessNameFilter = Matcher.CreateMatcher("ImmortalChild", MatchingMode.CaseInsensitive, true),
+            };
+
+            dumper.myPreloadedTests = new Lazy<SingleTest>[] { new Lazy<SingleTest>(() => CreateProcessTree()) };
+
+            List<DumpProcesses.MatchData> matching = dumper.ExecuteInternal();
+
+            testOutput.Flush();
+            string[] expectedOutput = new string[]
+            {
+                "1/1/2000 12:00:00 AM   test ",
+                "PID: 5001   Start:  Stop:  Duration:  RCode:  Parent:  5000  ImmortalChild.exe "
+            };
+
+            var lines = testOutput.GetSingleLines();
+            Assert.Equal(expectedOutput.Length, lines.Count);
+            for (int i = 0; i < expectedOutput.Length; i++)
+            {
+                Assert.Equal(expectedOutput[i], lines[i]);
+            }
+        }
+
+
+        [Fact]
+        public void SessionFilter_Matches_Numbers_Exactly()
+        {
+            DumpProcesses dumper = new DumpProcesses()
+            {
+                //  Parent = Matcher.CreateMatcher("Parent", MatchingMode.CaseInsensitive, true),
+                Session = Matcher.CreateMatcher("1"),
+            };
+
+            var procSession0 = new ETWProcess
+            {
+                SessionId = 0,
+            };
+
+            var procSession1 = new ETWProcess
+            {
+                SessionId = 1,
+            };
+
+            var procSession2 = new ETWProcess
+            {
+                SessionId = 2,
+            };
+
+            Assert.False(dumper.SessionIdFilter(procSession0));
+            Assert.True( dumper.SessionIdFilter(procSession1));
+            Assert.False(dumper.SessionIdFilter(procSession2));
+        }
+
         DateTimeOffset TenClock = new DateTimeOffset(2000, 1, 1, 10, 0, 0, TimeSpan.Zero); // start at 10:00:00
 
         SingleTest CreateSingleTest()

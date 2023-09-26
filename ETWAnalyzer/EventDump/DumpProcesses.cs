@@ -30,7 +30,13 @@ namespace ETWAnalyzer.EventDump
         public bool ShowAllProcesses { get; internal set; }
 
         public bool Crash { get; internal set; }
-        public Func<string, bool> Parent { get; set; } = _ => true;
+
+        /// <summary>
+        /// Parent process regular expression filter. By default is must be null to differentiate between a not set filter which 
+        /// would otherwise add parent processes to output regardless of process name filter!
+        /// </summary>
+        public Func<string, bool> Parent { get; set; } = null;
+
         public Func<string, bool> Session { get; set; } = _ => true;
         public DumpCommand.SortOrders SortOrder { get; internal set; }
         public bool Merge { get; internal set; }
@@ -399,7 +405,7 @@ namespace ETWAnalyzer.EventDump
                 HashSet<ETWProcess> processes = processGroup.Where(ProcessFilter).Where(x => ParentFilter(x, extract.Processes, foundParentProcesses)).Where(SessionIdFilter).ToHashSet();
 
                 // Add parents to list and remove already printed ones
-                processes.UnionWith(foundParentProcesses);
+                processes.UnionWith(foundParentProcesses.Where(SessionIdFilter));
                 processes.ExceptWith(alreadyPrinted);
 
                 // update alradyPrinted list with current and parents 
@@ -578,18 +584,25 @@ namespace ETWAnalyzer.EventDump
         /// </summary>
         /// <param name="process">child process to check</param>
         /// <param name="all">Full list of processes</param>
-        /// <param name="parents">If parent process was found it is added to list of known parents.</param>
+        /// <param name="parents">If parent process was found it is added to list of known parents, but only if Parent Filter is not null.</param>
         /// <returns>true if process passes <see cref="Parent"/> filter, false otherwise.</returns>
         internal bool ParentFilter(ETWProcess process, IReadOnlyList<ETWProcess> all, HashSet<ETWProcess> parents)
         {
-            ETWProcess parent = all.FirstOrDefault(x => process.ParentPid == x.ProcessID && process.StartTime >= x.StartTime && process.EndTime <= x.EndTime);
+            bool lret = true;
 
-            bool lret = Parent(parent?.GetProcessName(UsePrettyProcessName)) ||   // filter by process name like cmd.exe and with pid like cmd.exe(100)
-                        Parent(parent?.GetProcessWithId(UsePrettyProcessName));
-
-            if( lret && parent != null)
+            // Only add parent processes when user did add -parent filter at command line
+            // otherwise we would add always all parent processes of the selected processes.
+            if (Parent != null)
             {
-                parents.Add(parent);
+                ETWProcess parent = all.FirstOrDefault(x => process.ParentPid == x.ProcessID && process.StartTime >= x.StartTime && process.EndTime <= x.EndTime);
+
+                lret = Parent(parent?.GetProcessName(UsePrettyProcessName)) ||   // filter by process name like cmd.exe and with pid like cmd.exe(100)
+                       Parent(parent?.GetProcessWithId(UsePrettyProcessName));
+
+                if (lret && parent != null)
+                {
+                    parents.Add(parent);
+                }
             }
 
             return lret;
@@ -597,8 +610,7 @@ namespace ETWAnalyzer.EventDump
 
         internal bool SessionIdFilter(ETWProcess process)
         {
-            bool lret =
-                (Session(process.SessionId.ToString()));
+            bool lret = Session( process.SessionId.ToString() );
             return lret;
         }
 

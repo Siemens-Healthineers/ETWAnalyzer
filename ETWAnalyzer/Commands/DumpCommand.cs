@@ -744,7 +744,12 @@ namespace ETWAnalyzer.Commands
         public bool Crash { get; private set; }
         public bool ShowUser { get; private set; }
         public MinMaxRange<double> MinMaxStart { get; private set; } = new();
-        public Func<string, bool> Parent { get; private set; } = _ => true;
+
+        /// <summary>
+        /// Parent filter must be null by default to not alter behavior during dumping parent processes.
+        /// </summary>
+        public Func<string, bool> Parent { get; private set; } = null;
+
         public Func<string, bool> Session { get; private set; } = _ => true;
 
         // Dump CPU specific Flags
