@@ -143,8 +143,30 @@ To change sorting by process names the following values are supported
 
 | -SortBy      | Description |
 | -----------  | ----------- |
-|    Default   | Sort by process name and start time   |
+|   Default    | Sort by process name and start time.   |
+|   Tree       | Display process tree with parent child processes properly indented. |
 |   Time       | Sort by process start/end time. It displays processes in 3 groups: Running, Ended, Started where the processes are sorted accordingly. |  
+|   StopTime   | Sort by process end time. |
+
+## -Parent
+Works in the same way as -ProcessName filter. It allows you to select parent processes by name, or id. The corresponding parent
+processes are printed additionally to the selected processes by -ProcessName filter.
+
+The command below will print all child processes of explorer and AdobeCollabSync along with ETW session time and process
+duration where present. 
+
+```ETWAnalyzer -dump Process %f% -Clip -SortBy Tree -Parent explorer;AdobeCollabSync -Details -timefmt s```
+
+![](Images/DumpProcessTree.png "Dump Process Tree")
+
+>**Pro Tip:** To show from all selected processes the parent process you can use -Parent with a star query together with a -ProcessName (-pn) query.
+
+```ETWAnalyzer -dump Process %f% -Clip -Parent * -ProcessName cmd.exe```
+
+## -Session 
+Filter processes by Windows session id. Session ids are displayed for ```ETWAnalyzer -Dump Process -Details```.
+Sessions are a way to isolate different logged on user sessions or non interactive processes (session 0) from interactive sessions. 
+Windows runs (when process isolation is enabled) containers in an extra Windows session where CExecSvc.exe is the parent process. 
 
 ## -MinMaxDuration
 Filter for processes with specific runtime range. The time is entered in seconds with your current locale dependent decimal point character.
