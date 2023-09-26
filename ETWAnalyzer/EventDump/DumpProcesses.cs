@@ -16,6 +16,7 @@ using System.ComponentModel;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Reflection.Emit;
 using System.Text;
 using System.Threading.Tasks;
 using static ETWAnalyzer.Commands.DumpCommand;
@@ -74,9 +75,18 @@ namespace ETWAnalyzer.EventDump
         {
             SortOrders.Time,
             SortOrders.StopTime,
+            SortOrders.Tree,
             SortOrders.Default,
         };
 
+
+        string myCurrentSourceFile = null;
+
+ 
+        /// <summary>
+        /// Print output to console
+        /// </summary>
+        /// <param name="data"></param>
         private void Print(List<MatchData> data)
         {
             if( data.Count == 0) // nothing to print and Max would throw otherwise for max column calculation
@@ -105,6 +115,17 @@ namespace ETWAnalyzer.EventDump
                 data = nostartEnd.ToList();
                 data.AddRange(startedbutnotEnded);
                 data.AddRange(ended);
+            }
+            else if( SortOrder == DumpCommand.SortOrders.Tree) // Process tree visualization is different
+            {
+                data = MatchData.ConvertToTree(data);
+
+                foreach (var root in data)
+                {
+                    PrintProcessTree(root, 0);
+                }
+
+                return;
             }
 
             int userWidth = data.Max(x => x.User.Length);
@@ -167,6 +188,91 @@ namespace ETWAnalyzer.EventDump
                 ColorConsole.WriteEmbeddedColorLine(str);
             }
         }
+
+        /// <summary>
+        /// Print a process tree starting at indention level
+        /// </summary>
+        /// <param name="root">Starting process</param>
+        /// <param name="level">indention level</param>
+        void PrintProcessTree(MatchData root, int level)
+        {
+            string indention = new string(' ', 2 * level); // 2 spaces per level
+
+            int userWidth = root.Childs.Count == 0 ? 0 : root.Childs.Max(x => x.User.Length);
+            int lifeTimeWidth = root.Childs.Count == 0 ? 0 : root.Childs.Max(x => x.LifeTimeString.Length);
+            int startTimeWidth = root.Childs.Count == 0 ? 0 : root.Childs.Max(x => x.StartTime.HasValue ? GetDateTimeString(x.StartTime.Value, x.SessionStart, TimeFormatOption).Length : 0);
+            int stopTimeWidth = root.Childs.Count == 0 ? 0 : root.Childs.Max(x => x.EndTime.HasValue ? GetDateTimeString(x.EndTime.Value, x.SessionStart, TimeFormatOption).Length : 0);
+            int returnCodeWidth = root.Childs.Count == 0 ? 0 : root.Childs.Max(x => (x.ReturnCodeString?.Length).GetValueOrDefault());
+
+            if (myCurrentSourceFile != root.SourceFile && !ShowFileOnLine)
+            {
+                PrintFileName(root.SourceFile, null, root.PerformedAt.DateTime, root.BaseLine);
+                myCurrentSourceFile = root.SourceFile;
+            }
+
+            PrintTreeLine(root, userWidth, level, indention, returnCodeWidth);
+
+            foreach (var child in root.Childs)
+            {
+                PrintProcessTree(child, level + 1);
+            }
+        }
+
+        /// <summary>
+        /// Print a process tree Item
+        /// </summary>
+        /// <param name="data"></param>
+        /// <param name="userWidth"></param>
+        /// <param name="level"></param>
+        /// <param name="indention"></param>
+        /// <param name="returnCodeWidth"></param>
+        void PrintTreeLine(MatchData data, int userWidth, int level, string indention, int returnCodeWidth)
+        {
+            string startTime = "";
+            if (data.StartTime != null)
+            {
+                startTime = GetDateTimeString(data.StartTime.Value, data.SessionStart, TimeFormatOption);
+            }
+
+            string stopTime = "";
+            if (data.EndTime != null)
+            {
+                stopTime = GetDateTimeString(data.EndTime.Value, data.SessionStart, TimeFormatOption);
+            }
+
+            string user = "";
+            if (ShowUser)
+            {
+                user = data.User.WithWidth(-1 * userWidth) + " ";
+            }
+
+
+            string fileName = "";
+            if (ShowFileOnLine)
+            {
+                fileName = Path.GetFileNameWithoutExtension(data.SourceFile);
+            }
+            string cmdLine = data.ProcessName;
+            if (!NoCmdLine)
+            {
+                cmdLine = String.IsNullOrEmpty(data.CmdLine) ? data.ProcessName : data.CmdLine;
+            }
+
+            string sessionId = "";
+            if (ShowDetails)
+            {
+                sessionId = ShowDetails ? $" Session: {data.SessionId,2}" : "";
+            }
+
+            string treeMarker = level > 0 ? "|- " : "";
+            string str = $"{indention}{treeMarker}[yellow]{data.ProcessId,-6}[/yellow]" +
+                         $" {data.StartStopTags} " +
+                         (data.ReturnCode == null ? "" : $"RCode: {data.ReturnCodeString.WithWidth(returnCodeWidth)}") +
+                         $"[yellow]{sessionId}[/yellow] " +
+                         $"[yellow]{user}[/yellow]{cmdLine} {fileName}";
+            ColorConsole.WriteEmbeddedColorLine(str);
+        }
+
 
         internal List<MatchData> CalculateProcessLifeTimesAndFilterRedundantCrossFileEvents(List<MatchData> data)
         {
@@ -263,6 +369,12 @@ namespace ETWAnalyzer.EventDump
             return lret;
         }
 
+
+        /// <summary>
+        /// Convert Json file to a list of filterd matches.
+        /// </summary>
+        /// <param name="json">Input Json file</param>
+        /// <returns>List of matches which have passed the Process/Parent/Session filters.</returns>
         protected override List<MatchData> DumpJson(TestDataFile json)
         {
             List<MatchData> lret = new();
@@ -274,12 +386,31 @@ namespace ETWAnalyzer.EventDump
             }
 
             IETWExtract extract = json.Extract;
+            
+            // when -Parent filter is active we add also the parent processes to output
+            // since a parent can have many childs we need to ensure to not print parent processes more than once
+            HashSet<ETWProcess> alreadyPrinted = new();
 
             // order process starts by process name and group them by exe
             foreach (var processGroup in extract.Processes.GroupBy(x => x.GetProcessName(UsePrettyProcessName)).OrderBy(x => x.Key))
             {
+                HashSet<ETWProcess> foundParentProcesses = new();
+
+                HashSet<ETWProcess> processes = processGroup.Where(ProcessFilter).Where(x => ParentFilter(x, extract.Processes, foundParentProcesses)).Where(SessionIdFilter).ToHashSet();
+
+                // Add parents to list and remove already printed ones
+                processes.UnionWith(foundParentProcesses);
+                processes.ExceptWith(alreadyPrinted);
+
+                // update alradyPrinted list with current and parents 
+                alreadyPrinted.UnionWith(foundParentProcesses);
+                alreadyPrinted.UnionWith(processes);
+
+                // Now we can sort 
+                List<ETWProcess> sortedProcesses = processes.OrderBy(x => x.StartTime).ThenBy(x => x.ProcessID).ToList();
+
                 // then order by start time and if not present by process id
-                foreach (var process in processGroup.OrderBy(x => x.StartTime).ThenBy(x => x.ProcessID).Where(ProcessFilter).Where(ParentFilter).Where(SessionIdFilter))
+                foreach (var process in sortedProcesses)
                 {
                     string cmdLine = String.IsNullOrEmpty(process.CmdLine) ? process.GetProcessName(UsePrettyProcessName) : process.GetProcessName(UsePrettyProcessName) + " " + process.CommandLineNoExe;
 
@@ -294,6 +425,7 @@ namespace ETWAnalyzer.EventDump
                         CmdLine = String.Intern(cmdLine),
                         ProcessWithPid = String.Intern(process.GetProcessWithId(UsePrettyProcessName)),
                         ProcessName = String.Intern(process.GetProcessName(UsePrettyProcessName)),
+                        StartStopTags = GetProcessTags(process, extract.SessionStart),
                         ProcessId = process.ProcessID,
                         IsNewProcess = process.IsNew,
                         HasEnded = process.HasEnded,
@@ -304,8 +436,8 @@ namespace ETWAnalyzer.EventDump
                         SessionId = process.SessionId,
                         User = process.Identity ?? "",
                         SourceFile = json.FileName,
-                        StartTime = process.StartTime == DateTimeOffset.MinValue ? (DateTimeOffset?)null : process.StartTime.AddSeconds((-1.0d)*zeroS),
-                        EndTime = (process.EndTime == DateTimeOffset.MaxValue || process.EndTime == DateTimeOffset.MinValue ) ? (DateTimeOffset?)null : process.EndTime.AddSeconds((-1.0d)*zeroS),
+                        StartTime = process.StartTime == DateTimeOffset.MinValue ? (DateTimeOffset?)null : process.StartTime.AddSeconds((-1.0d) * zeroS),
+                        EndTime = (process.EndTime == DateTimeOffset.MaxValue || process.EndTime == DateTimeOffset.MinValue) ? (DateTimeOffset?)null : process.EndTime.AddSeconds((-1.0d) * zeroS),
                         LifeTime = (process.StartTime != DateTimeOffset.MinValue && process.EndTime != DateTimeOffset.MaxValue) ? (process.EndTime - process.StartTime) : null,
                         SessionStart = extract.SessionStart,
                         BaseLine = extract.MainModuleVersion?.ToString(),
@@ -317,6 +449,12 @@ namespace ETWAnalyzer.EventDump
             return lret;
         }
 
+
+        /// <summary>
+        /// Dump an ETL file directly
+        /// </summary>
+        /// <param name="etlFile">Input etl file.</param>
+        /// <returns>List of filtered processes.</returns>
         protected override List<MatchData> DumpETL(string etlFile)
         {
             List<MatchData> lret = new();
@@ -330,44 +468,32 @@ namespace ETWAnalyzer.EventDump
             ITraceMetadata meta = processor.UseMetadata();
             processor.Process();
 
-            // order process starts by process name and group them by exe
-            foreach (var processGroup in processes.Result.Processes.GroupBy(x => x.ImageName).OrderBy(x => x.Key))
+            ETWExtract extract = new();
+            extract.SourceETLFileName = etlFile;
+            extract.SessionStart = meta?.StartTime ?? DateTimeOffset.MinValue;
+            TestDataFile testDataFile = new(Path.GetFileName(etlFile), etlFile, meta.StartTime.DateTime, 0, 0, "MachineNameNotKnown", null);
+            testDataFile.Extract = new ETWExtract
             {
-                // then order by start time and if not present by process id
-                foreach (var process in processGroup.OrderBy(x => x.CreateTime).ThenBy(x => x.Id).Where(ProcessFilter).Where(ParentFilter).Where(SessionIdFilter))
-                {
-                    string cmdLine = String.IsNullOrEmpty(process.CommandLine) ? process.ImageName : process.CommandLine;
-                    string ret = process.ExitCode.HasValue ? process.ExitCode.Value.ToString(CultureInfo.InvariantCulture) : "";
-                    var data = new MatchData
-                    {
-                        CmdLine = String.Intern(cmdLine),
-                        ProcessWithPid = String.Intern($"{process.ImageName}({process.Id})"),
-                        ProcessName = String.Intern(process.ImageName),
-                        ProcessId = process.Id,
-                        IsNewProcess = process.CreateTime.HasValue,
-                        HasEnded = process.ExitTime.HasValue,
-                        PerformedAt = meta.StartTime,
-                        TestCase = Path.GetFileName(etlFile),
-                        ReturnCode = process.ExitCode,
+                Processes = processes.Result.Processes.Select(process => new ETWProcess 
+                { 
+                    CmdLine = String.IsNullOrEmpty(process.CommandLine) ? process.ImageName : process.CommandLine,
+                    ProcessID = process.Id,
+                    ProcessName = String.Intern(process.ImageName),
+                    ParentPid = process.ParentId,
+                    IsNew = process.CreateTime.HasValue,
+                    HasEnded = process.ExitTime.HasValue,
+                    ReturnCode = process.ExitCode,
 #pragma warning disable CA1416
-                        User = process.User.Value ?? "",
+                    Identity = process.User.Value ?? "",
 #pragma warning restore CA1416
-                        ParentProcessId = process.ParentId,
-                        SessionId = process.SessionId,
-                        SourceFile = etlFile,
-                        StartTime = process.CreateTime.HasValue ? process.CreateTime.Value.DateTimeOffset : (DateTimeOffset?)null,
-                        EndTime = process.ExitTime.HasValue ? process.ExitTime.Value.DateTimeOffset : (DateTimeOffset?)null,
-                        LifeTime = (process.CreateTime != null && process.ExitTime != null) ? (process.ExitTime.Value.DateTimeOffset - process.CreateTime.Value.DateTimeOffset) : null,
-                        SessionStart = meta?.StartTime ?? DateTimeOffset.MinValue,
-                    };
+                    SessionId = process.SessionId,
+                    StartTime = process.CreateTime.HasValue ? process.CreateTime.Value.DateTimeOffset : DateTimeOffset.MinValue,
+                    EndTime = process.ExitTime.HasValue ? process.ExitTime.Value.DateTimeOffset : DateTimeOffset.MaxValue,
+                }).ToList(),
+            };
 
-                    if (MinMaxStart.IsWithin((data.StartTime.GetValueOrDefault() - data.SessionStart).TotalSeconds)) // we do not support zerotime filtering for etl files
-                    {
-                        lret.Add(data);
-                    }
 
-                }
-            }
+            lret = DumpJson(testDataFile);
 
             return lret;
         }
@@ -447,38 +573,25 @@ namespace ETWAnalyzer.EventDump
             return lret;
         }
 
-        bool ProcessFilter(IProcess process)
+        /// <summary>
+        /// Check if current process has a parent process which matches the Parent Filter. 
+        /// </summary>
+        /// <param name="process">child process to check</param>
+        /// <param name="all">Full list of processes</param>
+        /// <param name="parents">If parent process was found it is added to list of known parents.</param>
+        /// <returns>true if process passes <see cref="Parent"/> filter, false otherwise.</returns>
+        internal bool ParentFilter(ETWProcess process, IReadOnlyList<ETWProcess> all, HashSet<ETWProcess> parents)
         {
-            bool isNew = process.CreateTime.HasValue;
+            ETWProcess parent = all.FirstOrDefault(x => process.ParentPid == x.ProcessID && process.StartTime >= x.StartTime && process.EndTime <= x.EndTime);
 
-            bool lret =
-             (process.ImageName != null) && // etl can have partial events with empty image names
-             (process.ImageName != "conhost.exe") &&
-             (ProcessNameFilter(process.ImageName) ||   // filter by process name like cmd.exe and with pid like cmd.exe(100)
-              ProcessNameFilter($"{process.ImageName}({process.Id})")
-             ) &&
-             CommandLineFilter(process.CommandLine) &&
-             process.IsMatch(NewProcessFilter)   // If new process filter is set check flags
-             ;
+            bool lret = Parent(parent?.GetProcessName(UsePrettyProcessName)) ||   // filter by process name like cmd.exe and with pid like cmd.exe(100)
+                        Parent(parent?.GetProcessWithId(UsePrettyProcessName));
 
-            return lret;
-        }
+            if( lret && parent != null)
+            {
+                parents.Add(parent);
+            }
 
-        internal bool ParentFilter(ETWProcess  process)
-        {
-            bool lret =
-                (
-                Parent(process.ParentPid.ToString()))
-                ;
-            return lret;
-        }
-
-        internal bool ParentFilter(IProcess process)
-        {
-            bool lret =
-                (
-                Parent(process.ParentId.ToString()))
-                ;
             return lret;
         }
 
@@ -488,18 +601,39 @@ namespace ETWAnalyzer.EventDump
                 (Session(process.SessionId.ToString()));
             return lret;
         }
-        internal bool SessionIdFilter(IProcess process)
-        {
-            bool lret =
-                (Session(process.SessionId.ToString()));
-            return lret;
-        }
 
         public class MatchData : IEquatable<MatchData>
         {
-            public DateTimeOffset? StartTime;
-            public DateTimeOffset? EndTime;
-            public TimeSpan? LifeTime;
+            /// <summary>
+            /// Process Start time
+            /// </summary>
+            public DateTimeOffset? StartTime { get; set; }
+
+            /// <summary>
+            /// Process Exit time
+            /// </summary>
+            public DateTimeOffset? EndTime { get; set; }
+
+            /// <summary>
+            /// Process duration
+            /// </summary>
+            public TimeSpan? LifeTime { get; set; }
+
+            /// <summary>
+            /// Parent Process, only filled after a call to <see cref="ConvertToTree(List{MatchData})"/>
+            /// </summary>
+            public MatchData Parent { get; set; }
+
+            /// <summary>
+            /// Child processes only filled after a call to  <see cref="ConvertToTree(List{MatchData})"/>
+            /// </summary>
+            public List<MatchData> Childs { get; set; } = new();
+
+            public ETWProcess Process { get; set; }
+
+            /// <summary>
+            /// Pretty print of process lifetime. t ?lt; 60s => total seconds, t>60s &lt; 10minutes mm:ss, t>10min mm no seconds
+            /// </summary>
             public string LifeTimeString
             {
                 get
@@ -525,8 +659,15 @@ namespace ETWAnalyzer.EventDump
                 }
             }
 			
+            /// <summary>
+            /// Process return code
+            /// </summary>
             public int? ReturnCode;
 
+
+            /// <summary>
+            /// Return code as string or exception code if it is matching the well known ones. 
+            /// </summary>
             public string ReturnCodeString
             {
                 get
@@ -535,36 +676,174 @@ namespace ETWAnalyzer.EventDump
                 }
             }
 
-            private string cmdLine;
+
+            /// <summary>
+            /// Input Json file
+            /// </summary>
             public string SourceFile;
+
+            /// <summary>
+            /// Test case file name
+            /// </summary>
             public string TestCase;
+
+            /// <summary>
+            /// Test time
+            /// </summary>
             public DateTimeOffset PerformedAt;
+
+            /// <summary>
+            /// Is new process when true which was started during session.
+            /// </summary>
             public bool IsNewProcess;
-            private string processName;
+
+            /// <summary>
+            /// Full process name
+            /// </summary>
             public string ProcessWithPid;
-            public int ParentProcessId;
-            public int SessionId;
-            internal int ProcessId;
-            internal string User;
+
+            /// <summary>
+            /// Parent process id
+            /// </summary>
+            public int ParentProcessId { get; set; }
+
+            /// <summary>
+            /// Windows Session Id
+            /// </summary>
+            public int SessionId { get; set; }
+
+            /// <summary>
+            /// Process Id
+            /// </summary>
+            internal int ProcessId { get; set; }
+
+            /// <summary>
+            /// User SID or translated SID when extraction was done on generating machine or it was a well known SID.
+            /// </summary>
+            internal string User { get; set; }
 
 
 
+            private string myCmdLine;
+
+            /// <summary>
+            /// Process Command Line
+            /// </summary>
             public string CmdLine 
             { 
-                get => cmdLine; 
-                set => cmdLine = String.Intern(value ?? ""); // speed up string comparisons 
+                get => myCmdLine; 
+                set => myCmdLine = String.Intern(value ?? ""); // speed up string comparisons 
             }
+
+
+            private string processName;
+
+            /// <summary>
+            /// Process Name,
+            /// </summary>
             public string ProcessName 
             {
                 get => processName; 
                 set => processName = String.Intern(value ?? ""); 
             }
+
+            /// <summary>
+            /// Process did exit during ETW recording
+            /// </summary>
             public bool HasEnded { get; internal set; }
+
+
+            /// <summary>
+            /// ETW Trace session start time
+            /// </summary>
             public DateTimeOffset SessionStart { get; internal set; }
+
+            /// <summary>
+            /// -zt Time shift 
+            /// </summary>
             public double ZeroTimeS { get; internal set; }
+
+            /// <summary>
+            /// Software baseline
+            /// </summary>
             public string BaseLine { get; internal set; }
 
-            public bool IsMatch(ProcessStates? filter)
+            public static List<MatchData> ConvertToTree(List<MatchData> data)
+            {
+                // Create a dictionary to quickly look up nodes by ProcessId
+                HashSet<MatchData> visited = new();
+
+
+                foreach(var process in data)
+                {
+                    foreach(var any in data)
+                    {
+                        if( any.IsParent(process))
+                        {
+                            any.Childs.Add(process);
+                            process.Parent = any;
+                            break;
+                        }
+                    }
+                }
+
+                // sort by file ( SessionStart) then by session and then by name
+                List<MatchData> roots = data.Where(x=>x.Parent == null).OrderBy(x => x.SessionStart).ThenBy(x => x.SessionId).ThenBy(x => x.ProcessName).ToList();
+
+                return roots;
+            }
+
+
+
+            string myProcessKey;
+
+            /// <summary>
+            /// Unique process key which consists of process name, id and start time
+            /// </summary>
+            public string ProcessKey
+            {
+                get
+                {
+                    if( myProcessKey== null)
+                    {
+                        myProcessKey = ProcessName + ProcessId + StartTime?.Ticks;
+                    }
+                    return myProcessKey;
+                }
+            }
+
+            /// <summary>
+            /// Process start/stop tags +- or actual start/stop time in various formats controlled with -processfmt switch
+            /// </summary>
+            public string StartStopTags { get; internal set; }
+
+            /// <summary>
+            /// Checks if other process can be a child of current MatchData instance.
+            /// </summary>
+            /// <param name="possibleChild">Child to check agains current instance.</param>
+            /// <returns>true if this instance is a parent of possibleChild process, false otherwise.</returns>
+            bool IsParent(MatchData possibleChild)
+            {
+                if (Object.ReferenceEquals(this, possibleChild))
+                {
+                    return false;
+                }
+
+                return this.ProcessId == possibleChild.ParentProcessId &&
+                       this.SourceFile == possibleChild.SourceFile &&
+                       this.SessionId == possibleChild.SessionId &&
+                       IsWithinLifeTime(possibleChild.StartTime ?? DateTimeOffset.MinValue, possibleChild.EndTime ?? DateTime.MaxValue);
+            }
+
+
+            bool IsWithinLifeTime(DateTimeOffset childStart, DateTimeOffset childEnd)
+            {
+                DateTimeOffset start = StartTime ?? DateTimeOffset.MinValue;
+                DateTimeOffset end = EndTime ?? DateTimeOffset.MaxValue;
+                return childStart >= start && childStart < end;
+            }
+
+           public bool IsMatch(ProcessStates? filter)
             {
                 bool lret = filter switch
                 {
@@ -614,7 +893,7 @@ namespace ETWAnalyzer.EventDump
 
             public override string ToString()
             {
-                return $"{ProcessWithPid} Start: {StartTime ?? DateTime.MaxValue} End: {EndTime ?? DateTime.MaxValue} CmdLine: {CmdLine} TestCase: {TestCase}";
+                return $"{ProcessName}({ProcessId}) Start: {StartTime ?? DateTime.MaxValue} End: {EndTime ?? DateTime.MaxValue} CmdLine: {CmdLine} TestCase: {TestCase}";
             }
         }
     }
