@@ -152,7 +152,7 @@ To change sorting by process names the following values are supported
 Works in the same way as -ProcessName filter. It allows you to select parent processes by name, or id. The corresponding parent
 processes are printed additionally to the selected processes by -ProcessName filter.
 
-The command below will print all child processes of explorer and AdobeCollabSync along with ETW session time and process
+The command below will print all child processes of explorer and AdobeCollabSync along with session id, time and process
 duration where present. 
 
 ```ETWAnalyzer -dump Process %f% -Clip -SortBy Tree -Parent explorer;AdobeCollabSync -Details -timefmt s```
