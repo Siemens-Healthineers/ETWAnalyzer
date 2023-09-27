@@ -9,6 +9,8 @@ using Microsoft.Diagnostics.Symbols;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
+using System.Runtime.InteropServices;
 
 namespace ETWAnalyzer.LoadSymbol
 {
@@ -75,8 +77,23 @@ namespace ETWAnalyzer.LoadSymbol
             {
                 if (!myLoadedPdbs.TryGetValue(localPdbPath, out SymbolModule module))
                 {
-                    module = new SymbolModule(myReader, localPdbPath);
-                    myLoadedPdbs[localPdbPath] = module;
+
+                    try
+                    {
+                        module = new SymbolModule(myReader, localPdbPath);
+                        myLoadedPdbs[localPdbPath] = module;
+                    }
+                    catch (COMException comEx)
+                    {
+                        myCouldNotLoadFromSymbolServerPdbs.Add(pdbId);
+                        string warnMsg = $"Warning: Could not resolve pdb {localPdbPath}. COMException code: 0x{comEx.HResult:X}";
+                        if ( (uint) comEx.HResult == 0x806D000C)
+                        {
+                            warnMsg = $"Warning pdb {localPdbPath} uses a no longer supported pdb format.";
+                        }
+                        Console.WriteLine(warnMsg);
+                        Logger.Warn(warnMsg);
+                    }
                 }
                 
                 lret = module;
