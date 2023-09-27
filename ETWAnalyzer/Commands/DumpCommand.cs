@@ -46,7 +46,7 @@ namespace ETWAnalyzer.Commands
         "                         -ModuleFilter  filter     Extracted data from Config\\DllToBuildMapping.json. Print only version information for module. Multiple filters are separated by ;. Wildcards are * and ?. Exclusion filters start with !" + Environment.NewLine;
         static readonly string ProcessHelpString =
         "   Process  -filedir/fd x.etl/.json [-recursive] [-csv xxx.csv] [-NoCSVSeparator] [-TimeFmt s,Local,LocalTime,UTC,UTCTime,Here,HereTime] [-ProcessName/pn xxx.exe(pid)] [-Parent xxx.exe(pid)]" + Environment.NewLine +
-        "            [-CmdLine *xxx*] [-Crash] [-ShowUser] [-Session dd] [-SortBy Tree/Time/StopTime/Default] [-ZeroTime/zt Marker/First/Last/ProcessStart filter] [-ZeroProcessName/zpn filter]" + Environment.NewLine +
+        "            [-CmdLine *xxx*] [-Crash] [-ShowUser] [-Session dd] [-User abc] [-SortBy Tree/Time/StopTime/Default] [-ZeroTime/zt Marker/First/Last/ProcessStart filter] [-ZeroProcessName/zpn filter]" + Environment.NewLine +
         "            [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-MinMaxStart xx-yy] [-ShowFileOnLine] [-ShowAllProcesses] [-NoCmdLine] [-Details] [-Clip] [-TestsPerRun dd -SkipNTests dd] " + Environment.NewLine +
         "            [-TestRunIndex dd -TestRunCount dd] [-MinMaxMsTestTimes xx-yy ...] [-ShowFullFileName/-sffn]" + Environment.NewLine +
         "                         Print process name, pid, command line, start/stop time return code and parent process id" + Environment.NewLine +
@@ -96,6 +96,8 @@ namespace ETWAnalyzer.Commands
         "                         -Crash                     Show potentially crashed processes with unusual return codes, or did trigger Windows Error Reporting." + Environment.NewLine +
         "                         -Session dd;yy             Filter processes by Windows session id. Multiple filters are separated by ;" + Environment.NewLine +
         "                                                    E.g. dd;dd2 will filter for all dd instances and dd2. The wildcards * and ? are supported for all filter strings." + Environment.NewLine +
+        "                         -User abc;*xyz*            Filter user name by which the process was started. Multiple filters are separated by ;" + Environment.NewLine +
+        "                                                    E.g. abc;*xyz* will filter for the user names abc and *xyz*. The wildcards * and ? are supported for all filter strings." + Environment.NewLine +
         "                         For other options [-TestsPerRun] [-SkipNTests] [-TestRunIndex] [-TestRunCount] [-MinMaxMsTestTimes]" + Environment.NewLine +
         "                         [-ShowFullFileName] refer to help of TestRun. Run \'EtwAnalyzer -help dump\' to get more infos." + Environment.NewLine;
         static readonly string TestRunHelpString =
@@ -372,6 +374,8 @@ namespace ETWAnalyzer.Commands
         "[green]Dump processes and filter by Windows session ids. Session -1 must be *-1*, otherwise it would be interpreted as an argument switch.[/green]" + Environment.NewLine +
         " ETWAnalyzer -dump Process -fd xx.etl/.json -session 1;*-1*;13" + Environment.NewLine +
         "[green]Dump processes and display Windows session ids.[/green]" + Environment.NewLine +
+        " ETWAnalyzer -dump Process -fd xx.etl/.json -user abc;*xyz*" + Environment.NewLine +
+        "[green]Dump processes and user names abc and xyz.[/green]" + Environment.NewLine +
         " ETWAnalyzer -dump Process -fd xx.etl/.json -details" + Environment.NewLine +
         "[green]Dump processes as process tree where the parent process was cmd.exe and show process start/stop times as ETW trace session times in seconds.[/green]" + Environment.NewLine +
         " ETWAnalyzer -dump Process -fd xx.etl/.json -sortby tree -parent cmd -timefmt s";
@@ -750,6 +754,8 @@ namespace ETWAnalyzer.Commands
         /// </summary>
         public Func<string, bool> Parent { get; private set; } = null;
 
+        public Func<string, bool> User { get; private set; } = _ => true;
+
         public Func<string, bool> Session { get; private set; } = _ => true;
 
         // Dump CPU specific Flags
@@ -1062,6 +1068,9 @@ namespace ETWAnalyzer.Commands
                         break;
                     case "-parent":
                         Parent =            Matcher.CreateMatcher(GetNextNonArg("-parent"), MatchingMode.CaseInsensitive, pidFilterFormat:true);
+                        break;
+                    case "-user":
+                        User =              Matcher.CreateMatcher(GetNextNonArg("-user"));
                         break;
                     case "-session":
                         Session =           Matcher.CreateMatcher(GetNextNonArg("-session"));
@@ -1663,6 +1672,7 @@ namespace ETWAnalyzer.Commands
                             NewProcessFilter = NewProcess,
                             Parent = Parent,
                             Session = Session,
+                            User = User,
                             ShowFileOnLine = ShowFileOnLine,
                             ShowAllProcesses = ShowAllProcesses,
                             Crash = Crash,
