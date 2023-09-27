@@ -103,7 +103,7 @@ namespace ETWAnalyzer.Extract
         /// <summary>
         /// System wide memory metrics and per process memory at start and end of trace
         /// </summary>
-        MemoryStats MemoryUsage { get; }
+        IMemoryStats MemoryUsage { get; }
 
         /// <summary>
         /// Computer Model Name

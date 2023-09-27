@@ -274,6 +274,7 @@ namespace ETWAnalyzer.Extract
         /// </summary>
         public MemoryStats MemoryUsage { get; set; }
 
+        IMemoryStats IETWExtract.MemoryUsage => MemoryUsage;
 
         [NonSerialized]
         private Dictionary<string, ETWProcessIndex> myProcessByName;
@@ -397,6 +398,7 @@ namespace ETWAnalyzer.Extract
         /// When Extract is deserialized from a file we set here the input file name to be able to deserialize other parts later
         /// </summary>
         internal string DeserializedFileName { get; set; }
+
 
         /// <summary>
         /// Default ctor

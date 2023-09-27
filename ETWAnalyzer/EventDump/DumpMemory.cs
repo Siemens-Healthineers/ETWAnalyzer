@@ -175,7 +175,7 @@ namespace ETWAnalyzer.EventDump
             return globals;
         }
 
-        bool MemoryFilter(ProcessWorkingSet set)
+        bool MemoryFilter(IProcessWorkingSet set)
         {
             return MinMaxWorkingSetMiB.IsWithin( set.WorkingSetInMiB ) &&
                    MinMaxCommitMiB.IsWithin( set.CommitInMiB ) &&

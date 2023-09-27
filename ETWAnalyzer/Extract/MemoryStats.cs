@@ -10,7 +10,7 @@ namespace ETWAnalyzer.Extract
     /// <summary>
     /// System wide memory statistics
     /// </summary>
-    public class MemoryStats
+    public class MemoryStats : IMemoryStats
     {
         /// <summary>
         /// Machine wide committed memory in MiB at Trace Start
@@ -65,8 +65,11 @@ namespace ETWAnalyzer.Extract
         /// </summary>
         public IReadOnlyList<ProcessWorkingSet> WorkingSetsAtStart
         {
-            get;set;
+            get; 
+            set;
         }
+
+        IReadOnlyList<IProcessWorkingSet> IMemoryStats.WorkingSetsAtStart => WorkingSetsAtStart;
 
         /// <summary>
         /// Collection of working sets at ETW Trace end.
@@ -77,6 +80,8 @@ namespace ETWAnalyzer.Extract
             set;
         }
 
+        IReadOnlyList<IProcessWorkingSet> IMemoryStats.WorkingSetsAtEnd => WorkingSetsAtEnd;
+
         /// <summary>
         /// 
         /// </summary>
@@ -86,12 +91,12 @@ namespace ETWAnalyzer.Extract
         /// <param name="machineActiveEndMiB"></param>
         public MemoryStats(decimal machineCommitStartMiB, decimal machineCommitEndMiB, decimal machineActiveStartMiB, decimal machineActiveEndMiB)
         {
-            MachineActiveEndMiB = (ulong) machineActiveEndMiB;
-            MachineActiveStartMiB = (ulong) machineActiveStartMiB;
-            MachineCommitEndMiB = (ulong) machineCommitEndMiB;
-            MachineCommitStartMiB = (ulong) machineCommitStartMiB;
-            MachineCommitDiffMiB = (long) MachineCommitEndMiB - (long) MachineCommitStartMiB;
-            MachineActiveDiffMiB = (long) MachineActiveEndMiB - (long) MachineActiveStartMiB;
+            MachineActiveEndMiB     = (ulong) machineActiveEndMiB;
+            MachineActiveStartMiB   = (ulong) machineActiveStartMiB;
+            MachineCommitEndMiB     = (ulong) machineCommitEndMiB;
+            MachineCommitStartMiB   = (ulong) machineCommitStartMiB;
+            MachineCommitDiffMiB    =  (long) MachineCommitEndMiB - (long) MachineCommitStartMiB;
+            MachineActiveDiffMiB    =  (long) MachineActiveEndMiB - (long) MachineActiveStartMiB;
         }
     }
 
