@@ -91,7 +91,7 @@ namespace ETWAnalyzer.Extract
         /// <param name="workingsetPrivate"></param>
         /// <param name="sharedCommitSize"></param>
         internal ProcessWorkingSet(IProcess process, DataSize commit, DataSize workingset, DataSize workingsetPrivate, DataSize sharedCommitSize)
-                        : this(CheckProcess(process), commit, workingset, workingsetPrivate, sharedCommitSize)
+                        : this(CheckProcess(process),         commit,          workingset,          workingsetPrivate,          sharedCommitSize)
         {
         }
 

@@ -65,7 +65,8 @@ namespace ETWAnalyzer.Extract
         /// </summary>
         public IReadOnlyList<ProcessWorkingSet> WorkingSetsAtStart
         {
-            get; set;
+            get; 
+            set;
         }
 
         IReadOnlyList<IProcessWorkingSet> IMemoryStats.WorkingSetsAtStart => WorkingSetsAtStart;
@@ -90,12 +91,12 @@ namespace ETWAnalyzer.Extract
         /// <param name="machineActiveEndMiB"></param>
         public MemoryStats(decimal machineCommitStartMiB, decimal machineCommitEndMiB, decimal machineActiveStartMiB, decimal machineActiveEndMiB)
         {
-            MachineActiveEndMiB = (ulong)machineActiveEndMiB;
-            MachineActiveStartMiB = (ulong)machineActiveStartMiB;
-            MachineCommitEndMiB = (ulong)machineCommitEndMiB;
-            MachineCommitStartMiB = (ulong)machineCommitStartMiB;
-            MachineCommitDiffMiB = (long)MachineCommitEndMiB - (long)MachineCommitStartMiB;
-            MachineActiveDiffMiB = (long)MachineActiveEndMiB - (long)MachineActiveStartMiB;
+            MachineActiveEndMiB     = (ulong) machineActiveEndMiB;
+            MachineActiveStartMiB   = (ulong) machineActiveStartMiB;
+            MachineCommitEndMiB     = (ulong) machineCommitEndMiB;
+            MachineCommitStartMiB   = (ulong) machineCommitStartMiB;
+            MachineCommitDiffMiB    =  (long) MachineCommitEndMiB - (long) MachineCommitStartMiB;
+            MachineActiveDiffMiB    =  (long) MachineActiveEndMiB - (long) MachineActiveStartMiB;
         }
     }
 
