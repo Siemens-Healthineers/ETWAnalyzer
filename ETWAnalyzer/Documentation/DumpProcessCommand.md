@@ -168,6 +168,15 @@ Filter processes by Windows session id. Session ids are displayed for ```ETWAnal
 Sessions are a way to isolate different logged on user sessions or non interactive processes (session 0) from interactive sessions. 
 Windows runs (when process isolation is enabled) containers in an extra Windows session where CExecSvc.exe is the parent process. 
 
+## -ShowUser
+Show user names under which the processes were started. If you want to get also the user names of local users you need to
+extract the .etl file on the machine where it has been recorded, because during extraction the stored SIDs are tried to translate
+to actual user names. That will fail on other machines, except if you are having domain users which can be translated also on 
+other machines which are joined the same domain as the recording machine. Well known users like Administrator, System can always
+be translated because the SIDs are hard coded by Windows. If translation is not possible the plain SID is displayed.
+
+![](Images/DumpProcess_User.png "Dump User Name")
+
 ## -MinMaxDuration
 Filter for processes with specific runtime range. The time is entered in seconds with your current locale dependent decimal point character.
 
