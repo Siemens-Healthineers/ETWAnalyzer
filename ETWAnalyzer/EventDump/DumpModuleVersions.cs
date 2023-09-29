@@ -14,6 +14,8 @@ using ETWAnalyzer.Extract.Modules;
 using System.Diagnostics;
 using ETWAnalyzer.Commands;
 using static ETWAnalyzer.Commands.DumpCommand;
+using System.IO;
+using Microsoft.Windows.EventTracing.Symbols;
 
 namespace ETWAnalyzer.EventDump
 {
@@ -196,7 +198,25 @@ namespace ETWAnalyzer.EventDump
         private void ExtractPdbData(IETWExtract data, TestDataFile sourceFile, List<MatchData> lret)
         {
             List<MatchData> added = new();
-            foreach (var pdb in data.Modules.UnresolvedPdbs.Where(PdbMatch))
+
+            HashSet<string> allPdbsWithCPUData = data.CPU?.PerProcessMethodCostsInclusive?.MethodNames?.Select(x =>
+            {
+                int sepIdx = x.IndexOf('!');
+                string moduleName = x.Substring(0, sepIdx == -1 ? x.Length : sepIdx);
+                if (moduleName.IndexOf('.') != -1)
+                {
+                    moduleName = Path.GetFileNameWithoutExtension(moduleName); // get rid of .dll, .sys, .exe extension
+                }
+                moduleName = moduleName + ".pdb";
+                return moduleName;
+            })?.ToHashSet(StringComparer.OrdinalIgnoreCase) ?? new HashSet<string>();
+
+            // only report pdbs as missing which have CPU sampling/CSwitch data which would lead to unresolved methods 
+            Func<IPdbIdentifier, bool> additionalFilter = allPdbsWithCPUData.Count == 0 ? 
+                                                            (iPdb) => true :    // no CPU data present report all pdbs
+                                                            (iPdb) => allPdbsWithCPUData.Contains(iPdb.Name);
+
+            foreach (var pdb in data.Modules.UnresolvedPdbs.Where(PdbMatch).Where(additionalFilter))
             {
                 added.Add(new MatchData
                 {
