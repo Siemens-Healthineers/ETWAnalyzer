@@ -10,7 +10,6 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
-using Utilities;
 
 namespace Microsoft.Diagnostics.Symbols
 {
@@ -23,7 +22,7 @@ namespace Microsoft.Diagnostics.Symbols
     /// simply implement Windows PDBS here.   This can be factored out of this class when we 
     /// support other formats (e.g. Dwarf).
     /// 
-    /// To implmente support for Windows PDBs we use the Debug Interface Access (DIA).  See 
+    /// To implement support for Windows PDBs we use the Debug Interface Access (DIA).  See 
     /// http://msdn.microsoft.com/library/x93ctkx8.aspx for more.   I have only exposed what
     /// I need, and the interface is quite large (and not super pretty).  
     /// </summary>
