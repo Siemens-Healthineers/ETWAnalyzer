@@ -73,6 +73,34 @@ That query would be
 
 The time format values are described in [-Dump Process](DumpProcessCommand.md).
 
+## New Methods during Trace
+When dealing with correlations it is often useful to find unique methods during a given time window.
+Lets suppose we are dealing with a case of a sudden shutdown during application startup where the application itself consists of many processes. 
+We know when the restart was triggered by looking at the CPU samples when *KubernetesWorker.StopAllProcesses (77.341 s)* was visible the first time. 
+Since we do not know who was causing this we are interested in unique methods which are called shortly before the shutdown was initiated. 
+With the query 
+
+>*EtwAnalyzer -dump cpu -methods *service*;*Contoso* -MinMaxFirst 77.330 77.380 -TopNMethods 15 -fld s s*
+
+we find all methods which are around 77.341 visible the first time (during the ETW Trace) in all processes on the system. The query -fld shows method
+first and last time in WPA session time in seconds, but you can also use *utc*, or *local* time. This view cannot be 
+achieved in WPA which will simply show all methods during a selected sample duration which makes it much harder to 
+find methods which are showing up the first time in the interesting time region. 
+
+![Dump New Methods](Images/DumpCPU_FirstLastDurationCorrelation.png "Dump New Methods")
+
+By looking at time correlations we find that the managed process *Contoso.Common.Kubernetes.exe* did receive a *ServiceCommandCallback* callback which 
+most likely was the service stop command for a .NET service process. 1ms before that we find a *DoStopService* for an unrelated service
+named *ContosoConfiguration* in a powershell process. This was shutting down a different service but since the time correlation
+is within 1ms it looks somehow related. A further investigation showed that the *Contoso.Common.Kubernetes.exe* service had configured a 
+[service dependency](https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/sc-config)
+to the *ContosoConfiguration* service. Windows will shut down not only the Configuration service but also all dependent services.
+
+Case solved. 
+
+You might need a few iterations to record the right data to see all relevant methods by increasing the CPU sampling rate up to 8 kHz (= 0.125 ms), and/or 
+enabling Context Switch profiling. That is usually sufficient to see nearly all relevant methods. 
+
 ## Stacktags
 
 Additionally stacktag data which is supported by WPA in the form of a stacktag file is also extracted. During extraction the stacktag files
