@@ -672,7 +672,7 @@ namespace ETWAnalyzer_uTest.EventDump
 
             Assert.Equal(8, lines.Count);
             Assert.Contains("Process Count: 2", lines[7]);
-            Assert.Contains("TotalTime: 0,00000 s", lines[7]);
+            Assert.Contains("TotalTime: 0.00000 s", lines[7]);
             Assert.Contains("File/s Total with 0 accessed file/s", lines[7]);
             
         }
