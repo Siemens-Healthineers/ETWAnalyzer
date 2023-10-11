@@ -15,6 +15,7 @@
     <VSToolsPath Condition="'$(VSToolsPath)' == ''">$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)</VSToolsPath>
     <TestProjectType>UnitTest</TestProjectType>
     <Platforms>x64</Platforms>
+    <UseCommonOutputDirectory>True</UseCommonOutputDirectory>
   </PropertyGroup>
   <PropertyGroup Condition="'$(TargetFramework)' == 'net6.0-windows'">
     <PublishReadyToRun>True</PublishReadyToRun>
