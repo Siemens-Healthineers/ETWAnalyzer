@@ -27,7 +27,7 @@ namespace ETWAnalyzer_uTest
             }
             catch (PathTooLongException)
             {
-                Assert.True(false, $"Change file C:\\Program Files(x86)\\Microsoft Visual Studio\\2019\\Enterprise\\Common7\\IDE\\Extensions\\TestPlatform\\testhost.exe.config " +
+                Assert.Fail($"Change file C:\\Program Files(x86)\\Microsoft Visual Studio\\2019\\Enterprise\\Common7\\IDE\\Extensions\\TestPlatform\\testhost.exe.config " +
                                     "and testhost.x86.exe.config and add as FIRST AppContextSwitchOverride " + Environment.NewLine + "<AppContextSwitchOverrides value=\"Switch.System.IO.UseLegacyPathHandling = false; Switch.System.IO.BlockLongPaths = false\" />" + Environment.NewLine +
                                     " to enable long path handling. The test host process was compiled against .NET 4.0 as target runtime which has disabled long path support by default!");
             }

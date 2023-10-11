@@ -72,7 +72,7 @@ namespace ETWAnalyzer_uTest
                 MethodCost tmp = MethodCost.FromString(hugeStr);
             }
             sw.Stop();
-            Assert.True(false, $"Did take {sw.Elapsed.TotalSeconds:F2}s: str: {hugeStr}");
+            Assert.Fail($"Did take {sw.Elapsed.TotalSeconds:F2}s: str: {hugeStr}");
         }
     }
 }

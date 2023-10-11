@@ -33,7 +33,7 @@ namespace ETWAnalyzer_uTest
                 exThrown = true;
                 if( !(ex is T))
                 {
-                    Assert.True(false, $"Expected exception of type {typeof(T).Name} but got {ex.GetType().Name} with message: {ex.Message}");
+                    Assert.Fail($"Expected exception of type {typeof(T).Name} but got {ex.GetType().Name} with message: {ex.Message}");
                 }
             }
 
@@ -59,7 +59,7 @@ namespace ETWAnalyzer_uTest
             {
                 if (!(ex is T))
                 {
-                    Assert.True(false, $"Expected exception of type {typeof(T).Name} but got {ex.GetType().Name} with message: {ex.Message}");
+                    Assert.Fail($"Expected exception of type {typeof(T).Name} but got {ex.GetType().Name} with message: {ex.Message}");
                 }
 
                 if( ex.Message.IndexOf(expectedMessageSubstring, StringComparison.OrdinalIgnoreCase) == -1)

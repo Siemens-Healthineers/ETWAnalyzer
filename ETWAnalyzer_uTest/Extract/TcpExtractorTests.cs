@@ -172,7 +172,7 @@ namespace ETWAnalyzer_uTest.Extract
             IETWExtract iExtract = (IETWExtract)extract;
             var tcpData = iExtract.Network.TcpData;
 
-            Assert.Equal(1, tcpData.Connections.Count);
+            Assert.Single(tcpData.Connections);
             Assert.Equal(2, tcpData.Retransmissions.Count);
 
             var retrans0 = tcpData.Retransmissions[0];
