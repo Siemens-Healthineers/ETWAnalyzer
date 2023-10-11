@@ -102,6 +102,8 @@ namespace ETWAnalyzer_uTest.EventDump
         public void Verify_Process_Tree_Output()
         {
             using var testOutput = new ExceptionalPrinter(myWriter, true);
+            using CultureSwitcher invariant = new();
+
             DumpProcesses dumper = new DumpProcesses()
             {
                 //  Parent = Matcher.CreateMatcher("Parent", MatchingMode.CaseInsensitive, true),
@@ -140,6 +142,8 @@ namespace ETWAnalyzer_uTest.EventDump
         public void Process_Filter_DisplaysJustMatchingProcesses_When_ParentFilter_Is_NotActive()
         {
             using var testOutput = new ExceptionalPrinter(myWriter, true);
+            using CultureSwitcher invariant = new();
+
             DumpProcesses dumper = new DumpProcesses()
             {
                 ProcessNameFilter = Matcher.CreateMatcher("ImmortalChild", MatchingMode.CaseInsensitive, true),

@@ -719,6 +719,7 @@ namespace ETWAnalyzer_uTest.EventDump
         public void TotalMode_Not_SetMeans_It_Is_Off_CPU_Summary()
         {
             using ExceptionalPrinter redirect = new(myWriter,true);
+            using CultureSwitcher invariant = new();
 
             DumpCPUMethod dumper = new();
             dumper.ShowTotal = null;
@@ -746,6 +747,7 @@ namespace ETWAnalyzer_uTest.EventDump
         public void TotalMode_Total_CPU_Summary()
         {
             using ExceptionalPrinter redirect = new(myWriter, true);
+            using CultureSwitcher invariant = new();
 
             DumpCPUMethod dumper = new();
             // prevent parsing random json files in test directory
@@ -775,6 +777,7 @@ namespace ETWAnalyzer_uTest.EventDump
         public void TotalMode_Process_CPU_Summary()
         {
             using ExceptionalPrinter redirect = new(myWriter, true);
+            using CultureSwitcher invariant = new();
 
             DumpCPUMethod dumper = new();
             // prevent parsing random json files in test directory
@@ -804,6 +807,7 @@ namespace ETWAnalyzer_uTest.EventDump
         public void TotalMode_NotSet_None_CPU_MethodLevel()
         {
             using ExceptionalPrinter redirect = new(myWriter, true);
+            using CultureSwitcher invariant = new();
 
             DumpCPUMethod dumper = new();
             // prevent parsing random json files in test directory
@@ -835,6 +839,7 @@ namespace ETWAnalyzer_uTest.EventDump
         public void TotalMode_Process_CPU_MethodLevel()
         {
             using ExceptionalPrinter redirect = new(myWriter, true);
+            using CultureSwitcher invariant = new();
 
             DumpCPUMethod dumper = new();
             dumper.ShowTotal = TotalModes.Process;
@@ -859,6 +864,7 @@ namespace ETWAnalyzer_uTest.EventDump
         [Fact]
         public void TotalMode_Method_CPU_MethodLevel()
         {
+            using CultureSwitcher invariant = new();
             using ExceptionalPrinter redirect = new(myWriter, true);
 
             DumpCPUMethod dumper = new();
@@ -890,6 +896,7 @@ namespace ETWAnalyzer_uTest.EventDump
         public void TotalMode_Total_CPU_MethodLevel()
         {
             using ExceptionalPrinter redirect = new(myWriter, true);
+            using CultureSwitcher invariant = new();
 
             DumpCPUMethod dumper = new();
             // prevent parsing random json files in test directory

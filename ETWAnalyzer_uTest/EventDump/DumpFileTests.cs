@@ -603,6 +603,8 @@ namespace ETWAnalyzer_uTest.EventDump
         public void PrintIsSummaryTotalsNone()
         {
             using var testOutput = new ExceptionalPrinter(myWriter, true);
+            using CultureSwitcher invariant = new();
+
             var data = CreateTestData();
 
             DumpFile fileDumper = new()
@@ -627,6 +629,8 @@ namespace ETWAnalyzer_uTest.EventDump
         public void PrintIsSummaryTotals()
         {
             using var testOutput = new ExceptionalPrinter(myWriter, true);
+            using CultureSwitcher invariant = new();
+
             var data = CreateTestData();
 
             DumpFile fileDumper = new()
@@ -668,7 +672,7 @@ namespace ETWAnalyzer_uTest.EventDump
 
             Assert.Equal(8, lines.Count);
             Assert.Contains("Process Count: 2", lines[7]);
-            Assert.Contains("TotalTime: 0.00000 s", lines[7]);
+            Assert.Contains("TotalTime: 0,00000 s", lines[7]);
             Assert.Contains("File/s Total with 0 accessed file/s", lines[7]);
             
         }
