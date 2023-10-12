@@ -39,7 +39,10 @@ same file then each process gets the mapped file size as Shared Commit.
  you also filter out processes which were leaking more than e.g. 600 MB of memory over a collection of files. 
  
  >EtwAnalyzer -dump Memory -GlobalDiffMB 500 
-  
+
+ To export the data to a CSV file you can use
+
+ >EtwAnalyzer -dump Memory -GlobalDiffMB 500 -csv LeakingProcesses.csv 
 
  # WPA View
  The displayed data from ETWAnalyzer can be visualized in WPA from the tables
