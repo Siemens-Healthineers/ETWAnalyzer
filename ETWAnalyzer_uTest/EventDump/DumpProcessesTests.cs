@@ -194,6 +194,68 @@ namespace ETWAnalyzer_uTest.EventDump
             Assert.False(dumper.SessionIdFilter(procSession2));
         }
 
+        [Fact]
+        public void User_Filter_Null()
+        {
+            DumpProcesses dumper = new DumpProcesses()
+            {
+                User = Matcher.CreateMatcher(null),
+            };
+
+            var procUser1 = new ETWProcess
+            {
+                Identity = null
+            };
+
+            Assert.True(dumper.UserFilter(procUser1));
+        }
+
+        [Fact]
+        public void User_Filter()
+        {
+            DumpProcesses dumper = new DumpProcesses()
+            {
+                User = Matcher.CreateMatcher("*SERVICE*"),
+            };
+
+            var procUser1 = new ETWProcess
+            {
+                Identity = "NT AUTHORITY\\SYSTEM"
+            };
+            var procUser2 = new ETWProcess
+            {
+                Identity = "NT AUTHORITY\\LOCAL SERVICE"
+            };
+            var procUser3 = new ETWProcess
+            {
+                Identity = "NT AUTHORITY\\NETWORK SERVICE"
+            };
+            var procUser4 = new ETWProcess
+            {
+                Identity = "NT SERVICE\\SQLServerReportingServices"
+            };
+            var procUser5 = new ETWProcess
+            {
+                Identity = "NT SERVICE\\MsDtsServer140"
+            };
+
+            Assert.False(dumper.UserFilter(procUser1));
+
+            Assert.True(dumper.UserFilter(procUser2));
+            Assert.True(dumper.UserFilter(procUser3));
+            Assert.True(dumper.UserFilter(procUser4));
+            Assert.True(dumper.UserFilter(procUser5));
+
+            DumpProcesses dumper1 = new DumpProcesses()
+            {
+                User = Matcher.CreateMatcher("SYSTEM;*sys*;SERVICE"),
+            };
+
+            Assert.True(dumper1.UserFilter(procUser1));
+            Assert.False(dumper1.UserFilter(procUser2));
+
+        }
+
         DateTimeOffset TenClock = new DateTimeOffset(2000, 1, 1, 10, 0, 0, TimeSpan.Zero); // start at 10:00:00
 
         SingleTest CreateSingleTest()
