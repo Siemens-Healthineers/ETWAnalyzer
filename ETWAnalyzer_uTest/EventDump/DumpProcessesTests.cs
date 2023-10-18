@@ -202,12 +202,12 @@ namespace ETWAnalyzer_uTest.EventDump
                 User = Matcher.CreateMatcher(null),
             };
 
-            var procUser1 = new ETWProcess
+            var procNullUser = new ETWProcess
             {
                 Identity = null
             };
 
-            Assert.True(dumper.UserFilter(procUser1));
+            Assert.True(dumper.UserFilter(procNullUser));
         }
 
         [Fact]
@@ -218,41 +218,42 @@ namespace ETWAnalyzer_uTest.EventDump
                 User = Matcher.CreateMatcher("*SERVICE*"),
             };
 
-            var procUser1 = new ETWProcess
+            var procSystem = new ETWProcess
             {
                 Identity = "NT AUTHORITY\\SYSTEM"
             };
-            var procUser2 = new ETWProcess
+            var procLocalService = new ETWProcess
             {
                 Identity = "NT AUTHORITY\\LOCAL SERVICE"
             };
-            var procUser3 = new ETWProcess
+            var procNetworkService = new ETWProcess
             {
                 Identity = "NT AUTHORITY\\NETWORK SERVICE"
             };
-            var procUser4 = new ETWProcess
+            var procSQLServerReportingServices = new ETWProcess
             {
                 Identity = "NT SERVICE\\SQLServerReportingServices"
             };
-            var procUser5 = new ETWProcess
+            var procMsDtsServer140 = new ETWProcess
             {
                 Identity = "NT SERVICE\\MsDtsServer140"
             };
 
-            Assert.False(dumper.UserFilter(procUser1));
+            Assert.False(dumper.UserFilter(procSystem));
 
-            Assert.True(dumper.UserFilter(procUser2));
-            Assert.True(dumper.UserFilter(procUser3));
-            Assert.True(dumper.UserFilter(procUser4));
-            Assert.True(dumper.UserFilter(procUser5));
+            Assert.True(dumper.UserFilter(procLocalService));
+            Assert.True(dumper.UserFilter(procNetworkService));
+            Assert.True(dumper.UserFilter(procSQLServerReportingServices));
+            Assert.True(dumper.UserFilter(procMsDtsServer140));
+
 
             DumpProcesses dumper1 = new DumpProcesses()
             {
                 User = Matcher.CreateMatcher("SYSTEM;*sys*;SERVICE"),
             };
 
-            Assert.True(dumper1.UserFilter(procUser1));
-            Assert.False(dumper1.UserFilter(procUser2));
+            Assert.True(dumper1.UserFilter(procSystem));
+            Assert.False(dumper1.UserFilter(procLocalService));
 
         }
 
