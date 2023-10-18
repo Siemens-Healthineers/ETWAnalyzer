@@ -198,6 +198,69 @@ namespace ETWAnalyzer_uTest.EventDump
             Assert.False(dumper.SessionIdFilter(procSession2));
         }
 
+        [Fact]
+        public void User_Filter_Null()
+        {
+            DumpProcesses dumper = new DumpProcesses()
+            {
+                User = Matcher.CreateMatcher(null),
+            };
+
+            var procNullUser = new ETWProcess
+            {
+                Identity = null
+            };
+
+            Assert.True(dumper.UserFilter(procNullUser));
+        }
+
+        [Fact]
+        public void User_Filter()
+        {
+            DumpProcesses dumper = new DumpProcesses()
+            {
+                User = Matcher.CreateMatcher("*SERVICE*"),
+            };
+
+            var procSystem = new ETWProcess
+            {
+                Identity = "NT AUTHORITY\\SYSTEM"
+            };
+            var procLocalService = new ETWProcess
+            {
+                Identity = "NT AUTHORITY\\LOCAL SERVICE"
+            };
+            var procNetworkService = new ETWProcess
+            {
+                Identity = "NT AUTHORITY\\NETWORK SERVICE"
+            };
+            var procSQLServerReportingServices = new ETWProcess
+            {
+                Identity = "NT SERVICE\\SQLServerReportingServices"
+            };
+            var procMsDtsServer140 = new ETWProcess
+            {
+                Identity = "NT SERVICE\\MsDtsServer140"
+            };
+
+            Assert.False(dumper.UserFilter(procSystem));
+
+            Assert.True(dumper.UserFilter(procLocalService));
+            Assert.True(dumper.UserFilter(procNetworkService));
+            Assert.True(dumper.UserFilter(procSQLServerReportingServices));
+            Assert.True(dumper.UserFilter(procMsDtsServer140));
+
+
+            DumpProcesses dumper1 = new DumpProcesses()
+            {
+                User = Matcher.CreateMatcher("SYSTEM;*sys*;SERVICE"),
+            };
+
+            Assert.True(dumper1.UserFilter(procSystem));
+            Assert.False(dumper1.UserFilter(procLocalService));
+
+        }
+
         DateTimeOffset TenClock = new DateTimeOffset(2000, 1, 1, 10, 0, 0, TimeSpan.Zero); // start at 10:00:00
 
         SingleTest CreateSingleTest()

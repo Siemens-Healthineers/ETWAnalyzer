@@ -38,6 +38,7 @@ namespace ETWAnalyzer.EventDump
         public Func<string, bool> Parent { get; set; } = null;
 
         public Func<string, bool> Session { get; set; } = _ => true;
+        public Func<string, bool> User { get; set; } = _ => true;
         public DumpCommand.SortOrders SortOrder { get; internal set; }
         public bool Merge { get; internal set; }
         public bool NoCmdLine { get; internal set; }
@@ -402,10 +403,10 @@ namespace ETWAnalyzer.EventDump
             {
                 HashSet<ETWProcess> foundParentProcesses = new();
 
-                HashSet<ETWProcess> processes = processGroup.Where(ProcessFilter).Where(x => ParentFilter(x, extract.Processes, foundParentProcesses)).Where(SessionIdFilter).ToHashSet();
+                HashSet<ETWProcess> processes = processGroup.Where(ProcessFilter).Where(x => ParentFilter(x, extract.Processes, foundParentProcesses)).Where(SessionIdFilter).Where(UserFilter).ToHashSet();
 
                 // Add parents to list and remove already printed ones
-                processes.UnionWith(foundParentProcesses.Where(SessionIdFilter));
+                processes.UnionWith(foundParentProcesses.Where(SessionIdFilter).Where(UserFilter));
                 processes.ExceptWith(alreadyPrinted);
 
                 // update alradyPrinted list with current and parents 
@@ -611,6 +612,12 @@ namespace ETWAnalyzer.EventDump
         internal bool SessionIdFilter(ETWProcess process)
         {
             bool lret = Session( process.SessionId.ToString() );
+            return lret;
+        }
+
+        internal bool UserFilter(ETWProcess process)
+        {
+            bool lret = User(process.Identity);
             return lret;
         }
 
