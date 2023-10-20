@@ -1025,6 +1025,7 @@ namespace ETWAnalyzer.EventDump
                 SortOrders.First,
                 SortOrders.Last,
                 SortOrders.TestTime,
+                SortOrders.StartTime,
             };
 
         /// <summary>
@@ -1041,6 +1042,7 @@ namespace ETWAnalyzer.EventDump
                 SortOrders.Ready => data.ReadyMs,
                 SortOrders.CPUWait => data.CPUMs+data.WaitMs,
                 SortOrders.CPUWaitReady => data.CPUMs+data.WaitMs+data.ReadyMs,
+                SortOrders.StartTime => data.Process.StartTime.Ticks,
                 // We normalize CPU consumption with the stack depth. The depth starts from 0 which is the method which consumes CPU.
                 // Upwards in the stack we must reduce the weight of CPU to get an approximate ordering of the methods which consume most CPU.
                 // This can be viewed as a special kind of distance metric in the 2D-space of Time vs StackDepth

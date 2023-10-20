@@ -121,7 +121,7 @@ namespace ETWAnalyzer.Commands
         "                         -PrintFiles                Print input Json files paths into output" + Environment.NewLine;
         static readonly string CPUHelpString =
         "   CPU      -filedir/fd Extract\\ or xxx.json [-recursive] [-csv xxx.csv] [-NoCSVSeparator] [-ProcessFmt timefmt] [-Methods method1;method2...] [-FirstLastDuration/fld [firsttimefmt] [lasttimefmt]]" + Environment.NewLine +
-        "            [-ThreadCount] [-SortBy [CPU/Wait/CPUWait/CPUWaitReady/StackDepth/First/Last/TestTime] [-StackTags tag1;tag2] [-CutMethod xx-yy] [-ShowOnMethod] [-ShowModuleInfo [Driver] or [filter]] [-NoCmdLine] [-Clip]" + Environment.NewLine +
+        "            [-ThreadCount] [-SortBy [CPU/Wait/CPUWait/CPUWaitReady/StackDepth/First/Last/TestTime/StartTime] [-StackTags tag1;tag2] [-CutMethod xx-yy] [-ShowOnMethod] [-ShowModuleInfo [Driver] or [filter]] [-NoCmdLine] [-Clip]" + Environment.NewLine +
         "            [-ShowTotal Total, Process, Method] [-topn dd nn] [-topNMethods dd nn] [-ZeroTime/zt Marker/First/Last/ProcessStart filter] [-ZeroProcessName/zpn filter] " + Environment.NewLine +
         "            [-includeDll] [-includeArgs] [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd] [-MinMaxMsTestTimes xx-yy ...] [-ProcessName/pn xxx.exe(pid)] [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-CmdLine substring]" + Environment.NewLine +
         "            [-ShowFullFileName/-sffn]" + Environment.NewLine +
@@ -160,8 +160,9 @@ namespace ETWAnalyzer.Commands
         "                         -topNMethods dd nn         Include dd most expensive methods/stacktags which consume most CPU in trace. Optional nn skips the first nn lines." + Environment.NewLine +
         "                         -ThreadCount               Show # of unique threads that did execute that method." + Environment.NewLine +
         "                         -ProcessFmt timefmt        Add besides process name start/stop time and duration. See -TimeFmt for available options." + Environment.NewLine +
-        "                         -SortBy [CPU/Wait/CPUWait/CPUWaitReady/StackDepth/First/Last/TestTime] Default method sort order is CPU consumption. Wait sorts by wait time, First/Last sorts by first/last occurrence of method/stacktags." + Environment.NewLine +
+        "                         -SortBy [CPU/Wait/CPUWait/CPUWaitReady/StackDepth/First/Last/TestTime/StartTime] Default method sort order is CPU consumption. Wait sorts by wait time, First/Last sorts by first/last occurrence of method/stacktags." + Environment.NewLine +
         "                                                    StackDepth shows hottest methods which consume most CPU but are deepest in the call stack." + Environment.NewLine +
+        "                                                    StartTime sorts by process start time to correlate things in the order the processes were started." + Environment.NewLine +   
         "                                                    TestTime can be used to force sort order of files by test time when -ShowTotal is used. When totals are enabled the files are sorted by highest totals." + Environment.NewLine +
         "                         -MinMaxReadyMs xx-yy or xx Only include methods (stacktags have no recorded ready times) with a minimum ready time of [xx, yy] ms." + Environment.NewLine +
         "                         -MinMaxCpuMs xx-yy or xx   Only include methods/stacktags with a minimum CPU consumption of [xx,yy] ms." + Environment.NewLine +
@@ -596,6 +597,9 @@ namespace ETWAnalyzer.Commands
             OpenCloseTime,
             TotalSize,
             TotalTime,
+
+            // CPU
+            StartTime,
 
             // Process sort order
             StopTime,
