@@ -10,6 +10,7 @@ using ETWAnalyzer.Helper;
 using ETWAnalyzer.Infrastructure;
 using ETWAnalyzer_uTest.TestInfrastructure;
 using Microsoft.Windows.EventTracing;
+using NuGet.Frameworks;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -210,6 +211,8 @@ namespace ETWAnalyzer_uTest.EventDump
             ProcessID = 1234,
             ProcessName = "cmd.exe",
             CmdLine = "hi",
+            StartTime = new DateTimeOffset(1, 1, 1, 0, 2, 0, TimeSpan.Zero),
+            IsNew = true,
         };
 
         static readonly ProcessKey myCmdProcessKey = myCmdProcess.ToProcessKey();
@@ -219,6 +222,8 @@ namespace ETWAnalyzer_uTest.EventDump
             ProcessID = 2222,
             ProcessName = "2222.exe",
             CmdLine = "hi",
+            StartTime = new DateTimeOffset(1, 1, 1, 0, 1, 0, TimeSpan.Zero),
+            IsNew = true,
         };
         static readonly ProcessKey myCmdProcessKey2 = myCmdProcess2.ToProcessKey();
 
@@ -828,9 +833,9 @@ namespace ETWAnalyzer_uTest.EventDump
             Assert.Equal(14, lines.Count);
             Assert.Equal("         CPU ms       Wait msMethod",                    lines[0]);
             Assert.Equal("1/1/0500 12:00:00 AM   File3 ",                             lines[1]);
-            Assert.Equal("   2222.exe(2222) hi",                                      lines[2]);
+            Assert.Equal("   2222.exe(2222) + hi",                                      lines[2]);
             Assert.Equal("           1 ms          1 ms Wait1MsMethod_1msCPU ",       lines[3]);
-            Assert.Equal("   cmd.exe(1234) hi",                                       lines[4]);
+            Assert.Equal("   cmd.exe(1234) + hi",                                       lines[4]);
             Assert.Equal("      15,000 ms        900 ms Wait900MsMethod_15000msCPU ", lines[13]);
             
         }
@@ -856,8 +861,8 @@ namespace ETWAnalyzer_uTest.EventDump
 
             Assert.Equal(8, lines.Count);
             Assert.Equal("1/1/0500 12:00:00 AM    CPU            2 ms Wait            2 ms Total            4 ms File3 ", lines[0]);
-            Assert.Equal("   CPU            1 ms Wait:            1 ms Total:            2 ms 2222.exe(2222) hi",         lines[1]);
-            Assert.Equal("   CPU            1 ms Wait:            1 ms Total:            2 ms cmd.exe(1234) hi",          lines[2]);
+            Assert.Equal("   CPU            1 ms Wait:            1 ms Total:            2 ms 2222.exe(2222) + hi",         lines[1]);
+            Assert.Equal("   CPU            1 ms Wait:            1 ms Total:            2 ms cmd.exe(1234) + hi",          lines[2]);
             Assert.Equal("Total 22,210 ms CPU 16,008 ms Wait 6,202 ms",                                                   lines[7]);
         }
 
@@ -886,9 +891,9 @@ namespace ETWAnalyzer_uTest.EventDump
             Assert.Equal(15, lines.Count);
             Assert.Equal("         CPU ms       Wait msMethod"                                                          ,lines[0]);
             Assert.Equal("1/1/0500 12:00:00 AM    CPU            2 ms Wait            2 ms Total            4 ms File3 ", lines[1]);
-            Assert.Equal("   CPU            1 ms Wait:            1 ms Total:            2 ms 2222.exe(2222) hi"        , lines[2]);
+            Assert.Equal("   CPU            1 ms Wait:            1 ms Total:            2 ms 2222.exe(2222) + hi"        , lines[2]);
             Assert.Equal("           1 ms          1 ms Wait1MsMethod_1msCPU "                                          , lines[3]);
-            Assert.Equal("   CPU            1 ms Wait:            1 ms Total:            2 ms cmd.exe(1234) hi",          lines[4]);
+            Assert.Equal("   CPU            1 ms Wait:            1 ms Total:            2 ms cmd.exe(1234) + hi",          lines[4]);
             Assert.Equal("Total 22,210 ms CPU 16,008 ms Wait 6,202 ms"                                                  , lines[14]);
         }
 
@@ -919,6 +924,152 @@ namespace ETWAnalyzer_uTest.EventDump
             Assert.Equal("1/1/1500 12:00:00 AM    CPU       16,000 ms Wait        5,900 ms Total       21,900 ms File2 ", lines[2]);
             Assert.Equal("Total 22,210 ms CPU 16,008 ms Wait 6,202 ms", lines[3]);
         }
+
+
+        [Fact]
+        public void CPU_ProcessTotalMode_Uses_ProcessSortOrder()
+        {
+            using ExceptionalPrinter redirect = new(myWriter, true);
+            using CultureSwitcher invariant = new();
+
+            DumpCPUMethod dumper = new()
+            {
+                FileOrDirectoryQueries = new List<string> { "dummy" },
+                ProcessFormatOption = DumpBase.TimeFormats.s,
+                SortOrder = SortOrders.StartTime,
+            };
+
+
+            Assert.True(dumper.IsProcessTotalMode);
+
+            var matches = CreateTestData();
+            dumper.PrintMatches(matches);
+
+            redirect.Flush();
+            var lines = redirect.GetSingleLines();
+
+            Assert.Equal(3, lines.Count);
+            Assert.Equal("\t      CPU ms Process Name        ", lines[0]);
+            Assert.Equal("\t   16,001 ms 2222.exe(2222)       +60.000 hi  ", lines[1]);
+            Assert.Equal("\t        7 ms cmd.exe(1234)        +120.000 hi  ", lines[2]);
+        }
+
+        [Fact]
+        public void CPU_ProcessTotalMode_Default_SortsByCPU()
+        {
+            using ExceptionalPrinter redirect = new(myWriter, true);
+            using CultureSwitcher invariant = new();
+
+            DumpCPUMethod dumper = new()
+            {
+                FileOrDirectoryQueries = new List<string> { "dummy" },
+                ProcessFormatOption = DumpBase.TimeFormats.s,
+            };
+
+
+            Assert.True(dumper.IsProcessTotalMode);
+
+            var matches = CreateTestData();
+            dumper.PrintMatches(matches);
+
+            redirect.Flush();
+            var lines = redirect.GetSingleLines();
+
+            Assert.Equal(3, lines.Count);
+            Assert.Equal("\t      CPU ms Process Name        ", lines[0]);
+            Assert.Equal("\t        7 ms cmd.exe(1234)        +120.000 hi  ", lines[1]);
+            Assert.Equal("\t   16,001 ms 2222.exe(2222)       +60.000 hi  ", lines[2]);
+        }
+
+        [Fact]
+        public void Process_Summary_CanPrint_ByProcessStartTime()
+        {
+            using ExceptionalPrinter redirect = new(myWriter, true);
+            using CultureSwitcher invariant = new();
+
+            DumpCPUMethod dumper = new()
+            {
+                FileOrDirectoryQueries = new List<string> { "dummy" },
+                ProcessFormatOption = DumpBase.TimeFormats.s,
+                SortOrder = SortOrders.StartTime,
+            };
+
+
+            Assert.True(dumper.IsProcessTotalMode);
+
+            var datafile = new TestDataFile("Test", "fullfilename.json", new DateTime(), 10, 1, "machine", null);
+
+            datafile.Extract = new ETWExtract
+            {
+                Processes = new List<ETWProcess>
+                {
+                    myCmdProcess,
+                    myCmdProcess2,
+                },
+                CPU = new CPUStats(
+                    new Dictionary<ProcessKey, uint>
+                    {
+                        { myCmdProcess, 7 },
+                        { myCmdProcess2, 16001 },
+                    }, null, null),
+
+            };
+
+            var matches = new List<DumpCPUMethod.MatchData>();
+
+            dumper.AddAndPrintTotalStats(matches, datafile);
+
+            redirect.Flush();
+            var lines = redirect.GetSingleLines();
+            Assert.Equal(4, lines.Count);
+            Assert.Equal("\t   16,001 ms 2222.exe(2222)       +60.000 hi  ", lines[2]);
+            Assert.Equal("\t        7 ms cmd.exe(1234)        +120.000 hi  ", lines[3]);
+        }
+
+        [Fact]
+        public void Process_Summary_Default_SortByCPU()
+        {
+            using ExceptionalPrinter redirect = new(myWriter, true);
+            using CultureSwitcher invariant = new();
+
+            DumpCPUMethod dumper = new()
+            {
+                FileOrDirectoryQueries = new List<string> { "dummy" },
+                ProcessFormatOption = DumpBase.TimeFormats.s,
+            };
+
+
+            Assert.True(dumper.IsProcessTotalMode);
+
+            var datafile = new TestDataFile("Test", "fullfilename.json", new DateTime(), 10, 1, "machine", null);
+
+            datafile.Extract = new ETWExtract
+            {
+                Processes = new List<ETWProcess>
+                {
+                    myCmdProcess,
+                    myCmdProcess2,
+                },
+                CPU = new CPUStats(
+                    new Dictionary<ProcessKey, uint>
+                    {
+                        { myCmdProcess, 7 },
+                        { myCmdProcess2, 16001 },
+                    }, null, null),
+
+            };
+
+            var matches = new List<DumpCPUMethod.MatchData>();
+
+            dumper.AddAndPrintTotalStats(matches, datafile);
+
+            redirect.Flush();
+            var lines = redirect.GetSingleLines();
+            Assert.Equal(4, lines.Count);
+            Assert.Equal("\t        7 ms cmd.exe(1234)        +120.000 hi  ", lines[2]);
+            Assert.Equal("\t   16,001 ms 2222.exe(2222)       +60.000 hi  ", lines[3]);
+        }
+
 
     }
 }
