@@ -13,6 +13,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.ServiceProcess;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -24,6 +25,9 @@ namespace ETWAnalyzer.EventDump
     internal abstract class DumpFileDirBase<T> : DumpBase<T>
     {
         public Func<string, bool> ProcessNameFilter { get; set; } = _ => true;
+
+        public Func<string, bool> Session { get; set; } = _ => true;
+
         public Func<string, bool> CommandLineFilter { get; set; } = _ => true;
 
         public List<MinMaxRange<int>> MinMaxMsTestTimes = new();
@@ -622,6 +626,10 @@ namespace ETWAnalyzer.EventDump
                 return false;
             }
 
+            if (!Session(proc.SessionId.ToString()))
+            {
+                return false;
+            }
 
             bool lret = proc.IsMatch(NewProcessFilter);
             if( lret )

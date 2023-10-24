@@ -37,7 +37,6 @@ namespace ETWAnalyzer.EventDump
         /// </summary>
         public Func<string, bool> Parent { get; set; } = null;
 
-        public Func<string, bool> Session { get; set; } = _ => true;
         public Func<string, bool> User { get; set; } = _ => true;
         public DumpCommand.SortOrders SortOrder { get; internal set; }
         public bool Merge { get; internal set; }
