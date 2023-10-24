@@ -121,7 +121,7 @@ namespace ETWAnalyzer.Commands
         "                         -PrintFiles                Print input Json files paths into output" + Environment.NewLine;
         static readonly string CPUHelpString =
         "   CPU      -filedir/fd Extract\\ or xxx.json [-recursive] [-csv xxx.csv] [-NoCSVSeparator] [-ProcessFmt timefmt] [-Methods method1;method2...] [-FirstLastDuration/fld [firsttimefmt] [lasttimefmt]]" + Environment.NewLine +
-        "            [-ThreadCount] [-SortBy [CPU/Wait/CPUWait/CPUWaitReady/StackDepth/First/Last/TestTime/StartTime] [-StackTags tag1;tag2] [-CutMethod xx-yy] [-ShowOnMethod] [-ShowModuleInfo [Driver] or [filter]] [-NoCmdLine] [-Clip]" + Environment.NewLine +
+        "            [-ThreadCount] [-SortBy [CPU/Wait/CPUWait/CPUWaitReady/StackDepth/First/Last/TestTime/StartTime] [-StackTags tag1;tag2] [-CutMethod xx-yy] [-ShowOnMethod] [-ShowModuleInfo [Driver] or [filter]] [-NoCmdLine] [-Clip] [-Details]" + Environment.NewLine +
         "            [-ShowTotal Total, Process, Method] [-topn dd nn] [-topNMethods dd nn] [-ZeroTime/zt Marker/First/Last/ProcessStart filter] [-ZeroProcessName/zpn filter] " + Environment.NewLine +
         "            [-includeDll] [-includeArgs] [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd] [-MinMaxMsTestTimes xx-yy ...] [-ProcessName/pn xxx.exe(pid)] [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-CmdLine substring]" + Environment.NewLine +
         "            [-ShowFullFileName/-sffn]" + Environment.NewLine +
