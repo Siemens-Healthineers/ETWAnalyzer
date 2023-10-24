@@ -47,7 +47,7 @@ namespace ETWAnalyzer.EventDump
         /// <summary>
         /// When true we print only process total CPU information
         /// </summary>
-        bool IsProcessTotalMode
+        internal bool IsProcessTotalMode
         {
             get => MethodFilter.Key == null && TopNMethods.TakeN == int.MaxValue && StackTagFilter.Key == null;
         }
@@ -976,9 +976,9 @@ namespace ETWAnalyzer.EventDump
 
         private void PrintProcessTotalMatches(List<MatchData> matches)
         {
-            foreach (var group in matches.GroupBy(x => x.Process.GetProcessName(this.UsePrettyProcessName)).OrderBy(x => x.Sum(x => x.CPUMs)))
+            foreach (var group in matches.GroupBy(x => x.Process.GetProcessName(this.UsePrettyProcessName)).OrderBy(x => x.Sum(SortBySortOrder)))
             {
-                foreach (var subgroup in group.GroupBy(x => x.ProcessKey).OrderBy(x => x.Sum(x => x.CPUMs)))
+                foreach (var subgroup in group.GroupBy(x => x.ProcessKey).OrderBy(x => x.Sum(SortBySortOrder)))
                 {
                     long cpu = subgroup.Sum(x => x.CPUMs);
 
@@ -1034,6 +1034,7 @@ namespace ETWAnalyzer.EventDump
                 SortOrders.First,
                 SortOrders.Last,
                 SortOrders.TestTime,
+                SortOrders.StartTime,
             };
 
         /// <summary>
@@ -1050,6 +1051,7 @@ namespace ETWAnalyzer.EventDump
                 SortOrders.Ready => data.ReadyMs,
                 SortOrders.CPUWait => data.CPUMs+data.WaitMs,
                 SortOrders.CPUWaitReady => data.CPUMs+data.WaitMs+data.ReadyMs,
+                SortOrders.StartTime => IsProcessTotalMode ? data.Process.StartTime.Ticks : data.CPUMs,
                 // We normalize CPU consumption with the stack depth. The depth starts from 0 which is the method which consumes CPU.
                 // Upwards in the stack we must reduce the weight of CPU to get an approximate ordering of the methods which consume most CPU.
                 // This can be viewed as a special kind of distance metric in the 2D-space of Time vs StackDepth
@@ -1115,6 +1117,7 @@ namespace ETWAnalyzer.EventDump
                             SortOrders.Ready => totals.ReadyMs,
                             SortOrders.CPUWait => totals.GetTotal(SortOrders.CPUWait),
                             SortOrders.CPUWaitReady => totals.GetTotal(SortOrders.CPUWaitReady),
+                            SortOrders.StartTime => x.Key.StartTime.Ticks,
                             _ => totals.CPUMs,
                         };
                     }

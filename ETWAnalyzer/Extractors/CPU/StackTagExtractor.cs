@@ -91,41 +91,20 @@ namespace ETWAnalyzer.Extractors.CPU
             var totalStackTagsRaw = new Dictionary<ProcessKey, Dictionary<string, StackTagDuration>>();
             var specialStackTagsRaw = new Dictionary<ProcessKey, Dictionary<string, StackTagDuration>>();
 
-            var t1 = Task.Run(() =>
+            using (new PerfLogger($"Extract from default stacktag file: {DefaultStackTagFile}"))
             {
-                using (new PerfLogger($"Extract from default stacktag file: {DefaultStackTagFile}"))
-                {
-                    ExtractStackTagsFromProfilingAndContextSwitchEvents(gcJitStackTagMapper, gcJitStackTags, addDefaultStackTag: false);
-                }
-            });
-
-            if( Concurrency == null || Concurrency == 1)
-            {
-                t1.Wait();
+                ExtractStackTagsFromProfilingAndContextSwitchEvents(gcJitStackTagMapper, gcJitStackTags, addDefaultStackTag: false);
             }
 
-            var t2 = Task.Run(() =>
+            using (new PerfLogger($"Extracting from secondary stacktag file: {SecondaryStackTagFile}"))
             {
-                using (new PerfLogger($"Extracting from secondary stacktag file: {SecondaryStackTagFile}"))
-                {
-                    ExtractStackTagsFromProfilingAndContextSwitchEvents(defaultStackTagMapper, totalStackTagsRaw, addDefaultStackTag: true);
-                }
-            });
-
-            if( Concurrency == 2)
-            {
-                Task.WaitAll(t1, t2);
+                ExtractStackTagsFromProfilingAndContextSwitchEvents(defaultStackTagMapper, totalStackTagsRaw, addDefaultStackTag: true);
             }
 
-            var t3 = Task.Run(() =>
+            using (new PerfLogger($"Extracting from special stacktag file: {SpecialStacktagFile}"))
             {
-                using (new PerfLogger($"Extracting from special stacktag file: {SpecialStacktagFile}"))
-                {
-                    ExtractStackTagsFromProfilingAndContextSwitchEvents(specialStackTagMapper, specialStackTagsRaw, addDefaultStackTag: false);
-                }
-            });
-
-            Task.WaitAll(t1, t2, t3);
+                ExtractStackTagsFromProfilingAndContextSwitchEvents(specialStackTagMapper, specialStackTagsRaw, addDefaultStackTag: false);
+            }
 
             ProcessStackTags totalStackTags = new()
             {
