@@ -274,6 +274,8 @@ namespace ETWAnalyzer_uTest
             get => UnzipTestContainerFileOnlyOnce.Value;
         }
 
+        public static readonly int TestRunDirectoryFileCount = 2899;
+
         /// <summary>
         /// Copies an folder of empty .7z files and converts them to .json
         /// </summary>
@@ -331,27 +333,31 @@ namespace ETWAnalyzer_uTest
         /// Lazy is a special construct which executes the passed method only once. That way we
         /// can ensure that the access to the path is fast without uncompressing the 7z file during every property get call.
         /// </summary>
-        static readonly Lazy<DataOutput<string>> UnzipTestContainerFileOnlyOnce = new Lazy<DataOutput<string>>(UnzipFiles("SampleData", TestSampleFileServer));
+        static readonly Lazy<DataOutput<string>> UnzipTestContainerFileOnlyOnce = new Lazy<DataOutput<string>>(UnzipFiles("SampleData"));
 
         const string TestSampleFileClient = "CallupAdhocColdReadingCR_11341msFO9DE01T0166PC.7z";
         const string TestSampleFileServer = "CallupAdhocColdReadingCR_11341msDEFOR09T121SRV.7z";
 
-        static DataOutput<string> UnzipFiles(string pathName, string sampleTestFile)
+        static DataOutput<string> UnzipFiles(string pathName)
         {
-            string samplePath = GetPath(pathName);
-            string extractedFile = Path.Combine(samplePath, sampleTestFile);
+            string inputPath = GetPath(pathName);
+            string extractedPath = Path.Combine(inputPath, "extracted");
             string outputStr = null;
             // check if file is already uncompressed 
-            if (!File.Exists(extractedFile))
+            if (!Directory.Exists(extractedPath))
             {
                 // No then uncompress it now
-                ProcessCommand cmd = new ProcessCommand("7z.exe", $"x {Path.Combine(samplePath, pathName + ".7z")} -o{samplePath}");
+                ProcessCommand cmd = new ProcessCommand("7z.exe", $"x {Path.Combine(inputPath, pathName + ".7z")} -o{extractedPath}");
                 ExecResult output = cmd.Execute();
-                outputStr = $"7z output: {output.AllOutput}";
+                outputStr = $"ETWAnalyzer_uTest.TestData 7z output: {output.AllOutput}";
+            }
+            else 
+            {
+                outputStr = "ETWAnalyzer_uTest.TestData: Data was already uncompressed";
             }
 
 
-            return new DataOutput<string>(samplePath, outputStr);
+            return new DataOutput<string>(extractedPath, outputStr);
         }
 
         public static string GetSampleDataV2SpecificDate
@@ -359,9 +365,8 @@ namespace ETWAnalyzer_uTest
             get => UnzipTestContainerFileOnlyOnceV2.Value.Data;
         }
 
-        static readonly Lazy<DataOutput<string>> UnzipTestContainerFileOnlyOnceV2 = new Lazy<DataOutput<string>>(UnzipFiles("SampleDataV2", TestSampleFileServerV2));
-        const string TestSampleFileServerV2 = "CallupAdhocColdReadingCR_12701msDEFOR09T121SRV.20190923-164416.7z";
-
+        static readonly Lazy<DataOutput<string>> UnzipTestContainerFileOnlyOnceV2 = new Lazy<DataOutput<string>>(UnzipFiles("SampleDataV2"));
+        
         public static string GetSampleDataJson
         {
             get => Path.Combine(UnzipTestContainerFileOnlyOnceJson.Value, Program.ExtractFolder);

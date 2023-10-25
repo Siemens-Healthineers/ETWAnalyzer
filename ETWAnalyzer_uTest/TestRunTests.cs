@@ -129,7 +129,7 @@ namespace ETWAnalyzer_uTest
             {
                 count += run.GetTotalNumberOfTestDataFilesInTestRun();
             }
-            Assert.Equal(2900, count);
+            Assert.Equal(TestData.TestRunDirectoryFileCount, count);
 
         }
 
@@ -192,7 +192,7 @@ namespace ETWAnalyzer_uTest
                 numberOfTestdata += element.Count;
             }
 
-            Assert.Equal(2900, numberOfTestdata);
+            Assert.Equal(TestData.TestRunDirectoryFileCount, numberOfTestdata);
 
         }
 
@@ -212,7 +212,7 @@ namespace ETWAnalyzer_uTest
             }
 
             // The TestDataFiles in Directory without the extracted etl files which are already covered by the compressed files
-            Assert.Equal(2900, dataFiles);
+            Assert.Equal(TestData.TestRunDirectoryFileCount, dataFiles);
         }
 
 
