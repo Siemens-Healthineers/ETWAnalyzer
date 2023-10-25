@@ -39,7 +39,7 @@ namespace ETWAnalyzer_uTest
                 return executableDirectory;
 
             }
-            set => executableDirectory = value; 
+            set => executableDirectory = value;
         }
 
         static TestData()
@@ -311,7 +311,7 @@ namespace ETWAnalyzer_uTest
 
         public static DataOutput<string> TestRunSample_Server
         {
-            get 
+            get
             {
                 DataOutput<string> output = TestRunDirectory;
                 return new DataOutput<string>(Path.Combine(output.Data, TestSampleFileServer), output.Output);
@@ -331,21 +331,21 @@ namespace ETWAnalyzer_uTest
         /// Lazy is a special construct which executes the passed method only once. That way we
         /// can ensure that the access to the path is fast without uncompressing the 7z file during every property get call.
         /// </summary>
-        static readonly Lazy<DataOutput<string>> UnzipTestContainerFileOnlyOnce = new Lazy<DataOutput<string>>(UnzipFiles);
+        static readonly Lazy<DataOutput<string>> UnzipTestContainerFileOnlyOnce = new Lazy<DataOutput<string>>(UnzipFiles("SampleData", TestSampleFileServer));
 
         const string TestSampleFileClient = "CallupAdhocColdReadingCR_11341msFO9DE01T0166PC.7z";
         const string TestSampleFileServer = "CallupAdhocColdReadingCR_11341msDEFOR09T121SRV.7z";
 
-        static DataOutput<string> UnzipFiles()
+        static DataOutput<string> UnzipFiles(string pathName, string sampleTestFile)
         {
-            string samplePath = GetPath("SampleData");
-            string extractedFile = Path.Combine(samplePath, TestSampleFileServer);
+            string samplePath = GetPath(pathName);
+            string extractedFile = Path.Combine(samplePath, sampleTestFile);
             string outputStr = null;
             // check if file is already uncompressed 
             if (!File.Exists(extractedFile))
             {
                 // No then uncompress it now
-                ProcessCommand cmd = new ProcessCommand("7z.exe", $"x {Path.Combine(samplePath, "SampleData.7z")} -o{samplePath}");
+                ProcessCommand cmd = new ProcessCommand("7z.exe", $"x {Path.Combine(samplePath, pathName + ".7z")} -o{samplePath}");
                 ExecResult output = cmd.Execute();
                 outputStr = $"7z output: {output.AllOutput}";
             }
@@ -356,31 +356,15 @@ namespace ETWAnalyzer_uTest
 
         public static string GetSampleDataV2SpecificDate
         {
-            get => UnzipTestContainerFileOnlyOnceV2.Value;
+            get => UnzipTestContainerFileOnlyOnceV2.Value.Data;
         }
 
-        static readonly Lazy<string> UnzipTestContainerFileOnlyOnceV2 = new Lazy<string>(UnzipFilesV2);
-        const string TestSampleFileClientV2 = "CallupAdhocColdReadingCR_12701msFO9DE01T0166PC.20190923-164416.7z";
+        static readonly Lazy<DataOutput<string>> UnzipTestContainerFileOnlyOnceV2 = new Lazy<DataOutput<string>>(UnzipFiles("SampleDataV2", TestSampleFileServerV2));
         const string TestSampleFileServerV2 = "CallupAdhocColdReadingCR_12701msDEFOR09T121SRV.20190923-164416.7z";
-
-        static string UnzipFilesV2()
-        {
-            string samplePath = GetPath("SampleDataV2");
-            string extractedFile = Path.Combine(samplePath, TestSampleFileServerV2);
-            // check if file is already uncompressed 
-            if (!File.Exists(extractedFile))
-            {
-                // No then uncompress it now
-                ProcessCommand cmd = new ProcessCommand("7z.exe", $"x {Path.Combine(samplePath, "SampleDataV2.7z")} -o{samplePath}");
-                ExecResult output = cmd.Execute();
-                Console.WriteLine($"7z output: {output.AllOutput}");
-            }
-            return samplePath;
-        }
 
         public static string GetSampleDataJson
         {
-            get => Path.Combine(UnzipTestContainerFileOnlyOnceJson.Value,Program.ExtractFolder);
+            get => Path.Combine(UnzipTestContainerFileOnlyOnceJson.Value, Program.ExtractFolder);
         }
 
         static readonly Lazy<string> UnzipTestContainerFileOnlyOnceJson = new Lazy<string>(UnzipFilesJson);
