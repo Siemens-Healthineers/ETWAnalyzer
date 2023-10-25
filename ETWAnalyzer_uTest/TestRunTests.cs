@@ -468,5 +468,20 @@ namespace ETWAnalyzer_uTest
             List<List<TestDataFile>> groups = TestRun.GroupTestDataFilesByTests(new TestDataFile[] { file1, file2 });
             Assert.Single(groups);
         }
+
+        [Fact]
+        public void Ensure_Splitting_works_also_with_data_from_three_machines()
+        {
+            using var printer = new ExceptionalPrinter(myWriter);
+            DataOutput<string> testrunDirectory = TestData.TestRunDirectoryMultiMachines;
+            printer.Add(testrunDirectory.Output);
+
+            TestRun[] runs = TestRun.CreateFromDirectory(testrunDirectory.Data, SearchOption.TopDirectoryOnly, null);
+            List<SingleTest> tests = runs.SelectMany(x => x.Tests).SelectMany(x => x.Value).ToList();
+
+            Assert.All(tests,
+                t => Assert.True(t.Files.Count.Equals(3), $"we are expecting that each Test has 3 files, but here we only have {t.Files.Count}")
+            );
+        }
     }
 }

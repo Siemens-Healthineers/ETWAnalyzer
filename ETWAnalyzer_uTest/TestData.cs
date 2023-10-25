@@ -29,7 +29,8 @@ namespace ETWAnalyzer_uTest
     public static class TestData
     {
         private static string executableDirectory;
-        public static string ExecutableDirectory { 
+        public static string ExecutableDirectory 
+        { 
             get
             {
                 //needed to be done again as it is null if we execute tests using the VisualStudio Test Explorer in some scenarios
@@ -277,6 +278,17 @@ namespace ETWAnalyzer_uTest
         public static readonly int TestRunDirectoryFileCount = 2899;
 
         /// <summary>
+        /// Get directory containing compressed test run files which are all 0 bytes in size for testing the test run logic with multiple machines per test run.
+        /// </summary>
+        public static DataOutput<string> TestRunDirectoryMultiMachines
+        {
+            get => UnzipTestContainerFilesMoreMachinesOnlyOnce.Value;
+        }
+
+
+
+
+        /// <summary>
         /// Copies an folder of empty .7z files and converts them to .json
         /// </summary>
         /// <returns>folder with empty .json files</returns>
@@ -335,6 +347,8 @@ namespace ETWAnalyzer_uTest
         /// </summary>
         static readonly Lazy<DataOutput<string>> UnzipTestContainerFileOnlyOnce = new Lazy<DataOutput<string>>(UnzipFiles("SampleData"));
 
+        static readonly Lazy<DataOutput<string>> UnzipTestContainerFilesMoreMachinesOnlyOnce = new Lazy<DataOutput<string>>(UnzipFiles("SampleDataMoreMachines"));
+
         const string TestSampleFileClient = "CallupAdhocColdReadingCR_11341msFO9DE01T0166PC.7z";
         const string TestSampleFileServer = "CallupAdhocColdReadingCR_11341msDEFOR09T121SRV.7z";
 
@@ -351,7 +365,7 @@ namespace ETWAnalyzer_uTest
                 ExecResult output = cmd.Execute();
                 outputStr = $"ETWAnalyzer_uTest.TestData 7z output: {output.AllOutput}";
             }
-            else 
+            else
             {
                 outputStr = "ETWAnalyzer_uTest.TestData: Data was already uncompressed";
             }
@@ -366,7 +380,7 @@ namespace ETWAnalyzer_uTest
         }
 
         static readonly Lazy<DataOutput<string>> UnzipTestContainerFileOnlyOnceV2 = new Lazy<DataOutput<string>>(UnzipFiles("SampleDataV2"));
-        
+
         public static string GetSampleDataJson
         {
             get => Path.Combine(UnzipTestContainerFileOnlyOnceJson.Value, Program.ExtractFolder);
