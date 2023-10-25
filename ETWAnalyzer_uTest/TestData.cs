@@ -29,14 +29,30 @@ namespace ETWAnalyzer_uTest
     public static class TestData
     {
         private static string executableDirectory;
-        public static string ExecutableDirectory { get => executableDirectory; set => executableDirectory = value; }
+        public static string ExecutableDirectory { 
+            get
+            {
+                //needed to be done again as it is null if we execute tests using the VisualStudio Test Explorer in some scenarios
+                //(e.g. Microsoft Visual Studio Enterprise 2022 (64-bit) - CurrentVersion 17.7.4)
+                if (executableDirectory == null)
+                    SetExecutableDirectory();
+                return executableDirectory;
+
+            }
+            set => executableDirectory = value; 
+        }
 
         static TestData()
+        {
+            SetExecutableDirectory();
+        }
+
+        private static void SetExecutableDirectory()
         {
             var codeBaseUrl = new Uri(Assembly.GetExecutingAssembly().CodeBase);
             var codeBasePath = Uri.UnescapeDataString(codeBaseUrl.AbsolutePath);
             var dirPath = Path.GetDirectoryName(codeBasePath);
-            ExecutableDirectory = dirPath;
+            executableDirectory = dirPath;
         }
 
         /// <summary>
