@@ -94,6 +94,8 @@ namespace ETWAnalyzer.EventDump
             public string Baseline;
             public ModuleDefinition Module { get; internal set; }
             public DateTimeOffset SessionStart { get; internal set; }
+            public int SessionId { get; set; }
+
         }
 
 
@@ -241,6 +243,7 @@ namespace ETWAnalyzer.EventDump
                                 SharedCommitInMiB = mem2.SharedCommitSizeInMiB,
                                 SessionEnd = file.Extract.SessionEnd,
                                 Process = process,
+                                SessionId = process.SessionId,
                                 ProcessName = process.GetProcessName(UsePrettyProcessName),
                                 WorkingSetMiB = mem2.WorkingSetInMiB,
                                 WorkingsetPrivateMiB = mem2.WorkingsetPrivateInMiB,
@@ -287,6 +290,7 @@ namespace ETWAnalyzer.EventDump
                         SharedCommitInMiB = mem2.SharedCommitSizeInMiB,
                         SessionEnd = file.Extract.SessionEnd,
                         Process = process,
+                        SessionId = process.SessionId,
                         ProcessName = process.GetProcessName(UsePrettyProcessName),
                         WorkingSetMiB = mem2.WorkingSetInMiB,
                         WorkingsetPrivateMiB = mem2.WorkingsetPrivateInMiB,
@@ -306,7 +310,7 @@ namespace ETWAnalyzer.EventDump
 
         internal void WriteToCSV(List<Match> matches)
         {
-            OpenCSVWithHeader(Col_CSVOptions, Col_Time, Col_Process, Col_ProcessName, "Commit MiB", "Shared CommitMiB", "Working Set MiB", "Working Set Private MiB",
+            OpenCSVWithHeader(Col_CSVOptions, Col_Time, Col_Process, Col_ProcessName, "Session", "Commit MiB", "Shared CommitMiB", "Working Set MiB", "Working Set Private MiB",
                 Col_CommandLine, Col_Baseline, Col_TestCase, Col_TestTimeinms, Col_SourceJsonFile, "Machine", 
                 Col_FileVersion, Col_VersionString, Col_ProductVersion, Col_ProductName, Col_Description, Col_Directory);
 
@@ -318,7 +322,7 @@ namespace ETWAnalyzer.EventDump
                 string productName = match.Module?.ProductName?.Trim() ?? "";
                 string description = match.Module?.Description?.Trim() ?? "";
                 string directory = match.Module?.ModulePath ?? "";
-                WriteCSVLine(CSVOptions, base.GetDateTimeString(match.SessionEnd, match.SessionStart, TimeFormatOption), match.Process.GetProcessWithId(UsePrettyProcessName), match.ProcessName, 
+                WriteCSVLine(CSVOptions, base.GetDateTimeString(match.SessionEnd, match.SessionStart, TimeFormatOption), match.Process.GetProcessWithId(UsePrettyProcessName), match.ProcessName, match.Process.SessionId,
                     match.CommitedMiB, match.SharedCommitInMiB, match.WorkingSetMiB, match.WorkingsetPrivateMiB, match.CmdLine, match.Baseline, match.TestCase, match.TestDurationInMs, match.SourceFile, match.Machine,
                     fileVersion, versionString, productVersion, productName, description, directory);
             }
@@ -397,7 +401,8 @@ namespace ETWAnalyzer.EventDump
                             $"[{GetColorTotal(m.CommitedMiB)}]Commit {m.CommitedMiB,4} MiB[/{GetColorTotal(m.CommitedMiB)}] " +
                             $"[{GetColorTotal(m.WorkingSetMiB)}]WorkingSet {m.WorkingSetMiB,4} MiB[/{GetColorTotal(m.WorkingSetMiB)}] " +
                             (ShowDetails ? $"[{GetColorTotal(m.WorkingsetPrivateMiB)}]WorkingsetPrivate {m.WorkingsetPrivateMiB,4} MiB[/{GetColorTotal(m.WorkingsetPrivateMiB)}] " : "") +
-                            $"[{GetColorTotal(m.SharedCommitInMiB)}]Shared Commit: {m.SharedCommitInMiB,4} MiB [/{GetColorTotal(m.SharedCommitInMiB)}] ", null, true);
+                            $"[{GetColorTotal(m.SharedCommitInMiB)}]Shared Commit: {m.SharedCommitInMiB,4} MiB [/{GetColorTotal(m.SharedCommitInMiB)}] " +
+                            (ShowDetails ? $"[yellow] Session: {m.SessionId, 2} [/yellow]" : ""), null, true);
                         ColorConsole.WriteEmbeddedColorLine($"[yellow]{m.Process.GetProcessWithId(UsePrettyProcessName)}[/yellow][grey]{GetProcessTags(m.Process, m.SessionStart)}[/grey] {(NoCmdLine ? "" : m.CmdLine)} ", ConsoleColor.DarkCyan, true);
                         ColorConsole.WriteEmbeddedColorLine($"[red]{moduleInfo}[/red]");
                     }

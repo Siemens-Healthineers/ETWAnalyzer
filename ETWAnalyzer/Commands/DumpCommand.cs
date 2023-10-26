@@ -1852,6 +1852,7 @@ namespace ETWAnalyzer.Commands
                             ShowModuleInfo = ShowModuleInfo,
                             ShowModuleFilter = ShowModuleFilter,
 
+                            Session = Session,
                             ShowTime  = ShowTime,
                             TypeFilter = TypeFilter,
                             MessageFilter = MessageFilter,
@@ -1865,6 +1866,7 @@ namespace ETWAnalyzer.Commands
                             ZeroTimeMode = ZeroTimeMode,
                             ZeroTimeFilter = ZeroTimeFilter,
                             ZeroTimeProcessNameFilter = ZeroTimeProcessNameFilter,
+                            ShowDetails = ShowDetails,
                         };
                         break;
                     case DumpCommands.Memory:
@@ -1892,6 +1894,7 @@ namespace ETWAnalyzer.Commands
                             ShowModuleFilter = ShowModuleFilter,
 
                             ShowTotal = ShowTotal,
+                            Session = Session,
                             TopN = TopN,
                             SortOrder = SortOrder,
                             MinDiffMB = MinDiffMB,
