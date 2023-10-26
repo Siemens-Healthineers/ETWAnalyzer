@@ -626,6 +626,7 @@ namespace ETWAnalyzer.EventDump
                 return false;
             }
 
+            // filter by SessionIds for process
             if (!Session(proc.SessionId.ToString()))
             {
                 return false;
