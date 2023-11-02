@@ -176,7 +176,7 @@ namespace ETWAnalyzer.EventDump
 
         private void WriteToCSVFile(List<MatchData> matches)
         {
-            OpenCSVWithHeader(Col_CSVOptions, Col_Time, "Exception Type", "Message", Col_Process, Col_ProcessName, "Session", Col_StartTime, 
+            OpenCSVWithHeader(Col_CSVOptions, Col_Time, "Exception Type", "Message", Col_Process, Col_ProcessName, Col_Session, Col_StartTime, 
                 Col_CommandLine, "StackTrace", Col_TestCase, Col_Baseline, "PerformedAt", Col_SourceJsonFile, 
                 Col_FileVersion, Col_VersionString, Col_ProductVersion, Col_ProductName, Col_Description, Col_Directory);
             foreach(var match in matches)

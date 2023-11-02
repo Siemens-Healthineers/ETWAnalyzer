@@ -24,6 +24,7 @@ namespace ETWAnalyzer.EventDump
         protected string Col_Directory = "Directory";
         protected string Col_TestCase = "TestCase";
         protected string Col_Process = "Process";
+        protected string Col_Session = "Session";
         protected string Col_ProcessName = "ProcessName";
         protected string Col_CommandLine = "CommandLine";
         protected string Col_Baseline = "Baseline";

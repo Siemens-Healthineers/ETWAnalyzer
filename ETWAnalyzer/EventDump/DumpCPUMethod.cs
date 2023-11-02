@@ -951,8 +951,8 @@ namespace ETWAnalyzer.EventDump
 
             if (!myCSVHeaderPrinted)
             {
-                OpenCSVWithHeader("CSVOptions", "Test Case", "Date", "Test Time in ms", "Module", "Method", "CPU ms", "Wait ms", "Ready ms", "# Threads", "Baseline", "Process", "Process Name", "Session", "Start Time", "StackDepth",
-                                  "FirstLastCall Duration in s", $"First Call time in {GetAbbreviatedName(firstFormat)}", $"Last Call time in {GetAbbreviatedName(lastFormat)}", "Command Line", "SourceFile", "IsNewProcess", "Module and Driver Info");
+                OpenCSVWithHeader("CSVOptions", "Test Case", "Date", "Test Time in ms", "Module", "Method", "CPU ms", "Wait ms", "Ready ms", "# Threads",Col_Baseline, Col_Process, Col_ProcessName, Col_Session, "Start Time", "StackDepth",
+                                  "FirstLastCall Duration in s", $"First Call time in {GetAbbreviatedName(firstFormat)}", $"Last Call time in {GetAbbreviatedName(lastFormat)}", Col_CommandLine, "SourceFile", "IsNewProcess", "Module and Driver Info");
                 myCSVHeaderPrinted = true;
             }
 

@@ -310,7 +310,7 @@ namespace ETWAnalyzer.EventDump
 
         internal void WriteToCSV(List<Match> matches)
         {
-            OpenCSVWithHeader(Col_CSVOptions, Col_Time, Col_Process, Col_ProcessName, "Session", "Commit MiB", "Shared CommitMiB", "Working Set MiB", "Working Set Private MiB",
+            OpenCSVWithHeader(Col_CSVOptions, Col_Time, Col_Process, Col_ProcessName, Col_Session, "Commit MiB", "Shared CommitMiB", "Working Set MiB", "Working Set Private MiB",
                 Col_CommandLine, Col_Baseline, Col_TestCase, Col_TestTimeinms, Col_SourceJsonFile, "Machine", 
                 Col_FileVersion, Col_VersionString, Col_ProductVersion, Col_ProductName, Col_Description, Col_Directory);
 
