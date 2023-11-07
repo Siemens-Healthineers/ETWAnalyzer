@@ -28,6 +28,8 @@ namespace ETWAnalyzer.EventDump
         public int CutStackMin { get; internal set; }
         public int CutStackMax { get; internal set; }
         public bool NoCmdLine { get; internal set; }
+        public bool ShowDetails { get; internal set; }
+
         public MinMaxRange<double> MinMaxExTimeS { get; internal set; }
         public int MaxMessage { get; internal set; } = DumpCommand.MaxMessageLength;
 
@@ -107,6 +109,8 @@ namespace ETWAnalyzer.EventDump
             /// </summary>
             public ModuleDefinition Module { get; internal set; }
 
+            public int SessionId { get; set; }
+
             public MatchData Clone()
             {
                 return new MatchData
@@ -120,6 +124,7 @@ namespace ETWAnalyzer.EventDump
                     SourceFile = SourceFile,
                     ZeroTimeS = ZeroTimeS,
                     BaseLine = BaseLine,
+                    SessionId = SessionId,
                 };
             }
         }
@@ -171,7 +176,7 @@ namespace ETWAnalyzer.EventDump
 
         private void WriteToCSVFile(List<MatchData> matches)
         {
-            OpenCSVWithHeader(Col_CSVOptions, Col_Time, "Exception Type", "Message", Col_Process, Col_ProcessName, Col_StartTime, 
+            OpenCSVWithHeader(Col_CSVOptions, Col_Time, "Exception Type", "Message", Col_Process, Col_ProcessName, Col_Session, Col_StartTime, 
                 Col_CommandLine, "StackTrace", Col_TestCase, Col_Baseline, "PerformedAt", Col_SourceJsonFile, 
                 Col_FileVersion, Col_VersionString, Col_ProductVersion, Col_ProductName, Col_Description, Col_Directory);
             foreach(var match in matches)
@@ -183,7 +188,7 @@ namespace ETWAnalyzer.EventDump
                 string description = match.Module?.Description?.Trim() ?? "";
                 string directory = match.Module?.ModulePath ?? "";
                 WriteCSVLine(CSVOptions, GetDateTimeString(match.TimeStamp, match.SessionStart, TimeFormatOption), match.Type, match.Message, match.Process.GetProcessWithId(UsePrettyProcessName), 
-                    match.Process.GetProcessName(UsePrettyProcessName), match.Process.StartTime,
+                    match.Process.GetProcessName(UsePrettyProcessName), match.Process.SessionId, match.Process.StartTime,
                     match.Process.CmdLine, match.Stack, match.TestCase, match.BaseLine, GetDateTimeString(match.PerformedAt), match.SourceFile,
                     fileVersion, versionString, productVersion, productName, description, directory);
             }
@@ -222,6 +227,7 @@ namespace ETWAnalyzer.EventDump
                     Message = ex.Message,
                     Type = ex.Type,
                     Process = ex.Process,
+                    SessionId = ex.Process.SessionId,
                     TimeStamp = ex.Time.AddSeconds(-1.0d*zeroTimeS),
                     Stack = ex.Stack,
                     SourceFile = file.JsonExtractFileWhenPresent,
@@ -280,11 +286,13 @@ namespace ETWAnalyzer.EventDump
             };
             const int expTypeWidth = 40;
             string excheader = "Exception Type";
-            const int processWidth = 34;
+            const int processWidth = 36;
             string processheader = "Process";
+            const int sessionWidth = 7;
+            string sessionHeader = ShowDetails ?$"{"Session",sessionWidth}" : "";
             const int expmsgWidth = 90;
             string expmsgheader = "Exception Message";
-            ColorConsole.WriteEmbeddedColorLine($"{timeHeader.WithWidth(timeWidth)} [magenta]{processheader.WithWidth(processWidth)}[/magenta] [green]{excheader.WithWidth(expTypeWidth)}[/green] {expmsgheader.WithWidth(expmsgWidth)}");
+            ColorConsole.WriteEmbeddedColorLine($"{timeHeader.WithWidth(timeWidth)} [magenta]{processheader.WithWidth(processWidth)}[/magenta] [yellow]{sessionHeader}[/yellow] [green]{excheader.WithWidth(expTypeWidth)}[/green] {expmsgheader.WithWidth(expmsgWidth)}");
 
             string previousExceptionType = null;
             string previousProcess = null;
@@ -296,6 +304,7 @@ namespace ETWAnalyzer.EventDump
             {
                 string timeStr = GetDateTimeString(item.TimeStamp, item.SessionStart, TimeFormatOption).WithWidth(timeWidth);
                 string currentProcess = item.Process.GetProcessWithId(UsePrettyProcessName);
+                string currentSession = ShowDetails ? $"{item.Process.SessionId.ToString(),sessionWidth}" : "";
                 string currentMessage = item.Message;
                 string currentExceptiontype = item.Type;
 
@@ -307,7 +316,7 @@ namespace ETWAnalyzer.EventDump
                 previousExceptionType = currentExceptiontype;
                 previousProcess = currentProcess;
 
-                ColorConsole.WriteEmbeddedColorLine($"{timeStr} [magenta]{tobePrintedProcess,processWidth}[/magenta] [green]{tobePrintedType,expTypeWidth}[/green] {tobePrintedMsg,expmsgWidth}");
+                ColorConsole.WriteEmbeddedColorLine($"{timeStr} [magenta]{tobePrintedProcess,processWidth}[/magenta] [yellow]{currentSession}[/yellow] [green]{tobePrintedType,expTypeWidth}[/green] {tobePrintedMsg,expmsgWidth}");
             }
         }
         
@@ -318,9 +327,10 @@ namespace ETWAnalyzer.EventDump
                 MatchData matchData = processExceptions.First();
                 ModuleDefinition processModule = matchData.Module;
                 string moduleInfo = processModule != null ? GetModuleString(processModule, true) : "";
+                string sessionIdStr = ShowDetails ? $"{processExceptions.Key.SessionId, 2}" : "  ";
 
 
-                ColorConsole.WriteEmbeddedColorLine($"[magenta]{processExceptions.Key.GetProcessWithId(UsePrettyProcessName)} {GetProcessTags(processExceptions.Key, matchData.SessionStart.AddSeconds(matchData.ZeroTimeS))}[/magenta] {(NoCmdLine ? String.Empty : processExceptions.Key.CommandLineNoExe)}", ConsoleColor.DarkCyan, true);
+                ColorConsole.WriteEmbeddedColorLine($"[magenta]{processExceptions.Key.GetProcessWithId(UsePrettyProcessName)} {GetProcessTags(processExceptions.Key, matchData.SessionStart.AddSeconds(matchData.ZeroTimeS))}[/magenta] [yellow]{sessionIdStr}[/yellow] {(NoCmdLine ? String.Empty : processExceptions.Key.CommandLineNoExe)}", ConsoleColor.DarkCyan, true);
                 ColorConsole.WriteEmbeddedColorLine($"[red] {moduleInfo}[/red]");
 
                 foreach (var byType in processExceptions.GroupBy(x => x.Type))

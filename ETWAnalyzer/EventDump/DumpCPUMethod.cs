@@ -72,6 +72,8 @@ namespace ETWAnalyzer.EventDump
         /// </summary>
         public bool NoCmdLine { get; internal set; }
 
+        public bool ShowDetails { get; internal set; }
+
         /// <summary>
         /// Only show info from Configuration\WellKnownDrivers.json
         /// </summary>
@@ -212,6 +214,7 @@ namespace ETWAnalyzer.EventDump
             public bool? HasCPUSamplingData { get; internal set; }
             public bool? HasCSwitchData { get; internal set; }
             public ProcessKey ProcessKey { get; internal set; }
+            public int SessionId { get; set; }
 
             public override string ToString()
             {
@@ -332,6 +335,7 @@ namespace ETWAnalyzer.EventDump
                             FirstLastCallDurationS = (float)stacktag.FirstLastOccurenceDuration.TotalSeconds,
                             SessionStart = file.Extract.SessionStart,
                             Process = process,
+                            SessionId = process.SessionId,
                             ExeModule = exeModule,
                             ZeroTimeS = zeroTimeS,
                         });
@@ -405,6 +409,7 @@ namespace ETWAnalyzer.EventDump
                             SessionStart = file.Extract.SessionStart,
                             StackDepth = methodCost.DepthFromBottom,
                             Process = process,
+                            SessionId = process.SessionId,
                             Module = module,
                             ExeModule = exeModule,
                             Driver = driver,
@@ -506,6 +511,7 @@ namespace ETWAnalyzer.EventDump
                     ProcessKey = process,
                     SourceFile = file.JsonExtractFileWhenPresent,
                     Process = process,
+                    SessionId = process.SessionId,
                     Module = module,
 
                 };
@@ -542,10 +548,11 @@ namespace ETWAnalyzer.EventDump
             {
                 string cpuHeaderName = "CPU";
                 string processHeaderName = "Process Name";
+                string sessionHeaderName = ShowDetails ? "Session ": "";
 
                 if (myCPUTotalHeaderShown == false)
                 {
-                    ColorConsole.WriteEmbeddedColorLine($"\t[Green]{cpuHeaderName.WithWidth(CPUTotal_CPUColumnWidth)} ms[/Green] [yellow]{processHeaderName.WithWidth(CPUTotal_ProcessNameWidth)}[/yellow]");
+                    ColorConsole.WriteEmbeddedColorLine($"\t[Green]{cpuHeaderName.WithWidth(CPUTotal_CPUColumnWidth)} ms[/Green] [yellow]{sessionHeaderName}{processHeaderName.WithWidth(CPUTotal_ProcessNameWidth)}[/yellow]");
                     myCPUTotalHeaderShown = true;
                 }
             }
@@ -556,6 +563,8 @@ namespace ETWAnalyzer.EventDump
             string fileName = this.Merge ? $" {sourceFile}" : "";
 
             string cpuStr = cpu.ToString("N0");
+
+            string sessionIdStr = ShowDetails ? $"{process.SessionId, 7} " : "";
 
             string moduleInfo = "";
             if(exeModule != null)
@@ -569,7 +578,7 @@ namespace ETWAnalyzer.EventDump
             }
             else
             {
-                ColorConsole.WriteEmbeddedColorLine($"\t[Green]{cpuStr,CPUTotal_CPUColumnWidth} ms[/Green] [yellow]{process.GetProcessWithId(UsePrettyProcessName),CPUTotal_ProcessNameWidth}{GetProcessTags(process, sessionStart)}[/yellow] {process.CommandLineNoExe}", ConsoleColor.DarkCyan, true);
+                ColorConsole.WriteEmbeddedColorLine($"\t[Green]{cpuStr,CPUTotal_CPUColumnWidth} ms[/Green] [yellow]{sessionIdStr}{process.GetProcessWithId(UsePrettyProcessName),CPUTotal_ProcessNameWidth}{GetProcessTags(process, sessionStart)}[/yellow] {process.CommandLineNoExe}", ConsoleColor.DarkCyan, true);
                 ColorConsole.WriteEmbeddedColorLine($" {fileName} [red]{moduleInfo}[/red]");
             }
         }
@@ -942,12 +951,12 @@ namespace ETWAnalyzer.EventDump
 
             if (!myCSVHeaderPrinted)
             {
-                OpenCSVWithHeader("CSVOptions", "Test Case", "Date", "Test Time in ms", "Module", "Method", "CPU ms", "Wait ms", "Ready ms", "# Threads", "Baseline", "Process", "Process Name", "Start Time", "StackDepth",
-                                  "FirstLastCall Duration in s", $"First Call time in {GetAbbreviatedName(firstFormat)}", $"Last Call time in {GetAbbreviatedName(lastFormat)}", "Command Line", "SourceFile", "IsNewProcess", "Module and Driver Info");
+                OpenCSVWithHeader("CSVOptions", "Test Case", "Date", "Test Time in ms", "Module", "Method", "CPU ms", "Wait ms", "Ready ms", "# Threads",Col_Baseline, Col_Process, Col_ProcessName, Col_Session, "Start Time", "StackDepth",
+                                  "FirstLastCall Duration in s", $"First Call time in {GetAbbreviatedName(firstFormat)}", $"Last Call time in {GetAbbreviatedName(lastFormat)}", Col_CommandLine, "SourceFile", "IsNewProcess", "Module and Driver Info");
                 myCSVHeaderPrinted = true;
             }
 
-            WriteCSVLine(CSVOptions, match.TestName, match.PerformedAt, match.DurationInMs, match.ModuleName, match.Method, match.CPUMs, match.WaitMs, match.ReadyMs, match.Threads, match.BaseLine, match.ProcessAndPid, match.Process.GetProcessName(UsePrettyProcessName), match.Process.StartTime, match.CPUMs / Math.Exp(match.StackDepth),
+            WriteCSVLine(CSVOptions, match.TestName, match.PerformedAt, match.DurationInMs, match.ModuleName, match.Method, match.CPUMs, match.WaitMs, match.ReadyMs, match.Threads, match.BaseLine, match.ProcessAndPid, match.Process.GetProcessName(UsePrettyProcessName), match.Process.SessionId, match.Process.StartTime, match.CPUMs / Math.Exp(match.StackDepth),
                          firstLastDurationS, GetDateTimeString(match.FirstCallTime, match.SessionStart, firstFormat), GetDateTimeString(match.LastCallTime, match.SessionStart, lastFormat), NoCmdLine ? "" : match.Process.CmdLine, match.SourceFile, (match.Process.IsNew ? 1 : 0), moduleDriverInfo);
         }
 

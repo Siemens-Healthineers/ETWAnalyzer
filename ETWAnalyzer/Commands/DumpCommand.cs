@@ -94,6 +94,7 @@ namespace ETWAnalyzer.Commands
         "                         -MinMaxStart minS [maxS]   Select processes which did start after minS seconds." + Environment.NewLine +
         "                         -ShowFileOnLine            Show etl file name on each printed line." + Environment.NewLine +
         "                         -Crash                     Show potentially crashed processes with unusual return codes, or did trigger Windows Error Reporting." + Environment.NewLine +
+        "                         -Details                   Show more columns" + Environment.NewLine +
         "                         -Session dd;yy             Filter processes by Windows session id. Multiple filters are separated by ;" + Environment.NewLine +
         "                                                    E.g. dd;dd2 will filter for all dd instances and dd2. The wildcards * and ? are supported for all filter strings." + Environment.NewLine +
         "                         -User abc;*xyz*            Filter user name by which the process was started. Multiple filters are separated by ;" + Environment.NewLine +
@@ -121,7 +122,7 @@ namespace ETWAnalyzer.Commands
         "                         -PrintFiles                Print input Json files paths into output" + Environment.NewLine;
         static readonly string CPUHelpString =
         "   CPU      -filedir/fd Extract\\ or xxx.json [-recursive] [-csv xxx.csv] [-NoCSVSeparator] [-ProcessFmt timefmt] [-Methods method1;method2...] [-FirstLastDuration/fld [firsttimefmt] [lasttimefmt]]" + Environment.NewLine +
-        "            [-ThreadCount] [-SortBy [CPU/Wait/CPUWait/CPUWaitReady/StackDepth/First/Last/TestTime/StartTime] [-StackTags tag1;tag2] [-CutMethod xx-yy] [-ShowOnMethod] [-ShowModuleInfo [Driver] or [filter]] [-NoCmdLine] [-Clip]" + Environment.NewLine +
+        "            [-ThreadCount] [-SortBy [CPU/Wait/CPUWait/CPUWaitReady/StackDepth/First/Last/TestTime/StartTime] [-StackTags tag1;tag2] [-CutMethod xx-yy] [-ShowOnMethod] [-ShowModuleInfo [Driver] or [filter]] [-NoCmdLine] [-Clip] [-Details]" + Environment.NewLine +
         "            [-ShowTotal Total, Process, Method] [-topn dd nn] [-topNMethods dd nn] [-ZeroTime/zt Marker/First/Last/ProcessStart filter] [-ZeroProcessName/zpn filter] " + Environment.NewLine +
         "            [-includeDll] [-includeArgs] [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd] [-MinMaxMsTestTimes xx-yy ...] [-ProcessName/pn xxx.exe(pid)] [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-CmdLine substring]" + Environment.NewLine +
         "            [-ShowFullFileName/-sffn]" + Environment.NewLine +
@@ -167,6 +168,9 @@ namespace ETWAnalyzer.Commands
         "                         -MinMaxReadyMs xx-yy or xx Only include methods (stacktags have no recorded ready times) with a minimum ready time of [xx, yy] ms." + Environment.NewLine +
         "                         -MinMaxCpuMs xx-yy or xx   Only include methods/stacktags with a minimum CPU consumption of [xx,yy] ms." + Environment.NewLine +
         "                         -MinMaxWaitMs xx-yy or xx  Only include methods/stacktags with a minimum wait time of [xx,yy] ms." + Environment.NewLine +
+        "                         -Details                   Show more columns" + Environment.NewLine +
+        "                         -Session dd;yy             Filter processes by Windows session id. Multiple filters are separated by ;" + Environment.NewLine +
+        "                                                    E.g. dd;dd2 will filter for all dd instances and dd2. The wildcards * and ? are supported for all filter strings." + Environment.NewLine +
         "                         For other options [-recursive] [-csv] [-NoCSVSeparator] [-TimeFmt] [-TestsPerRun] [-SkipNTests] [-TestRunIndex] [-TestRunCount] [-MinMaxMsTestTimes] [-ProcessName/pn] [-NewProcess] [-CmdLine]" + Environment.NewLine +
         "                         [-ShowFullFileName] refer to help of TestRun and Process. Run \'EtwAnalyzer -help dump\' to get more infos." + Environment.NewLine;
 
@@ -187,6 +191,9 @@ namespace ETWAnalyzer.Commands
         "                         -MinMaxSharedCommitMiB xx-yy Only include processes which had at least a shared commit of xx-yy MiB at trace end." + Environment.NewLine + 
         "                         -MinDiffMB    dd           Include processes which have gained inside one Json file more than xx MB of committed memory." + Environment.NewLine +
         "                         -GlobalDiffMB dd           Same as before but the diff is calculated across all incuded Json files." + Environment.NewLine +
+        "                         -Details                   Show more columns" + Environment.NewLine +
+        "                         -Session dd;yy             Filter processes by Windows session id. Multiple filters are separated by ;" + Environment.NewLine +
+        "                                                    E.g. dd;dd2 will filter for all dd instances and dd2. The wildcards * and ? are supported for all filter strings." + Environment.NewLine +
         "                         For other options [-recursive] [-csv] [-NoCSVSeparator] [-TimeFmt] [-NoCmdLine] [-TestsPerRun] [-SkipNTests] [-TestRunIndex] [-TestRunCount] [-MinMaxMsTestTimes] [-ProcessName/pn] [-NewProcess] [-CmdLine]" + Environment.NewLine +
         "                         [-ShowFullFileName] refer to help of TestRun, Process and CPU (-ProcessFmt, -ShowModuleInfo). Run \'EtwAnalyzer -help dump\' to get more infos." + Environment.NewLine;
         static readonly string ExceptionHelpString =
@@ -194,7 +201,7 @@ namespace ETWAnalyzer.Commands
         "                           [-TimeFmt s,Local,LocalTime,UTC,UTCTime,Here,HereTime] [-ProcessFmt timefmt] [-NoCmdLine] [-Clip] [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd] [-MinMaxMsTestTimes xx-yy ...]" + Environment.NewLine +
         "                           [-MinMaxExTime minS [maxS]] [-ZeroTime/zt Marker/First/Last/ProcessStart filter] [-ZeroProcessName/zpn filter]" + Environment.NewLine +
         "                           [-ProcessName/pn xxx.exe(pid)] [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-CmdLine substring]" + Environment.NewLine +
-        "                           [-ShowFullFileName/-sffn] [-ShowModuleInfo [filter]]" + Environment.NewLine +
+        "                           [-ShowFullFileName/-sffn] [-ShowModuleInfo [filter]] [-Details]" + Environment.NewLine +
         "                         Print Managed Exceptions from extracted Json file. To get output -extract Exception, All or Default must have been used during extraction." + Environment.NewLine +
         "                         Before each message the number how often that exception was thrown is printed. That number also includes rethrows in finally blocks which leads to higher numbers as one might expect!" + Environment.NewLine +
         "                         When a filter (type,message or stack) is used then the exception throw times are also printed." + Environment.NewLine +
@@ -210,6 +217,9 @@ namespace ETWAnalyzer.Commands
         "                                                    E.g. -CutStack -50 will display the first 50 lines of a stack trace." + Environment.NewLine +
         "                         -SortBy [Time / Default]   Sorts exceptions by time or use default grouping." + Environment.NewLine +
         "                         -ShowTime                  Show the time of exception when a -Type filter is active. Time format is controlled by -TimeFmt flag. By default no time is printed." + Environment.NewLine +
+        "                         -Details                   Show more columns" + Environment.NewLine +
+        "                         -Session dd;yy             Filter processes by Windows session id. Multiple filters are separated by ;" + Environment.NewLine +
+        "                                                    E.g. dd;dd2 will filter for all dd instances and dd2. The wildcards * and ? are supported for all filter strings." + Environment.NewLine +
         "                         For other options [-ZeroTime ..] [-recursive] [-csv] [-NoCSVSeparator] [-TimeFmt] [-NoCmdLine] [-TestsPerRun] [-SkipNTests] [-TestRunIndex] [-TestRunCount] [-MinMaxMsTestTimes] [-ProcessName/pn] " + Environment.NewLine +
         "                         [-NewProcess] [-CmdLine] [-ShowFullFileName] refer to help of TestRun, Process and CPU (-ProcessFmt, -ShowModuleInfo).  Run \'EtwAnalyzer -help dump\' to get more infos." + Environment.NewLine;
 
@@ -254,6 +264,7 @@ namespace ETWAnalyzer.Commands
         "                         -MinMax[Read/Write/Total][Size/Time] and MinMaxTotalCount xx-yy Filter column wise for corresponding data. You can add units for size: B,MB,MiB,GB,GiB,TB, time: s,seconds,ms,us,ns, count does not require any units." + Environment.NewLine + 
         "                                                    E.g. -MinMaxReadSize 100MB-500MB. Fractions use . as decimal separator." + Environment.NewLine +
         "                         -Details                   Show more columns" + Environment.NewLine +
+        "                         -Session dd;yy             Filter processes by Windows session id. Multiple filters are separated by ;" + Environment.NewLine +
         "                         -ReverseFileName/rfn       Reverse file name. Useful with -Clip to keep output clean (no console wraparound regardless how long the file name is)." + Environment.NewLine +
         "                         -Merge                     Merge all selected Json files into one summary output. Useful to get a merged view of a session consisting of multiple ETL files." + Environment.NewLine +
         "                         -ShowTotal [Total/Process/File/None] Show totals for the complete File/per process but skip aggregated directory metrics/per process but show also original aggregated directory metrics. None will turn off totals." + Environment.NewLine +
@@ -412,7 +423,9 @@ namespace ETWAnalyzer.Commands
         "[green]Show unique methods which were executed in the last 5 s before process with pid 136816 did terminate. You see e.g. invoked error handlers just before a crash.[/green]" + Environment.NewLine +
         " ETWAnalyzer -dump CPU -fd xxx.json -methods * -SortBy Last -ZeroTime ProcessEnd -ZeroProcessName 136816 -pn 136816 -MinMaxFirst -5" + Environment.NewLine +
         "[green]Show CPU and process lifetime (along with duration if it did start/stop) with full Json path name[/green]" + Environment.NewLine +
-        " ETWAnalyzer -dump CPU -fd xxx.json -ProcessFmt s -ShowFullFileName" + Environment.NewLine;
+        " ETWAnalyzer -dump CPU -fd xxx.json -ProcessFmt s -ShowFullFileName" + Environment.NewLine +
+        "[green]Show session IDs with the session filter IDs of 0 and 8[/green]" + Environment.NewLine +
+        " ETWAnalyzer -dump CPU -fd xxx.json -details -session 0;8" + Environment.NewLine ;
 
         static readonly string MemoryExamples = ExamplesHelpString +
         "[green]Get an overview about system memory consumption across all ETL files belonging to a test run. The TestRun Index you can get from the output of -dump TestRun -filedir ...[/green]" + Environment.NewLine +
@@ -430,7 +443,9 @@ namespace ETWAnalyzer.Commands
         "[green]Filter all the details with WorkingsetPrivate memory with 10MiB-100MiB default.Numbers can have units like Bytes, KiB, MiB, GiB e.g. 500MiB.[/green]" + Environment.NewLine +
         " ETWAnalyzer -dump Memory -fd xxx.json -MinMaxWorkingSetPrivateMiB 10-100" + Environment.NewLine +
         "[green]Summary is not printed.[/green]" + Environment.NewLine +
-        " ETWAnalyzer -dump Memory -fd xxx.json -ShowTotal None" + Environment.NewLine;
+        " ETWAnalyzer -dump Memory -fd xxx.json -ShowTotal None" + Environment.NewLine +
+        "[green]Display and filter by Windows Session Ids by 0.[/green]" + Environment.NewLine +
+        " ETWAnalyzer -dump Memory -fd xxx.json -Details -Session 0" + Environment.NewLine;
 
         static readonly string ExceptionExamples = ExamplesHelpString +
         "[green]Show all exceptions which did pass the exception filter during extraction, grouped by process, exception type and message.[/green]" + Environment.NewLine +
@@ -448,7 +463,9 @@ namespace ETWAnalyzer.Commands
         "[green]Dump all TimeoutExceptions after the first occurrence of method ShowShutdownWindow and write them to a CSV file.[/green]" + Environment.NewLine +
         " ETWAnalyzer -dump Exception -Type* timeout* -TimeFmt s -ZeroTime First *ShowShutdownWindow* -MinMaxExTime 0 -CSV Exceptions.csv" + Environment.NewLine +
         "[green]Show stacks of all exceptions of all extracted files in current folder. Print process start/stop/duration besides process name.[/green]" + Environment.NewLine +
-        " ETWAnalyzer -dump Exception -type * -ShowStack -ProcessFmt s" + Environment.NewLine;
+        " ETWAnalyzer -dump Exception -type * -ShowStack -ProcessFmt s" + Environment.NewLine +
+        "[green]Display and filter by Windows Session Ids by 0.[/green]" + Environment.NewLine +
+        " ETWAnalyzer -dump Memory -fd xxx.json -Details -Session 0" + Environment.NewLine;
 
 
         static readonly string DiskExamples = ExamplesHelpString +
@@ -484,7 +501,9 @@ namespace ETWAnalyzer.Commands
         "[green]Show per process totals for all processes with show module information (exclusively to be used perprocess only). Print process start/stop/duration besides process name with information details exclusively for Microsoft processes.[/green]" + Environment.NewLine +
         " ETWAnalyzer -dump File -FileOperation Write -SortBy Count -PerProcess -smi *microsoft*" + Environment.NewLine +
         "[green]Dump files and the summary metrics is not displayed.[/green]" + Environment.NewLine +
-        " ETWAnalyzer -fd xx.json -dump File -ShowTotal None" + Environment.NewLine;
+        " ETWAnalyzer -fd xx.json -dump File -ShowTotal None" + Environment.NewLine +
+        "[green]Display and filter by Windows Session Ids by 0.[/green]" + Environment.NewLine +
+        " ETWAnalyzer -dump File -fd xxx.json -Details -Session 0" + Environment.NewLine;
 
 
         static readonly string ThreadPoolExamples = ExamplesHelpString +
@@ -1714,6 +1733,7 @@ namespace ETWAnalyzer.Commands
                             TopN = TopN,
                             StackTagFilter = StackTagFilter,
                             MethodFilter = MethodFilter,
+                            Session = Session,
                             TopNMethods = TopNMethods,
                             MinMaxCPUMs = MinMaxCPUMs,
                             MinMaxWaitMs = MinMaxWaitMs,
@@ -1728,6 +1748,7 @@ namespace ETWAnalyzer.Commands
                             LastTimeFormat = LastTimeFormat,
                             SortOrder = SortOrder,
                             ShowTotal = ShowTotal,
+                            ShowDetails = ShowDetails,
                             ShowDetailsOnMethodLine = ShowDetailsOnMethodLine,
                             ShowModuleInfo = ShowModuleInfo,
                             ShowModuleFilter = ShowModuleFilter,
@@ -1816,6 +1837,7 @@ namespace ETWAnalyzer.Commands
                             SortOrder = SortOrder,
                             ShowAllFiles = ShowAllFiles,
                             ShowDetails = ShowDetails,
+                            Session = Session,
                             ShowModuleInfo = ShowModuleInfo,
                             ShowModuleFilter = ShowModuleFilter,
                             ReverseFileName = ReverseFileName,
@@ -1846,6 +1868,7 @@ namespace ETWAnalyzer.Commands
                             ShowModuleInfo = ShowModuleInfo,
                             ShowModuleFilter = ShowModuleFilter,
 
+                            Session = Session,
                             ShowTime  = ShowTime,
                             TypeFilter = TypeFilter,
                             MessageFilter = MessageFilter,
@@ -1859,6 +1882,7 @@ namespace ETWAnalyzer.Commands
                             ZeroTimeMode = ZeroTimeMode,
                             ZeroTimeFilter = ZeroTimeFilter,
                             ZeroTimeProcessNameFilter = ZeroTimeProcessNameFilter,
+                            ShowDetails = ShowDetails,
                         };
                         break;
                     case DumpCommands.Memory:
@@ -1886,6 +1910,7 @@ namespace ETWAnalyzer.Commands
                             ShowModuleFilter = ShowModuleFilter,
 
                             ShowTotal = ShowTotal,
+                            Session = Session,
                             TopN = TopN,
                             SortOrder = SortOrder,
                             MinDiffMB = MinDiffMB,

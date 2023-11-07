@@ -37,7 +37,6 @@ namespace ETWAnalyzer.EventDump
         /// </summary>
         public Func<string, bool> Parent { get; set; } = null;
 
-        public Func<string, bool> Session { get; set; } = _ => true;
         public Func<string, bool> User { get; set; } = _ => true;
         public DumpCommand.SortOrders SortOrder { get; internal set; }
         public bool Merge { get; internal set; }
@@ -551,7 +550,7 @@ namespace ETWAnalyzer.EventDump
 
         private void WriteToCSV(List<MatchData> rowData)
         {
-            OpenCSVWithHeader(Col_CSVOptions, Col_TestCase, "TestDate", Col_ProcessName, "ProcessName(pid)", "Parent ProcessId", "Session Id", "Return Code", "NewProcess", "Start Time", "End Time", "LifeTime in minutes", "User", Col_CommandLine, Col_Baseline, "SourceFile");
+            OpenCSVWithHeader(Col_CSVOptions, Col_TestCase, "TestDate", Col_ProcessName, "ProcessName(pid)", "Parent ProcessId", Col_Session, "Return Code", "NewProcess", "Start Time", "End Time", "LifeTime in minutes", "User", Col_CommandLine, Col_Baseline, "SourceFile");
             foreach (var data in rowData)
             {
                 WriteCSVLine(CSVOptions, data.TestCase, data.PerformedAt, data.ProcessName, data.ProcessWithPid, data.ParentProcessId, data.SessionId, ETWProcess.GetReturnString(data.ReturnCode, out bool bCrash), Convert.ToInt32(data.IsNewProcess),

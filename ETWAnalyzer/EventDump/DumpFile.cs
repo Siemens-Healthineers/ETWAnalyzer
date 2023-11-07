@@ -126,7 +126,7 @@ namespace ETWAnalyzer.EventDump
 
             if (IsCSVEnabled)
             {
-                OpenCSVWithHeader(Col_CSVOptions, Col_Date, "InputDirectory", Col_SourceJsonFile, Col_TestCase, Col_TestTimeinms, Col_Baseline, Col_ProcessName, Col_Process, Col_StartTime, Col_CommandLine,
+                OpenCSVWithHeader(Col_CSVOptions, Col_Date, "InputDirectory", Col_SourceJsonFile, Col_TestCase, Col_TestTimeinms, Col_Baseline, Col_ProcessName, Col_Process, Col_Session, Col_StartTime, Col_CommandLine,
                                   "File Directory", Col_FileName,
                                   "Open Count", "Open Duration us", "Open Status",
                                   "Close Count", "Close Duration us",
@@ -151,7 +151,7 @@ namespace ETWAnalyzer.EventDump
                     string description = fileIO.FileModule?.Description?.Trim() ?? "";
                     string directory = fileIO.FileModule?.ModulePath ?? "";
                     WriteCSVLine(CSVOptions, fileIO.DataFile.PerformedAt, Path.GetDirectoryName(fileIO.DataFile.FileName), Path.GetFileNameWithoutExtension(fileIO.DataFile.FileName), fileIO.DataFile.TestName, fileIO.DataFile.DurationInMs,
-                                fileIO.BaseLine, fileIO.Process.GetProcessName(UsePrettyProcessName), fileIO.Process.GetProcessWithId(UsePrettyProcessName), fileIO.Process.StartTime, NoCmdLine ? "" : fileIO.Process.CommandLineNoExe,
+                                fileIO.BaseLine, fileIO.Process.GetProcessName(UsePrettyProcessName), fileIO.Process.GetProcessWithId(UsePrettyProcessName), fileIO.Process.SessionId, fileIO.Process.StartTime, NoCmdLine ? "" : fileIO.Process.CommandLineNoExe,
                                 Path.GetDirectoryName(fileIO.FileName), Path.GetFileName(fileIO.FileName),
                                 stats?.Open?.Count, stats?.Open?.Durationus, String.Join(" ", stats?.Open?.NtStatus?.Select(x => ((NtStatus)x).ToString()) ?? Enumerable.Empty<string>()),
                                 stats?.Close?.Count, stats?.Close?.Durationus,
@@ -294,7 +294,9 @@ namespace ETWAnalyzer.EventDump
                     {
                         ModuleDefinition fileModule = group.First().FileModule;
                         string moduleInfo = fileModule != null ? GetModuleString(fileModule, true) : ""; 
-                        ColorConsole.WriteEmbeddedColorLine($"[grey]{group.Key.GetProcessWithId(UsePrettyProcessName)}{GetProcessTags(group.Key, group.First().SessionStart)}[/grey] {(NoCmdLine ? "" : group.Key.CmdLine)}", ConsoleColor.DarkCyan, fileModule != null ? true: false);
+                        ColorConsole.WriteEmbeddedColorLine($"[grey]{group.Key.GetProcessWithId(UsePrettyProcessName)}{GetProcessTags(group.Key, group.First().SessionStart)}[/grey] " +
+                            (ShowDetails ? $"[yellow] Session: {group.Key.SessionId,2} [/yellow]" : "") +
+                            $"{(NoCmdLine ? "" : group.Key.CmdLine)}", ConsoleColor.DarkCyan, fileModule != null ? true: false);
                         if (moduleInfo!="")
                         {
                             ColorConsole.WriteEmbeddedColorLine($"[red] {moduleInfo}[/red]");
@@ -868,6 +870,7 @@ namespace ETWAnalyzer.EventDump
                             FileName = fileEvent.FileName,
                             Stats = RemoveStatsFromColumn(fileEvent.Stats),
                             Process = fileEvent.Process,
+                            SessionId = fileEvent.Process.SessionId,
                             DataFile = file,
                             BaseLine = file.Extract.MainModuleVersion != null ? file.Extract.MainModuleVersion.ToString() : "",
                             SessionStart = file.Extract.SessionStart,
@@ -1108,6 +1111,9 @@ namespace ETWAnalyzer.EventDump
             /// Process dealing with that file <see cref="FileName"/> from FileIO Data
             /// </summary>
             public ETWProcess Process { get; internal set; }
+
+            public int SessionId { get; set; }
+
 
             /// <summary>
             /// Input Json DataFile
