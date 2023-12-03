@@ -327,7 +327,7 @@ namespace ETWAnalyzer_uTest
             var file3 = new TestDataFile("TestCase", "NonName.etl", new DateTime(2015, 1, 1), 500, 20, "TestMachine3", "20001212_1200");
             var files = new List<TestDataFile> { file1, file2, file3 };
             List<List<TestDataFile>> tests = TestRun.GroupTestDataFilesByTests(files);
-            Assert.Equal(1, tests.Count);
+            Assert.Single(tests);
             Assert.Equal(3, tests[0].Count);
             
         }

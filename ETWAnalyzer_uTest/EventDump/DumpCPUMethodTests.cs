@@ -192,7 +192,7 @@ namespace ETWAnalyzer_uTest.EventDump
                     {
                         Costs =
                         {
-                            new MethodCost((MethodIndex) 0, 100,500, 5.0m, 10.0m, 1, 0, 0) { MethodList = MethodListForString },
+                            new MethodCost((MethodIndex) 0, 100,500, 5.0m, 10.0m, 1, 0, 0, 0, 0) { MethodList = MethodListForString },
                         }
                     }
                 }
@@ -307,6 +307,92 @@ namespace ETWAnalyzer_uTest.EventDump
                     SourceFile = File3,
                     PerformedAt = time_500,
 
+                },
+            };
+
+            return data;
+        }
+
+        List<DumpCPUMethod.MatchData> CreateReadyData()
+        {
+
+            DateTime time_500 = new DateTime(500, 1, 1);
+            DateTime time_1000 = new DateTime(1000, 1, 1);
+            DateTime time_1500 = new DateTime(1500, 1, 1);
+
+            List<DumpCPUMethod.MatchData> data = new()
+            {
+                new DumpCPUMethod.MatchData
+                {
+                    ReadyMs = 50,
+                    ReadyAverageUs = 10,
+                    ContextSwitchCount = 50,
+                    Method = "Ready50_10_50",
+                    Process = myCmdProcess,
+                    ProcessKey = myCmdProcessKey,
+                    SourceFile = File1,
+                    PerformedAt = time_1500,
+                    HasCSwitchData = true,
+                },
+                new DumpCPUMethod.MatchData
+                {
+                    ReadyMs = 49,
+                    ReadyAverageUs = 10,
+                    ContextSwitchCount = 60,
+                    Method = "Ready49_10_50",
+                    Process = myCmdProcess,
+                    ProcessKey = myCmdProcessKey,
+                    SourceFile = File1,
+                    PerformedAt = time_1500,
+                    HasCSwitchData = true,
+                },
+                new DumpCPUMethod.MatchData
+                {
+                    ReadyMs = 50,
+                    ReadyAverageUs = 15,
+                    ContextSwitchCount = 70,
+                    Method = "Ready50_15_50",
+                    Process = myCmdProcess,
+                    ProcessKey = myCmdProcessKey,
+                    SourceFile = File1,
+                    PerformedAt = time_1500,
+                    HasCSwitchData = true,
+                },
+                new DumpCPUMethod.MatchData
+                {
+                    ReadyMs = 50,
+                    ReadyAverageUs = 14,
+                    ContextSwitchCount = 80,
+                    Method = "Ready50_14_50",
+                    Process = myCmdProcess,
+                    ProcessKey = myCmdProcessKey,
+                    SourceFile = File1,
+                    PerformedAt = time_1500,
+                    HasCSwitchData = true,
+                },
+                new DumpCPUMethod.MatchData
+                {
+                    ReadyMs = 150,
+                    ReadyAverageUs = 10,
+                    ContextSwitchCount = 90,
+                    Method = "Ready150_10_40",
+                    Process = myCmdProcess,
+                    ProcessKey = myCmdProcessKey,
+                    SourceFile = File1,
+                    PerformedAt = time_1500,
+                    HasCSwitchData = true,
+                },
+                new DumpCPUMethod.MatchData
+                {
+                    ReadyMs = 50,
+                    ReadyAverageUs = 10,
+                    ContextSwitchCount = 60,
+                    Method = "Ready50_10_60",
+                    Process = myCmdProcess,
+                    ProcessKey = myCmdProcessKey,
+                    SourceFile = File1,
+                    PerformedAt = time_1500,
+                    HasCSwitchData = true,
                 },
             };
 
@@ -465,8 +551,7 @@ namespace ETWAnalyzer_uTest.EventDump
             Assert.Equal(140, fileTotals[File2].ReadyMs);
             Assert.Equal(5000, fileTotals[File3].ReadyMs);
         }
-
-
+ 
         [Fact]
         public void File_TotalSortOrder_TopN1_Wait()
         {
@@ -506,7 +591,6 @@ namespace ETWAnalyzer_uTest.EventDump
         [Fact]
         public void CPUMs_Filter()
         {
-
             foreach (var input in RangeValues)
             {
                 var args = new string[] { "-dump", "cpu", "-MinMaxCPUms",input.Key };
@@ -523,26 +607,41 @@ namespace ETWAnalyzer_uTest.EventDump
         [Fact]
         public void MinMaxFirst_Filter()
         {
-            // -MinMaxFirst    MinMaxRange<double> MinMaxFirstS
-            // -MinMaxLast     MinMaxRange<double> MinMaxLastS 
-            // -MinmaxDuration MinMaxRange<double> MinMaxDurationS
+            var args = new string[] { "-dump", "cpu", "-MinMaxFirst", "1", "5" };
+            DumpCommand dump = (DumpCommand)CommandFactory.CreateCommand(args);
+            dump.Parse();
+            dump.Run();
+            DumpCPUMethod cpuDumper = (DumpCPUMethod)dump.myCurrentDumper;
+
+            Assert.Equal(1, cpuDumper.MinMaxFirstS.Min);
+            Assert.Equal(5, cpuDumper.MinMaxFirstS.Max);
         }
 
         [Fact]
         public void MinMaxLast_Filter()
         {
-            // -MinMaxFirst    MinMaxRange<double> MinMaxFirstS
-            // -MinMaxLast     MinMaxRange<double> MinMaxLastS 
-            // -MinmaxDuration MinMaxRange<double> MinMaxDurationS
+            var args = new string[] { "-dump", "cpu", "-MinMaxLast", "3", "4" };
+            DumpCommand dump = (DumpCommand)CommandFactory.CreateCommand(args);
+            dump.Parse();
+            dump.Run();
+            DumpCPUMethod cpuDumper = (DumpCPUMethod)dump.myCurrentDumper;
+
+            Assert.Equal(3, cpuDumper.MinMaxLastS.Min);
+            Assert.Equal(4, cpuDumper.MinMaxLastS.Max);
         }
 
 
         [Fact]
         public void MinmaxDuration_Filter()
         {
-            // -MinMaxFirst    MinMaxRange<double> MinMaxFirstS
-            // -MinMaxLast     MinMaxRange<double> MinMaxLastS 
-            // -MinmaxDuration MinMaxRange<double> MinMaxDurationS
+            var args = new string[] { "-dump", "cpu", "-MinMaxDuration", "6", "7" };
+            DumpCommand dump = (DumpCommand)CommandFactory.CreateCommand(args);
+            dump.Parse();
+            dump.Run();
+            DumpCPUMethod cpuDumper = (DumpCPUMethod)dump.myCurrentDumper;
+
+            Assert.Equal(6, cpuDumper.MinMaxDurationS.Min);
+            Assert.Equal(7, cpuDumper.MinMaxDurationS.Max);
         }
 
         [Fact]
@@ -580,6 +679,52 @@ namespace ETWAnalyzer_uTest.EventDump
             }
         }
 
+        [Fact]
+        public void ReadyAverage_Filter()
+        {
+            KeyValuePair<string, MinMaxRange<int>>[] readyRanges = new KeyValuePair<string, MinMaxRange<int>>[]
+            {
+                new KeyValuePair<string, MinMaxRange<int>>("1", new MinMaxRange<int>(1, int.MaxValue)),
+                new KeyValuePair<string, MinMaxRange<int>>("1ms", new MinMaxRange<int>(1000, int.MaxValue)),
+                new KeyValuePair<string, MinMaxRange<int>>("1-5", new MinMaxRange<int>(1, 5)),
+            };
+
+            foreach (var input in readyRanges)
+            {
+                var args = new string[] { "-dump", "cpu", "-MinMaxReadyAvgus", input.Key };
+                DumpCommand dump = (DumpCommand)CommandFactory.CreateCommand(args);
+                dump.Parse();
+                dump.Run();
+                DumpCPUMethod cpuDumper = (DumpCPUMethod)dump.myCurrentDumper;
+
+                Assert.Equal(input.Value.Min, cpuDumper.MinMaxReadyAverageUs.Min);
+                Assert.Equal(input.Value.Max, cpuDumper.MinMaxReadyAverageUs.Max);
+            }
+        }
+
+
+        [Fact]
+        public void CSwitchCount_Filter()
+        {
+            KeyValuePair<string, MinMaxRange<int>>[] readyRanges = new KeyValuePair<string, MinMaxRange<int>>[]
+            {
+                new KeyValuePair<string, MinMaxRange<int>>("1", new MinMaxRange<int>(1, int.MaxValue)),
+                new KeyValuePair<string, MinMaxRange<int>>("0", new MinMaxRange<int>(0, int.MaxValue)),
+                new KeyValuePair<string, MinMaxRange<int>>("1-5", new MinMaxRange<int>(1, 5)),
+            };
+
+            foreach (var input in readyRanges)
+            {
+                var args = new string[] { "-dump", "cpu", "-MinMaxCSwitchCount", input.Key };
+                DumpCommand dump = (DumpCommand)CommandFactory.CreateCommand(args);
+                dump.Parse();
+                dump.Run();
+                DumpCPUMethod cpuDumper = (DumpCPUMethod)dump.myCurrentDumper;
+
+                Assert.Equal(input.Value.Min, cpuDumper.MinMaxCSwitch.Min);
+                Assert.Equal(input.Value.Max, cpuDumper.MinMaxCSwitch.Max);
+            }
+        }
 
         [Fact]
         public void Total_File_Process_Calculation()
@@ -1070,6 +1215,121 @@ namespace ETWAnalyzer_uTest.EventDump
             Assert.Equal("\t   16,001 ms 2222.exe(2222)       +60.000 hi  ", lines[3]);
         }
 
+        [Fact]
+        public void SortByReadyAverage_IsProperlySorting()
+        {
+            using ExceptionalPrinter redirect = new(myWriter, true);
+            using CultureSwitcher invariant = new();
 
+            DumpCPUMethod dumper = new()
+            {
+                FileOrDirectoryQueries = new List<string> { "dummy" },
+                ProcessFormatOption = DumpBase.TimeFormats.s,
+                MethodFilter = new KeyValuePair<string, Func<string, bool>>("xx", (x) => true),
+                ShowDetails = true,
+                SortOrder = SortOrders.ReadyAvg,
+            };
+
+            dumper.PrintMatches(CreateReadyData());
+
+            redirect.Flush();
+            var lines = redirect.GetSingleLines();
+            Assert.Equal(9, lines.Count);
+
+            string[] expectedLines = new string[] {
+                "         CPU ms       Wait ms  Ready ms ReadyAvg  CSwitches Method",
+                "1/1/1500 12:00:00 AM   File1 ",
+                "   cmd.exe(1234) +120.000 hi",
+                "           0 ms          0 ms     50 ms    10 us         50 Ready50_10_50 ",
+                "           0 ms          0 ms     49 ms    10 us         60 Ready49_10_50 ",
+                "           0 ms          0 ms    150 ms    10 us         90 Ready150_10_40 ",
+                "           0 ms          0 ms     50 ms    10 us         60 Ready50_10_60 ",
+                "           0 ms          0 ms     50 ms    14 us         80 Ready50_14_50 ",
+                "           0 ms          0 ms     50 ms    15 us         70 Ready50_15_50 ",
+            };
+
+            for (int i = 0; i < expectedLines.Length; i++)
+            {
+                Assert.Equal(expectedLines[i], lines[i]);
+            }
+        }
+
+        [Fact]
+        public void SortByReady_IsProperlySorting()
+        {
+            using ExceptionalPrinter redirect = new(myWriter, true);
+            using CultureSwitcher invariant = new();
+
+            DumpCPUMethod dumper = new()
+            {
+                FileOrDirectoryQueries = new List<string> { "dummy" },
+                ProcessFormatOption = DumpBase.TimeFormats.s,
+                MethodFilter = new KeyValuePair<string, Func<string, bool>>("xx", (x) => true),
+                ShowDetails = true,
+                SortOrder = SortOrders.Ready,
+            };
+
+            dumper.PrintMatches(CreateReadyData());
+
+            redirect.Flush();
+            var lines = redirect.GetSingleLines();
+            Assert.Equal(9, lines.Count);
+
+            string[] expectedLines = new string[] {
+                "         CPU ms       Wait ms  Ready ms ReadyAvg  CSwitches Method",
+                "1/1/1500 12:00:00 AM   File1 ",
+                "   cmd.exe(1234) +120.000 hi",
+                "           0 ms          0 ms     49 ms    10 us         60 Ready49_10_50 ",
+                "           0 ms          0 ms     50 ms    10 us         50 Ready50_10_50 ",
+                "           0 ms          0 ms     50 ms    15 us         70 Ready50_15_50 ",
+                "           0 ms          0 ms     50 ms    14 us         80 Ready50_14_50 ",
+                "           0 ms          0 ms     50 ms    10 us         60 Ready50_10_60 ",
+                "           0 ms          0 ms    150 ms    10 us         90 Ready150_10_40 ",
+            };
+
+            for (int i = 0; i < expectedLines.Length; i++)
+            {
+                Assert.Equal(expectedLines[i], lines[i]);
+            }
+        }
+
+        [Fact]
+        public void SortbyCSwitchCount_IsProperlySorting()
+        {
+            using ExceptionalPrinter redirect = new(myWriter, true);
+            using CultureSwitcher invariant = new();
+
+            DumpCPUMethod dumper = new()
+            {
+                FileOrDirectoryQueries = new List<string> { "dummy" },
+                ProcessFormatOption = DumpBase.TimeFormats.s,
+                MethodFilter = new KeyValuePair<string, Func<string, bool>>("xx", (x) => true),
+                ShowDetails = true,
+                SortOrder = SortOrders.CSwitchCount,
+            };
+
+            dumper.PrintMatches(CreateReadyData());
+
+            redirect.Flush();
+            var lines = redirect.GetSingleLines();
+            Assert.Equal(9, lines.Count);
+
+            string[] expectedLines = new string[] {
+                "         CPU ms       Wait ms  Ready ms ReadyAvg  CSwitches Method",
+                "1/1/1500 12:00:00 AM   File1 ",
+                "   cmd.exe(1234) +120.000 hi",
+                "           0 ms          0 ms     50 ms    10 us         50 Ready50_10_50 ",
+                "           0 ms          0 ms     49 ms    10 us         60 Ready49_10_50 ",
+                "           0 ms          0 ms     50 ms    10 us         60 Ready50_10_60 ",
+                "           0 ms          0 ms     50 ms    15 us         70 Ready50_15_50 ",
+                "           0 ms          0 ms     50 ms    14 us         80 Ready50_14_50 ",
+                "           0 ms          0 ms    150 ms    10 us         90 Ready150_10_40 ",
+            };
+
+            for (int i = 0; i < expectedLines.Length; i++)
+            {
+                Assert.Equal(expectedLines[i], lines[i]);
+            }
+        }
     }
 }

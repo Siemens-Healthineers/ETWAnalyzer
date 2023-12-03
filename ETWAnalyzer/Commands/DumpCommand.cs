@@ -121,8 +121,8 @@ namespace ETWAnalyzer.Commands
         "                         -verbose                   Print Test Duration as x" + Environment.NewLine +
         "                         -PrintFiles                Print input Json files paths into output" + Environment.NewLine;
         static readonly string CPUHelpString =
-        "   CPU      -filedir/fd Extract\\ or xxx.json [-recursive] [-csv xxx.csv] [-NoCSVSeparator] [-ProcessFmt timefmt] [-Methods method1;method2...] [-FirstLastDuration/fld [firsttimefmt] [lasttimefmt]]" + Environment.NewLine +
-        "            [-ThreadCount] [-SortBy [CPU/Wait/CPUWait/CPUWaitReady/StackDepth/First/Last/TestTime/StartTime] [-StackTags tag1;tag2] [-CutMethod xx-yy] [-ShowOnMethod] [-ShowModuleInfo [Driver] or [filter]] [-NoCmdLine] [-Clip] [-Details]" + Environment.NewLine +
+        "   CPU      -filedir/fd Extract\\ or xxx.json [-recursive] [-csv xxx.csv] [-NoCSVSeparator] [-ProcessFmt timefmt] [-Methods method1;method2...] [-FirstLastDuration/fld [firsttimefmt] [lasttimefmt]] [-MinMaxCSwitchCount xx-yy] [-MinMaxReadyAvgus xx-yy]" + Environment.NewLine +
+        "            [-ThreadCount] [-SortBy [CPU/Wait/CPUWait/CPUWaitReady/ReadyAvg/CSwitchCount/StackDepth/First/Last/TestTime/StartTime] [-StackTags tag1;tag2] [-CutMethod xx-yy] [-ShowOnMethod] [-ShowModuleInfo [Driver] or [filter]] [-NoCmdLine] [-Clip] [-Details]" + Environment.NewLine +
         "            [-ShowTotal Total, Process, Method] [-topn dd nn] [-topNMethods dd nn] [-ZeroTime/zt Marker/First/Last/ProcessStart filter] [-ZeroProcessName/zpn filter] " + Environment.NewLine +
         "            [-includeDll] [-includeArgs] [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd] [-MinMaxMsTestTimes xx-yy ...] [-ProcessName/pn xxx.exe(pid)] [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-CmdLine substring]" + Environment.NewLine +
         "            [-ShowFullFileName/-sffn]" + Environment.NewLine +
@@ -161,14 +161,16 @@ namespace ETWAnalyzer.Commands
         "                         -topNMethods dd nn         Include dd most expensive methods/stacktags which consume most CPU in trace. Optional nn skips the first nn lines." + Environment.NewLine +
         "                         -ThreadCount               Show # of unique threads that did execute that method." + Environment.NewLine +
         "                         -ProcessFmt timefmt        Add besides process name start/stop time and duration. See -TimeFmt for available options." + Environment.NewLine +
-        "                         -SortBy [CPU/Wait/CPUWait/CPUWaitReady/StackDepth/First/Last/TestTime/StartTime] Default method sort order is CPU consumption. Wait sorts by wait time, First/Last sorts by first/last occurrence of method/stacktags." + Environment.NewLine +
+        "                         -SortBy [CPU/Wait/CPUWait/CPUWaitReady/ReadyAvg/CSwitchCount/StackDepth/First/Last/TestTime/StartTime] Default method sort order is CPU consumption. Wait sorts by wait time, First/Last sorts by first/last occurrence of method/stacktags." + Environment.NewLine +
         "                                                    StackDepth shows hottest methods which consume most CPU but are deepest in the call stack." + Environment.NewLine +
         "                                                    StartTime sorts by process start time to correlate things in the order the processes were started." + Environment.NewLine +   
         "                                                    TestTime can be used to force sort order of files by test time when -ShowTotal is used. When totals are enabled the files are sorted by highest totals." + Environment.NewLine +
+        "                         -MinMaxCSwitchCount xx-yy or xx  Filter by context switch count." + Environment.NewLine +
+        "                         -MinMaxReadyAvgus xx-yy    Filter by Ready Average time in us." + Environment.NewLine +
         "                         -MinMaxReadyMs xx-yy or xx Only include methods (stacktags have no recorded ready times) with a minimum ready time of [xx, yy] ms." + Environment.NewLine +
         "                         -MinMaxCpuMs xx-yy or xx   Only include methods/stacktags with a minimum CPU consumption of [xx,yy] ms." + Environment.NewLine +
         "                         -MinMaxWaitMs xx-yy or xx  Only include methods/stacktags with a minimum wait time of [xx,yy] ms." + Environment.NewLine +
-        "                         -Details                   Show more columns" + Environment.NewLine +
+        "                         -Details                   Show additionally Session Id, Ready Average time and Context Switch Count." + Environment.NewLine +
         "                         -Session dd;yy             Filter processes by Windows session id. Multiple filters are separated by ;" + Environment.NewLine +
         "                                                    E.g. dd;dd2 will filter for all dd instances and dd2. The wildcards * and ? are supported for all filter strings." + Environment.NewLine +
         "                         For other options [-recursive] [-csv] [-NoCSVSeparator] [-TimeFmt] [-TestsPerRun] [-SkipNTests] [-TestRunIndex] [-TestRunCount] [-MinMaxMsTestTimes] [-ProcessName/pn] [-NewProcess] [-CmdLine]" + Environment.NewLine +
@@ -582,6 +584,7 @@ namespace ETWAnalyzer.Commands
         const decimal SecondUnit = 1.0m;
         const decimal MiBUnit = 1024m * 1024m;
         const decimal MSUnit = 1/1000m;
+        const decimal UsUnit = 1 / 1_000_000m;
 
         /// <summary>
         /// Sort order which can later be added to more and more commands and columns where it makes sense.
@@ -619,6 +622,8 @@ namespace ETWAnalyzer.Commands
 
             // CPU
             StartTime,
+            ReadyAvg,
+            CSwitchCount,
 
             // Process sort order
             StopTime,
@@ -792,6 +797,8 @@ namespace ETWAnalyzer.Commands
         public MinMaxRange<int> MinMaxCPUMs { get; private set; } = new();
         public MinMaxRange<int> MinMaxWaitMs { get; private set; } = new();
         public MinMaxRange<int> MinMaxReadyMs { get; private set; } = new();
+        public MinMaxRange<int> MinMaxReadyAverageUs { get; private set; } = new();
+        public MinMaxRange<int> MinMaxCSwitch { get; private set; } = new();
 
         public MinMaxRange<double> MinMaxFirstS { get; private set; } = new();
         public MinMaxRange<double> MinMaxLastS { get; private set; } = new();
@@ -1203,6 +1210,16 @@ namespace ETWAnalyzer.Commands
                         string minmaxreadyms = GetNextNonArg("-minmaxreadyms");
                         KeyValuePair<decimal, decimal> minMaxReady = minmaxreadyms.GetMinMaxDecimal(MSUnit);
                         MinMaxReadyMs = new MinMaxRange<int>(minMaxReady.Key.ConvertToInt(1/MSUnit), minMaxReady.Value.ConvertToInt(1/MSUnit));
+                        break;
+                    case "-minmaxcswitchcount":
+                        string minmaxcswitchcount = GetNextNonArg("-minmaxcswitchcount");
+                        KeyValuePair<decimal, decimal> minmaxcswitch = minmaxcswitchcount.GetMinMaxDecimal(1);
+                        MinMaxCSwitch = new MinMaxRange<int>(minmaxcswitch.Key.ConvertToInt(1), minmaxcswitch.Value.ConvertToInt(1));
+                        break;
+                    case "-minmaxreadyavgus":
+                        string minmaxReadyAvgus = GetNextNonArg("-minmaxreadyavgus");
+                        KeyValuePair<decimal, decimal> minmaxReadyAvg = minmaxReadyAvgus.GetMinMaxDecimal(UsUnit);
+                        MinMaxReadyAverageUs = new MinMaxRange<int>(minmaxReadyAvg.Key.ConvertToInt(1 / UsUnit), minmaxReadyAvg.Value.ConvertToInt(1 / UsUnit));
                         break;
                     case "-minmaxcount":
                         string minmaxcount = GetNextNonArg("-minmaxcount");
@@ -1738,6 +1755,8 @@ namespace ETWAnalyzer.Commands
                             MinMaxCPUMs = MinMaxCPUMs,
                             MinMaxWaitMs = MinMaxWaitMs,
                             MinMaxReadyMs = MinMaxReadyMs,
+                            MinMaxReadyAverageUs = MinMaxReadyAverageUs,
+                            MinMaxCSwitch = MinMaxCSwitch,
                             MinMaxFirstS = MinMaxFirstS,
                             MinMaxLastS = MinMaxLastS,
                             MinMaxDurationS = MinMaxDurationS,
