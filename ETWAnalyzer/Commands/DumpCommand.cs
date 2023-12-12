@@ -623,6 +623,7 @@ namespace ETWAnalyzer.Commands
             // Process sort order
             StopTime,
             Tree,
+            Session,
 
             // TCP sort orders
             ReceivedCount,
@@ -1690,6 +1691,7 @@ namespace ETWAnalyzer.Commands
                             NoCmdLine = NoCmdLine,
                             ShowDetails = ShowDetails,
                             SortOrder = SortOrder,
+                            ShowTotal = ShowTotal,
                             Merge = Merge,
                             MinMaxDurationS = MinMaxDurationS,
                             NewProcessFilter = NewProcess,
