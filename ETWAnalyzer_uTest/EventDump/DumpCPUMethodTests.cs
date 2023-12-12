@@ -196,7 +196,7 @@ namespace ETWAnalyzer_uTest.EventDump
                         }
                     }
                 }
-            }, null);
+            }, null, null);
 
             file.Extract = extract;
 
@@ -856,6 +856,7 @@ namespace ETWAnalyzer_uTest.EventDump
                         { proc2, 6000 },
                     },
                     methodList,
+                    null,
                     null)
             };
 
@@ -1156,7 +1157,7 @@ namespace ETWAnalyzer_uTest.EventDump
                     {
                         { myCmdProcess, 7 },
                         { myCmdProcess2, 16001 },
-                    }, null, null),
+                    }, null, null, null),
 
             };
 
@@ -1200,7 +1201,7 @@ namespace ETWAnalyzer_uTest.EventDump
                     {
                         { myCmdProcess, 7 },
                         { myCmdProcess2, 16001 },
-                    }, null, null),
+                    }, null, null, null),
 
             };
 

@@ -194,7 +194,7 @@ namespace ETWAnalyzer.Extractors.CPU
 
             inclusiveSamplesPerMethod.SortMethodsByNameAndCPU();
 
-            results.CPU = new CPUStats(perProcessSamplesInMs, inclusiveSamplesPerMethod, myTimelineExtractor?.Timeline);
+            results.CPU = new CPUStats(perProcessSamplesInMs, inclusiveSamplesPerMethod, myTimelineExtractor?.Timeline,results.CPU?.Frequency);
 
             // Try to release memory as early as possible
             mySamplingData = null;

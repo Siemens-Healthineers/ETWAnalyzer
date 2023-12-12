@@ -41,6 +41,11 @@ namespace ETWAnalyzer.Extract
         ICPUPerProcessMethodList ICPUStats.PerProcessMethodCostsInclusive => PerProcessMethodCostsInclusive;
 
         /// <summary>
+        /// CPU Frequency Metrics
+        /// </summary>
+        public CPUFrequency Frequency { get; }
+
+        /// <summary>
         /// When -timeline was used during extraction we generate CPU timeline data.
         /// </summary>
         public CPUTimeLine TimeLine
@@ -59,11 +64,13 @@ namespace ETWAnalyzer.Extract
         /// <param name="perProcessCPUConsumptionInMs"></param>
         /// <param name="perProcessMethodCostsInclusive"></param>
         /// <param name="timeLine"></param>
-        public CPUStats(Dictionary<ProcessKey, uint> perProcessCPUConsumptionInMs, CPUPerProcessMethodList perProcessMethodCostsInclusive, CPUTimeLine timeLine)
+        /// <param name="frequency"></param>
+        public CPUStats(Dictionary<ProcessKey, uint> perProcessCPUConsumptionInMs, CPUPerProcessMethodList perProcessMethodCostsInclusive, CPUTimeLine timeLine, CPUFrequency frequency)
         {
             PerProcessCPUConsumptionInMs = perProcessCPUConsumptionInMs;
             PerProcessMethodCostsInclusive = perProcessMethodCostsInclusive;
             TimeLine = timeLine;
+            Frequency = frequency;
         }
     }
 }

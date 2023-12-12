@@ -23,6 +23,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using ETWAnalyzer.EventDump;
 using ETWAnalyzer.Extractors.TCP;
+using ETWAnalyzer.Extractors.Memory;
 
 namespace ETWAnalyzer.Commands
 {
@@ -159,6 +160,8 @@ namespace ETWAnalyzer.Commands
             PMC,
             Dns,
             TCP,
+            Frequency,
+            VirtualAlloc,
         }
 
         /// <summary>
@@ -174,17 +177,19 @@ namespace ETWAnalyzer.Commands
         /// </summary>
         readonly Dictionary<ExtractionOptions, Func<ExtractorBase>> myExtractorFactory = new()
         {
-            { ExtractionOptions.Disk,       () => new DiskExtractor()       },
-            { ExtractionOptions.File,       () => new FileExtractor()       },
-            { ExtractionOptions.CPU,        () => new CPUExtractor()        },
-            { ExtractionOptions.Memory,     () => new MemoryExtractor()     },
-            { ExtractionOptions.Exception,  () => new ExceptionExtractor()  },
-            { ExtractionOptions.StackTag,   () => new StackTagExtractor()   },
-            { ExtractionOptions.ThreadPool, () => new ThreadPoolExtractor() },
-            { ExtractionOptions.Module,     () => new ModuleExtractor()     },
-            { ExtractionOptions.PMC,        () => new PMCExtractor()        },
-            { ExtractionOptions.Dns,        () => new DnsClientExtractor()  },
-            { ExtractionOptions.TCP,        () => new TCPExtractor()        },
+            { ExtractionOptions.Disk,        () => new DiskExtractor()         },
+            { ExtractionOptions.File,        () => new FileExtractor()         },
+            { ExtractionOptions.CPU,         () => new CPUExtractor()          },
+            { ExtractionOptions.Memory,      () => new MemoryExtractor()       },
+            { ExtractionOptions.Exception,   () => new ExceptionExtractor()    },
+            { ExtractionOptions.StackTag,    () => new StackTagExtractor()     },
+            { ExtractionOptions.ThreadPool,  () => new ThreadPoolExtractor()   },
+            { ExtractionOptions.Module,      () => new ModuleExtractor()       },
+            { ExtractionOptions.PMC,         () => new PMCExtractor()          },
+            { ExtractionOptions.Dns,         () => new DnsClientExtractor()    },
+            { ExtractionOptions.TCP,         () => new TCPExtractor()          },
+            { ExtractionOptions.Frequency,   () => new CpuFrequencyExtractor() },
+            { ExtractionOptions.VirtualAlloc,() => new VirtualAllocExtractor() },
         };
 
         /// <summary>
@@ -502,6 +507,8 @@ namespace ETWAnalyzer.Commands
                         extractors.Add(myExtractorFactory[ExtractionOptions.PMC]());
                         extractors.Add(myExtractorFactory[ExtractionOptions.Dns]());
                         extractors.Add(myExtractorFactory[ExtractionOptions.TCP]());
+                        extractors.Add(myExtractorFactory[ExtractionOptions.Frequency]());
+                        extractors.Add(myExtractorFactory[ExtractionOptions.VirtualAlloc]());
                     }
                     else
                     {

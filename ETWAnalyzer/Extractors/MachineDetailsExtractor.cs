@@ -3,6 +3,7 @@
 
 using ETWAnalyzer.Configuration;
 using ETWAnalyzer.Extract;
+using ETWAnalyzer.Extract.CPU;
 using ETWAnalyzer.Extract.Disk;
 using Microsoft.Diagnostics.Tracing.Etlx;
 using Microsoft.Diagnostics.Tracing.Parsers.Symbol;
@@ -54,6 +55,8 @@ namespace ETWAnalyzer.Extractors
             results.NumberOfProcessors = meta?.ProcessorCount ?? 0;
             results.CPUSpeedMHz = (int)(meta?.ProcessorSpeed.TotalMegahertz ?? 0);
 
+
+            Dictionary<CPUNumber, CPUInfo> cpuInfos = new();
             try
             {
                 IProcessor proc = meta?.Processors?.FirstOrDefault();
@@ -62,6 +65,31 @@ namespace ETWAnalyzer.Extractors
                     results.CPUName = proc.Name?.Trim();
                     results.CPUVendor = proc.Vendor?.Trim();
                     results.CPUHyperThreadingEnabled = proc.IsSimultaneousMultithreadingEnabled;
+
+                    
+                    for(int i=0;i<meta.Processors.Count;i++) 
+                    {
+                        int nominalMHz = 0;
+                        if( meta.Processors[i].NominalFrequency.HasValue )
+                        {
+                            nominalMHz = (int) meta.Processors[i].NominalFrequency.Value.TotalMegahertz;
+                        }
+                        cpuInfos[(CPUNumber)i] = new CPUInfo
+                        {
+                            NominalFrequencyMHz = nominalMHz,
+                            RelativePerformancePercentage = (int) (meta.Processors[i]?.RelativePerformance?.Value ?? 100),
+                            EfficiencyClass = (int) ( meta.Processors[i]?.EfficiencyClass ?? 0),
+                        };
+                    }
+
+                    var frequencyData = results?.CPU?.Frequency;
+                    if(frequencyData == null)
+                    {
+                        frequencyData = new CPUFrequency();
+                    }
+                    frequencyData.CPUInfos = cpuInfos;
+
+                    results.CPU = new CPUStats(results?.CPU?.PerProcessCPUConsumptionInMs, results?.CPU?.PerProcessMethodCostsInclusive, results?.CPU?.TimeLine, frequencyData);
                 }
             }
             catch (InvalidTraceDataException ex)
