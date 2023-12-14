@@ -193,6 +193,22 @@ namespace ETWAnalyzer.Extract
         }
 
         /// <summary>
+        /// Average ready time in microseconds.
+        /// </summary>
+        public ulong ReadyAverageUs
+        {
+            get; internal set;
+        }
+
+        /// <summary>
+        /// Number of context switches where this method did show up in the stacktrace
+        /// </summary>
+        public uint ContextSwitchCount
+        {
+            get; internal set;
+        }
+
+        /// <summary>
         /// 
         /// </summary>
         /// <param name="methodIdx"></param>
@@ -203,7 +219,9 @@ namespace ETWAnalyzer.Extract
         /// <param name="threadCount"></param>
         /// <param name="depthFromBottom"></param>
         /// <param name="readyMs"></param>
-        public MethodCost(MethodIndex methodIdx, uint cpuMs, uint waitMs, decimal firstOccurrence, decimal lastOccurrence, int threadCount, int depthFromBottom, uint readyMs)
+        /// <param name="averageReadyUs"></param>
+        /// <param name="contextSwitchCount"></param>
+        public MethodCost(MethodIndex methodIdx, uint cpuMs, uint waitMs, decimal firstOccurrence, decimal lastOccurrence, int threadCount, int depthFromBottom, uint readyMs, ulong averageReadyUs, uint contextSwitchCount)
         {
             MethodIdx = methodIdx;
             CPUMs = cpuMs;
@@ -213,6 +231,8 @@ namespace ETWAnalyzer.Extract
             Threads = threadCount;
             DepthFromBottom = depthFromBottom;
             ReadyMs = readyMs;
+            ReadyAverageUs = averageReadyUs;
+            ContextSwitchCount = contextSwitchCount;
         }
 
         /// <summary>
@@ -285,6 +305,12 @@ namespace ETWAnalyzer.Extract
                 case Parts.ReadyMs:
                     deser.ReadyMs = ParseUInt(cost, startIdx, len);
                     break;
+                case Parts.ReadyAverageus:
+                    deser.ReadyAverageUs = ParseULong(cost, startIdx, len);
+                    break;
+                case Parts.ContextSwitchCount:
+                    deser.ContextSwitchCount = ParseUInt(cost, startIdx, len);
+                    break;
                 default:
                     throw new InvalidOperationException("Invalid Part of MethodCost reached");
             }
@@ -302,6 +328,8 @@ namespace ETWAnalyzer.Extract
             ThreadCount,
             DepthFromBottom,
             ReadyMs,
+            ReadyAverageus,
+            ContextSwitchCount,
         }
 
         /// <summary>
@@ -337,6 +365,13 @@ namespace ETWAnalyzer.Extract
             return ParseUInt(s, 0, s.Length);
         }
 
+        /// <summary>
+        /// Faster parser for unsigned integer containing no thousand separators
+        /// </summary>
+        /// <param name="s"></param>
+        /// <param name="startIdx"></param>
+        /// <param name="len"></param>
+        /// <returns></returns>
         static uint ParseUInt(string s, int startIdx, int len)
         {
             long lret = 0;
@@ -350,6 +385,26 @@ namespace ETWAnalyzer.Extract
         }
 
         /// <summary>
+        /// Faster parser for unsigned long containing no thousand separators
+        /// </summary>
+        /// <param name="s"></param>
+        /// <param name="startIdx"></param>
+        /// <param name="len"></param>
+        /// <returns></returns>
+        static ulong ParseULong(string s, int startIdx, int len)
+        {
+            ulong lret = 0;
+            int end = startIdx + len;
+            for (int i = startIdx; i < end; i++)
+            {
+                lret = lret * 10ul + (ulong) (s[i] - '0');
+            }
+
+            return lret;
+
+        }
+
+        /// <summary>
         /// Serialize MethodCost to a string which is the counterpart for <see cref="FromString(string)"/>
         /// </summary>
         /// <returns></returns>
@@ -359,7 +414,7 @@ namespace ETWAnalyzer.Extract
             string first = FirstOccurenceInSecond.ToString("F4", CultureInfo.InvariantCulture);
             string last = LastOccurenceInSecond.ToString("F4", CultureInfo.InvariantCulture);
 
-            return $"{MethodIdx} {CPUMs.ToString(CultureInfo.InvariantCulture)} {WaitMs.ToString(CultureInfo.InvariantCulture)} {first} {last} {Threads} {DepthFromBottom} {ReadyMs}";
+            return $"{MethodIdx} {CPUMs.ToString(CultureInfo.InvariantCulture)} {WaitMs.ToString(CultureInfo.InvariantCulture)} {first} {last} {Threads} {DepthFromBottom} {ReadyMs.ToString(CultureInfo.InvariantCulture)} {ReadyAverageUs.ToString(CultureInfo.InvariantCulture)} {ContextSwitchCount.ToString(CultureInfo.InvariantCulture)}";
         }
 
         /// <summary>
@@ -368,7 +423,7 @@ namespace ETWAnalyzer.Extract
         /// <returns></returns>
         public override string ToString()
         {
-            return $"{Method} CPU: {CPUMs:N0}ms Wait: {WaitMs:N0}ms Ready: {ReadyMs}ms  First: {FirstOccurenceInSecond}s Last: {LastOccurenceInSecond}s Threads: {Threads} Depth: {DepthFromBottom}";
+            return $"{Method} CPU: {CPUMs:N0}ms Wait: {WaitMs:N0}ms Ready: {ReadyMs}ms  ReadyAvg: {ReadyAverageUs} us, CSwitchCount: {ContextSwitchCount} First: {FirstOccurenceInSecond}s Last: {LastOccurenceInSecond}s Threads: {Threads} Depth: {DepthFromBottom}";
         }
     }
 }

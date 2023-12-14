@@ -530,18 +530,24 @@ namespace ETWAnalyzer.Extract
 
             Queue<TestDataFile> tests = new(mergedGroup);
 
-            // We expect at most two files in one test case. If more are there rip them apart again 
-            // and put into separate groups so we do not end up with two subsequent tests with the same time and duration which did run 
-            // within the 10 minutes window where we group things together.
+            // There can be more than 2 items belonging to the same group, but we need to avoid adding testdata files from the same machine to a group.
+            // this is needed to avoid that we end up with two subsequent tests with the same time and duration which did run 
+            // within the 10 minutes (SingleTest.MaxTimeBetweenTests) window where we group things together.
             while (tests.Count > 0)
             {
                 List<TestDataFile> subGroup = new()
                 {
                     tests.Dequeue()
                 };
-                if (tests.Count > 0)
+                while (tests.Count > 0)
                 {
+                    var nextTest = tests.Peek();
+                    if(subGroup.Any(t => t.MachineName == nextTest.MachineName ))
+                    {
+                        break;
+                    }
                     subGroup.Add(tests.Dequeue());
+
                 }
                 groups.Add(subGroup);
             }

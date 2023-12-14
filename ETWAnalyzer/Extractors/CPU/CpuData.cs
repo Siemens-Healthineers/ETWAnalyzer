@@ -74,6 +74,16 @@ namespace ETWAnalyzer.Extractors.CPU
         public TimeRangeCalculator ReadyTimeRange { get; internal set; } = new TimeRangeCalculator();
 
         /// <summary>
+        /// Number of context switches as field because it is incremented from multiple threads so we use interlocked operations
+        /// </summary>
+        internal int myContextSwitchCountField;
+
+        /// <summary>
+        /// Number of context switches
+        /// </summary>
+        public uint ContextSwitchCount { get => (uint) myContextSwitchCountField;  }
+
+        /// <summary>
         /// Number of used Context Switch Events. Mainly used for debugging purposes
         /// </summary>
         public int WaitMsCount;

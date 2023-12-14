@@ -1,17 +1,11 @@
 ﻿//// SPDX-FileCopyrightText:  © 2022 Siemens Healthcare GmbH
 //// SPDX-License-Identifier:   MIT
 
-using ETWAnalyzer.Extractors;
 using ETWAnalyzer.Extractors.CPU;
-using Microsoft.Windows.EventTracing;
-using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using System.Runtime.Serialization;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ETWAnalyzer.Extract
 {
@@ -125,7 +119,7 @@ namespace ETWAnalyzer.Extract
             long averageStackDepths = totalStackDepth / (cpuData.DepthFromBottom.Count > 0 ? cpuData.DepthFromBottom.Count : 1);
 
             var cost = new MethodCost(GetMethodIndex(method), cpuDurationMs, waitDurationMs, cpuData.FirstOccurrenceSeconds, cpuData.LastOccurrenceSeconds, cpuData.ThreadIds.Count,
-                                      (int)averageStackDepths, (uint)cpuData.ReadyTimeRange.GetDuration().TotalMilliseconds)
+                                      (int)averageStackDepths, (uint)cpuData.ReadyTimeRange.GetDuration().TotalMilliseconds, (ulong) cpuData.ReadyTimeRange.GetAverage(), cpuData.ContextSwitchCount)
             {
                 MethodList = MethodNames
             };

@@ -3,6 +3,7 @@
 
 using ETWAnalyzer.Extract;
 using ETWAnalyzer.Helper;
+using ETWAnalyzer_uTest.TestInfrastructure;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -18,6 +19,12 @@ namespace ETWAnalyzer_uTest.Extract
         [Fact]
         public void CanGetRemoteServerFrom_EnvVar()
         {
+            // this test need Admin access or the create directory link privilege 
+            if (!TestContext.IsAdministrator())
+            {
+                return;
+            }
+
             string old = Environment.GetEnvironmentVariable(SymbolPaths.NT_SYMBOLPATH);
             try
             {
@@ -69,6 +76,12 @@ namespace ETWAnalyzer_uTest.Extract
         [Fact]
         public void Can_Get_LocalPath_WithLocalSymFolder_Without_Remote()
         {
+            // this test need Admin access or the create directory link privilege 
+            if ( !TestContext.IsAdministrator())
+            {
+                return;
+            }
+
             using var tmp = TempDir.Create();
             string localFolder = tmp.Name;
 
@@ -89,6 +102,12 @@ namespace ETWAnalyzer_uTest.Extract
         [Fact]
         public void Can_Get_ShortPath_Embedded_And_NgenPDBs()
         {
+            // this test need Admin access or the create directory link privilege 
+            if (!TestContext.IsAdministrator())
+            {
+                return;
+            }
+
             using var tmp = TempDir.Create();
             string localFolder = tmp.Name;
 
@@ -112,6 +131,12 @@ namespace ETWAnalyzer_uTest.Extract
         [Fact]
         public void Link_Creation_Does_Not_Fail_If_Link_Already_Exists()
         {
+            // this test need Admin access or the create directory link privilege 
+            if (!TestContext.IsAdministrator())
+            {
+                return;
+            }
+
             using var tmp = TempDir.Create();
             string localFolder = tmp.Name;
 
@@ -134,6 +159,12 @@ namespace ETWAnalyzer_uTest.Extract
         [Fact]
         public void Link_Is_Created_And_Removed_In_SymbolFolder()
         {
+            // this test need Admin access or the create directory link privilege 
+            if (!TestContext.IsAdministrator())
+            {
+                return;
+            }
+
             using var tmp = TempDir.Create();
             string localFolder = tmp.Name;
 

@@ -74,5 +74,15 @@ namespace ETWAnalyzer.TraceProcessorHelpers
 
             return myDuration.Value;
         }
+
+        /// <summary>
+        /// Get Average duration.
+        /// </summary>
+        /// <returns>Average duration in microseconds</returns>
+        public long GetAverage()
+        {
+            decimal averageReadyus = myTimeRanges.Count > 0 ? myTimeRanges.Average(x => x.Value.TotalMicroseconds) : 0;
+            return (long) averageReadyus;
+        }
     }
 }

@@ -108,31 +108,41 @@ namespace ETWAnalyzer.EventDump
         /// <summary>
         /// Configured by command line switches -includedll, -includeargs 
         /// </summary>
-        public MethodFormatter MethodFormatter { get; internal set; } = new MethodFormatter();
+        public MethodFormatter MethodFormatter { get; internal set; } = new();
 
         /// <summary>
         /// Only show methods/stacktags where the CPU time in ms matches the range. Default is everything.
         /// </summary>
-        public MinMaxRange<int> MinMaxCPUMs { get; internal set; } = new MinMaxRange<int>();
+        public MinMaxRange<int> MinMaxCPUMs { get; internal set; } = new();
 
         /// <summary>
         /// Only show methods/stacktags where the Wait time in ms time matches the range. Default is everything.
         /// </summary>
-        public MinMaxRange<int> MinMaxWaitMs { get; internal set; } = new MinMaxRange<int>();
+        public MinMaxRange<int> MinMaxWaitMs { get; internal set; } = new();
 
         /// <summary>
         /// Only show methods where the ready time in ms matches the time range. Default is everything.
         /// </summary>
-        public MinMaxRange<int> MinMaxReadyMs { get; internal set; } = new MinMaxRange<int>();
+        public MinMaxRange<int> MinMaxReadyMs { get; internal set; } = new();
+
+        /// <summary>
+        /// Only show methods for which the average ready time is within bounds. Default is everything.
+        /// </summary>
+        public MinMaxRange<int> MinMaxReadyAverageUs { get; internal set; } = new();
+
+        /// <summary>
+        /// Only show methods which have at least [x-y] context switches. Default is everything.
+        /// </summary>
+        public MinMaxRange<int> MinMaxCSwitch { get; internal set; } = new();
 
         /// <summary>
         /// Only show methods/stacktags where the first occurrence in seconds  matches the range. Default is everything.
         /// </summary>
-        public MinMaxRange<double> MinMaxFirstS { get; internal set; } = new MinMaxRange<double>();
+        public MinMaxRange<double> MinMaxFirstS { get; internal set; } = new();
         /// <summary>
         /// Only show methods/stacktags where the last occurrence in seconds matches the range. Default is everything.
         /// </summary>
-        public MinMaxRange<double> MinMaxLastS { get; internal set; } = new MinMaxRange<double>();
+        public MinMaxRange<double> MinMaxLastS { get; internal set; } = new();
 
         /// <summary>
         /// Only show methods/stacktags where the Last-First occurrence matches the range. Default is everything.
@@ -141,9 +151,9 @@ namespace ETWAnalyzer.EventDump
         /// did show up in the trace timeline. This value can still be useful to e.g. estimate the runtime of asynchronous methods, or to check
         /// if it was called more than once in a trace if e.g. the ctor which is supposed to run a short time is several seconds apart. 
         /// </summary>
-        public MinMaxRange<double> MinMaxDurationS { get; internal set; } = new MinMaxRange<double>();
+        public MinMaxRange<double> MinMaxDurationS { get; internal set; } = new();
 
-        
+
 
         /// <summary>
         /// State flag for CSV output
@@ -188,6 +198,9 @@ namespace ETWAnalyzer.EventDump
             public int DurationInMs { get; set; }
             public uint CPUMs { get; set; }
             public uint WaitMs { get; set; }
+            public uint ReadyMs { get; internal set; }
+            public ulong ReadyAverageUs { get; internal set; }
+            public uint ContextSwitchCount { get; internal set; }
             public int Threads { get; set; }
             public string BaseLine { get; set; }
             public string ProcessAndPid { get; set; }
@@ -210,7 +223,6 @@ namespace ETWAnalyzer.EventDump
             public DateTimeOffset SessionStart { get; internal set; }
 
             public double ZeroTimeS { get; internal set; }
-            public uint ReadyMs { get; internal set; }
             public bool? HasCPUSamplingData { get; internal set; }
             public bool? HasCSwitchData { get; internal set; }
             public ProcessKey ProcessKey { get; internal set; }
@@ -218,7 +230,7 @@ namespace ETWAnalyzer.EventDump
 
             public override string ToString()
             {
-                return $"{TestName} {ProcessAndPid} {CPUMs}ms {WaitMs}ms {ReadyMs}ms {Method} {FirstCallTime} {LastCallTime} {SourceFile}";
+                return $"{TestName} {ProcessAndPid} {CPUMs}ms {WaitMs}ms {ReadyMs}ms {ReadyAverageUs}us {Method} {FirstCallTime} {LastCallTime} {SourceFile}";
             }
         }
 
@@ -396,6 +408,8 @@ namespace ETWAnalyzer.EventDump
                             CPUMs = methodCost.CPUMs,
                             WaitMs = methodCost.WaitMs,
                             ReadyMs = methodCost.ReadyMs,
+                            ReadyAverageUs = methodCost.ReadyAverageUs,
+                            ContextSwitchCount = methodCost.ContextSwitchCount,
                             Threads = methodCost.Threads,
                             HasCPUSamplingData = file.Extract.CPU.PerProcessMethodCostsInclusive.HasCPUSamplingData,
                             HasCSwitchData = file.Extract.CPU.PerProcessMethodCostsInclusive.HasCSwitchData,
@@ -611,17 +625,30 @@ namespace ETWAnalyzer.EventDump
             string cpuHeader = null;
             string waitHeader = null;
             string readyHeader = null;
+            string readyAverageHeader = null;
+            string cswitchCountHeader = null;
             Func<MatchData, string> waitFormatter = _ => "";
             Func<MatchData, string> readyFormatter = _ => "";
             Func<MatchData, string> firstLastFormatter = (data) => "";
             Func<MatchData, string> cpuFormatter = _ => "";
+            Func<MatchData, string> readyAverageFormatter = _ => "";
+            Func<MatchData, string> cswitchCountFormatter = _ => "";
 
             GetHeaderFormatter(matches, ref cpuHeader, ref cpuFormatter, ref firstlastDurationHeader, ref firstLastFormatter, ref waitHeader, ref waitFormatter, ref readyHeader, ref readyFormatter);
+
+            if( readyHeader != null  && ShowDetails )
+            {
+                readyAverageHeader = "ReadyAvg ";
+                readyAverageFormatter = (data) => $"{data.ReadyAverageUs,5} us ";
+
+                cswitchCountHeader = " CSwitches ";
+                cswitchCountFormatter = (data) => "N0".WidthFormat(data.ContextSwitchCount, 10) + " ";
+            }
 
             // The header is omitted when total or process mode is active
             if (!IsCSVEnabled && !(ShowTotal == TotalModes.Total || ShowTotal == TotalModes.Process))
             {
-                ColorConsole.WriteEmbeddedColorLine($"[green]{cpuHeader}[/green][yellow]{waitHeader}[/yellow][red]{readyHeader}[/red]{threadCountHeader}{firstlastDurationHeader}Method");
+                ColorConsole.WriteEmbeddedColorLine($"[green]{cpuHeader}[/green][yellow]{waitHeader}[/yellow][red]{readyHeader}{readyAverageHeader}[/red][yellow]{cswitchCountHeader}[/yellow]{threadCountHeader}{firstlastDurationHeader}Method");
             }
 
             
@@ -729,7 +756,7 @@ namespace ETWAnalyzer.EventDump
                                 process = " " + match.ProcessAndPid;
                             }
 
-                            ColorConsole.WriteEmbeddedColorLine($"  [Green]{cpuFormatter(match)}[/Green] [yellow]{waitFormatter(match)}[/yellow][red]{readyFormatter(match)}[/red]{threadCount}{firstLastFormatter(match)}{match.Method}[darkyellow]{process}[/darkyellow] ", null, true);
+                            ColorConsole.WriteEmbeddedColorLine($"  [Green]{cpuFormatter(match)}[/Green] [yellow]{waitFormatter(match)}[/yellow][red]{readyFormatter(match)}{readyAverageFormatter(match)}[/red][yellow]{cswitchCountFormatter(match)}[/yellow]{threadCount}{firstLastFormatter(match)}{match.Method}[darkyellow]{process}[/darkyellow] ", null, true);
 
                             if (ShowModuleInfo)
                             {
@@ -951,12 +978,12 @@ namespace ETWAnalyzer.EventDump
 
             if (!myCSVHeaderPrinted)
             {
-                OpenCSVWithHeader("CSVOptions", "Test Case", "Date", "Test Time in ms", "Module", "Method", "CPU ms", "Wait ms", "Ready ms", "# Threads",Col_Baseline, Col_Process, Col_ProcessName, Col_Session, "Start Time", "StackDepth",
+                OpenCSVWithHeader("CSVOptions", "Test Case", "Date", "Test Time in ms", "Module", "Method", "CPU ms", "Wait ms", "Ready ms", "Ready Average us", "Context Switch Count", "# Threads",Col_Baseline, Col_Process, Col_ProcessName, Col_Session, "Start Time", "StackDepth",
                                   "FirstLastCall Duration in s", $"First Call time in {GetAbbreviatedName(firstFormat)}", $"Last Call time in {GetAbbreviatedName(lastFormat)}", Col_CommandLine, "SourceFile", "IsNewProcess", "Module and Driver Info");
                 myCSVHeaderPrinted = true;
             }
 
-            WriteCSVLine(CSVOptions, match.TestName, match.PerformedAt, match.DurationInMs, match.ModuleName, match.Method, match.CPUMs, match.WaitMs, match.ReadyMs, match.Threads, match.BaseLine, match.ProcessAndPid, match.Process.GetProcessName(UsePrettyProcessName), match.Process.SessionId, match.Process.StartTime, match.CPUMs / Math.Exp(match.StackDepth),
+            WriteCSVLine(CSVOptions, match.TestName, match.PerformedAt, match.DurationInMs, match.ModuleName, match.Method, match.CPUMs, match.WaitMs, match.ReadyMs, match.ReadyAverageUs, match.ContextSwitchCount, match.Threads, match.BaseLine, match.ProcessAndPid, match.Process.GetProcessName(UsePrettyProcessName), match.Process.SessionId, match.Process.StartTime, match.CPUMs / Math.Exp(match.StackDepth),
                          firstLastDurationS, GetDateTimeString(match.FirstCallTime, match.SessionStart, firstFormat), GetDateTimeString(match.LastCallTime, match.SessionStart, lastFormat), NoCmdLine ? "" : match.Process.CmdLine, match.SourceFile, (match.Process.IsNew ? 1 : 0), moduleDriverInfo);
         }
 
@@ -1035,6 +1062,8 @@ namespace ETWAnalyzer.EventDump
                 SortOrders.Last,
                 SortOrders.TestTime,
                 SortOrders.StartTime,
+                SortOrders.CSwitchCount,
+                SortOrders.ReadyAvg,
             };
 
         /// <summary>
@@ -1058,6 +1087,8 @@ namespace ETWAnalyzer.EventDump
                 SortOrders.StackDepth => data.CPUMs > myMaxCPUSortData ? data.CPUMs / Math.Exp(data.StackDepth) : data.CPUMs / Math.Exp(data.StackDepth+10), 
                 SortOrders.First => IsProcessTotalMode  ? data.Process.StartTime.Ticks : data.FirstCallTime.Ticks,  // in CPU total mode we can sort by process start time with -Sortby First which is useful with -ProcessFmt s
                 SortOrders.Last => IsProcessTotalMode  ?  (data.Process.EndTime == DateTimeOffset.MaxValue ? 0 : data.Process.EndTime.Ticks) : data.LastCallTime.Ticks,     // in CPU total mode we can sort by process end time with -SortBy Last
+                SortOrders.ReadyAvg => data.ReadyAverageUs,
+                SortOrders.CSwitchCount => data.ContextSwitchCount,
                 _ => data.CPUMs,  // by default sort by CPU
             };
         }
@@ -1140,6 +1171,16 @@ namespace ETWAnalyzer.EventDump
             if( lret )
             {
                 lret = MinMaxReadyMs.IsWithin((int)cost.ReadyMs);
+            }
+
+            if( lret )
+            {
+                lret = MinMaxReadyAverageUs.IsWithin((int)cost.ReadyAverageUs);
+            }
+
+            if( lret )
+            {
+                lret = MinMaxCSwitch.IsWithin((int) cost.ContextSwitchCount);
             }
 
             if( lret )

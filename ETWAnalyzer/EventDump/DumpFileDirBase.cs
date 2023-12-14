@@ -319,7 +319,7 @@ namespace ETWAnalyzer.EventDump
             }
             else if( matches == 0 )
             {
-                ColorConsole.WriteLine($"Warning: Zero timepoint definition did not match. No timepoint shift is applied to this file!", ConsoleColor.Red);
+                ColorConsole.WriteLine($"Warning: Zero timepoint definition did not match. No timepoint shift is applied to this file {extract.SourceETLFileName}!", ConsoleColor.Red);
             }
 
             return lret;

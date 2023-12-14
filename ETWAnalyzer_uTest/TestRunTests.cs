@@ -129,7 +129,7 @@ namespace ETWAnalyzer_uTest
             {
                 count += run.GetTotalNumberOfTestDataFilesInTestRun();
             }
-            Assert.Equal(2900, count);
+            Assert.Equal(TestData.TestRunDirectoryFileCount, count);
 
         }
 
@@ -192,7 +192,7 @@ namespace ETWAnalyzer_uTest
                 numberOfTestdata += element.Count;
             }
 
-            Assert.Equal(2900, numberOfTestdata);
+            Assert.Equal(TestData.TestRunDirectoryFileCount, numberOfTestdata);
 
         }
 
@@ -212,7 +212,7 @@ namespace ETWAnalyzer_uTest
             }
 
             // The TestDataFiles in Directory without the extracted etl files which are already covered by the compressed files
-            Assert.Equal(2900, dataFiles);
+            Assert.Equal(TestData.TestRunDirectoryFileCount, dataFiles);
         }
 
 
@@ -327,9 +327,23 @@ namespace ETWAnalyzer_uTest
             var file3 = new TestDataFile("TestCase", "NonName.etl", new DateTime(2015, 1, 1), 500, 20, "TestMachine3", "20001212_1200");
             var files = new List<TestDataFile> { file1, file2, file3 };
             List<List<TestDataFile>> tests = TestRun.GroupTestDataFilesByTests(files);
+            Assert.Single(tests);
+            Assert.Equal(3, tests[0].Count);
+            
+        }
+
+        [Fact]
+        public void GroupTestCaseByTests_Four_Files_Equal_Names_but_same_machine_within_10_minutes()
+        {
+            var file1 = new TestDataFile("TestCase", "NonName.etl", new DateTime(2015, 1, 1,1,1,0), 500, 20, "TestMachine1", "20001212_1200");
+            var file2 = new TestDataFile("TestCase", "NonName.etl", new DateTime(2015, 1, 1, 1, 1, 0), 500, 20, "TestMachine2", "20001212_1200");
+            var file3 = new TestDataFile("TestCase", "NonName.etl", new DateTime(2015, 1, 1, 1, 5, 0), 500, 20, "TestMachine1", "20001212_1200");
+            var file4 = new TestDataFile("TestCase", "NonName.etl", new DateTime(2015, 1, 1, 1, 5, 0), 500, 20, "TestMachine2", "20001212_1200");
+            var files = new List<TestDataFile> { file1, file2, file3, file4 };
+            List<List<TestDataFile>> tests = TestRun.GroupTestDataFilesByTests(files);
             Assert.Equal(2, tests.Count);
             Assert.Equal(2, tests[0].Count);
-            Assert.Single(tests[1]);
+            Assert.Equal(2, tests[1].Count);
         }
 
 
@@ -436,7 +450,7 @@ namespace ETWAnalyzer_uTest
             DateTime performedAt1 = new DateTime(2020, 1, 1, 1, 1, 1);
             DateTime performedAt2 = new DateTime(2021, 1, 1, 1, 1, 2);
             TestDataFile file1 = new TestDataFile("Test1", "", performedAt1, 100, 0, "SomeMachine", "20201002-121114");
-            TestDataFile file2 = new TestDataFile("Test1", "", performedAt2, 100, 0, "SomeMachine", "20201002-121114");
+            TestDataFile file2 = new TestDataFile("Test1", "", performedAt2, 100, 0, "SomeMachine2", "20201002-121114");
 
             List<List<TestDataFile>> groups = TestRun.GroupTestDataFilesByTests(new TestDataFile[] { file1, file2 });
             Assert.Single(groups);
@@ -467,6 +481,21 @@ namespace ETWAnalyzer_uTest
 
             List<List<TestDataFile>> groups = TestRun.GroupTestDataFilesByTests(new TestDataFile[] { file1, file2 });
             Assert.Single(groups);
+        }
+
+        [Fact]
+        public void Ensure_Splitting_works_also_with_data_from_three_machines()
+        {
+            using var printer = new ExceptionalPrinter(myWriter);
+            DataOutput<string> testrunDirectory = TestData.TestRunDirectoryMultiMachines;
+            printer.Add(testrunDirectory.Output);
+
+            TestRun[] runs = TestRun.CreateFromDirectory(testrunDirectory.Data, SearchOption.TopDirectoryOnly, null);
+            List<SingleTest> tests = runs.SelectMany(x => x.Tests).SelectMany(x => x.Value).ToList();
+
+            Assert.All(tests,
+                t => Assert.True(t.Files.Count.Equals(3), $"we are expecting that each Test has 3 files, but here we only have {t.Files.Count}")
+            );
         }
     }
 }

@@ -141,7 +141,7 @@ namespace ETWAnalyzer_uTest
             var runner = new AnalyzeCommand(new string[] { "-filedir", testrunDirectory.Data, "-outdir", "C:\\Temp" });
             List<TestDataFile> allMachedFiles = TestRun.ExistingSingleTestsIncludeComputerAndTestNameAndDateFilter(runner.TestCaseNames, runner.ComputerNames,runner.StartAndStopDates,TestRun.CreateFromDirectory(testrunDirectory.Data, SearchOption.TopDirectoryOnly, null)).ToTestDataFiles();
             
-            Assert.Equal(2900, allMachedFiles.Count);
+            Assert.Equal(TestData.TestRunDirectoryFileCount, allMachedFiles.Count);
         }
 
         [Fact]

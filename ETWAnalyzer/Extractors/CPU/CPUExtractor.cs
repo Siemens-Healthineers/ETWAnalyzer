@@ -261,6 +261,8 @@ namespace ETWAnalyzer.Extractors.CPU
                         methods.TryGetValue(methodWithRva, out stats);
                     }
                 }
+
+                Interlocked.Increment(ref stats.myContextSwitchCountField);
                 
                 if (slice.WaitingDuration.HasValue)
                 {
