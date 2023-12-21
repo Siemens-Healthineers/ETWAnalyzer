@@ -33,7 +33,7 @@ namespace ETWAnalyzer.TraceProcessorHelpers
         }
 
         /// <summary>
-        /// The duration is the sume of all time ranges where overlaps in the time ranges count only once.
+        /// The duration is the sum of all time ranges where overlaps in the time ranges count only once.
         /// </summary>
         /// <returns>Total duration</returns>
         public TimeSpan GetDuration()
