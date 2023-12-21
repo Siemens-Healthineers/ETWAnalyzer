@@ -150,7 +150,7 @@ namespace ETWAnalyzer.EventDump
             }
             else if (SortOrder == DumpCommand.SortOrders.Session)
             {
-                var sortedData = data.OrderBy(x => x.SessionId).ThenBy(x => x.ProcessName);
+                var sortedData = data.GroupBy(x => x.SourceFile).Select(g => g.OrderBy(x => x.SessionId).ThenBy(x => x.ProcessName)).SelectMany(g => g);
                 data = sortedData.ToList();
             }
             else if( SortOrder == DumpCommand.SortOrders.Tree) // Process tree visualization is different
@@ -185,9 +185,8 @@ namespace ETWAnalyzer.EventDump
                     if (IsSummary || IsFileTotalMode)
                     {
                         processTotals.PrintFileSummary(isSummary: true);
+                        processTotals = new TotalCounter();
                     }
-
-                    processTotals = new TotalCounter();
 
                     PrintFileName(m.SourceFile, null, m.PerformedAt.DateTime, m.BaseLine);
                     currentSourceFile = m.SourceFile;
@@ -997,6 +996,7 @@ namespace ETWAnalyzer.EventDump
             {
 
                 ProcessCount ++;
+
                 NewProcessCount += data.IsNewProcess ? 1 : 0;
                 ExitedProcessCount += data.HasEnded ? 1 : 0;
                 PermanentProcessCount += (!data.IsNewProcess && !data.HasEnded) ? 1 : 0;

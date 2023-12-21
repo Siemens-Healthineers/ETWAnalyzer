@@ -437,12 +437,12 @@ namespace ETWAnalyzer_uTest.EventDump
             {
                 "1/1/0001 12:00:00 AM   File3 " ,
                 "PID: 111    Start: 2000-01-01 10:00:00.000 Stop: 2000-01-01 10:00:10.000 Duration:  RCode:  Parent:    11  Session:  1 User1      " ,
-                "1/1/0001 12:00:00 AM   File1 " ,
-                "PID: 111    Start: 2000-01-01 10:00:00.000 Stop: 2000-01-01 10:01:00.000 Duration:  RCode:  Parent:    11  Session:  1 UserAdmin  " ,
                 "1/1/0001 12:00:00 AM   File2 " ,
                 "PID: 999    Start: 2000-01-01 10:00:00.000 Stop: 2000-01-01 10:00:40.000 Duration:  RCode:  Parent:     1  Session:  6 UserAdmin  " ,
                 "1/1/0001 12:00:00 AM   File1 " ,
+                "PID: 111    Start: 2000-01-01 10:00:00.000 Stop: 2000-01-01 10:01:00.000 Duration:  RCode:  Parent:    11  Session:  1 UserAdmin  " ,
                 "PID: 666    Start: 2000-01-01 10:00:00.000 Stop: 2000-01-01 10:00:05.000 Duration:  RCode:  Parent:     1  Session:  8 User100    ",
+                "EachFileTotals: 2 Processes, 0 new, 0 exited, 2 permanent in 2 sessions of 2 users.",
                 "Totals: 4 Processes, 0 new, 0 exited, 4 permanent in 3 sessions of 3 users."
             };
 
@@ -480,12 +480,12 @@ namespace ETWAnalyzer_uTest.EventDump
             {
                 "1/1/0001 12:00:00 AM   File3 " ,
                 "PID: 111    Start: 2000-01-01 10:00:00.000 Stop: 2000-01-01 10:00:10.000 Duration:  RCode:  Parent:    11  Session:  1 User1      " ,
-                "1/1/0001 12:00:00 AM   File1 " ,
-                "PID: 111    Start: 2000-01-01 10:00:00.000 Stop: 2000-01-01 10:01:00.000 Duration:  RCode:  Parent:    11  Session:  1 UserAdmin  " ,
                 "1/1/0001 12:00:00 AM   File2 " ,
                 "PID: 999    Start: 2000-01-01 10:00:00.000 Stop: 2000-01-01 10:00:40.000 Duration:  RCode:  Parent:     1  Session:  6 UserAdmin  " ,
                 "1/1/0001 12:00:00 AM   File1 " ,
-                "PID: 666    Start: 2000-01-01 10:00:00.000 Stop: 2000-01-01 10:00:05.000 Duration:  RCode:  Parent:     1  Session:  8 User100    "
+                "PID: 111    Start: 2000-01-01 10:00:00.000 Stop: 2000-01-01 10:01:00.000 Duration:  RCode:  Parent:    11  Session:  1 UserAdmin  " ,
+                "PID: 666    Start: 2000-01-01 10:00:00.000 Stop: 2000-01-01 10:00:05.000 Duration:  RCode:  Parent:     1  Session:  8 User100    ",
+                "EachFileTotals: 2 Processes, 0 new, 0 exited, 2 permanent in 2 sessions of 2 users."
             };
 
             var lines = testOutput.GetSingleLines();
@@ -523,11 +523,10 @@ namespace ETWAnalyzer_uTest.EventDump
             {
                 "1/1/0001 12:00:00 AM   File3 " ,
                 "PID: 111    Start: 2000-01-01 10:00:00.000 Stop: 2000-01-01 10:00:10.000 Duration:  RCode:  Parent:    11  Session:  1 User1      " ,
-                "1/1/0001 12:00:00 AM   File1 " ,
-                "PID: 111    Start: 2000-01-01 10:00:00.000 Stop: 2000-01-01 10:01:00.000 Duration:  RCode:  Parent:    11  Session:  1 UserAdmin  " ,
                 "1/1/0001 12:00:00 AM   File2 " ,
                 "PID: 999    Start: 2000-01-01 10:00:00.000 Stop: 2000-01-01 10:00:40.000 Duration:  RCode:  Parent:     1  Session:  6 UserAdmin  " ,
                 "1/1/0001 12:00:00 AM   File1 " ,
+                "PID: 111    Start: 2000-01-01 10:00:00.000 Stop: 2000-01-01 10:01:00.000 Duration:  RCode:  Parent:    11  Session:  1 UserAdmin  " ,
                 "PID: 666    Start: 2000-01-01 10:00:00.000 Stop: 2000-01-01 10:00:05.000 Duration:  RCode:  Parent:     1  Session:  8 User100    "
             };
 
