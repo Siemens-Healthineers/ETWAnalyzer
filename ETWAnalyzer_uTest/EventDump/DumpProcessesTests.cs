@@ -369,6 +369,8 @@ namespace ETWAnalyzer_uTest.EventDump
                     ParentProcessId = proc1.ParentPid, 
                     SessionId = proc1.SessionId,
                     SourceFile = File3,
+                    HasEnded = proc1.HasEnded,
+                    IsNewProcess = proc1.IsNew,
                     StartTime = TenClock,
                     EndTime = TenClock + TimeSpan.FromSeconds(10),
                 },
@@ -379,6 +381,8 @@ namespace ETWAnalyzer_uTest.EventDump
                     ProcessId = proc3.ProcessID,
                     ParentProcessId = proc3.ParentPid,
                     SessionId = proc3.SessionId,
+                    HasEnded = proc3.HasEnded,
+                    IsNewProcess = proc3.IsNew,
                     SourceFile = File2,
                     StartTime = TenClock,
                     EndTime = TenClock + TimeSpan.FromSeconds(40),
@@ -390,6 +394,8 @@ namespace ETWAnalyzer_uTest.EventDump
                     ProcessId = proc2.ProcessID,
                     ParentProcessId = proc2.ParentPid,
                     SessionId = proc2.SessionId,
+                    HasEnded = proc2.HasEnded,
+                    IsNewProcess = proc2.IsNew,
                     SourceFile = File1,
                     StartTime = TenClock,
                     EndTime = TenClock + TimeSpan.FromSeconds(5),
@@ -401,6 +407,8 @@ namespace ETWAnalyzer_uTest.EventDump
                     ProcessId = proc1.ProcessID,
                     ParentProcessId = proc1.ParentPid,
                     SessionId = proc1.SessionId,
+                    HasEnded = proc1.HasEnded,
+                    IsNewProcess = proc3.IsNew,
                     SourceFile = File1,
                     StartTime = TenClock,
                     EndTime = TenClock + TimeSpan.FromSeconds(60),
@@ -442,8 +450,8 @@ namespace ETWAnalyzer_uTest.EventDump
                 "1/1/0001 12:00:00 AM   File1 " ,
                 "PID: 111    Start: 2000-01-01 10:00:00.000 Stop: 2000-01-01 10:01:00.000 Duration:  RCode:  Parent:    11  Session:  1 UserAdmin  " ,
                 "PID: 666    Start: 2000-01-01 10:00:00.000 Stop: 2000-01-01 10:00:05.000 Duration:  RCode:  Parent:     1  Session:  8 User100    ",
-                "EachFileTotals: 2 Processes, 0 new, 0 exited, 2 permanent in 2 sessions of 2 users.",
-                "Totals: 4 Processes, 0 new, 0 exited, 4 permanent in 3 sessions of 3 users."
+                "FileTotals: 2 Processes, 0 new, 2 exited, 0 permanent in 2 sessions of 2 users.",
+                "Totals: 4 Processes, 1 new, 3 exited, 1 permanent in 3 sessions of 3 users."
             };
 
             var lines = testOutput.GetSingleLines();
@@ -485,7 +493,7 @@ namespace ETWAnalyzer_uTest.EventDump
                 "1/1/0001 12:00:00 AM   File1 " ,
                 "PID: 111    Start: 2000-01-01 10:00:00.000 Stop: 2000-01-01 10:01:00.000 Duration:  RCode:  Parent:    11  Session:  1 UserAdmin  " ,
                 "PID: 666    Start: 2000-01-01 10:00:00.000 Stop: 2000-01-01 10:00:05.000 Duration:  RCode:  Parent:     1  Session:  8 User100    ",
-                "EachFileTotals: 2 Processes, 0 new, 0 exited, 2 permanent in 2 sessions of 2 users."
+                "FileTotals: 2 Processes, 0 new, 2 exited, 0 permanent in 2 sessions of 2 users."
             };
 
             var lines = testOutput.GetSingleLines();

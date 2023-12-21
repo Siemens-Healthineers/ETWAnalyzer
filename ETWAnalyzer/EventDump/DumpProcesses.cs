@@ -177,9 +177,7 @@ namespace ETWAnalyzer.EventDump
 
             foreach (var m in data)
             {
-                globalProcessCounts.Add(m);
-                processTotals.Add(m);
-
+                
                 if ( currentSourceFile != m.SourceFile && !ShowFileOnLine )
                 {
                     if (IsSummary || IsFileTotalMode)
@@ -191,6 +189,9 @@ namespace ETWAnalyzer.EventDump
                     PrintFileName(m.SourceFile, null, m.PerformedAt.DateTime, m.BaseLine);
                     currentSourceFile = m.SourceFile;
                 }
+
+                globalProcessCounts.Add(m);
+                processTotals.Add(m);
 
                 string startTime = "";
                 if (m.StartTime != null)
@@ -1019,7 +1020,7 @@ namespace ETWAnalyzer.EventDump
 
                 if (isSummary)
                 {
-                    ColorConsole.WriteEmbeddedColorLine($"[green]EachFileTotals: {ProcessCount} Processes, {NewProcessCount} new, {ExitedProcessCount} exited, " +
+                    ColorConsole.WriteEmbeddedColorLine($"[green]FileTotals: {ProcessCount} Processes, {NewProcessCount} new, {ExitedProcessCount} exited, " +
                             $"{PermanentProcessCount} permanent in {SessionCount} sessions of {UniqueUserCount} users.[/green]");
 
                 }
