@@ -3,6 +3,7 @@
 
 
 using ETWAnalyzer.Extract;
+using ETWAnalyzer.Extract.CPU;
 using ETWAnalyzer.Extract.FileIO;
 using ETWAnalyzer.Extract.Modules;
 using Newtonsoft.Json;
@@ -28,6 +29,11 @@ namespace ETWAnalyzer.Extractors
         /// Module data is stored in external file with this postfix
         /// </summary>
         public const string ModulesPostFix = "Modules";
+
+        /// <summary>
+        /// Extended CPU metrics
+        /// </summary>
+        public const string ExtendedCPUPostFix = "CPUExtended";
 
         /// <summary>
         /// Shared Json Serializer
@@ -102,6 +108,13 @@ namespace ETWAnalyzer.Extractors
                     Serialize<ModuleContainer>(moduleStream, extract.Modules);
                     extract.Modules = null;
                 }
+                if( extract?.CPU?.ExtendedCPUMetrics != null && extract.CPU.ExtendedCPUMetrics.CPUToFrequencyDurations.Count > 0 )
+                {
+                    using var frequencyStream = GetOutputStreamFor(outputFile, ExtendedCPUPostFix, outputFiles);
+                    Serialize<CPUExtended>(frequencyStream, extract.CPU.ExtendedCPUMetrics);
+                }
+
+                extract.CPU.ExtendedCPUMetrics = null;
 
                 // After all externalized data was removed serialize data to main extract file.
 

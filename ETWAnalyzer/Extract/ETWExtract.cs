@@ -166,7 +166,18 @@ namespace ETWAnalyzer.Extract
         /// <summary>
         /// CPU Metrics
         /// </summary>
-        ICPUStats IETWExtract.CPU => CPU;
+        ICPUStats IETWExtract.CPU
+        {
+            get
+            {
+                if( CPU != null  && CPU.DeserializedFileName == null)
+                {
+                    CPU.DeserializedFileName = DeserializedFileName;  // needed to deserialize CPUExtended json file
+                }
+                return CPU;
+            }
+        }
+
 
         /// <summary>
         /// Disk Metrics

@@ -5,6 +5,7 @@
 using ETWAnalyzer.Extract;
 using ETWAnalyzer.Extract.Modules;
 using ETWAnalyzer.Infrastructure;
+using ETWAnalyzer.TraceProcessorHelpers;
 using Microsoft.Windows.EventTracing;
 using Microsoft.Windows.EventTracing.Processes;
 using Microsoft.Windows.EventTracing.Symbols;
@@ -19,16 +20,6 @@ namespace ETWAnalyzer.Extractors.Modules
 {
     class ModuleExtractor : ExtractorBase
     {
-        /// <summary>
-        /// Pid of Idle process. This gets the device drivers belonging to the System process. 
-        /// </summary>
-        const int IdlePid = 0;
-
-        /// <summary>
-        /// System process has always pid 4
-        /// </summary>
-        const int SystemPid = 4;
-
         IPendingResult<IProcessDataSource> myProcesses;
 
         public ModuleExtractor()
@@ -81,7 +72,7 @@ namespace ETWAnalyzer.Extractors.Modules
                             continue;
                         }
 
-                        ETWProcessIndex processIdx = results.GetProcessIndexByPID(process.Id == IdlePid ? SystemPid : process.Id, createTime);
+                        ETWProcessIndex processIdx = results.GetProcessIndexByPID(process.Id == WindowsConstants.IdleProcessId ? WindowsConstants.SystemProcessId : process.Id, createTime);
                         PdbIndex pdbIdx = PdbIndex.Invalid;
                         if (dll.Pdb != null)
                         {

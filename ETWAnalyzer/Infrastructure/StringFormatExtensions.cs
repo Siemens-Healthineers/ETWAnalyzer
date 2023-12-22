@@ -12,6 +12,11 @@ namespace ETWAnalyzer.Infrastructure
     internal static class StringFormatExtensions
     {
         /// <summary>
+        /// New Line characters used for triming.
+        /// </summary>
+        internal static char[] NewLineChars = Environment.NewLine.ToCharArray();   
+
+        /// <summary>
         /// Format a string with the format expression and then adds spaces before, after the string until the desired width for tabular output is reached.
         /// </summary>
         /// <param name="fmt"></param>

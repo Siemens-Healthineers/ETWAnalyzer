@@ -26,5 +26,15 @@ namespace ETWAnalyzer.Extract
         /// e.g. graph the data.
         /// </summary>
         ICPUTimeLine TimeLine { get; }
+
+        /// <summary>
+        /// Per core CPU Information
+        /// </summary>
+        public IReadOnlyDictionary<CPUNumber, ICPUTopology> Topology { get; }
+
+        /// <summary>
+        /// Get CPU Frequency related data
+        /// </summary>
+        public ICPUExtended ExtendedCPUMetrics { get; }
     }
 }

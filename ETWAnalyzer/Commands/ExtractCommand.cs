@@ -33,7 +33,7 @@ namespace ETWAnalyzer.Commands
     class ExtractCommand : ArgParser
     {
         internal static readonly string HelpString =
-         "ETWAnalyzer [-extract [All, Default or Disk File CPU Memory Exception Stacktag ThreadPool PMC Dns TCP] -filedir/-fd inEtlOrZip [-DryRun] [-symServer NtSymbolPath/MS/Google/syngo] [-keepTemp] [-NoOverwrite] [-pThreads dd] [-nThreads dd]" + Environment.NewLine +
+         "ETWAnalyzer [-extract [All, Default or Disk File CPU Memory Exception Stacktag ThreadPool PMC Frequency Dns TCP] -filedir/-fd inEtlOrZip [-DryRun] [-symServer NtSymbolPath/MS/Google/syngo] [-keepTemp] [-NoOverwrite] [-pThreads dd] [-nThreads dd]" + Environment.NewLine +
          "            [-Concurrency dd] [-LastNDays dd] [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd]  " + Environment.NewLine + 
          "Retrieve data from ETL files and store extracted data in a serialized format in Json in the output directory \\Extract folder." + Environment.NewLine +
          "The data can the be analyzed by other tools or ETWAnalyzer itself which can also analyze the data for specific patterns or issues." + Environment.NewLine +
@@ -58,6 +58,7 @@ namespace ETWAnalyzer.Commands
          "  ThreadPool: Extract relevant data from .NET Runtime ThreadPool if available. ThreadingKeyword 0x10000 needs to be set for the Microsoft-Windows-DotNETRuntime ETW Provider during recording." + Environment.NewLine +
          "              Json Nodes: ThreadPool-PerProcessThreadPoolStarvations" + Environment.NewLine +
          "  PMC       : Extract Performance Monitoring Counters and Last Branch Record CPU traces. You need to enable PMC/LBR ETW Tracing during the recording to get data." + Environment.NewLine +
+         "  Frequency : Extract CPU Frequency data when present from enabled Microsoft-Windows-Kernel-Processor-Power and Microsoft-Windows-Kernel-Power (capture state data from both providers is also needed) ETW providers." + Environment.NewLine +
          "  DNS       : Extract DNS Queries. You need to enable ETW provider Microsoft-Windows-DNS-Client." + Environment.NewLine +
          "  TCP       : Extract TCP statistic per connection. You need to enable the provider Microsoft-Windows-TCPIP." + Environment.NewLine +
          "The following filters work only if the adhere to a specific file naming convention." + Environment.NewLine + 
@@ -495,8 +496,9 @@ namespace ETWAnalyzer.Commands
                     {
                         extractors.AddRange(myExtractorFactory.Values.Select(x => x()));
                     }
-                    else if( enumActionExtract == ExtractionOptions.Default) // all except File IO so far
+                    else if (enumActionExtract == ExtractionOptions.Default) // all except File IO so far
                     {
+                        extractors.Add(myExtractorFactory[ExtractionOptions.Frequency]());
                         extractors.Add(myExtractorFactory[ExtractionOptions.Disk]());
                         extractors.Add(myExtractorFactory[ExtractionOptions.CPU]());
                         extractors.Add(myExtractorFactory[ExtractionOptions.Memory]());
@@ -507,8 +509,7 @@ namespace ETWAnalyzer.Commands
                         extractors.Add(myExtractorFactory[ExtractionOptions.PMC]());
                         extractors.Add(myExtractorFactory[ExtractionOptions.Dns]());
                         extractors.Add(myExtractorFactory[ExtractionOptions.TCP]());
-                        extractors.Add(myExtractorFactory[ExtractionOptions.Frequency]());
-                        extractors.Add(myExtractorFactory[ExtractionOptions.VirtualAlloc]());
+                 //       extractors.Add(myExtractorFactory[ExtractionOptions.VirtualAlloc]());
                     }
                     else
                     {
@@ -524,6 +525,24 @@ namespace ETWAnalyzer.Commands
                 if (wrongCommand)
                 {
                     throw new ArgumentException($"Wrong action command: {processingAction}");
+                }
+            }
+
+            SortDependantExtractors(extractors);
+
+        }
+
+        private static void SortDependantExtractors(List<ExtractorBase> extractors)
+        {
+            // CPUFrequency must first extract its data before CPU extractor can calcualte average CPU frequencies for methods
+            for (int i = 0; i < extractors.Count; i++)
+            {
+                ExtractorBase extractor = extractors[i];
+                if (extractor is CpuFrequencyExtractor)
+                {
+                    var tmp = extractors[1]; // 0 is MachineDetailsExtractor which needs to be first which sets also CPU topology information which is needed for CPUFrequency extractor
+                    extractors[1] = extractor;
+                    extractors[i] = tmp;
                 }
             }
         }

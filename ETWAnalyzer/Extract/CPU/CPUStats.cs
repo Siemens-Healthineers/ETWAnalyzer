@@ -2,6 +2,7 @@
 //// SPDX-License-Identifier:   MIT
 
 using ETWAnalyzer.Extract.CPU;
+using ETWAnalyzer.Extractors;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -43,7 +44,45 @@ namespace ETWAnalyzer.Extract
         /// <summary>
         /// CPU Frequency Metrics
         /// </summary>
-        public CPUFrequency Frequency { get; }
+        public CPUExtended ExtendedCPUMetrics { get; set; }
+
+        /// <summary>
+        /// CPU Frequency Metrics
+        /// </summary>
+        ICPUExtended ICPUStats.ExtendedCPUMetrics => myLazyCPU.Value;
+
+        Lazy<CPUExtended> myLazyCPU;
+
+
+        /// <summary>
+        /// Per core CPU Information
+        /// </summary>
+        public Dictionary<CPUNumber, CPUTopology> Topology { get; set; } = new();
+
+
+        IReadOnlyDictionary<CPUNumber, ICPUTopology> myReadOnly;
+
+        /// <summary>
+        /// CPU Information
+        /// </summary>
+        IReadOnlyDictionary<CPUNumber, ICPUTopology> ICPUStats.Topology
+        {
+            get
+            {
+                if( myReadOnly == null )
+                {
+                    // We need to make a copy because we cannot cast the dictionary to the interface
+                    var local = new Dictionary<CPUNumber, ICPUTopology>();
+                    myReadOnly = local;
+                    foreach(var topology in ((CPUStats)this).Topology )
+                    {
+                        local[topology.Key] = topology.Value;  
+                    }
+                }
+
+                return myReadOnly;
+            }
+        }
 
         /// <summary>
         /// When -timeline was used during extraction we generate CPU timeline data.
@@ -59,18 +98,47 @@ namespace ETWAnalyzer.Extract
         ICPUTimeLine ICPUStats.TimeLine => TimeLine;
 
         /// <summary>
+        /// Needed to deserialize dependant Json files on access
+        /// </summary>
+        internal string DeserializedFileName { get;  set; }
+
+
+        /// <summary>
         /// Ctor which fills the data. This is also used by Json.NET during deserialization.
         /// </summary>
         /// <param name="perProcessCPUConsumptionInMs"></param>
         /// <param name="perProcessMethodCostsInclusive"></param>
         /// <param name="timeLine"></param>
-        /// <param name="frequency"></param>
-        public CPUStats(Dictionary<ProcessKey, uint> perProcessCPUConsumptionInMs, CPUPerProcessMethodList perProcessMethodCostsInclusive, CPUTimeLine timeLine, CPUFrequency frequency)
+        /// <param name="cpuInfos">CPU informations</param>
+        /// <param name="extendedMetrics">Extended metrics</param>
+        public CPUStats(Dictionary<ProcessKey, uint> perProcessCPUConsumptionInMs, CPUPerProcessMethodList perProcessMethodCostsInclusive, CPUTimeLine timeLine, Dictionary<CPUNumber, CPUTopology> cpuInfos, CPUExtended extendedMetrics)
         {
             PerProcessCPUConsumptionInMs = perProcessCPUConsumptionInMs;
             PerProcessMethodCostsInclusive = perProcessMethodCostsInclusive;
             TimeLine = timeLine;
-            Frequency = frequency;
+            Topology = cpuInfos;
+            ExtendedCPUMetrics = extendedMetrics;
+            myLazyCPU = new Lazy<CPUExtended>(() =>
+            {
+                CPUExtended lret = null;
+                if (DeserializedFileName != null)
+                {
+                    ExtractSerializer ser = new();
+                    string file = ser.GetFileNameFor(DeserializedFileName, ExtractSerializer.ExtendedCPUPostFix);
+                    if (File.Exists(file))
+                    {
+                        using var fileStream = ETWExtract.OpenFileReadOnly(file);
+                        lret = ExtractSerializer.Deserialize<CPUExtended>(fileStream);
+                    }
+                }
+                
+                if( lret == null )
+                {
+                    lret = new();
+                }
+
+                return lret;
+            });
         }
     }
 }

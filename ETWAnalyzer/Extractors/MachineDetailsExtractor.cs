@@ -56,7 +56,7 @@ namespace ETWAnalyzer.Extractors
             results.CPUSpeedMHz = (int)(meta?.ProcessorSpeed.TotalMegahertz ?? 0);
 
 
-            Dictionary<CPUNumber, CPUInfo> cpuInfos = new();
+            Dictionary<CPUNumber, CPUTopology> cpuTopology = new();
             try
             {
                 IProcessor proc = meta?.Processors?.FirstOrDefault();
@@ -74,22 +74,15 @@ namespace ETWAnalyzer.Extractors
                         {
                             nominalMHz = (int) meta.Processors[i].NominalFrequency.Value.TotalMegahertz;
                         }
-                        cpuInfos[(CPUNumber)i] = new CPUInfo
+                        cpuTopology[(CPUNumber)i] = new CPUTopology
                         {
                             NominalFrequencyMHz = nominalMHz,
                             RelativePerformancePercentage = (int) (meta.Processors[i]?.RelativePerformance?.Value ?? 100),
-                            EfficiencyClass = (int) ( meta.Processors[i]?.EfficiencyClass ?? 0),
+                            EfficiencyClass = (EfficiencyClass) ( meta.Processors[i]?.EfficiencyClass ?? 0),
                         };
                     }
 
-                    var frequencyData = results?.CPU?.Frequency;
-                    if(frequencyData == null)
-                    {
-                        frequencyData = new CPUFrequency();
-                    }
-                    frequencyData.CPUInfos = cpuInfos;
-
-                    results.CPU = new CPUStats(results?.CPU?.PerProcessCPUConsumptionInMs, results?.CPU?.PerProcessMethodCostsInclusive, results?.CPU?.TimeLine, frequencyData);
+                    results.CPU = new CPUStats(results?.CPU?.PerProcessCPUConsumptionInMs, results?.CPU?.PerProcessMethodCostsInclusive, results?.CPU?.TimeLine, cpuTopology, null);
                 }
             }
             catch (InvalidTraceDataException ex)
