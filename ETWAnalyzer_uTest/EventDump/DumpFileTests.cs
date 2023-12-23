@@ -654,6 +654,7 @@ namespace ETWAnalyzer_uTest.EventDump
         [Fact]
         public void PrintIsSummaryTotalsNullFileMode()
         {
+            using CultureSwitcher invariant = new();
             using var testOutput = new ExceptionalPrinter(myWriter, true);
             var data = CreateTestData();
 
@@ -663,7 +664,7 @@ namespace ETWAnalyzer_uTest.EventDump
                 TopNProcesses = new SkipTakeRange(),
                 // prevent parsing random json files in test directory
                 FileOrDirectoryQueries = new List<string> { "dummy" },
-        };
+            };
 
             fileDumper.PrintData(data);
 

@@ -114,7 +114,11 @@ namespace ETWAnalyzer.Extractors
                     Serialize<CPUExtended>(frequencyStream, extract.CPU.ExtendedCPUMetrics);
                 }
 
-                extract.CPU.ExtendedCPUMetrics = null;
+                if( extract?.CPU?.ExtendedCPUMetrics != null )
+                {
+                    // remove remanents from json which will never be read anyway because the explicit interface will read another file
+                    extract.CPU.ExtendedCPUMetrics = null; 
+                }
 
                 // After all externalized data was removed serialize data to main extract file.
 

@@ -74,9 +74,12 @@ namespace ETWAnalyzer.Extract
                     // We need to make a copy because we cannot cast the dictionary to the interface
                     var local = new Dictionary<CPUNumber, ICPUTopology>();
                     myReadOnly = local;
-                    foreach(var topology in ((CPUStats)this).Topology )
+                    if (this.Topology != null)
                     {
-                        local[topology.Key] = topology.Value;  
+                        foreach (var topology in ((CPUStats)this).Topology)
+                        {
+                            local[topology.Key] = topology.Value;
+                        }
                     }
                 }
 

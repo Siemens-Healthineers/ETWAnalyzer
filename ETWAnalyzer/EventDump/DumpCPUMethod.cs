@@ -430,7 +430,7 @@ namespace ETWAnalyzer.EventDump
                             ContextSwitchCount = methodCost.ContextSwitchCount,
                             Threads = methodCost.Threads,
                             CPUUsage = cpuUsage,   
-                            Topology = file.Extract?.CPU?.Topology,
+                            Topology = file?.Extract?.CPU?.Topology,
                             HasCPUSamplingData = file.Extract.CPU.PerProcessMethodCostsInclusive.HasCPUSamplingData,
                             HasCSwitchData = file.Extract.CPU.PerProcessMethodCostsInclusive.HasCSwitchData,
                             BaseLine = file.Extract.MainModuleVersion != null ? file.Extract.MainModuleVersion.ToString() : "",
