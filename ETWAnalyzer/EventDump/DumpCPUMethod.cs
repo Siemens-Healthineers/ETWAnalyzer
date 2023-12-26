@@ -820,7 +820,7 @@ namespace ETWAnalyzer.EventDump
                     null => new Formatter
                     {
                         Header = FirstLastDuration ? "Last-First " : "",
-                        Print = FirstLastDuration?  (data) => $"{"F3".WidthFormat(data.FirstLastCallDurationS, SecondsColWidth)} s " : (data) => "",
+                        Print = FirstLastDuration ? (data) => $"{"F3".WidthFormat(data.FirstLastCallDurationS, SecondsColWidth)} s " : (data) => "",
                     },
                     TimeFormats.s or
                     TimeFormats.second or
@@ -834,7 +834,7 @@ namespace ETWAnalyzer.EventDump
                         null => new Formatter
                         {
                             Header = FirstLastDuration ? "Last-First " + $"First({GetAbbreviatedName(FirstTimeFormat.Value)})".WithWidth(-1 * GetWidth(FirstTimeFormat.Value)) + " " : "",
-                            Print = FirstLastDuration  ? (data) => $"{"F3".WidthFormat(data.FirstLastCallDurationS, SecondsColWidth)} s {GetDateTimeString(data.FirstCallTime, data.SessionStart, FirstTimeFormat.Value, true)} " : (data) => "",
+                            Print = FirstLastDuration ? (data) => $"{"F3".WidthFormat(data.FirstLastCallDurationS, SecondsColWidth)} s {GetDateTimeString(data.FirstCallTime, data.SessionStart, FirstTimeFormat.Value, true)} " : (data) => "",
                         },
                         TimeFormats.s or
                         TimeFormats.second or
@@ -847,7 +847,7 @@ namespace ETWAnalyzer.EventDump
                           new Formatter
                           {
                               Header = FirstLastDuration ? "Last-First " + $"First({GetAbbreviatedName(FirstTimeFormat.Value)})".WithWidth(-1 * GetWidth(FirstTimeFormat.Value)) + " " + $"Last({GetAbbreviatedName(LastTimeFormat.Value)})".WithWidth(-1 * GetWidth(LastTimeFormat.Value)) + " " : "",
-                              Print = FirstLastDuration  ? (data) => $"{"F3".WidthFormat(data.FirstLastCallDurationS, SecondsColWidth)} s {GetDateTimeString(data.FirstCallTime, data.SessionStart, FirstTimeFormat.Value, true)}" +
+                              Print = FirstLastDuration ? (data) => $"{"F3".WidthFormat(data.FirstLastCallDurationS, SecondsColWidth)} s {GetDateTimeString(data.FirstCallTime, data.SessionStart, FirstTimeFormat.Value, true)}" +
                                                                  $" {GetDateTimeString(data.LastCallTime, data.SessionStart, LastTimeFormat.Value, true)} " : (data) => "",
                           },
                         _ => throw new InvalidOperationException($"LastTimeFormat {LastTimeFormat} is not yet supported."),
@@ -878,19 +878,19 @@ namespace ETWAnalyzer.EventDump
                 FormatterType.CSwitchCount => new Formatter
                 {
                     Header = matches.Any(x => x.HasCSwitchData.GetValueOrDefault()) && ShowDetails ? " CSwitches " : "",
-                    Print =  matches.Any(x => x.HasCSwitchData.GetValueOrDefault()) && ShowDetails ? (data) => "N0".WidthFormat(data.ContextSwitchCount, 10) + " " : (data) => "",
+                    Print = matches.Any(x => x.HasCSwitchData.GetValueOrDefault()) && ShowDetails ? (data) => "N0".WidthFormat(data.ContextSwitchCount, 10) + " " : (data) => "",
                 },
                 FormatterType.Frequency => new Formatter
                 {
-                    Header = ShowDetails && matches.Any(x=>x.CPUUsage!=null) ? "CoreData" : "",
+                    Header = ShowDetails && matches.Any(x => x.CPUUsage != null) ? "CoreData" : "",
                     Print = ShowDetails && matches.Any(x => x.CPUUsage != null) ? FormatCoreData : (data) => "",
                 },
-                FormatterType.ThreadCount => new Formatter 
-                { 
+                FormatterType.ThreadCount => new Formatter
+                {
                     Header = ThreadCount ? "#Threads " : "",
-                    Print =  (data) => ThreadCount ? "#"+"N0".WidthFormat(data.Threads,-9) : "",
-                }
-
+                    Print = (data) => ThreadCount ? "#" + "N0".WidthFormat(data.Threads, -9) : "",
+                },
+                _ => throw new NotSupportedException($"Formatter {type} is not supported"),
             };
         }
 
