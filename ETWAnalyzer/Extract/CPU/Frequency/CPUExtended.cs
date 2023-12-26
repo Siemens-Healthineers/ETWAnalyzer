@@ -237,6 +237,9 @@ namespace ETWAnalyzer.Extract.CPU
         public float LastS { get; set; }
 
 #if DEBUG
+        /// <summary>
+        /// Used for debugging
+        /// </summary>
         public string Debug { get; set; }
 #endif
     }
