@@ -635,14 +635,14 @@ namespace ETWAnalyzer.EventDump
 
         internal void ProcessPerMethodMatches(List<MatchData> matches, List<MatchData> printed)
         {
-            Formatter cpuFormatter = GetHeaderFormatter(matches, FormatterType.CPU);
-            Formatter waitFormatter = GetHeaderFormatter(matches, FormatterType.Wait);
-            Formatter readyFormatter = GetHeaderFormatter(matches, FormatterType.Ready);
-            Formatter readyAverageFormatter = GetHeaderFormatter(matches, FormatterType.ReadyAverage);
-            Formatter cswitchCountFormatter = GetHeaderFormatter(matches, FormatterType.CSwitchCount);
-            Formatter threadCountFormatter = GetHeaderFormatter(matches, FormatterType.ThreadCount);
-            Formatter coreFrequencyFormatter = GetHeaderFormatter(matches, FormatterType.Frequency);
-            Formatter firstLastFormatter = GetHeaderFormatter(matches, FormatterType.FirstLast);
+            Formatter<MatchData> cpuFormatter = GetHeaderFormatter(matches, FormatterType.CPU);
+            Formatter<MatchData> waitFormatter = GetHeaderFormatter(matches, FormatterType.Wait);
+            Formatter<MatchData> readyFormatter = GetHeaderFormatter(matches, FormatterType.Ready);
+            Formatter<MatchData> readyAverageFormatter = GetHeaderFormatter(matches, FormatterType.ReadyAverage);
+            Formatter<MatchData> cswitchCountFormatter = GetHeaderFormatter(matches, FormatterType.CSwitchCount);
+            Formatter<MatchData> threadCountFormatter = GetHeaderFormatter(matches, FormatterType.ThreadCount);
+            Formatter<MatchData> coreFrequencyFormatter = GetHeaderFormatter(matches, FormatterType.Frequency);
+            Formatter<MatchData> firstLastFormatter = GetHeaderFormatter(matches, FormatterType.FirstLast);
 
             // The header is omitted when total or process mode is active
             if (!IsCSVEnabled && !(ShowTotal == TotalModes.Total || ShowTotal == TotalModes.Process))
@@ -805,19 +805,13 @@ namespace ETWAnalyzer.EventDump
 
         }
 
-        class Formatter
-        {
-            public string Header;
-            public Func<MatchData, string> Print;
-        }
-
-        private Formatter GetHeaderFormatter(List<MatchData> matches, FormatterType type)
+        private Formatter<MatchData> GetHeaderFormatter(List<MatchData> matches, FormatterType type)
         {
             return type switch
             {
                 FormatterType.FirstLast => FirstTimeFormat switch
                 {
-                    null => new Formatter
+                    null => new Formatter<MatchData>
                     {
                         Header = FirstLastDuration ? "Last-First " : "",
                         Print = FirstLastDuration ? (data) => $"{"F3".WidthFormat(data.FirstLastCallDurationS, SecondsColWidth)} s " : (data) => "",
@@ -831,7 +825,7 @@ namespace ETWAnalyzer.EventDump
                     TimeFormats.UTC or
                     TimeFormats.UTCTime => LastTimeFormat switch
                     {
-                        null => new Formatter
+                        null => new Formatter<MatchData>
                         {
                             Header = FirstLastDuration ? "Last-First " + $"First({GetAbbreviatedName(FirstTimeFormat.Value)})".WithWidth(-1 * GetWidth(FirstTimeFormat.Value)) + " " : "",
                             Print = FirstLastDuration ? (data) => $"{"F3".WidthFormat(data.FirstLastCallDurationS, SecondsColWidth)} s {GetDateTimeString(data.FirstCallTime, data.SessionStart, FirstTimeFormat.Value, true)} " : (data) => "",
@@ -844,7 +838,7 @@ namespace ETWAnalyzer.EventDump
                         TimeFormats.LocalTime or
                         TimeFormats.UTC or
                         TimeFormats.UTCTime =>
-                          new Formatter
+                          new Formatter<MatchData>
                           {
                               Header = FirstLastDuration ? "Last-First " + $"First({GetAbbreviatedName(FirstTimeFormat.Value)})".WithWidth(-1 * GetWidth(FirstTimeFormat.Value)) + " " + $"Last({GetAbbreviatedName(LastTimeFormat.Value)})".WithWidth(-1 * GetWidth(LastTimeFormat.Value)) + " " : "",
                               Print = FirstLastDuration ? (data) => $"{"F3".WidthFormat(data.FirstLastCallDurationS, SecondsColWidth)} s {GetDateTimeString(data.FirstCallTime, data.SessionStart, FirstTimeFormat.Value, true)}" +
@@ -854,38 +848,38 @@ namespace ETWAnalyzer.EventDump
                     },
                     _ => throw new InvalidOperationException($"FirstTimeFormat {FirstTimeFormat} is not yet supported."),
                 },
-                FormatterType.CPU => new Formatter
+                FormatterType.CPU => new Formatter<MatchData>
                 {
                     Header = "         CPU ms ",
                     Print = (data) => "N0".WidthFormat(data.CPUMs, 10) + " ms"
                 },
-                FormatterType.Wait => new Formatter
+                FormatterType.Wait => new Formatter<MatchData>
                 {
                     Header = matches.Any(x => x.HasCSwitchData.GetValueOrDefault() || x.WaitMs != 0) ? "      Wait ms" : "",
                     Print = matches.Any(x => x.HasCSwitchData.GetValueOrDefault() || x.WaitMs != 0) ? (data) => " " + "N0".WidthFormat(data.WaitMs, 9) + " ms " : (data) => "",
                 },
-                FormatterType.Ready => new Formatter
+                FormatterType.Ready => new Formatter<MatchData>
                 {
                     // only data in enhanced format can contain ready data
                     Header = matches.Any(x => x.HasCSwitchData.GetValueOrDefault()) ? "  Ready ms " : "",
                     Print = matches.Any(x => x.HasCSwitchData.GetValueOrDefault()) ? (data) => "N0".WidthFormat(data.ReadyMs, 6) + " ms " : (data) => "",
                 },
-                FormatterType.ReadyAverage => new Formatter
+                FormatterType.ReadyAverage => new Formatter<MatchData>
                 {
                     Header = matches.Any(x => x.HasCSwitchData.GetValueOrDefault()) && ShowDetails ? "ReadyAvg " : "",
                     Print = matches.Any(x => x.HasCSwitchData.GetValueOrDefault()) && ShowDetails ? (data) => $"{data.ReadyAverageUs,5} us " : (data) => "",
                 },
-                FormatterType.CSwitchCount => new Formatter
+                FormatterType.CSwitchCount => new Formatter<MatchData>
                 {
                     Header = matches.Any(x => x.HasCSwitchData.GetValueOrDefault()) && ShowDetails ? " CSwitches " : "",
                     Print = matches.Any(x => x.HasCSwitchData.GetValueOrDefault()) && ShowDetails ? (data) => "N0".WidthFormat(data.ContextSwitchCount, 10) + " " : (data) => "",
                 },
-                FormatterType.Frequency => new Formatter
+                FormatterType.Frequency => new Formatter<MatchData>
                 {
                     Header = ShowDetails && matches.Any(x => x.CPUUsage != null) ? "CoreData" : "",
                     Print = ShowDetails && matches.Any(x => x.CPUUsage != null) ? FormatCoreData : (data) => "",
                 },
-                FormatterType.ThreadCount => new Formatter
+                FormatterType.ThreadCount => new Formatter<MatchData>
                 {
                     Header = ThreadCount ? "#Threads " : "",
                     Print = (data) => ThreadCount ? "#" + "N0".WidthFormat(data.Threads, -9) : "",

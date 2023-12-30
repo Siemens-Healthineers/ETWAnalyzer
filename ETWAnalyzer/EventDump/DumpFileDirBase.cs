@@ -130,10 +130,16 @@ namespace ETWAnalyzer.EventDump
         /// <param name="totalString">totals per file if needed</param>
         /// <param name="performedAt">Time when test did run</param>
         /// <param name="baseline">Version which was running</param>
-        protected void PrintFileName(string fileName, string totalString, DateTime performedAt, string baseline)
+        /// <param name="skipLineFeed">If true linefeed is omitted.</param>
+        protected void PrintFileName(string fileName, string totalString, DateTime performedAt, string baseline, bool skipLineFeed=false)
         {
-            ColorConsole.WriteEmbeddedColorLine($"{performedAt,-22} {totalString}{GetPrintFileName(fileName)} {baseline}", ConsoleColor.Cyan);
+            ColorConsole.WriteEmbeddedColorLine($"{performedAt,-22} {totalString}{GetPrintFileName(fileName)} {baseline}", FileConsoleColor, skipLineFeed);
         }
+
+        /// <summary>
+        /// Get File Console Color which is used to print file name, data, baseline ... 
+        /// </summary>
+        protected ConsoleColor FileConsoleColor => ConsoleColor.Cyan;
 
         protected void OpenCSVWithHeader(params string[] csvColumns)
         {

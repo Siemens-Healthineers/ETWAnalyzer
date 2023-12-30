@@ -66,9 +66,14 @@ namespace ETWAnalyzer.EventDump
         Disk,
 
         /// <summary>
-        /// Dump File IO Data
+        /// Dump File IO data
         /// </summary>
         File,
+
+        /// <summary>
+        /// Dump Power data
+        /// </summary>
+        Power,
 
         /// <summary>
         /// Dump .NET Threadpool starvation events

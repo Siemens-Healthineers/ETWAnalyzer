@@ -24,6 +24,7 @@ using System.Threading.Tasks;
 using ETWAnalyzer.EventDump;
 using ETWAnalyzer.Extractors.TCP;
 using ETWAnalyzer.Extractors.Memory;
+using ETWAnalyzer.Extractors.Power;
 
 namespace ETWAnalyzer.Commands
 {
@@ -33,7 +34,7 @@ namespace ETWAnalyzer.Commands
     class ExtractCommand : ArgParser
     {
         internal static readonly string HelpString =
-         "ETWAnalyzer [-extract [All, Default or Disk File CPU Memory Exception Stacktag ThreadPool PMC Frequency Dns TCP] -filedir/-fd inEtlOrZip [-DryRun] [-symServer NtSymbolPath/MS/Google/syngo] [-keepTemp] [-NoOverwrite] [-pThreads dd] [-nThreads dd]" + Environment.NewLine +
+         "ETWAnalyzer [-extract [All, Default or Disk File CPU Memory Exception Stacktag ThreadPool PMC Frequency Power Dns TCP] -filedir/-fd inEtlOrZip [-DryRun] [-symServer NtSymbolPath/MS/Google/syngo] [-keepTemp] [-NoOverwrite] [-pThreads dd] [-nThreads dd]" + Environment.NewLine +
          "            [-Concurrency dd] [-LastNDays dd] [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd]  " + Environment.NewLine + 
          "Retrieve data from ETL files and store extracted data in a serialized format in Json in the output directory \\Extract folder." + Environment.NewLine +
          "The data can the be analyzed by other tools or ETWAnalyzer itself which can also analyze the data for specific patterns or issues." + Environment.NewLine +
@@ -59,6 +60,7 @@ namespace ETWAnalyzer.Commands
          "              Json Nodes: ThreadPool-PerProcessThreadPoolStarvations" + Environment.NewLine +
          "  PMC       : Extract Performance Monitoring Counters and Last Branch Record CPU traces. You need to enable PMC/LBR ETW Tracing during the recording to get data." + Environment.NewLine +
          "  Frequency : Extract CPU Frequency data when present from enabled Microsoft-Windows-Kernel-Processor-Power and Microsoft-Windows-Kernel-Power (capture state data from both providers is also needed) ETW providers." + Environment.NewLine +
+         "  Power     : Extract Power profile data when present from Microsoft-Windows-Kernel-Power provider (capture state is needed to get power profile data)." + Environment.NewLine +
          "  DNS       : Extract DNS Queries. You need to enable ETW provider Microsoft-Windows-DNS-Client." + Environment.NewLine +
          "  TCP       : Extract TCP statistic per connection. You need to enable the provider Microsoft-Windows-TCPIP." + Environment.NewLine +
          "The following filters work only if the adhere to a specific file naming convention." + Environment.NewLine + 
@@ -162,7 +164,8 @@ namespace ETWAnalyzer.Commands
             Dns,
             TCP,
             Frequency,
-            VirtualAlloc,
+          //  VirtualAlloc,
+            Power,
         }
 
         /// <summary>
@@ -190,7 +193,8 @@ namespace ETWAnalyzer.Commands
             { ExtractionOptions.Dns,         () => new DnsClientExtractor()    },
             { ExtractionOptions.TCP,         () => new TCPExtractor()          },
             { ExtractionOptions.Frequency,   () => new CpuFrequencyExtractor() },
-            { ExtractionOptions.VirtualAlloc,() => new VirtualAllocExtractor() },
+       //    { ExtractionOptions.VirtualAlloc,() => new VirtualAllocExtractor() },
+            { ExtractionOptions.Power       ,() => new PowerExtractor() },
         };
 
         /// <summary>
@@ -509,6 +513,7 @@ namespace ETWAnalyzer.Commands
                         extractors.Add(myExtractorFactory[ExtractionOptions.PMC]());
                         extractors.Add(myExtractorFactory[ExtractionOptions.Dns]());
                         extractors.Add(myExtractorFactory[ExtractionOptions.TCP]());
+                        extractors.Add(myExtractorFactory[ExtractionOptions.Power]());
                  //       extractors.Add(myExtractorFactory[ExtractionOptions.VirtualAlloc]());
                     }
                     else
