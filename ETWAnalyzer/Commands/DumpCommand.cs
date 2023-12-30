@@ -296,7 +296,7 @@ namespace ETWAnalyzer.Commands
         "                                  Long running threads' processor architecture lower limit" + Environment.NewLine +
         "                                  Processor performance core parking parked performance state for Processor Power Efficiency Class 1" + Environment.NewLine +
         "                                  Processor performance increase policy for Processor Power Efficiency Class 1" + Environment.NewLine +
-        "                                  Processor Duty Cycling (deprecated)" + Environment.NewLine +
+        "                                  Processor Duty Cycling" + Environment.NewLine +
         "                                  Short running threads' processor architecture lower limit" + Environment.NewLine +
         "                                  Latency sensitivity hint min unparked cores/packages" + Environment.NewLine +
         "                                  Latency sensitivity hint min unparked cores/packages for Processor Power Efficiency Class 1" + Environment.NewLine +
