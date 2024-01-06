@@ -284,46 +284,7 @@ namespace ETWAnalyzer.Commands
         "  Power -filedir/fd Extract\\ or xxx.json [-Details] [-Diff] [-recursive] [-csv xxx.csv] [-NoCSVSeparator] [-Clip] " + Environment.NewLine +
         "        [-TestsPerRun dd - SkipNTests dd][-TestRunIndex dd - TestRunCount dd] [-MinMaxMsTestTimes xx-yy ...] " + Environment.NewLine +
         "                         Print Power profile CPU settings of one or several extracted files to Console." + Environment.NewLine +
-        "                         TraceProcessing can currently parse only 37/75 CPU power settings (38 are missing)." + Environment.NewLine +
-        "                         Currently not supported settings of TraceProcessing Library:" + Environment.NewLine +
-        "                                  Processor performance increase threshold for Processor Power Efficiency Class 1" + Environment.NewLine +
-        "                                  Processor performance decrease threshold for Processor Power Efficiency Class 1" + Environment.NewLine +
-        "                                  Initial performance for Processor Power Efficiency Class 1 when unparked" + Environment.NewLine +
-        "                                  Processor energy performance preference policy" + Environment.NewLine +
-        "                                  Processor energy performance preference policy for Processor Power Efficiency Class 1" + Environment.NewLine +
-        "                                  Processor performance increase time for Processor Power Efficiency Class 1" + Environment.NewLine +
-        "                                  Processor performance decrease policy for Processor Power Efficiency Class 1" + Environment.NewLine +
-        "                                  Long running threads' processor architecture lower limit" + Environment.NewLine +
-        "                                  Processor performance core parking parked performance state for Processor Power Efficiency Class 1" + Environment.NewLine +
-        "                                  Processor performance increase policy for Processor Power Efficiency Class 1" + Environment.NewLine +
-        "                                  Processor Duty Cycling" + Environment.NewLine +
-        "                                  Short running threads' processor architecture lower limit" + Environment.NewLine +
-        "                                  Latency sensitivity hint min unparked cores/packages" + Environment.NewLine +
-        "                                  Latency sensitivity hint min unparked cores/packages for Processor Power Efficiency Class 1" + Environment.NewLine +
-        "                                  Latency sensitivity hint processor performance for Processor Power Efficiency Class 1" + Environment.NewLine +
-        "                                  Processor performance history count for Processor Power Efficiency Class 1" + Environment.NewLine +
-        "                                  Processor performance decrease time for Processor Power Efficiency Class 1" + Environment.NewLine +
-        "                                  Heterogeneous policy in effect" + Environment.NewLine +
-        "                                  Short running threads' processor architecture upper limit" + Environment.NewLine +
-        "                                  Minimum processor state for Processor Power Efficiency Class 1" + Environment.NewLine +
-        "                                  Processor performance autonomous mode" + Environment.NewLine +
-        "                                  Heterogeneous thread scheduling policy" + Environment.NewLine +
-        "                                  Processor performance core parking soft park latency" + Environment.NewLine +
-        "                                  Processor performance increase time for Processor Power Efficiency Class 1" + Environment.NewLine +
-        "                                  Processor performance level increase threshold for Processor Power Efficiency Class 1 processor count increase" + Environment.NewLine +
-        "                                  Processor performance level increase threshold for Processor Power Efficiency Class 2 processor count increase" + Environment.NewLine +
-        "                                  Module unpark policy" + Environment.NewLine +
-        "                                  Smt threads unpark policy" + Environment.NewLine +
-        "                                  Complex unpark policy" + Environment.NewLine +
-        "                                  Heterogeneous short running thread scheduling policy" + Environment.NewLine +
-        "                                  Maximum processor state for Processor Power Efficiency Class 1" + Environment.NewLine +
-        "                                  Long running threads' processor architecture upper limit" + Environment.NewLine +
-        "                                  Processor autonomous activity window" + Environment.NewLine +
-        "                                  Processor performance decrease time for Processor Power Efficiency Class 1" + Environment.NewLine +
-        "                                  Short vs. long running thread threshold" + Environment.NewLine +
-        "                                  Processor performance level decrease threshold for Processor Power Efficiency Class 1 processor count decrease" + Environment.NewLine +
-        "                                  Processor performance level decrease threshold for Processor Power Efficiency Class 2 processor count decrease" + Environment.NewLine +
-        "                                  A floor performance for Processor Power Efficiency Class 0 when there are Processor Power Efficiency Class 1 processors unparked" + Environment.NewLine +
+        "                         TraceProcessing can currently parse only 37/75 CPU power settings (38 are missing). See Documentation for full details." + Environment.NewLine +
         "                         -Details      Print help text for all shown CPU power settings along with the values." + Environment.NewLine +
         "                         -Diff         Group files by power settings and print only one file of each group of files which have the same power settings. Only properties which are not identical in the remaining set of files are printed." + Environment.NewLine +
         "                                       This way you can e.g. visualize the differences between Power Saver, Balanced and High Performance power plans if you record an ETL file while each of these profiles were active." + Environment.NewLine + 
