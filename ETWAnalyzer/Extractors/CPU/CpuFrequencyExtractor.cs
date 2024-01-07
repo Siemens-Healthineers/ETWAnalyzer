@@ -11,6 +11,7 @@ using ETWAnalyzer.TraceProcessorHelpers;
 using ETWAnalyzer.Extract.CPU;
 using ETWAnalyzer.Analyzers.Exception.ResultPrinter;
 using ETWAnalyzer.ProcessTools;
+using ETWAnalyzer.Extract.CPU.Extended;
 
 namespace ETWAnalyzer.Extractors.CPU
 {
@@ -33,7 +34,7 @@ namespace ETWAnalyzer.Extractors.CPU
            
             if( myCpuFrequencies.HasResult )
             {
-                var frequencyData = new Extract.CPU.CPUExtended();
+                var frequencyData = new Extract.CPU.Extended.CPUExtended();
 
                 foreach(Microsoft.Windows.EventTracing.Power.IProcessorFrequencyInterval cpu in myCpuFrequencies.Result.Intervals) 
                 {

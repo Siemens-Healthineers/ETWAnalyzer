@@ -35,7 +35,7 @@ namespace ETWAnalyzer.Commands
     {
         internal static readonly string HelpString =
          "ETWAnalyzer [-extract [All, Default or Disk File CPU Memory Exception Stacktag ThreadPool PMC Frequency Power Dns TCP] -filedir/-fd inEtlOrZip [-DryRun] [-symServer NtSymbolPath/MS/Google/syngo] [-keepTemp] [-NoOverwrite] [-pThreads dd] [-nThreads dd]" + Environment.NewLine +
-         "            [-Concurrency dd] [-LastNDays dd] [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd]  " + Environment.NewLine + 
+         "            [-NoReady] [-allCPU] [-Concurrency dd] [-LastNDays dd] [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd]  " + Environment.NewLine + 
          "Retrieve data from ETL files and store extracted data in a serialized format in Json in the output directory \\Extract folder." + Environment.NewLine +
          "The data can the be analyzed by other tools or ETWAnalyzer itself which can also analyze the data for specific patterns or issues." + Environment.NewLine +
          "Extract Options are separated by space" + Environment.NewLine +
@@ -89,6 +89,8 @@ namespace ETWAnalyzer.Commands
          "                      must have been successfully loaded during extraction. Otherwise a warning is printed due to symbol loading errors." + Environment.NewLine +
          " -keepTemp            If you want to analyze the ETL files more than once from compressed files you can use this option to keep the uncompressed ETL files in the output folder. " + Environment.NewLine +
          " -allCPU              By default only methods with CPU or Wait > 10 ms are extracted. Used together with -extract CPU." + Environment.NewLine +
+         " -NoReady             By default when Context switch data is present an extra Json file with extended CPU data is created." + Environment.NewLine +
+         "                      You will miss with -Dump CPU -Details Ready time percentiles." + Environment.NewLine +
          " -allExceptions       By default exceptions are filtered away by the rules configured in Configuration\\ExceptionFilters.xml. To get all specify this flag." + Environment.NewLine +
          " -timeLine dd         When CPU data is extracted additionally extract CPU timeline data with given sampling interval in seconds. This data is only accessible at API level at IETWExtract.CPU.TimeLine." + Environment.NewLine +
          " -symFolder xxx       Default is C:\\Symbols. Path to a short directory name in which links are created from the unzipped ETL files to prevent symbol loading issues due to MAX_PATH limitations." + Environment.NewLine +
@@ -135,6 +137,7 @@ namespace ETWAnalyzer.Commands
         internal const string PThreadsArgs = "-pthreads";
         internal const string NThreadsArg = "-nthreads";
         internal const string TimeLineArg = "-timeline";
+        internal const string NoReadyArg = "-noready";
         internal const string ChildArg = "-child";  // Marker argument to prevent by accident to spawn child of child processes. Child processes process a trace single threaded
         internal const string AllCPUArg = "-allcpu";
         internal const string ConcurrencyArg = "-concurrency";
@@ -275,6 +278,12 @@ namespace ETWAnalyzer.Commands
         public bool ExtractAllCPUData { get; private set; }
 
         /// <summary>
+        /// When present do not extract Ready time percentiles when CPU is extracted and Context Switch data is found in the ETL file.
+        /// </summary>
+        public bool NoReady { get; private set; }
+
+
+        /// <summary>
         /// Extract and temp extraction directories
         /// </summary>
         public OutDir OutDir { get; private set; } = new OutDir();
@@ -411,6 +420,9 @@ namespace ETWAnalyzer.Commands
                     case AllCPUArg:   // -allcpu
                         ExtractAllCPUData = true;
                         break;
+                    case NoReadyArg: // -noready
+                        NoReady = true;
+                        break;
                     case AllExceptionsArgs:  // -allexceptions
                         DisableExceptionFilter = true;
                         break;
@@ -477,7 +489,7 @@ namespace ETWAnalyzer.Commands
             }
 
             ConfigureExtractors(Extractors, myProcessingActionList);
-            SetExtractorFilters(Extractors, ExtractAllCPUData, DisableExceptionFilter, TimelineDataExtractionIntervalS, Concurrency);
+            SetExtractorFilters(Extractors, ExtractAllCPUData, DisableExceptionFilter, TimelineDataExtractionIntervalS, Concurrency, NoReady);
 
         }
 
@@ -552,13 +564,14 @@ namespace ETWAnalyzer.Commands
             }
         }
 
-        static void SetExtractorFilters(List<ExtractorBase> extractors, bool extractAllCpuData, bool disableExceptionFilter, float? timelineExtractionInterval, int ?concurrency)
+        static void SetExtractorFilters(List<ExtractorBase> extractors, bool extractAllCpuData, bool disableExceptionFilter, float? timelineExtractionInterval, int ?concurrency, bool noReady)
         {
             var cpu = extractors.OfType<CPUExtractor>().SingleOrDefault();
             if (cpu != null)
             {
                 cpu.ExtractAllCPUData = extractAllCpuData;
                 cpu.Concurrency = concurrency;
+                cpu.NoReady = noReady;
                 cpu.TimelineDataExtractionIntervalS = timelineExtractionInterval;
             }
 

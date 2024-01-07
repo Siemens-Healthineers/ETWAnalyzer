@@ -17,8 +17,10 @@ using ETWAnalyzer.TraceProcessorHelpers;
 using System.Text.RegularExpressions;
 using System.Diagnostics;
 using ETWAnalyzer.Extract.CPU;
-using ETWAnalyzer.Extract.CPU.Frequency;
+using ETWAnalyzer.Extract.CPU.Extended;
 using ETWAnalyzer.Extractors.CPU;
+using static ETWAnalyzer.EventDump.DumpMemory;
+using System.Security.Claims;
 
 namespace ETWAnalyzer.EventDump
 {
@@ -156,6 +158,16 @@ namespace ETWAnalyzer.EventDump
         /// </summary>
         public MinMaxRange<double> MinMaxDurationS { get; internal set; } = new();
 
+        /// <summary>
+        /// When -Details is enabled and Ready Extended metrics are present Ready details are omitted.
+        /// </summary>
+        public bool NoReadyDetails { get; internal set; }
+
+        /// <summary>
+        /// When -Details are enabled and Frequency data was extracted data is no printed
+        /// </summary>
+        public bool NoFrequencyDetails { get; internal set; }
+
 
 
         /// <summary>
@@ -230,8 +242,9 @@ namespace ETWAnalyzer.EventDump
             public bool? HasCSwitchData { get; internal set; }
             public ProcessKey ProcessKey { get; internal set; }
             public int SessionId { get; set; }
-            public CPUUsage[] CPUUsage { get; internal set; }
+            public ICPUUsage[] CPUUsage { get; internal set; }
             public IReadOnlyDictionary<CPUNumber, ICPUTopology> Topology { get; internal set; }
+            public IReadyTimes ReadyDetails { get; internal set; }
 
             public override string ToString()
             {
@@ -403,7 +416,9 @@ namespace ETWAnalyzer.EventDump
                             continue;
                         }
 
-                        CPUUsage[] cpuUsage = null;
+                        ICPUUsage[] cpuUsage = null;
+                        IReadyTimes readyTimes = null;
+
                         if ( perProcess.Process.Pid >  WindowsConstants.IdleProcessId)
                         {
                             ETWProcessIndex idx = file.Extract.GetProcessIndexByPID(perProcess.Process.Pid, perProcess.Process.StartTime);
@@ -411,10 +426,15 @@ namespace ETWAnalyzer.EventDump
                             if ( file.Extract.CPU?.ExtendedCPUMetrics?.MethodIndexToCPUMethodData?.ContainsKey(procMethod) == true )
                             {
                                 cpuUsage = file.Extract.CPU.ExtendedCPUMetrics.MethodIndexToCPUMethodData[procMethod].CPUConsumption;
-                                
+                            }
+
+                            IReadOnlyDictionary<ProcessMethodIdx, ICPUMethodData> extendedCPUMetrics = file?.Extract?.CPU?.ExtendedCPUMetrics?.MethodIndexToCPUMethodData;
+
+                            if (extendedCPUMetrics != null && extendedCPUMetrics.TryGetValue(procMethod, out ICPUMethodData extendedCPUData))
+                            {
+                                readyTimes = extendedCPUData.ReadyMetrics;
                             }
                         }
-
 
                         matches.Add(new MatchData
                         {
@@ -431,6 +451,7 @@ namespace ETWAnalyzer.EventDump
                             Threads = methodCost.Threads,
                             CPUUsage = cpuUsage,   
                             Topology = file?.Extract?.CPU?.Topology,
+                            ReadyDetails = readyTimes,
                             HasCPUSamplingData = file.Extract.CPU.PerProcessMethodCostsInclusive.HasCPUSamplingData,
                             HasCSwitchData = file.Extract.CPU.PerProcessMethodCostsInclusive.HasCSwitchData,
                             BaseLine = file.Extract.MainModuleVersion != null ? file.Extract.MainModuleVersion.ToString() : "",
@@ -643,6 +664,7 @@ namespace ETWAnalyzer.EventDump
             Formatter<MatchData> threadCountFormatter = GetHeaderFormatter(matches, FormatterType.ThreadCount);
             Formatter<MatchData> coreFrequencyFormatter = GetHeaderFormatter(matches, FormatterType.Frequency);
             Formatter<MatchData> firstLastFormatter = GetHeaderFormatter(matches, FormatterType.FirstLast);
+            Formatter<MatchData> readyDetailsFormatter = GetHeaderFormatter(matches, FormatterType.ReadyDetails);
 
             // The header is omitted when total or process mode is active
             if (!IsCSVEnabled && !(ShowTotal == TotalModes.Total || ShowTotal == TotalModes.Process))
@@ -749,11 +771,19 @@ namespace ETWAnalyzer.EventDump
                             }
 
                             ColorConsole.WriteEmbeddedColorLine($"  [Green]{cpuFormatter.Print(match)}[/Green] [yellow]{waitFormatter.Print(match)}[/yellow][red]{readyFormatter.Print(match)}{readyAverageFormatter.Print(match)}[/red][yellow]{cswitchCountFormatter.Print(match)}[/yellow]{threadCountFormatter.Print(match)}{firstLastFormatter.Print(match)}{match.Method}[darkyellow]{process}[/darkyellow] ", null, true);
-                            if (coreFrequencyFormatter.Header != "")
+
+                            if (coreFrequencyFormatter.Header != "" && match.CPUUsage != null)
                             {
-                               Console.WriteLine();
-                               ColorConsole.WriteEmbeddedColorLine($"[cyan]{coreFrequencyFormatter.Print(match)}[/cyan]", null, true);
+                                Console.WriteLine();
+                                ColorConsole.WriteEmbeddedColorLine($"{coreFrequencyFormatter.Print(match)}", ConsoleColor.Cyan, true);
                             }
+
+                            if ( readyDetailsFormatter.Header != "" && match.ReadyDetails != null)
+                            {
+                                Console.WriteLine();
+                                ColorConsole.WriteEmbeddedColorLine($"[red]  {readyDetailsFormatter.Print(match)}[/red]", null, true);
+                            }
+
 
                             if (ShowModuleInfo)
                             {
@@ -802,7 +832,7 @@ namespace ETWAnalyzer.EventDump
             CSwitchCount,
             Frequency,
             ThreadCount,
-
+            ReadyDetails,
         }
 
         private Formatter<MatchData> GetHeaderFormatter(List<MatchData> matches, FormatterType type)
@@ -855,19 +885,21 @@ namespace ETWAnalyzer.EventDump
                 },
                 FormatterType.Wait => new Formatter<MatchData>
                 {
-                    Header = matches.Any(x => x.HasCSwitchData.GetValueOrDefault() || x.WaitMs != 0) ? "      Wait ms" : "",
+                    Header = matches.Any(x => x.HasCSwitchData.GetValueOrDefault() || x.WaitMs != 0) ? "Wait+Ready ms" : "",
                     Print = matches.Any(x => x.HasCSwitchData.GetValueOrDefault() || x.WaitMs != 0) ? (data) => " " + "N0".WidthFormat(data.WaitMs, 9) + " ms " : (data) => "",
                 },
                 FormatterType.Ready => new Formatter<MatchData>
                 {
                     // only data in enhanced format can contain ready data
-                    Header = matches.Any(x => x.HasCSwitchData.GetValueOrDefault()) ? "  Ready ms " : "",
-                    Print = matches.Any(x => x.HasCSwitchData.GetValueOrDefault()) ? (data) => "N0".WidthFormat(data.ReadyMs, 6) + " ms " : (data) => "",
+                    Header = matches.Any(x => x.HasCSwitchData.GetValueOrDefault()) && !NoReadyDetails ? "  Ready ms " : "",
+                    Print =  matches.Any(x => x.HasCSwitchData.GetValueOrDefault()) && !NoReadyDetails ? (data) => "N0".WidthFormat(data.ReadyMs, 6) + " ms " : (data) => "",
                 },
                 FormatterType.ReadyAverage => new Formatter<MatchData>
                 {
-                    Header = matches.Any(x => x.HasCSwitchData.GetValueOrDefault()) && ShowDetails ? "ReadyAvg " : "",
-                    Print = matches.Any(x => x.HasCSwitchData.GetValueOrDefault()) && ShowDetails ? (data) => $"{data.ReadyAverageUs,5} us " : (data) => "",
+                    Header = (matches.Any(x => x.HasCSwitchData.GetValueOrDefault()) && ShowDetails && !NoReadyDetails) ? "ReadyAvg " : "",
+                    Print =  (matches.Any(x => x.HasCSwitchData.GetValueOrDefault()) && ShowDetails && !NoReadyDetails) ? 
+                                            (data) => (data.ReadyAverageUs > 0 ? $"{data.ReadyAverageUs,5} us " : "".WithWidth(5+4)) :
+                                            (data) => "",
                 },
                 FormatterType.CSwitchCount => new Formatter<MatchData>
                 {
@@ -876,29 +908,55 @@ namespace ETWAnalyzer.EventDump
                 },
                 FormatterType.Frequency => new Formatter<MatchData>
                 {
-                    Header = ShowDetails && matches.Any(x => x.CPUUsage != null) ? "CoreData" : "",
-                    Print = ShowDetails && matches.Any(x => x.CPUUsage != null) ? FormatCoreData : (data) => "",
+                    Header = ShowDetails && !NoFrequencyDetails && matches.Any(x => x.CPUUsage != null) ? "CoreData" : "",
+                    Print =  ShowDetails && !NoFrequencyDetails && matches.Any(x => x.CPUUsage != null) ? FormatCoreData : (data) => "",
                 },
                 FormatterType.ThreadCount => new Formatter<MatchData>
                 {
                     Header = ThreadCount ? "#Threads " : "",
                     Print = (data) => ThreadCount ? "#" + "N0".WidthFormat(data.Threads, -9) : "",
                 },
+                FormatterType.ReadyDetails => new Formatter<MatchData>
+                {
+                    Header = ShowDetails && !NoReadyDetails && matches.Any(x => x.ReadyDetails != null) ? "ReadyDetails" : "",
+                    Print =  ShowDetails && !NoReadyDetails && matches.Any(x=> x.ReadyDetails != null ) ? FormatReadyData : (data) => "",
+                },
                 _ => throw new NotSupportedException($"Formatter {type} is not supported"),
             };
         }
 
+        /// <summary>
+        /// Show Ready percentiles which is aligned with ReadyAverage column for the 50% Median value to make it easy to compare values.
+        /// </summary>
+        /// <param name="data"></param>
+        /// <returns></returns>
+        private string FormatReadyData(MatchData data)
+        {
+            string lret = "";
+            if (data.ReadyDetails != null)
+            {
+                lret = "".WithWidth(3) + $"Min: {data.ReadyDetails.MinUs:F1} us 5% {data.ReadyDetails.Percentile5:F1} us 25% {data.ReadyDetails.Percentile25:F1} us 50% {data.ReadyDetails.Percentile50:F1} us 90%: {data.ReadyDetails.Percentile90:F1} us 95%: {data.ReadyDetails.Percentile95:F1} us Max: {data.ReadyDetails.MaxUs:F1} us";
+            }
+            return lret;
+        }
+
+        /// <summary>
+        /// Show CPU consumption per CPU efficiency class.
+        /// </summary>
+        /// <param name="data"></param>
+        /// <returns></returns>
         string FormatCoreData(MatchData data)
         {
             string lret = "";
             if( data.CPUUsage!= null )
             {
                 int totalCPUMs = data.CPUUsage.Sum(x => x.CPUMs);
-
                 foreach(var usage in data.CPUUsage.OrderByDescending(x=>x.EfficiencyClass))
                 {
                     int percentAboveNominal = (int) (100.0f * usage.AverageMHz / data.Topology.First(x => x.Value.EfficiencyClass == usage.EfficiencyClass).Value.NominalFrequencyMHz);
-                    lret += "     " + $"N0".WidthFormat(usage.CPUMs, 10) + " ms "+ $"{(100.0f*usage.CPUMs/totalCPUMs):F0} % CPU of total on {usage.UsedCores,2} Cores "  + "N0".WidthFormat(usage.AverageMHz, 4) + $" MHz ({percentAboveNominal}% Boost) " + $"Class: {usage.EfficiencyClass} Enabled Cores: {usage.EnabledCPUsAvg} {usage.FirstS}s-{usage.LastS}s" + Environment.NewLine;
+                    string cpuPercent = $"{(100.0f * usage.CPUMs / totalCPUMs):F0}".WithWidth(3);
+
+                    lret += "  [green]" +  $"N0".WidthFormat(usage.CPUMs, 10) + " ms [/green]"+ $"Class: {usage.EfficiencyClass} " + $"({cpuPercent} % CPU) on {usage.UsedCores,2} Cores "  + "N0".WidthFormat(usage.AverageMHz, 5) + $" MHz ({percentAboveNominal,3}% Frequency) " + $"Enabled Cores: {usage.EnabledCPUsAvg,2} Duration: {usage.LastS- usage.FirstS:F3} s" + Environment.NewLine;
                 }
             }
             return lret.TrimEnd(StringFormatExtensions.NewLineChars);
@@ -1020,18 +1078,101 @@ namespace ETWAnalyzer.EventDump
             TimeFormats firstFormat = FirstTimeFormat ?? TimeFormats.s;
             TimeFormats lastFormat = LastTimeFormat ?? TimeFormats.s;
 
+            int? cpuClass0Ms = null;
+            int? cpuClass1Ms = null;
+            int? frequencyClass0MHz = null;
+            int? frequencyClass1MHz = null;
+            int? frequencyRelativeToNominalPercentClass0 = null;
+            int? frequencyRelativeToNominalPercentClass1 = null;
+            long? usedCoresClass0 = null;
+            long? usedCoresClass1 = null;
+            long? enabledCores = null;
+
+            if (match.CPUUsage != null)
+            {
+                foreach (var usage in match.CPUUsage)
+                {
+                    if (usage.EfficiencyClass == (EfficiencyClass)0)
+                    {
+                        GetCPUUsage(usage, match, ref cpuClass0Ms, ref frequencyClass0MHz, ref frequencyRelativeToNominalPercentClass0, ref enabledCores, ref usedCoresClass0);
+                    }
+                    else if (usage.EfficiencyClass == (EfficiencyClass)1)
+                    {
+                        GetCPUUsage(usage, match, ref cpuClass1Ms, ref frequencyClass1MHz, ref frequencyRelativeToNominalPercentClass1, ref enabledCores, ref usedCoresClass1);
+                    }
+                }
+            }
 
             if (!myCSVHeaderPrinted)
             {
-                OpenCSVWithHeader("CSVOptions", "Test Case", "Date", "Test Time in ms", "Module", "Method", "CPU ms", "Wait ms", "Ready ms", "Ready Average us", "Context Switch Count", "# Threads",Col_Baseline, Col_Process, Col_ProcessName, Col_Session, "Start Time", "StackDepth",
+                OpenCSVWithHeader("CSVOptions", "Test Case", "Date", "Test Time in ms", "Module", "Method", "CPU ms", "Wait ms", "Ready ms", "Ready Average us", 
+                    "Ready Min us",
+                    "Ready Max us",
+                    "Ready 5% Percentile us",
+                    "Ready 25% Percentile us",
+                    "Ready 50% Percentile us (Median)",
+                    "Ready 90% Percentile us",
+                    "Ready 95% Percentile us",
+                    "Ready 99% Percentile us",
+                    "Context Switch Count",
+                    "CPU ms Efficiency Class 0",
+                    "Average Frequency Efficiency Class 0",
+                    "FrequencyRelativeToNominal % Efficiency Class 0",
+                    "UsedCores Class 0",
+                    "CPU ms Efficiency Class 1",
+                    "Average Frequency Efficiency Class 1",
+                    "FrequencyRelativeToNominal % Efficiency Class 1",
+                    "UsedCores Class 1",
+                    "Enabled Cores",
+                    "# Threads", Col_Baseline, Col_Process, Col_ProcessName, Col_Session, "Start Time", "StackDepth",
                                   "FirstLastCall Duration in s", $"First Call time in {GetAbbreviatedName(firstFormat)}", $"Last Call time in {GetAbbreviatedName(lastFormat)}", Col_CommandLine, "SourceFile", "IsNewProcess", "Module and Driver Info");
                 myCSVHeaderPrinted = true;
             }
 
-            WriteCSVLine(CSVOptions, match.TestName, match.PerformedAt, match.DurationInMs, match.ModuleName, match.Method, match.CPUMs, match.WaitMs, match.ReadyMs, match.ReadyAverageUs, match.ContextSwitchCount, match.Threads, match.BaseLine, match.ProcessAndPid, match.Process.GetProcessName(UsePrettyProcessName), match.Process.SessionId, match.Process.StartTime, match.CPUMs / Math.Exp(match.StackDepth),
+
+            WriteCSVLine(CSVOptions, match.TestName, match.PerformedAt, match.DurationInMs, match.ModuleName, match.Method, match.CPUMs, match.WaitMs, match.ReadyMs, match.ReadyAverageUs, 
+                match?.ReadyDetails?.MinUs,
+                match?.ReadyDetails?.MaxUs,
+                match?.ReadyDetails?.Percentile5,
+                match?.ReadyDetails?.Percentile25,
+                match?.ReadyDetails?.Percentile50,
+                match?.ReadyDetails?.Percentile90,
+                match?.ReadyDetails?.Percentile95,
+                match?.ReadyDetails?.Percentile99,
+                match.ContextSwitchCount, 
+                cpuClass0Ms,
+                frequencyClass0MHz,
+                frequencyRelativeToNominalPercentClass0,
+                usedCoresClass0,
+                cpuClass1Ms,
+                frequencyClass1MHz,
+                frequencyRelativeToNominalPercentClass1,
+                usedCoresClass1,
+                enabledCores,
+                match.Threads, match.BaseLine, match.ProcessAndPid, match.Process.GetProcessName(UsePrettyProcessName), match.Process.SessionId, match.Process.StartTime, match.CPUMs / Math.Exp(match.StackDepth),
                          firstLastDurationS, GetDateTimeString(match.FirstCallTime, match.SessionStart, firstFormat), GetDateTimeString(match.LastCallTime, match.SessionStart, lastFormat), NoCmdLine ? "" : match.Process.CmdLine, match.SourceFile, (match.Process.IsNew ? 1 : 0), moduleDriverInfo);
         }
 
+        /// <summary>
+        /// Fill values for given CPU efficiency class
+        /// </summary>
+        /// <param name="usage"></param>
+        /// <param name="data"></param>
+        /// <param name="cpuMs"></param>
+        /// <param name="frequencyMHz"></param>
+        /// <param name="boostPercent"></param>
+        void GetCPUUsage(ICPUUsage usage, MatchData data, ref int? cpuMs, ref int? frequencyMHz, ref int? boostPercent, ref long ?enabledCPUCount, ref long? usedCores)
+        {
+            cpuMs = usage.CPUMs;
+            frequencyMHz = usage.AverageMHz;
+            enabledCPUCount = usage.EnabledCPUsAvg;
+            usedCores = usage.UsedCores;
+            if (data.Topology != null)
+            {
+                int nominalMHz = data.Topology.First(x => x.Value.EfficiencyClass == usage.EfficiencyClass).Value.NominalFrequencyMHz;
+                boostPercent = (int)(100.0f * frequencyMHz / nominalMHz);
+            }
+        }
 
         private void ProcessTotalMatches(List<MatchData> matches)
         {

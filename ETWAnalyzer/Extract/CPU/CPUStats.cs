@@ -2,6 +2,7 @@
 //// SPDX-License-Identifier:   MIT
 
 using ETWAnalyzer.Extract.CPU;
+using ETWAnalyzer.Extract.CPU.Extended;
 using ETWAnalyzer.Extractors;
 using System;
 using System.Collections.Generic;
@@ -10,7 +11,7 @@ using System.IO;
 namespace ETWAnalyzer.Extract
 {
     /// <summary>
-    /// Part of ETWExtract which contains per process CPU consumption metrics
+    /// Part of ETWExtract which contains per process CPU consumption metrics. This is serialized to Json file.
     /// </summary>
     public class CPUStats : ICPUStats
     {

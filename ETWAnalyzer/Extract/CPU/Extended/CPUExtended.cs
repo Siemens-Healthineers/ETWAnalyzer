@@ -1,20 +1,10 @@
 ﻿//// SPDX-FileCopyrightText:  © 2023 Siemens Healthcare GmbH
 //// SPDX-License-Identifier:   MIT
 
-using ETWAnalyzer.Extract.CPU.Frequency;
-using ETWAnalyzer.Extractors.CPU;
 using Newtonsoft.Json;
-using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Linq;
-using System.Security.Policy;
-using System.Text;
-using System.Threading.Tasks;
-using static ETWAnalyzer.Extractors.CPU.CPUMethodData;
 
-namespace ETWAnalyzer.Extract.CPU
+namespace ETWAnalyzer.Extract.CPU.Extended
 {
 
     /// <summary>
@@ -95,13 +85,19 @@ namespace ETWAnalyzer.Extract.CPU
             frequencies.Add(startTimeS, endTimeS, averageFrequencyMHz);
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="processIndex"></param>
+        /// <param name="method"></param>
+        /// <param name="data"></param>
         internal void AddMethodCostPerEfficiencyClass(ETWProcessIndex processIndex, MethodIndex method, CPUUsage[] data)
         {
             var newData = new CPUMethodData
             {
                 CPUConsumption = data,
+                Index = processIndex.Create(method),
             };
-            newData.Index = processIndex.Create(method);
             MethodData.Add(newData);
         }
 
@@ -122,10 +118,23 @@ namespace ETWAnalyzer.Extract.CPU
                 m.Index =  process.Create( oldToNewIndex[method] );
             }
         }
+
+        internal void AddReadyMetrics(ETWProcessIndex processIdx, MethodIndex methodIndex, ReadyTimes ready)
+        {
+            ProcessMethodIdx procMethod = processIdx.Create(methodIndex);
+            var existing = MethodData.Find(x => x.Index == procMethod);
+            if (existing == null)
+            {
+                existing = new CPUMethodData { Index = procMethod };
+                MethodData.Add(existing);   
+            }
+            existing.ReadyMetrics = ready;
+        }
     }
 
     /// <summary>
     /// Contains extended CPU metrics per method. E.g. P/E Core CPU usage and average frequencies, ... 
+    /// This class is serialized to Json file
     /// </summary>
     public class CPUMethodData : ICPUMethodData
     {
@@ -135,9 +144,21 @@ namespace ETWAnalyzer.Extract.CPU
         public ProcessMethodIdx Index { get; set; }
 
         /// <summary>
-        /// CPU consumption summed accross all cores for all supported CPU Efficiency classes (e.g. P/E Cores).
+        /// CPU consumption summed across all cores for all supported CPU Efficiency classes (e.g. P/E Cores).
         /// </summary>
         public CPUUsage[] CPUConsumption { get; set; }
+
+        ICPUUsage[] ICPUMethodData.CPUConsumption => CPUConsumption;
+
+        /// <summary>
+        /// Contains Ready time percentiles
+        /// </summary>
+        public ReadyTimes ReadyMetrics { get; set; }
+
+        /// <summary>
+        /// Contains Ready time percentiles
+        /// </summary>
+        IReadyTimes ICPUMethodData.ReadyMetrics => ReadyMetrics;
     }
 
     /// <summary>
@@ -180,14 +201,19 @@ namespace ETWAnalyzer.Extract.CPU
     public interface ICPUMethodData
     {
         /// <summary>
-        /// CPU consumption summed accross all cores for all supported CPU Efficiency classes (e.g. P/E Cores).
+        /// CPU consumption summed across all cores for all supported CPU Efficiency classes (e.g. P/E Cores).
         /// </summary>
-        CPUUsage[] CPUConsumption { get; set; }
+        ICPUUsage[] CPUConsumption { get;  }
+
+        /// <summary>
+        /// Percentile Ready Metrics 
+        /// </summary>
+        IReadyTimes ReadyMetrics { get;  }
 
         /// <summary>
         /// Combined Index to the method name in <see cref="ICPUPerProcessMethodList.MethodNames"/> and <see cref="IETWExtract.Processes"/> arrays.
         /// </summary>
-        ProcessMethodIdx Index { get; set; }
+        ProcessMethodIdx Index { get; }
     }
 
     /// <summary>

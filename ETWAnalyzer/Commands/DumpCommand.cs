@@ -129,8 +129,8 @@ namespace ETWAnalyzer.Commands
         "                         -PrintFiles                Print input Json files paths into output" + Environment.NewLine;
         static readonly string CPUHelpString =
         "   CPU      -filedir/fd Extract\\ or xxx.json [-recursive] [-csv xxx.csv] [-NoCSVSeparator] [-ProcessFmt timefmt] [-Methods method1;method2...] [-FirstLastDuration/fld [firsttimefmt] [lasttimefmt]] [-MinMaxCSwitchCount xx-yy] [-MinMaxReadyAvgus xx-yy]" + Environment.NewLine +
-        "            [-ThreadCount] [-SortBy [CPU/Wait/CPUWait/CPUWaitReady/ReadyAvg/CSwitchCount/StackDepth/First/Last/TestTime/StartTime] [-StackTags tag1;tag2] [-CutMethod xx-yy] [-ShowOnMethod] [-ShowModuleInfo [Driver] or [filter]] [-NoCmdLine] [-Clip] [-Details]" + Environment.NewLine +
-        "            [-ShowTotal Total, Process, Method] [-topn dd nn] [-topNMethods dd nn] [-ZeroTime/zt Marker/First/Last/ProcessStart filter] [-ZeroProcessName/zpn filter] " + Environment.NewLine +
+        "            [-ThreadCount] [-SortBy [CPU/Wait/CPUWait/CPUWaitReady/ReadyAvg/CSwitchCount/StackDepth/First/Last/TestTime/StartTime] [-StackTags tag1;tag2] [-CutMethod xx-yy] [-ShowOnMethod] [-ShowModuleInfo [Driver] or [filter]] [-NoCmdLine] [-Clip]" + Environment.NewLine +
+        "            [-Details [-NoFrequency]] [-NoReady] [-ShowTotal Total, Process, Method] [-topn dd nn] [-topNMethods dd nn] [-ZeroTime/zt Marker/First/Last/ProcessStart filter] [-ZeroProcessName/zpn filter] " + Environment.NewLine +
         "            [-includeDll] [-includeArgs] [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd] [-MinMaxMsTestTimes xx-yy ...] [-ProcessName/pn xxx.exe(pid)] [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-CmdLine substring]" + Environment.NewLine +
         "            [-ShowFullFileName/-sffn]" + Environment.NewLine +
         "                         Print CPU, Wait and Ready duration of selected methods of one extracted Json or a directory of Json files. To get output -extract CPU, All or Default must have been used during extraction." + Environment.NewLine +
@@ -177,7 +177,9 @@ namespace ETWAnalyzer.Commands
         "                         -MinMaxReadyMs xx-yy or xx Only include methods (stacktags have no recorded ready times) with a minimum ready time of [xx, yy] ms." + Environment.NewLine +
         "                         -MinMaxCpuMs xx-yy or xx   Only include methods/stacktags with a minimum CPU consumption of [xx,yy] ms." + Environment.NewLine +
         "                         -MinMaxWaitMs xx-yy or xx  Only include methods/stacktags with a minimum wait time of [xx,yy] ms." + Environment.NewLine +
-        "                         -Details                   Show additionally Session Id, Ready Average time and Context Switch Count." + Environment.NewLine +
+        "                         -Details                   Show additionally Session Id, Ready Average time, Context Switch Count, average CPU frequency per CPU efficiency class and ready percentiles." + Environment.NewLine +
+        "                           -NoFrequency             When -Details is present do not print average CPU frequency and CPU usage per processor efficiency class (e.g. P/E Cores)." + Environment.NewLine +
+        "                         -NoReady                   Do not print Ready time, average or percentiles (when -Details is used) per method." + Environment.NewLine +
         "                         -Session dd;yy             Filter processes by Windows session id. Multiple filters are separated by ;" + Environment.NewLine +
         "                                                    E.g. dd;dd2 will filter for all dd instances and dd2. The wildcards * and ? are supported for all filter strings." + Environment.NewLine +
         "                         For other options [-recursive] [-csv] [-NoCSVSeparator] [-TimeFmt] [-TestsPerRun] [-SkipNTests] [-TestRunIndex] [-TestRunCount] [-MinMaxMsTestTimes] [-ProcessName/pn] [-NewProcess] [-CmdLine]" + Environment.NewLine +
@@ -825,6 +827,9 @@ namespace ETWAnalyzer.Commands
         public MinMaxRange<int> MinMaxReadyMs { get; private set; } = new();
         public MinMaxRange<int> MinMaxReadyAverageUs { get; private set; } = new();
         public MinMaxRange<int> MinMaxCSwitch { get; private set; } = new();
+        public bool NoReadyDetails { get; private set; }
+        public bool NoFrequencyDetails { get; private set; }
+
 
         public MinMaxRange<double> MinMaxFirstS { get; private set; } = new();
         public MinMaxRange<double> MinMaxLastS { get; private set; } = new();
@@ -846,7 +851,7 @@ namespace ETWAnalyzer.Commands
         public DumpBase.TimeFormats? FirstTimeFormat { get; private set; }
         public DumpBase.TimeFormats? LastTimeFormat { get; private set; }
         public TotalModes? ShowTotal { get; private set; }
-
+        
         // Dump Memory specific Flags
         public bool TotalMemory { get; private set; }
 
@@ -1436,6 +1441,12 @@ namespace ETWAnalyzer.Commands
                     case "-threadcount":
                         ThreadCount = true;
                         break;
+                    case "-noready":
+                        NoReadyDetails = true;
+                        break;
+                    case "-nofrequency":
+                        NoFrequencyDetails = true;
+                        break;
                     case "-firstlastduration":
                     case "-fld":
                         FirstLastDuration = true;
@@ -1791,6 +1802,8 @@ namespace ETWAnalyzer.Commands
                             MinMaxCPUMs = MinMaxCPUMs,
                             MinMaxWaitMs = MinMaxWaitMs,
                             MinMaxReadyMs = MinMaxReadyMs,
+                            NoReadyDetails = NoReadyDetails,
+                            NoFrequencyDetails = NoFrequencyDetails,
                             MinMaxReadyAverageUs = MinMaxReadyAverageUs,
                             MinMaxCSwitch = MinMaxCSwitch,
                             MinMaxFirstS = MinMaxFirstS,

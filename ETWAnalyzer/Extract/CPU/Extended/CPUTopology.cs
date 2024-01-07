@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ETWAnalyzer.Extract.CPU
+namespace ETWAnalyzer.Extract.CPU.Extended
 {
     /// <summary>
     /// Contains Nominal CPU Frequency and other CPU data

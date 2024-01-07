@@ -4,6 +4,7 @@
 
 using ETWAnalyzer.Extract;
 using ETWAnalyzer.Extract.CPU;
+using ETWAnalyzer.Extract.CPU.Extended;
 using ETWAnalyzer.Extract.FileIO;
 using ETWAnalyzer.Extract.Modules;
 using Newtonsoft.Json;
@@ -108,7 +109,9 @@ namespace ETWAnalyzer.Extractors
                     Serialize<ModuleContainer>(moduleStream, extract.Modules);
                     extract.Modules = null;
                 }
-                if( extract?.CPU?.ExtendedCPUMetrics != null && extract.CPU.ExtendedCPUMetrics.CPUToFrequencyDurations.Count > 0 )
+
+                // write extended CPU file only if we have data inside it
+                if( extract?.CPU?.ExtendedCPUMetrics != null && ( extract.CPU.ExtendedCPUMetrics.CPUToFrequencyDurations.Count > 0  || extract.CPU.ExtendedCPUMetrics.MethodData.Count > 0) )
                 {
                     using var frequencyStream = GetOutputStreamFor(outputFile, ExtendedCPUPostFix, outputFiles);
                     Serialize<CPUExtended>(frequencyStream, extract.CPU.ExtendedCPUMetrics);

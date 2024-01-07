@@ -1,13 +1,7 @@
 ﻿//// SPDX-FileCopyrightText:  © 2023 Siemens Healthcare GmbH
 //// SPDX-License-Identifier:   MIT
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace ETWAnalyzer.Extract.CPU.Frequency
+namespace ETWAnalyzer.Extract.CPU.Extended
 {
     /// <summary>
     /// Helper methods to convert a combined ProcessMethodIdx to/from ETWProcessIndex and MethodIndex.

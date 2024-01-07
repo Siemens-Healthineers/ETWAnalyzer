@@ -2,6 +2,7 @@
 //// SPDX-License-Identifier:   MIT
 
 using ETWAnalyzer.Extract.CPU;
+using ETWAnalyzer.Extract.CPU.Extended;
 using System.Collections.Generic;
 
 namespace ETWAnalyzer.Extract

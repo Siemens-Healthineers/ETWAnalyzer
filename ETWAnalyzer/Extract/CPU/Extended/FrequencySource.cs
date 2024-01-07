@@ -1,10 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿//// SPDX-FileCopyrightText:  © 2023 Siemens Healthcare GmbH
+//// SPDX-License-Identifier:   MIT
 
-namespace ETWAnalyzer.Extract.CPU.Frequency
+using System;
+using System.Collections.Generic;
+
+namespace ETWAnalyzer.Extract.CPU.Extended
 {
     /// <summary>
     /// This class contains the sampled CPU frequencies for a single CPU core which are serialized in a compact format into Json 

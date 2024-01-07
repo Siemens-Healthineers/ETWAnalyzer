@@ -1,4 +1,6 @@
-﻿using ETWAnalyzer.Extract.CPU;
+﻿using ETWAnalyzer.Extract;
+using ETWAnalyzer.Extract.CPU;
+using ETWAnalyzer.Extract.CPU.Extended;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -27,6 +29,17 @@ namespace ETWAnalyzer_uTest.Extract
             Assert.Equal(3000, frequencies.GetFrequency(0, startTime + 3.000f));
             Assert.Equal(2000, frequencies.GetFrequency(0, startTime + 5.000f));
             Assert.Equal(-1, frequencies.GetFrequency(0, startTime + 50.000f));
+        }
+
+        [Fact] 
+        public void Process_MethodIndex_Works()
+        {
+            ETWProcessIndex idx = (ETWProcessIndex) 1000;
+            MethodIndex method = (MethodIndex) 15000;
+
+            ProcessMethodIdx merged = idx.Create(method);
+            Assert.Equal(15000, (int) merged.MethodIndex());
+            Assert.Equal(1000, (int) merged.ProcessIndex());
         }
     }
 }

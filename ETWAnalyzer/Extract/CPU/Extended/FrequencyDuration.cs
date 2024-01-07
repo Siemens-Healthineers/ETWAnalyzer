@@ -1,13 +1,9 @@
 ﻿//// SPDX-FileCopyrightText:  © 2023 Siemens Healthcare GmbH
 //// SPDX-License-Identifier:   MIT
 
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace ETWAnalyzer.Extract.CPU
+namespace ETWAnalyzer.Extract.CPU.Extended
 {
 
     /// <summary>

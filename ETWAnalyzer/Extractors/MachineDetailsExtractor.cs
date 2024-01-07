@@ -4,6 +4,7 @@
 using ETWAnalyzer.Configuration;
 using ETWAnalyzer.Extract;
 using ETWAnalyzer.Extract.CPU;
+using ETWAnalyzer.Extract.CPU.Extended;
 using ETWAnalyzer.Extract.Disk;
 using Microsoft.Diagnostics.Tracing.Etlx;
 using Microsoft.Diagnostics.Tracing.Parsers.Symbol;

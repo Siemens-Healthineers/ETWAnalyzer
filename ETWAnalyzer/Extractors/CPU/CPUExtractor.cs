@@ -15,6 +15,8 @@ using System.Threading.Tasks;
 using System.Threading;
 using System.Collections.Concurrent;
 using ETWAnalyzer.Extract.CPU;
+using ETWAnalyzer.Extract.CPU.Extended;
+using System.Diagnostics;
 
 namespace ETWAnalyzer.Extractors.CPU
 {
@@ -44,6 +46,11 @@ namespace ETWAnalyzer.Extractors.CPU
         /// Actual number of used threads
         /// </summary>
         private int UsedConcurrency { get; set; } = 1;
+
+        /// <summary>
+        /// Do not extract extended Ready metrics when set to true
+        /// </summary>
+        public bool NoReady { get; internal set; }
 
         /// <summary>
         /// Just a rough guess for initial dictionary size
@@ -149,7 +156,7 @@ namespace ETWAnalyzer.Extractors.CPU
                     {
                         return;
                     }
-                    IReadOnlyList<StackFrame> frames = slice.SwitchIn.Stack?.Frames;
+                    IReadOnlyList<Microsoft.Windows.EventTracing.Symbols.StackFrame> frames = slice.SwitchIn.Stack?.Frames;
                     if (frames == null)
                     {
                         return;
@@ -187,20 +194,45 @@ namespace ETWAnalyzer.Extractors.CPU
 
             int cutOffMs = ExtractAllCPUData ? 0 : CutOffMs;
 
-            foreach (var process2Method in methodSamplesPerProcess)
+            foreach (KeyValuePair<ProcessKey, ConcurrentDictionary<string, CPUMethodData>> process2Method in methodSamplesPerProcess)
             {
-                foreach (var methodToMs in process2Method.Value)
+                foreach (KeyValuePair<string, CPUMethodData> methodToMs in process2Method.Value)
                 {
+                
                     MethodIndex methodIndex = inclusiveSamplesPerMethod.AddMethod(process2Method.Key, methodToMs.Key, methodToMs.Value, cutOffMs);
                     if (methodIndex != MethodIndex.Invalid && results?.CPU?.ExtendedCPUMetrics?.CPUToFrequencyDurations?.Count > 0)
                     {
                         if (process2Method.Key.Pid > WindowsConstants.IdleProcessId)
                         {
                             var perCoreTypeCPUUsage = methodToMs.Value.GetAverageFrequenciesPerEfficiencyClass(results.CPU);
-                            ETWProcessIndex processIdx = results.GetProcessIndexByPID(process2Method.Key.Pid, process2Method.Key.StartTime);
-                            results.CPU.ExtendedCPUMetrics.AddMethodCostPerEfficiencyClass(processIdx, methodIndex, perCoreTypeCPUUsage);
+                            if (perCoreTypeCPUUsage != null)
+                            {
+                                ETWProcessIndex processIdx = results.GetProcessIndexByPID(process2Method.Key.Pid, process2Method.Key.StartTime);
+                                Debug.Assert(methodToMs.Key == inclusiveSamplesPerMethod.MethodNames[(int)methodIndex], $"Method Index {methodIndex} and name {methodToMs.Key} are different ({inclusiveSamplesPerMethod.MethodNames[(int)methodIndex]})!");
+                                results.CPU.ExtendedCPUMetrics.AddMethodCostPerEfficiencyClass(processIdx, methodIndex, perCoreTypeCPUUsage);
+                            }
                         }
                     }
+
+                    if (NoReady == false)  // generate extended Ready metrics unless specified at command line
+                    {
+                        if (methodIndex != MethodIndex.Invalid && process2Method.Key.Pid > WindowsConstants.IdleProcessId)
+                        {
+                            ReadyTimes ready = methodToMs.Value.GetReadyMetrics(results.CPU);
+                            if (ready != null)
+                            {
+                                ETWProcessIndex processIdx = results.GetProcessIndexByPID(process2Method.Key.Pid, process2Method.Key.StartTime);
+                                if (results.CPU?.ExtendedCPUMetrics == null)
+                                {
+                                    results.CPU.ExtendedCPUMetrics = new();
+                                }
+
+                                Debug.Assert(methodToMs.Key == inclusiveSamplesPerMethod.MethodNames[(int)methodIndex], $"Method Index {methodIndex} and name {methodToMs.Key} are different ({inclusiveSamplesPerMethod.MethodNames[(int)methodIndex]})!");
+                                results.CPU.ExtendedCPUMetrics.AddReadyMetrics(processIdx, methodIndex, ready);
+                            }
+                        }
+                    }
+
                 }
             }
 
@@ -232,7 +264,7 @@ namespace ETWAnalyzer.Extractors.CPU
                 AddTotalCPU(process, slice, myPerProcessCPU);
             }
 
-            IReadOnlyList<StackFrame> frames = slice?.SwitchIn?.Stack?.Frames;
+            IReadOnlyList<Microsoft.Windows.EventTracing.Symbols.StackFrame> frames = slice?.SwitchIn?.Stack?.Frames;
             if( frames == null)
             {
                 return;
@@ -242,7 +274,7 @@ namespace ETWAnalyzer.Extractors.CPU
 
             for(int i=0;i<frames.Count;i++)
             {
-                StackFrame frame = frames[i];
+                Microsoft.Windows.EventTracing.Symbols.StackFrame frame = frames[i];
                 ConcurrentDictionary<string, CPUMethodData> methods = null;
 
                 if (!methodSamplesPerProcess.TryGetValue(process, out methods))
@@ -294,8 +326,9 @@ namespace ETWAnalyzer.Extractors.CPU
                 {
                     TraceTimestamp readyStart = slice.SwitchIn.ContextSwitch.Timestamp - slice.ReadyDuration.Value;
                     stats.ReadyTimeRange.Add(readyStart, slice.ReadyDuration.Value);
+                    stats.AddExtendedReadyMetrics(extract.CPU, (CPUNumber)slice.Processor, (float)readyStart.RelativeTimestamp.TotalSeconds, (float)slice.ReadyDuration.Value.TotalSeconds, slice.Thread.Id, slice.Thread.ProcessorAffinity);
                 }
-                    
+
                 decimal time = slice.StopTime.RelativeTimestamp.TotalSeconds;
                 stats.DepthFromBottom.Add((ushort)i);
 
@@ -312,6 +345,7 @@ namespace ETWAnalyzer.Extractors.CPU
                         stats.AddForExtendedMetrics(extract.CPU, (CPUNumber) slice.Processor, (float) slice.StartTime.RelativeTimestamp.TotalSeconds, (float) slice.StopTime.RelativeTimestamp.TotalSeconds, slice.Thread.Id, slice.Thread.ProcessorAffinity, debugData);
                         stats.CpuInMs += slice.Duration;
                     }
+
                     UpdateMethodTimingAndThreadId(stats, time, slice.Thread.Id);
                 }
             }
@@ -325,12 +359,12 @@ namespace ETWAnalyzer.Extractors.CPU
                 return;
             }
 
-            IReadOnlyList<StackFrame> frames = stack.Frames;
+            IReadOnlyList<Microsoft.Windows.EventTracing.Symbols.StackFrame> frames = stack.Frames;
             HashSet<string> recursionCountGuard = new();
 
             for(int i=0;i<frames.Count;i++)
             {
-                StackFrame frame = frames[i];
+                Microsoft.Windows.EventTracing.Symbols.StackFrame frame = frames[i];
                 ConcurrentDictionary<string, CPUMethodData> methods = null;
 
                 if (!methodSamplesPerProcess.TryGetValue(process, out methods))
