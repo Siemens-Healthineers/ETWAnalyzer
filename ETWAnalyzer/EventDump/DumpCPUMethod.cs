@@ -885,7 +885,7 @@ namespace ETWAnalyzer.EventDump
                 },
                 FormatterType.Wait => new Formatter<MatchData>
                 {
-                    Header = matches.Any(x => x.HasCSwitchData.GetValueOrDefault() || x.WaitMs != 0) ? "Wait+Ready ms" : "",
+                    Header = matches.Any(x => x.HasCSwitchData.GetValueOrDefault() || x.WaitMs != 0) ? "      Wait ms" : "",
                     Print = matches.Any(x => x.HasCSwitchData.GetValueOrDefault() || x.WaitMs != 0) ? (data) => " " + "N0".WidthFormat(data.WaitMs, 9) + " ms " : (data) => "",
                 },
                 FormatterType.Ready => new Formatter<MatchData>
