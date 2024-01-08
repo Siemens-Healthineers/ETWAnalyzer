@@ -74,7 +74,7 @@ namespace ETWAnalyzer.Commands
          " -DryRun              Do not extract. Only print which files would be extracted." + Environment.NewLine + 
          " -NoOverwrite         By default existing Json files are overwritten during a new extraction run. If you want to extract from a large directory only the missing extraction files you can use this option" + Environment.NewLine +
          "                      This way you can have the same extract command line in a script after a profiling run to extract only the newly added profiling data." + Environment.NewLine +
-         " -NoIndent            By default a readable indented json file is written. To save space for readability you can save the json files with no extra spaces. This reduces the file size ca. by 30%." + Environment.NewLine +    
+         " -Indent              By default a not readable non indented json file is written to save space. For readability you can save the json files with extra spaces and line feeds. This increases the file size ca. by 30%." + Environment.NewLine +    
          " -recursive           Test data is searched recursively below -filedir" + Environment.NewLine +
          " -filedir/-fd  xxx    Can occur multiple times. If a directory is entered all compressed and contained ETL files are extracted. You can also specify a single etl/zip file." + Environment.NewLine +
         @"                      File queries and exclusions are also supported. E.g. -fd C:\Temp\*error*.etl;!*disk* will extract all etl files in c:\temp containing the name error but exclude the ones which contain disk in the file name" + Environment.NewLine +
@@ -143,7 +143,7 @@ namespace ETWAnalyzer.Commands
         internal const string AllCPUArg = "-allcpu";
         internal const string ConcurrencyArg = "-concurrency";
         internal const string DryRunArg = "-dryrun";
-        internal const string NoIndentArg = "-noindent";
+        internal const string IndentArg = "-indent";
 
 
 
@@ -440,8 +440,8 @@ namespace ETWAnalyzer.Commands
                     case KeepTempArg: // -keepTemp
                         HaveToDeleteTemp = false;
                         break;
-                    case NoIndentArg:
-                        ExtractSerializer.JsonFormatting = Newtonsoft.Json.Formatting.None;
+                    case IndentArg:
+                        ExtractSerializer.JsonFormatting = Newtonsoft.Json.Formatting.Indented;
                         break;
                     case SymFolderArg: // -symFolder
                         Symbols.SymbolFolder = GetNextNonArg(SymFolderArg);

@@ -151,7 +151,7 @@ namespace ETWAnalyzer.Extractors
         internal static Formatting JsonFormatting
         {
             get; set;
-        } = Formatting.Indented;
+        } = Formatting.None;
 
         /// <summary>
         /// Serialize data to a stream. This method abstracts away the used serializer which 
