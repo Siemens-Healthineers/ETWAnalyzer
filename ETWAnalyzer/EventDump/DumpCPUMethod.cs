@@ -1161,6 +1161,8 @@ namespace ETWAnalyzer.EventDump
         /// <param name="cpuMs"></param>
         /// <param name="frequencyMHz"></param>
         /// <param name="boostPercent"></param>
+        /// <param name="enabledCPUCount"></param>
+        /// <param name="usedCores"></param>
         void GetCPUUsage(ICPUUsage usage, MatchData data, ref int? cpuMs, ref int? frequencyMHz, ref int? boostPercent, ref long ?enabledCPUCount, ref long? usedCores)
         {
             cpuMs = usage.CPUMs;
