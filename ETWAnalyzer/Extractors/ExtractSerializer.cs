@@ -76,7 +76,7 @@ namespace ETWAnalyzer.Extractors
 
         static internal string[] GetDerivedFileNameParts()
         {
-            string[] all = new string[] { FileIOPostFix, ModulesPostFix };
+            string[] all = new string[] { FileIOPostFix, ModulesPostFix, ExtendedCPUPostFix };
             return all.Select(x => "_Derived_" + x).ToArray();
         }
 
