@@ -144,6 +144,15 @@ namespace ETWAnalyzer.Extractors
             return outputFiles;
         }
 
+
+        /// <summary>
+        /// Get/Set how json indention is done. Default is Indented.
+        /// </summary>
+        internal static Formatting JsonFormatting
+        {
+            get; set;
+        } = Formatting.Indented;
+
         /// <summary>
         /// Serialize data to a stream. This method abstracts away the used serializer which 
         /// we can then use to test the used serializer specifics if we ever want to switch to a faster one.
@@ -161,7 +170,7 @@ namespace ETWAnalyzer.Extractors
                 writer = new StreamWriter(stream, new UTF8Encoding(false, true), 0xffff, true);
                 using var js = new JsonTextWriter(writer);
                 writer = null;
-                js.Formatting = Formatting.Indented;
+                js.Formatting = JsonFormatting;
                 Serializer.Serialize(js, value);
             }
             finally

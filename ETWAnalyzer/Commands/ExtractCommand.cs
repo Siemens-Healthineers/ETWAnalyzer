@@ -35,7 +35,7 @@ namespace ETWAnalyzer.Commands
     {
         internal static readonly string HelpString =
          "ETWAnalyzer [-extract [All, Default or Disk File CPU Memory Exception Stacktag ThreadPool PMC Frequency Power Dns TCP] -filedir/-fd inEtlOrZip [-DryRun] [-symServer NtSymbolPath/MS/Google/syngo] [-keepTemp] [-NoOverwrite] [-pThreads dd] [-nThreads dd]" + Environment.NewLine +
-         "            [-NoReady] [-allCPU] [-Concurrency dd] [-LastNDays dd] [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd]  " + Environment.NewLine + 
+         "            [-NoReady] [-allCPU] [-Concurrency dd] [-NoIndent] [-LastNDays dd] [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd]  " + Environment.NewLine + 
          "Retrieve data from ETL files and store extracted data in a serialized format in Json in the output directory \\Extract folder." + Environment.NewLine +
          "The data can the be analyzed by other tools or ETWAnalyzer itself which can also analyze the data for specific patterns or issues." + Environment.NewLine +
          "Extract Options are separated by space" + Environment.NewLine +
@@ -74,6 +74,7 @@ namespace ETWAnalyzer.Commands
          " -DryRun              Do not extract. Only print which files would be extracted." + Environment.NewLine + 
          " -NoOverwrite         By default existing Json files are overwritten during a new extraction run. If you want to extract from a large directory only the missing extraction files you can use this option" + Environment.NewLine +
          "                      This way you can have the same extract command line in a script after a profiling run to extract only the newly added profiling data." + Environment.NewLine +
+         " -NoIndent            By default a readable indented json file is written. To save space for readability you can save the json files with no extra spaces. This reduces the file size ca. by 30%." + Environment.NewLine +    
          " -recursive           Test data is searched recursively below -filedir" + Environment.NewLine +
          " -filedir/-fd  xxx    Can occur multiple times. If a directory is entered all compressed and contained ETL files are extracted. You can also specify a single etl/zip file." + Environment.NewLine +
         @"                      File queries and exclusions are also supported. E.g. -fd C:\Temp\*error*.etl;!*disk* will extract all etl files in c:\temp containing the name error but exclude the ones which contain disk in the file name" + Environment.NewLine +
@@ -142,6 +143,7 @@ namespace ETWAnalyzer.Commands
         internal const string AllCPUArg = "-allcpu";
         internal const string ConcurrencyArg = "-concurrency";
         internal const string DryRunArg = "-dryrun";
+        internal const string NoIndentArg = "-noindent";
 
 
 
@@ -437,6 +439,9 @@ namespace ETWAnalyzer.Commands
                         break;
                     case KeepTempArg: // -keepTemp
                         HaveToDeleteTemp = false;
+                        break;
+                    case NoIndentArg:
+                        ExtractSerializer.JsonFormatting = Newtonsoft.Json.Formatting.None;
                         break;
                     case SymFolderArg: // -symFolder
                         Symbols.SymbolFolder = GetNextNonArg(SymFolderArg);
