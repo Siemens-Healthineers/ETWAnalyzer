@@ -17,11 +17,11 @@ namespace ETWAnalyzer.Commands
         private static readonly string HelpString =
            $"ETWAnalyzer {FileVersionInfo.GetVersionInfo(Process.GetCurrentProcess().MainModule.FileName).FileVersion}" + Environment.NewLine +
             " ETWAnalyzer [green]-help[/green] [Extract, Dump, Convert or LoadSymbol]  Get further information about the specific sub command" + Environment.NewLine +
-            " ETWAnalyzer [green]-Extract[/green] [All or Cpu Disk File Module Memory Exception Stacktag ThreadPool Pmc Dns Tcp] -filedir inEtlOrZip [-outDir xxxxx] [-symServer [MS, syngo or NtSymbolPath] [-keepTemp] [-symFolder bbbb]" + Environment.NewLine +
+            " ETWAnalyzer [green]-Extract[/green] [All or Cpu Disk File Module Memory Exception Stacktag ThreadPool Pmc Dns Power Frequency Tcp] -filedir inEtlOrZip [-outDir xxxxx] [-symServer [MS, syngo or NtSymbolPath] [-keepTemp] [-symFolder bbbb]" + Environment.NewLine +
             "        Extract data from etl file/s and write summary data into json files." + Environment.NewLine +
             " ETWAnalyzer [green]-LoadSymbol[/green] -filedir xxx.json -symserver ..." + Environment.NewLine +
             "        Resolve method names from an extracted Json file." + Environment.NewLine +
-            " ETWAnalyzer [green]-Dump[/green] [Stats,Process,CPU,Memory,Disk,File,ThreadPool,Exception,Mark,TestRun,Version,PMC,LBR,Dns]" + Environment.NewLine +
+            " ETWAnalyzer [green]-Dump[/green] [Stats,Process,CPU,Stacktag,Memory,Disk,File,ThreadPool,Exception,Mark,TestRun,Version,PMC,LBR,Dns,Power,TCP]" + Environment.NewLine +
             "        Dump previously extracted data from Json files. Some commands additionally support ETL files (e.g. -dump Process)" + Environment.NewLine +
             " ETWAnalyzer [green]-Convert[/green] -filedir xx.etl -pid dd [-perthread]" + Environment.NewLine +
             "        Convert from an ETL File a process to a speedscope json file." + Environment.NewLine +
