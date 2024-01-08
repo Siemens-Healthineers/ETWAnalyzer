@@ -141,7 +141,7 @@ namespace ETWAnalyzer.Extract
             {
                 MethodNames.Add(method);
                 index = MethodNames.Count - 1;
-                myMethodChecker.Add(method, MethodNames.Count - 1);
+                myMethodChecker.Add(method, index);
             }
 
             return (MethodIndex)index;

@@ -7,6 +7,7 @@ using ETWAnalyzer.Extract.FileIO;
 using ETWAnalyzer.Extract.Modules;
 using ETWAnalyzer.Extract.Network;
 using ETWAnalyzer.Extract.PMC;
+using ETWAnalyzer.Extract.Power;
 using ETWAnalyzer.Extract.ThreadPool;
 using ETWAnalyzer.Infrastructure;
 using System;
@@ -204,6 +205,11 @@ namespace ETWAnalyzer.Extract
         /// Commandline of ETWAnalyzer during extraction
         /// </summary>
         string UsedExtractOptions { get; }
+
+        /// <summary>
+        /// Get power profile settings.
+        /// </summary>
+        IReadOnlyList<IPowerConfiguration> PowerConfiguration { get; }
 
 
         /// <summary>

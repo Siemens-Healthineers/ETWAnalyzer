@@ -3,17 +3,21 @@
 
 using ETWAnalyzer.Extract;
 using ETWAnalyzer.Extract.CPU;
+using ETWAnalyzer.Extract.CPU.Extended;
+using ETWAnalyzer.Infrastructure;
 using ETWAnalyzer.TraceProcessorHelpers;
 using Microsoft.Windows.EventTracing;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ETWAnalyzer.Extractors.CPU
 {
+
+    /// <summary>
+    /// Intermediate data structure used during CPU extraction to calculate wait, ready and CPU consumption data 
+    /// </summary>
     internal class CPUMethodData
     {
         /// <summary>
@@ -41,12 +45,23 @@ namespace ETWAnalyzer.Extractors.CPU
         /// </summary>
         internal Dictionary<CPUNumber, List<ProfilingData>> CPUToFrequencyDuration { get; set; } = new();
 
+        /// <summary>
+        /// CPU to Ready Duration
+        /// </summary>
+        internal Dictionary<CPUNumber, List<ReadyEvent>> CPUToReadyDuration { get; set; } = new();  
+
         class CPUDetails
         {
             public int UsedCores { get; set; }
             public List<ProfilingData> ProfilingData { get; set; } = new();
         }
 
+        /// <summary>
+        /// Calculate weighted average frequency which is summed across all cores per efficiency class.
+        /// This enables metrics how much cpu time was spent and what the average frequency was for P and E-Cores.
+        /// </summary>
+        /// <param name="context"></param>
+        /// <returns>Array of CPU Usage. Each array item represents the sum across all cores for one efficiency class.</returns>
         public CPUUsage[] GetAverageFrequenciesPerEfficiencyClass(CPUStats context)
         {
 
@@ -95,7 +110,7 @@ namespace ETWAnalyzer.Extractors.CPU
                     {
                         EfficiencyClass = kvp.Key,
                         AverageMHz = averageFrequencyMHz,
-                        CPUMs = (int) Math.Round(totalTimeS, 0, MidpointRounding.AwayFromZero ),
+                        CPUMs = (int) Math.Round(totalTimeS*1000, 0, MidpointRounding.AwayFromZero ),
                         UsedCores = kvp.Value.UsedCores,
                         EnabledCPUsAvg = enabledCPUs / kvp.Value.ProfilingData.Count,
                         FirstS = (float) Math.Round(firstS, 4, MidpointRounding.AwayFromZero),
@@ -107,7 +122,39 @@ namespace ETWAnalyzer.Extractors.CPU
                 );
             }
 
-            return lret.ToArray();
+            // return null to save space in serialized json if we have no data
+            return lret.Count == 0 ? null : lret.ToArray();
+        }
+
+
+        public ReadyTimes GetReadyMetrics(CPUStats context)
+        {
+            ReadyTimes lret = new ReadyTimes();
+            List<float> readyDurations = [];
+            foreach(var ready in CPUToReadyDuration)
+            {
+                readyDurations.AddRange(ready.Value.Select(x => x.DurationS));
+            }
+
+            if (readyDurations.Count > 50)
+            {
+                readyDurations.Sort();
+                lret.AddReadyTimes(readyDurations.Min(), 
+                    readyDurations.Max(),
+                    readyDurations.Percentile( 0.05f ),
+                    readyDurations.Percentile( 0.25f ),
+                    readyDurations.Percentile( 0.50f ),
+                    readyDurations.Percentile( 0.90f ),
+                    readyDurations.Percentile( 0.95f ),
+                    readyDurations.Percentile( 0.99f ));
+
+                return lret;
+            }
+            else
+            {
+                return null;
+            }
+
         }
 
         /// <summary>
@@ -224,6 +271,37 @@ namespace ETWAnalyzer.Extractors.CPU
                     EnabledCPUs = (long) enabledCPUs,
 #if DEBUG
                     DebugData = debugData,
+#endif
+                });
+            }
+        }
+
+        internal class ReadyEvent
+        {
+            public float StartTimeS { get; set; }
+
+            public float DurationS { get; set; }
+            public int ThreadId { get; set; }
+            public long EnabledCPUs { get; set; }
+        }
+
+        internal void AddExtendedReadyMetrics(CPUStats cpu, CPUNumber processor, float readyStartS, float readyDurationS, int threadId, long cpuAffinityMask)
+        {
+            lock (this)
+            {
+                if( !CPUToReadyDuration.TryGetValue(processor, out var readies) )
+                {
+                    readies = [];
+                    CPUToReadyDuration[processor] = readies;
+                }
+
+                readies.Add(new ReadyEvent
+                {
+                    StartTimeS = readyStartS,
+                    DurationS = readyDurationS,
+                    ThreadId = threadId,
+#if NET6_0_OR_GREATER
+                    EnabledCPUs = (long)System.Runtime.Intrinsics.X86.Popcnt.X64.PopCount((ulong)cpuAffinityMask),
 #endif
                 });
             }
