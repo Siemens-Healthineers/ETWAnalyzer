@@ -219,8 +219,8 @@ xperf -capturestate <YouUserModeSessionName> Microsoft-Windows-Kernel-Power
 
 You get then all power setting entries which are identified by a SettingGuid and its configured value as binary data. 
 
-| Event Name  | Id | SettingGuid (Field 1) | DataSize (Field 2) | Data (Field 3) | Override (Field 4)|
-| ------------------------------------------------------------------------------------------------------------- |
+| Event Name | Id  | SettingGuid (Field 1) | DataSize (Field 2) | Data (Field 3) | Override (Field 4) |
+| -----------| ----| ----------------------|--------------------|----------------|-------------------- |
 | Microsoft-Windows-Kernel-Power/PowerSettingRundown/win:Info | 111 | 4d2b0152-7d5c-498b-88e2-34345392a2c5 | 0x00000004 | 00000004 0f 00 00 00 | False |
 | Microsoft-Windows-Kernel-Power/PowerSettingRundown/win:Info | 111 | 4e4450b3-6179-4e91-b8f1-5bb9938f81a1 | 0x00000004 | 00000004 00 00 00 00 | False |
 
