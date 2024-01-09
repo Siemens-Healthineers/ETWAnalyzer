@@ -96,7 +96,8 @@ namespace ETWAnalyzer.Extract
         /// <param name="method"></param>
         /// <param name="cpuData"></param>
         /// <param name="cutOffMs">Do not add method if duration (Wait or CPU) is &lt;= cutOffMs</param>
-        internal void AddMethod(ProcessKey process, string method, CpuData cpuData, int cutOffMs)
+        /// <returns>Method index of added method or invalid if method was not added due to cutoff reasons.</returns>
+        internal MethodIndex AddMethod(ProcessKey process, string method, CPUMethodData cpuData, int cutOffMs)
         {
             uint cpuDurationMs = (uint)Math.Round(cpuData.CpuInMs.TotalMilliseconds);
             uint waitDurationMs = (uint)(cpuData.WaitTimeRange.GetDuration().TotalMilliseconds);
@@ -105,7 +106,7 @@ namespace ETWAnalyzer.Extract
                 waitDurationMs <= cutOffMs && 
                 cutOffMs != 0)
             {
-                return;
+                return MethodIndex.Invalid;
             }
 
             MethodsByProcess methodList = MethodStatsPerProcess.FirstOrDefault(x => x.Process == process);
@@ -118,12 +119,15 @@ namespace ETWAnalyzer.Extract
             long totalStackDepth = cpuData.DepthFromBottom.Aggregate(0L, (sum, value) => sum + value);
             long averageStackDepths = totalStackDepth / (cpuData.DepthFromBottom.Count > 0 ? cpuData.DepthFromBottom.Count : 1);
 
-            var cost = new MethodCost(GetMethodIndex(method), cpuDurationMs, waitDurationMs, cpuData.FirstOccurrenceSeconds, cpuData.LastOccurrenceSeconds, cpuData.ThreadIds.Count,
+            MethodIndex methodIdx = GetMethodIndex(method);
+            var cost = new MethodCost(methodIdx, cpuDurationMs, waitDurationMs, cpuData.FirstOccurrenceSeconds, cpuData.LastOccurrenceSeconds, cpuData.ThreadIds.Count,
                                       (int)averageStackDepths, (uint)cpuData.ReadyTimeRange.GetDuration().TotalMilliseconds, (ulong) cpuData.ReadyTimeRange.GetAverage(), cpuData.ContextSwitchCount)
             {
                 MethodList = MethodNames
             };
             methodList.Costs.Add(cost);
+
+            return methodIdx;
         }
 
         /// <summary>
@@ -137,13 +141,17 @@ namespace ETWAnalyzer.Extract
             {
                 MethodNames.Add(method);
                 index = MethodNames.Count - 1;
-                myMethodChecker.Add(method, MethodNames.Count - 1);
+                myMethodChecker.Add(method, index);
             }
 
             return (MethodIndex)index;
         }
 
-        internal void SortMethodsByNameAndCPU()
+        /// <summary>
+        /// Method list is sorted by name. CPU consumption is sorted descending to make it easier to spot errors in Json easier.
+        /// </summary>
+        /// <returns>MethodIndex mapping from old to new Method Index after sorting the method names.</returns>
+        internal Dictionary<MethodIndex, MethodIndex> SortMethodsByNameAndCPU()
         {
             // Sort Method names alphabetically in Json and update MethodIdx of the status
             List<string> sorted = MethodNames.OrderBy(x => x).ToList();
@@ -170,6 +178,7 @@ namespace ETWAnalyzer.Extract
                 }
             }
 
+            
 
             // Sort processes and methods per processes descending by CPU consumption
             static int SortAscendingByCPU(MethodsByProcess a, MethodsByProcess b)
@@ -185,6 +194,8 @@ namespace ETWAnalyzer.Extract
             {
                 process.Costs.Sort((a, b) => b.CPUMs.CompareTo(a.CPUMs));
             }
+
+            return old2NewIndexMap;
         }
 
 

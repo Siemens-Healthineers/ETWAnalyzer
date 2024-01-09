@@ -7,6 +7,7 @@ using ETWAnalyzer.Extract.FileIO;
 using ETWAnalyzer.Extract.Modules;
 using ETWAnalyzer.Extract.Network;
 using ETWAnalyzer.Extract.PMC;
+using ETWAnalyzer.Extract.Power;
 using ETWAnalyzer.Extract.ThreadPool;
 using ETWAnalyzer.Extractors;
 using Newtonsoft.Json;
@@ -144,6 +145,17 @@ namespace ETWAnalyzer.Extract
         IReadOnlyList<Display> IETWExtract.Displays => Displays;
 
         /// <summary>
+        /// Get power profile settings.
+        /// </summary>
+        public List<PowerConfiguration> PowerConfiguration { get; set; } = new();
+
+        /// <summary>
+        /// Get power profile settings.
+        /// </summary>
+        IReadOnlyList<IPowerConfiguration> IETWExtract.PowerConfiguration => (IReadOnlyList < IPowerConfiguration > ) PowerConfiguration;
+
+
+        /// <summary>
         /// Get Information about all loaded modules of the system
         /// </summary>
         IModuleContainer IETWExtract.Modules => myModuleDeserializer.Value; 
@@ -166,7 +178,18 @@ namespace ETWAnalyzer.Extract
         /// <summary>
         /// CPU Metrics
         /// </summary>
-        ICPUStats IETWExtract.CPU => CPU;
+        ICPUStats IETWExtract.CPU
+        {
+            get
+            {
+                if( CPU != null  && CPU.DeserializedFileName == null)
+                {
+                    CPU.DeserializedFileName = DeserializedFileName;  // needed to deserialize CPUExtended json file
+                }
+                return CPU;
+            }
+        }
+
 
         /// <summary>
         /// Disk Metrics

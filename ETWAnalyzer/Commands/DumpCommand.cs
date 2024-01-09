@@ -12,6 +12,13 @@ using System.IO;
 using System.Linq;
 using static ETWAnalyzer.Extract.ETWProcess;
 using ETWAnalyzer.TraceProcessorHelpers;
+using Microsoft.Windows.EventTracing.Metadata;
+using System.Drawing;
+using System.Numerics;
+using System.Reflection.Emit;
+using System.Reflection;
+using System.Runtime.InteropServices;
+using System.Threading;
 
 namespace ETWAnalyzer.Commands
 {
@@ -21,7 +28,7 @@ namespace ETWAnalyzer.Commands
     class DumpCommand : ArgParser
     {
         private static readonly string DumpHelpStringPrefix =
-        "ETWAnalyzer -Dump [Stats,Process,CPU,Memory,Disk,File,ThreadPool,Exception,Mark,TestRun,Version,PMC,LBR,Dns] [-nocolor]" + Environment.NewLine;
+        "ETWAnalyzer -Dump [Stats,Process,CPU,Memory,Disk,File,Power,ThreadPool,Exception,Mark,TestRun,Version,PMC,LBR,Dns] [-nocolor]" + Environment.NewLine;
 
         static readonly string StatsHelpString =
         "   Stats    -filedir/fd x.etl/.json   [-Properties xxxx] [-recursive] [-csv xxx.csv] [-NoCSVSeparator] [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd] [-MinMaxMsTestTimes xx-yy ...] [-Clip]" + Environment.NewLine + "" +
@@ -122,8 +129,8 @@ namespace ETWAnalyzer.Commands
         "                         -PrintFiles                Print input Json files paths into output" + Environment.NewLine;
         static readonly string CPUHelpString =
         "   CPU      -filedir/fd Extract\\ or xxx.json [-recursive] [-csv xxx.csv] [-NoCSVSeparator] [-ProcessFmt timefmt] [-Methods method1;method2...] [-FirstLastDuration/fld [firsttimefmt] [lasttimefmt]] [-MinMaxCSwitchCount xx-yy] [-MinMaxReadyAvgus xx-yy]" + Environment.NewLine +
-        "            [-ThreadCount] [-SortBy [CPU/Wait/CPUWait/CPUWaitReady/ReadyAvg/CSwitchCount/StackDepth/First/Last/TestTime/StartTime] [-StackTags tag1;tag2] [-CutMethod xx-yy] [-ShowOnMethod] [-ShowModuleInfo [Driver] or [filter]] [-NoCmdLine] [-Clip] [-Details]" + Environment.NewLine +
-        "            [-ShowTotal Total, Process, Method] [-topn dd nn] [-topNMethods dd nn] [-ZeroTime/zt Marker/First/Last/ProcessStart filter] [-ZeroProcessName/zpn filter] " + Environment.NewLine +
+        "            [-ThreadCount] [-SortBy [CPU/Wait/CPUWait/CPUWaitReady/ReadyAvg/CSwitchCount/StackDepth/First/Last/TestTime/StartTime] [-StackTags tag1;tag2] [-CutMethod xx-yy] [-ShowOnMethod] [-ShowModuleInfo [Driver] or [filter]] [-NoCmdLine] [-Clip]" + Environment.NewLine +
+        "            [-Details [-NoFrequency]] [-NoReady] [-ShowTotal Total, Process, Method] [-topn dd nn] [-topNMethods dd nn] [-ZeroTime/zt Marker/First/Last/ProcessStart filter] [-ZeroProcessName/zpn filter] " + Environment.NewLine +
         "            [-includeDll] [-includeArgs] [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd] [-MinMaxMsTestTimes xx-yy ...] [-ProcessName/pn xxx.exe(pid)] [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-CmdLine substring]" + Environment.NewLine +
         "            [-ShowFullFileName/-sffn]" + Environment.NewLine +
         "                         Print CPU, Wait and Ready duration of selected methods of one extracted Json or a directory of Json files. To get output -extract CPU, All or Default must have been used during extraction." + Environment.NewLine +
@@ -170,7 +177,9 @@ namespace ETWAnalyzer.Commands
         "                         -MinMaxReadyMs xx-yy or xx Only include methods (stacktags have no recorded ready times) with a minimum ready time of [xx, yy] ms." + Environment.NewLine +
         "                         -MinMaxCpuMs xx-yy or xx   Only include methods/stacktags with a minimum CPU consumption of [xx,yy] ms." + Environment.NewLine +
         "                         -MinMaxWaitMs xx-yy or xx  Only include methods/stacktags with a minimum wait time of [xx,yy] ms." + Environment.NewLine +
-        "                         -Details                   Show additionally Session Id, Ready Average time and Context Switch Count." + Environment.NewLine +
+        "                         -Details                   Show additionally Session Id, Ready Average time, Context Switch Count, average CPU frequency per CPU efficiency class and ready percentiles." + Environment.NewLine +
+        "                           -NoFrequency             When -Details is present do not print average CPU frequency and CPU usage per processor efficiency class (e.g. P/E Cores)." + Environment.NewLine +
+        "                         -NoReady                   Do not print Ready time, average or percentiles (when -Details is used) per method." + Environment.NewLine +
         "                         -Session dd;yy             Filter processes by Windows session id. Multiple filters are separated by ;" + Environment.NewLine +
         "                                                    E.g. dd;dd2 will filter for all dd instances and dd2. The wildcards * and ? are supported for all filter strings." + Environment.NewLine +
         "                         For other options [-recursive] [-csv] [-NoCSVSeparator] [-TimeFmt] [-TestsPerRun] [-SkipNTests] [-TestRunIndex] [-TestRunCount] [-MinMaxMsTestTimes] [-ProcessName/pn] [-NewProcess] [-CmdLine]" + Environment.NewLine +
@@ -272,6 +281,16 @@ namespace ETWAnalyzer.Commands
         "                         -ShowTotal [Total/Process/File/None] Show totals for the complete File/per process but skip aggregated directory metrics/per process but show also original aggregated directory metrics. None will turn off totals." + Environment.NewLine +
         "                         For other options [-recursive] [-csv] [-NoCSVSeparator] [-NoCmdLine] [-TimeFmt] [-TestsPerRun] [-SkipNTests] [-TestRunIndex] [-TestRunCount] [-MinMaxMsTestTimes] [-ProcessName/pn] [-NewProcess] [-CmdLine]" + Environment.NewLine +
         "                         [-ShowFullFileName] refer to help of TestRun, Process and CPU (-ProcessFmt). Run \'EtwAnalyzer -help dump\' to get more infos." + Environment.NewLine;
+
+        static readonly string PowerHelpString =
+        "  Power -filedir/fd Extract\\ or xxx.json [-Details] [-Diff] [-recursive] [-csv xxx.csv] [-NoCSVSeparator] [-Clip] " + Environment.NewLine +
+        "        [-TestsPerRun dd - SkipNTests dd][-TestRunIndex dd - TestRunCount dd] [-MinMaxMsTestTimes xx-yy ...] " + Environment.NewLine +
+        "                         Print Power profile CPU settings of one or several extracted files to Console." + Environment.NewLine +
+        "                         TraceProcessing can currently parse only 37/75 CPU power settings (38 are missing). See Documentation for full details." + Environment.NewLine +
+        "                         -Details      Print help text for all shown CPU power settings along with the values." + Environment.NewLine +
+        "                         -Diff         Group files by power settings and print only one file of each group of files which have the same power settings. Only properties which are not identical in the remaining set of files are printed." + Environment.NewLine +
+        "                                       This way you can e.g. visualize the differences between Power Saver, Balanced and High Performance power plans if you record an ETL file while each of these profiles were active." + Environment.NewLine + 
+        "";
 
         static readonly string ThreadPoolHelpString =
         "  ThreadPool -filedir/fd Extract\\ or xxx.json [-TimeFmt s,Local,LocalTime,UTC,UTCTime,Here,HereTime] [-recursive] [-csv xxx.csv] [-NoCSVSeparator] [-NoCmdLine] [-Clip] " + Environment.NewLine +
@@ -507,6 +526,14 @@ namespace ETWAnalyzer.Commands
         "[green]Display and filter by Windows Session Ids by 0.[/green]" + Environment.NewLine +
         " ETWAnalyzer -dump File -fd xxx.json -Details -Session 0" + Environment.NewLine;
 
+        static readonly string PowerExamples = ExamplesHelpString +
+        "[green]Show Windows Power Profile settings for two files side by side.[/green]" + Environment.NewLine +
+        " ETWAnalyzer -dump Power -filedir xx.json -filedir yy.json" + Environment.NewLine +
+        "[green]Show Windows Power Profile settings with detailed profile descriptions.[/green]" + Environment.NewLine +
+        " ETWAnalyzer -dump Power -filedir xx.json -details" + Environment.NewLine +
+        "[green]Compare two files and print only different properties. Useful to e.g. compare different used power profiles.[/green]" + Environment.NewLine +
+        " ETWAnalyzer -dump Power -filedir xx.json -filedir yy.json -Diff" + Environment.NewLine +
+        "";
 
         static readonly string ThreadPoolExamples = ExamplesHelpString +
         "[green]Show .NET ThreadPool starvation events[/green]" + Environment.NewLine +
@@ -566,6 +593,7 @@ namespace ETWAnalyzer.Commands
             ExceptionHelpString +
             DiskHelpString +
             FileHelpString +
+            PowerHelpString +
             ThreadPoolHelpString +
             MarkHelpString +
             PMCHelpString +
@@ -800,6 +828,9 @@ namespace ETWAnalyzer.Commands
         public MinMaxRange<int> MinMaxReadyMs { get; private set; } = new();
         public MinMaxRange<int> MinMaxReadyAverageUs { get; private set; } = new();
         public MinMaxRange<int> MinMaxCSwitch { get; private set; } = new();
+        public bool NoReadyDetails { get; private set; }
+        public bool NoFrequencyDetails { get; private set; }
+
 
         public MinMaxRange<double> MinMaxFirstS { get; private set; } = new();
         public MinMaxRange<double> MinMaxLastS { get; private set; } = new();
@@ -821,7 +852,7 @@ namespace ETWAnalyzer.Commands
         public DumpBase.TimeFormats? FirstTimeFormat { get; private set; }
         public DumpBase.TimeFormats? LastTimeFormat { get; private set; }
         public TotalModes? ShowTotal { get; private set; }
-
+        
         // Dump Memory specific Flags
         public bool TotalMemory { get; private set; }
 
@@ -859,11 +890,14 @@ namespace ETWAnalyzer.Commands
         public Extract.FileIO.FileIOStatistics.FileOperation FileOperation { get; private set; }
 
 
-        // Shared by -dump File and Dns
+        // Shared by -dump File, Process, CPU, Dns, Power, ...
         public bool ShowDetails { get; private set; }
 
         // Dump ThreadPool specific Flags
         public bool NoCmdLine { get; private set; }
+
+        // Dump Power specific flags
+        public bool ShowDiff { get; private set; }
 
         // Dump Marker specific Flags
         public Func<string, bool> MarkerFilter { get; private set; } = _ => true;
@@ -1408,6 +1442,12 @@ namespace ETWAnalyzer.Commands
                     case "-threadcount":
                         ThreadCount = true;
                         break;
+                    case "-noready":
+                        NoReadyDetails = true;
+                        break;
+                    case "-nofrequency":
+                        NoFrequencyDetails = true;
+                        break;
                     case "-firstlastduration":
                     case "-fld":
                         FirstLastDuration = true;
@@ -1470,6 +1510,9 @@ namespace ETWAnalyzer.Commands
                     case "-properties":
                         Properties = GetNextNonArg("-properties");
                         break;
+                    case "-diff":
+                        ShowDiff = true;
+                        break;
                     case "-oneline":
                         OneLine = true;
                         break;
@@ -1497,8 +1540,8 @@ namespace ETWAnalyzer.Commands
                     case "file":
                         myCommand = DumpCommands.File;
                         break;
-                    case "allocation":
-                        myEtlFileOrZip = GetNextNonArg("allocations");
+                    case "power":
+                        myCommand = DumpCommands.Power;
                         break;
                     case "testrun":
                         myCommand = DumpCommands.TestRuns;
@@ -1562,6 +1605,9 @@ namespace ETWAnalyzer.Commands
                     case DumpCommands.File:
                         lret = FileExamples + Environment.NewLine + FileHelpString;
                         break;
+                    case DumpCommands.Power:
+                        lret = PowerExamples + Environment.NewLine + PowerHelpString;
+                        break;
                     case DumpCommands.Exceptions:
                         lret = ExceptionExamples + Environment.NewLine + ExceptionHelpString;
                         break;
@@ -1602,6 +1648,7 @@ namespace ETWAnalyzer.Commands
                 return lret.TrimEnd(Environment.NewLine.ToCharArray());
             }
         }
+
 
         internal DumpBase myCurrentDumper = null;
 
@@ -1757,6 +1804,8 @@ namespace ETWAnalyzer.Commands
                             MinMaxCPUMs = MinMaxCPUMs,
                             MinMaxWaitMs = MinMaxWaitMs,
                             MinMaxReadyMs = MinMaxReadyMs,
+                            NoReadyDetails = NoReadyDetails,
+                            NoFrequencyDetails = NoFrequencyDetails,
                             MinMaxReadyAverageUs = MinMaxReadyAverageUs,
                             MinMaxCSwitch = MinMaxCSwitch,
                             MinMaxFirstS = MinMaxFirstS,
@@ -1862,6 +1911,27 @@ namespace ETWAnalyzer.Commands
                             ShowModuleInfo = ShowModuleInfo,
                             ShowModuleFilter = ShowModuleFilter,
                             ReverseFileName = ReverseFileName,
+                        };
+                        break;
+                    case DumpCommands.Power:
+                        ThrowIfFileOrDirectoryIsInvalid(FileOrDirectoryQueries);
+                        myCurrentDumper = new DumpPower
+                        {
+                            FileOrDirectoryQueries = FileOrDirectoryQueries,
+                            ShowFullFileName = ShowFullFileName,
+                            Recursive = mySearchOption,
+                            TestsPerRun = TestsPerRun,
+                            SkipNTests = SkipNTests,
+                            TestRunIndex = TestRunIndex,
+                            TestRunCount = TestRunCount,
+                            LastNDays = LastNDays,
+                            MinMaxMsTestTimes = MinMaxMsTestTimes,
+                            CSVFile = CSVFile,
+                            NoCSVSeparator = NoCSVSeparator,
+                            TimeFormatOption = TimeFormat,
+
+                            ShowDetails = ShowDetails,
+                            ShowDiff = ShowDiff,
                         };
                         break;
                     case DumpCommands.Exceptions:

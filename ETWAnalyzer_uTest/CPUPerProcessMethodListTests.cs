@@ -55,12 +55,12 @@ namespace ETWAnalyzer_uTest
             CPUPerProcessMethodList list = new CPUPerProcessMethodList();
             ProcessKey proc = new ProcessKey("test.exe", 1024, DateTimeOffset.MinValue);
             
-            list.AddMethod(proc, "Z", new CpuData(new Duration(100_000_000), new Duration(101_000_000), 5m, 6m, 10, 5), cutOffMs:10);
-            list.AddMethod(proc, "Y", new CpuData( new Duration(90_000_000), new Duration(91_000_000),  4m, 5m, 20, 4), cutOffMs:10);
-            list.AddMethod(proc, "X", new CpuData( new Duration(80_000_000), new Duration(81_000_000),  3m, 5m, 30, 3), cutOffMs:10);
-            list.AddMethod(proc, "B", new CpuData( new Duration(20_000_000), new Duration(21_000_000),  2m, 5m, 40, 2), cutOffMs:10);
-            list.AddMethod(proc, "A", new CpuData( new Duration(9_000_000), new Duration(11_000_000),  1m, 5m, 50, 1), cutOffMs:10);  // added due to wait
-            list.AddMethod(proc, "A0", new CpuData(new Duration(5_000_000), new Duration(5_000_000), 1m, 5m, 50, 1), cutOffMs: 10);   // skipped
+            list.AddMethod(proc, "Z", new CPUMethodData(new Duration(100_000_000), new Duration(101_000_000), 5m, 6m, 10, 5), cutOffMs:10);
+            list.AddMethod(proc, "Y", new CPUMethodData( new Duration(90_000_000), new Duration(91_000_000),  4m, 5m, 20, 4), cutOffMs:10);
+            list.AddMethod(proc, "X", new CPUMethodData( new Duration(80_000_000), new Duration(81_000_000),  3m, 5m, 30, 3), cutOffMs:10);
+            list.AddMethod(proc, "B", new CPUMethodData( new Duration(20_000_000), new Duration(21_000_000),  2m, 5m, 40, 2), cutOffMs:10);
+            list.AddMethod(proc, "A", new CPUMethodData( new Duration(9_000_000), new Duration(11_000_000),  1m, 5m, 50, 1), cutOffMs:10);  // added due to wait
+            list.AddMethod(proc, "A0", new CPUMethodData(new Duration(5_000_000), new Duration(5_000_000), 1m, 5m, 50, 1), cutOffMs: 10);   // skipped
 
             return list;
         }
@@ -70,7 +70,7 @@ namespace ETWAnalyzer_uTest
         {
             ETWExtract extract = new ETWExtract();
             CPUPerProcessMethodList list = GetTestData();
-            extract.CPU = new CPUStats(null, list, null);
+            extract.CPU = new CPUStats(null, list, null,null, null);
 
             MemoryStream stream = new MemoryStream();
             ExtractSerializer.Serialize(stream, extract);

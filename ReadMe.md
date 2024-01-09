@@ -53,6 +53,8 @@ Normally you would want to use all builtin extractors which include
 | Disk| Disk IO summary and a per file summary of read/write/flush disk service times. *DISK_IO* data must be present in trace to get this data.|
 | File| Open/Close/Read/Write summary of all accessed files per process. The ETL file must contain *FILEIO* data.|
 | Module| Dump all loaded modules with file path and version. *LOADER* data must be present in trace. |
+| Frequency | Get sampled CPU frequency data and calculate CPU consumption/average frequencies for E and P Cores per method. *Microsoft-Windows-Kernel-Processor-Power* and *Microsoft-Windows-Kernel-Power* needs to be enabled.  |
+| Power     | Extract Power Profile settings for CPU only. A capture state needs to be executed for *Microsoft-Windows-Kernel-Processor-Power* provider to get data. |
 | PMC      | Extract CPU cache misses, branch mispredictions. This reads low level CPU performance data. Additionally LBR (Last Branch Record) traces are processed to estimate call counts without the need to instrument any code. The ETL file must have enabled PMC tracing in counting mode or LBR (Last Branch Record) tracing. To enable see [PMC Help](https://github.com/Siemens-Healthineers/ETWAnalyzer/blob/main/ETWAnalyzer/Documentation/DumpPMCCommand.md). |
 | DNS      | Extract DNS requests and their timing. *Microsoft-Windows-DNS-Client* provider needs to be enabled along with *PROC_THREAD*. |
 | TCP      | Extract TCP connection metrics and retransmision statistics. *Microsoft-Windows-TCPIP* provider needs to be enabled along with *PROC_THREAD*. |
@@ -160,6 +162,7 @@ see if e.g. a running Windows Installer did have an effect to your test executio
 - [Process](ETWAnalyzer/Documentation/DumpProcessCommand.md) 
 - [Memory](ETWAnalyzer/Documentation/DumpMemoryCommand.md) 
 - [Version](ETWAnalyzer/Documentation/DumpVersionCommand.md)
+- [Power](ETWAnalyzer/Documentation/DumpPower.md)
 - [Exception](ETWAnalyzer/Documentation/DumpExceptionCommand.md)
 - [ThreadPool](ETWAnalyzer/Documentation/DumpThreadPoolCommand.md) 
 - [Mark](ETWAnalyzer/Documentation/DumpMarkCommand.md)

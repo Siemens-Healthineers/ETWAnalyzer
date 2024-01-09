@@ -3,6 +3,8 @@
 
 
 using ETWAnalyzer.Extract;
+using ETWAnalyzer.Extract.CPU;
+using ETWAnalyzer.Extract.CPU.Extended;
 using ETWAnalyzer.Extract.FileIO;
 using ETWAnalyzer.Extract.Modules;
 using Newtonsoft.Json;
@@ -28,6 +30,11 @@ namespace ETWAnalyzer.Extractors
         /// Module data is stored in external file with this postfix
         /// </summary>
         public const string ModulesPostFix = "Modules";
+
+        /// <summary>
+        /// Extended CPU metrics
+        /// </summary>
+        public const string ExtendedCPUPostFix = "CPUExtended";
 
         /// <summary>
         /// Shared Json Serializer
@@ -69,7 +76,7 @@ namespace ETWAnalyzer.Extractors
 
         static internal string[] GetDerivedFileNameParts()
         {
-            string[] all = new string[] { FileIOPostFix, ModulesPostFix };
+            string[] all = new string[] { FileIOPostFix, ModulesPostFix, ExtendedCPUPostFix };
             return all.Select(x => "_Derived_" + x).ToArray();
         }
 
@@ -103,6 +110,19 @@ namespace ETWAnalyzer.Extractors
                     extract.Modules = null;
                 }
 
+                // write extended CPU file only if we have data inside it
+                if( extract?.CPU?.ExtendedCPUMetrics != null && ( extract.CPU.ExtendedCPUMetrics.CPUToFrequencyDurations.Count > 0  || extract.CPU.ExtendedCPUMetrics.MethodData.Count > 0) )
+                {
+                    using var frequencyStream = GetOutputStreamFor(outputFile, ExtendedCPUPostFix, outputFiles);
+                    Serialize<CPUExtended>(frequencyStream, extract.CPU.ExtendedCPUMetrics);
+                }
+
+                if( extract?.CPU?.ExtendedCPUMetrics != null )
+                {
+                    // remove remanents from json which will never be read anyway because the explicit interface will read another file
+                    extract.CPU.ExtendedCPUMetrics = null; 
+                }
+
                 // After all externalized data was removed serialize data to main extract file.
 
                 using var mainfileStream = GetOutputStreamFor(outputFile, null, outputFiles);
@@ -124,6 +144,15 @@ namespace ETWAnalyzer.Extractors
             return outputFiles;
         }
 
+
+        /// <summary>
+        /// Get/Set how json indention is done. Default is Indented.
+        /// </summary>
+        internal static Formatting JsonFormatting
+        {
+            get; set;
+        } = Formatting.None;
+
         /// <summary>
         /// Serialize data to a stream. This method abstracts away the used serializer which 
         /// we can then use to test the used serializer specifics if we ever want to switch to a faster one.
@@ -141,7 +170,7 @@ namespace ETWAnalyzer.Extractors
                 writer = new StreamWriter(stream, new UTF8Encoding(false, true), 0xffff, true);
                 using var js = new JsonTextWriter(writer);
                 writer = null;
-                js.Formatting = Formatting.Indented;
+                js.Formatting = JsonFormatting;
                 Serializer.Serialize(js, value);
             }
             finally

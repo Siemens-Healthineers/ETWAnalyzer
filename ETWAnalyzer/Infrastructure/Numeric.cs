@@ -4,6 +4,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -28,6 +29,51 @@ namespace ETWAnalyzer.Infrastructure
             else
             {
                 return 0.0d;
+            }
+        }
+
+        /// <summary>
+        /// Calculate the percentile with interpolation between values. The returned value does not
+        /// necessarily exist. It interpolates between two values based on the relative distance. 
+        /// Excel uses this approach.
+        /// </summary>
+        /// <param name="values">Sequence of sorted values.</param>
+        /// <param name="percentile">Percentile to calculate.</param>
+        /// <returns>Median value which might be interpolated.</returns>
+        public static float Percentile(this List<float> values, float percentile)
+        {
+            if (values == null)
+            {
+                throw new ArgumentNullException(nameof(values));
+            }
+
+            if( values.Count ==0 )
+            {
+                return 0;
+            }
+
+            int N = values.Count;
+            float n = (N - 1) * percentile + 1;
+
+
+
+            if (n == 1d)
+            {
+                return values[0];
+            }
+            else if (n == N)
+            {
+                return values[N - 1];
+            }
+            else
+            {
+                int k = (int)n;
+                float d = n - k;
+#if DEBUG
+
+                Debug.Assert(values[k] >= values[k - 1], "Input array is not sorted!");
+#endif
+                return values[k - 1] + d * (values[k] - values[k - 1]);
             }
         }
     }

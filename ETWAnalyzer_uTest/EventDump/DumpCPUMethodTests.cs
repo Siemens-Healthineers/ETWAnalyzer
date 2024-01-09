@@ -196,7 +196,7 @@ namespace ETWAnalyzer_uTest.EventDump
                         }
                     }
                 }
-            }, null);
+            }, null, null, null);
 
             file.Extract = extract;
 
@@ -819,19 +819,19 @@ namespace ETWAnalyzer_uTest.EventDump
             ProcessKey proc1 = new("test1.exe", 1024, DateTimeOffset.MinValue);
             ProcessKey proc2 = new("test2.exe", 2000, DateTimeOffset.MinValue);
 
-            methodList.AddMethod(proc1, "Z", new CpuData(new Duration(100_000_000), new Duration(101_000_000), 5m, 6m, 10, 5), cutOffMs: 0);
-            methodList.AddMethod(proc1, "Y", new CpuData(new Duration(90_000_000),  new Duration(91_000_000), 4m, 5m, 20, 4), cutOffMs: 0);
-            methodList.AddMethod(proc1, "X", new CpuData(new Duration(80_000_000),  new Duration(81_000_000), 3m, 5m, 30, 3), cutOffMs: 0);
-            methodList.AddMethod(proc1, "B", new CpuData(new Duration(20_000_000),  new Duration(21_000_000), 2m, 5m, 40, 2), cutOffMs: 0);
-            methodList.AddMethod(proc1, "A", new CpuData(new Duration(9_000_000),   new Duration(11_000_000), 1m, 5m, 50, 1), cutOffMs: 0);  
-            methodList.AddMethod(proc1, "A0", new CpuData(new Duration(5_000_000),  new Duration(5_000_000), 1m, 5m, 50, 1), cutOffMs: 0);
+            methodList.AddMethod(proc1, "Z", new CPUMethodData(new Duration(100_000_000), new Duration(101_000_000), 5m, 6m, 10, 5), cutOffMs: 0);
+            methodList.AddMethod(proc1, "Y", new CPUMethodData(new Duration(90_000_000),  new Duration(91_000_000), 4m, 5m, 20, 4), cutOffMs: 0);
+            methodList.AddMethod(proc1, "X", new CPUMethodData(new Duration(80_000_000),  new Duration(81_000_000), 3m, 5m, 30, 3), cutOffMs: 0);
+            methodList.AddMethod(proc1, "B", new CPUMethodData(new Duration(20_000_000),  new Duration(21_000_000), 2m, 5m, 40, 2), cutOffMs: 0);
+            methodList.AddMethod(proc1, "A", new CPUMethodData(new Duration(9_000_000),   new Duration(11_000_000), 1m, 5m, 50, 1), cutOffMs: 0);  
+            methodList.AddMethod(proc1, "A0", new CPUMethodData(new Duration(5_000_000),  new Duration(5_000_000), 1m, 5m, 50, 1), cutOffMs: 0);
 
-            methodList.AddMethod(proc2, "Z", new CpuData(new Duration(200_000_000), new Duration(101_000_000), 5m, 6m, 10, 5), cutOffMs: 0);
-            methodList.AddMethod(proc2, "Y", new CpuData(new Duration(180_000_000), new Duration(91_000_000), 4m, 5m, 20, 4), cutOffMs: 0);
-            methodList.AddMethod(proc2, "X", new CpuData(new Duration(160_000_000), new Duration(81_000_000), 3m, 5m, 30, 3), cutOffMs: 0);
-            methodList.AddMethod(proc2, "B", new CpuData(new Duration(40_000_000),  new Duration(21_000_000), 2m, 5m, 40, 2), cutOffMs: 0);
-            methodList.AddMethod(proc2, "A", new CpuData(new Duration(18_000_000),  new Duration(11_000_000), 1m, 5m, 50, 1), cutOffMs: 0);
-            methodList.AddMethod(proc2, "A0", new CpuData(new Duration(10_000_000), new Duration(5_000_000), 1m, 5m, 50, 1), cutOffMs: 0);
+            methodList.AddMethod(proc2, "Z", new CPUMethodData(new Duration(200_000_000), new Duration(101_000_000), 5m, 6m, 10, 5), cutOffMs: 0);
+            methodList.AddMethod(proc2, "Y", new CPUMethodData(new Duration(180_000_000), new Duration(91_000_000), 4m, 5m, 20, 4), cutOffMs: 0);
+            methodList.AddMethod(proc2, "X", new CPUMethodData(new Duration(160_000_000), new Duration(81_000_000), 3m, 5m, 30, 3), cutOffMs: 0);
+            methodList.AddMethod(proc2, "B", new CPUMethodData(new Duration(40_000_000),  new Duration(21_000_000), 2m, 5m, 40, 2), cutOffMs: 0);
+            methodList.AddMethod(proc2, "A", new CPUMethodData(new Duration(18_000_000),  new Duration(11_000_000), 1m, 5m, 50, 1), cutOffMs: 0);
+            methodList.AddMethod(proc2, "A0", new CPUMethodData(new Duration(10_000_000), new Duration(5_000_000), 1m, 5m, 50, 1), cutOffMs: 0);
 
 
             TestDataFile file = new("Test", "test.json", new DateTime(2000, 1, 1), 500, 1000, "TestMachine", null);
@@ -856,6 +856,8 @@ namespace ETWAnalyzer_uTest.EventDump
                         { proc2, 6000 },
                     },
                     methodList,
+                    null,
+                    null, 
                     null)
             };
 
@@ -1156,7 +1158,7 @@ namespace ETWAnalyzer_uTest.EventDump
                     {
                         { myCmdProcess, 7 },
                         { myCmdProcess2, 16001 },
-                    }, null, null),
+                    }, null, null, null, null),
 
             };
 
@@ -1200,7 +1202,7 @@ namespace ETWAnalyzer_uTest.EventDump
                     {
                         { myCmdProcess, 7 },
                         { myCmdProcess2, 16001 },
-                    }, null, null),
+                    }, null, null, null, null),
 
             };
 
