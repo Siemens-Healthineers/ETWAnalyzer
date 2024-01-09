@@ -9,10 +9,12 @@ using Microsoft.Diagnostics.Tracing.Parsers.FrameworkEventSource;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using Xunit;
 using Xunit.Abstractions;
+using static ETWAnalyzer.EventDump.DumpProcesses;
 
 namespace ETWAnalyzer_uTest.EventDump
 {
@@ -260,6 +262,292 @@ namespace ETWAnalyzer_uTest.EventDump
             Assert.False(dumper1.UserFilter(procLocalService));
 
         }
+
+        [Fact]
+        public void TestTotalCounter()
+        {
+            var matchData = new List<MatchData>
+                                {
+                                    new MatchData { SourceFile = "SampleFile",ProcessId = 999, IsNewProcess = true, HasEnded = false, SessionId = 1, User = "User1" },
+                                    new MatchData { SourceFile = "SampleFile",ProcessId = 1, IsNewProcess = false, HasEnded = true, SessionId = 2, User = "User2" },
+                                    new MatchData { SourceFile = "OtherFile",ProcessId = 666, IsNewProcess = true, HasEnded = false, SessionId = 1, User = "User1" },
+                                };
+
+            var totalCounter = new TotalCounter();
+
+            foreach (var match in matchData)
+            {
+                totalCounter.Add(match);
+            }
+
+            Assert.Equal(3, totalCounter.ProcessCount);
+            Assert.Equal(2, totalCounter.SessionCount);
+            Assert.Equal(2, totalCounter.UniqueUserCount);
+            Assert.Equal(2, totalCounter.NewProcessCount);
+            Assert.Equal(1, totalCounter.ExitedProcessCount);
+            Assert.Equal(0, totalCounter.PermanentProcessCount);
+            Assert.Equal(new HashSet<int> { 1, 2 }, totalCounter.AllSessionIds);
+            Assert.Equal(new HashSet<string> { "User1", "User2" }, totalCounter.AllUsers);
+
+        }
+
+        [Fact]
+        public void TestTotalCounterWithSingleFile()
+        {
+            var totalCounter = new TotalCounter();
+
+            var matchData = new List<MatchData>
+            {
+                new MatchData { SourceFile = "OtherFile", IsNewProcess = true, HasEnded = false, SessionId = 1, User = "User1" },
+            };
+
+            foreach (var match in matchData)
+            {
+                totalCounter.Add(match);
+            }
+
+            Assert.Equal(1, totalCounter.ProcessCount);
+            Assert.Equal(1, totalCounter.SessionCount);
+            Assert.Equal(1, totalCounter.UniqueUserCount);
+            Assert.Equal(1, totalCounter.NewProcessCount);
+            Assert.Equal(0, totalCounter.ExitedProcessCount);
+            Assert.Equal(0, totalCounter.PermanentProcessCount);
+            Assert.Equal(1, totalCounter.SessionCount);
+            Assert.Equal(1, totalCounter.UniqueUserCount);
+
+        }
+
+        const string File1 = "File1.json";
+        const string File2 = "File2.json";
+        const string File3 = "File3.json";
+
+        static readonly ETWProcess proc1 = new ETWProcess()
+        {
+            ProcessID = 111,
+            ProcessName = "Test1",
+            CmdLine = "Hi",
+            ParentPid = 11,
+            SessionId = 1,
+            Identity = "User1",
+            IsNew = true,
+            HasEnded = true,
+        };
+
+        static readonly ETWProcess proc2 = new ETWProcess()
+        {
+            ProcessID = 666,
+            ProcessName = "Test2",
+            CmdLine = "Hello",
+            ParentPid = 1,
+            SessionId = 8,
+            Identity = "User100",
+            IsNew = false,
+            HasEnded = true,
+        };
+
+        static readonly ETWProcess proc3 = new ETWProcess()
+        {
+            ProcessID = 999,
+            ProcessName = "Test3",
+            CmdLine = "HelloHi",
+            ParentPid = 1,
+            SessionId = 6,
+            Identity = "UserAdmin",
+            IsNew = false,
+            HasEnded = false,
+        };
+
+        List<DumpProcesses.MatchData> CreateTestData()
+        {
+            List<DumpProcesses.MatchData> data = new List<DumpProcesses.MatchData>
+            {
+                new DumpProcesses.MatchData
+                {
+                    Process = proc1,
+                    User = proc1.Identity,
+                    ProcessId = proc1.ProcessID,
+                    ParentProcessId = proc1.ParentPid, 
+                    SessionId = proc1.SessionId,
+                    SourceFile = File3,
+                    HasEnded = proc1.HasEnded,
+                    IsNewProcess = proc1.IsNew,
+                    StartTime = TenClock,
+                    EndTime = TenClock + TimeSpan.FromSeconds(10),
+                },
+                new DumpProcesses.MatchData
+                {
+                    Process = proc3,
+                    User = proc3.Identity,
+                    ProcessId = proc3.ProcessID,
+                    ParentProcessId = proc3.ParentPid,
+                    SessionId = proc3.SessionId,
+                    HasEnded = proc3.HasEnded,
+                    IsNewProcess = proc3.IsNew,
+                    SourceFile = File2,
+                    StartTime = TenClock,
+                    EndTime = TenClock + TimeSpan.FromSeconds(40),
+                },
+                new DumpProcesses.MatchData
+                {
+                    Process = proc2,
+                    User = proc2.Identity,
+                    ProcessId = proc2.ProcessID,
+                    ParentProcessId = proc2.ParentPid,
+                    SessionId = proc2.SessionId,
+                    HasEnded = proc2.HasEnded,
+                    IsNewProcess = proc2.IsNew,
+                    SourceFile = File1,
+                    StartTime = TenClock,
+                    EndTime = TenClock + TimeSpan.FromSeconds(5),
+                },
+                new DumpProcesses.MatchData
+                {
+                    Process = proc1,
+                    User = proc3.Identity,
+                    ProcessId = proc1.ProcessID,
+                    ParentProcessId = proc1.ParentPid,
+                    SessionId = proc1.SessionId,
+                    HasEnded = proc1.HasEnded,
+                    IsNewProcess = proc3.IsNew,
+                    SourceFile = File1,
+                    StartTime = TenClock,
+                    EndTime = TenClock + TimeSpan.FromSeconds(60),
+                },
+
+            };
+
+            return data;
+        }
+
+        static char[] myNewLineSplitChars = Environment.NewLine.ToArray();
+
+        [Fact]
+        public void TestSortOrderSessionAndPrint_ShowTotalTotal()
+        {
+            using var testOutput = new ExceptionalPrinter(myWriter, true);
+
+            var data = CreateTestData();
+
+            DumpProcesses dumper = new DumpProcesses()
+            {
+                Session = Matcher.CreateMatcher("1;2;6;8;7;0"),
+                ShowDetails = true,
+                ShowUser = true,
+                ShowTotal = ETWAnalyzer.Commands.DumpCommand.TotalModes.Total,
+                SortOrder = ETWAnalyzer.Commands.DumpCommand.SortOrders.Session,
+            };
+
+            dumper.Print(data);
+
+            testOutput.Flush();
+
+            string[] expectedOutput = new string[]
+            {
+                "1/1/0001 12:00:00 AM   File3 " ,
+                "PID: 111    Start: 2000-01-01 10:00:00.000 Stop: 2000-01-01 10:00:10.000 Duration:  RCode:  Parent:    11  Session:  1 User1      " ,
+                "1/1/0001 12:00:00 AM   File2 " ,
+                "PID: 999    Start: 2000-01-01 10:00:00.000 Stop: 2000-01-01 10:00:40.000 Duration:  RCode:  Parent:     1  Session:  6 UserAdmin  " ,
+                "1/1/0001 12:00:00 AM   File1 " ,
+                "PID: 111    Start: 2000-01-01 10:00:00.000 Stop: 2000-01-01 10:01:00.000 Duration:  RCode:  Parent:    11  Session:  1 UserAdmin  " ,
+                "PID: 666    Start: 2000-01-01 10:00:00.000 Stop: 2000-01-01 10:00:05.000 Duration:  RCode:  Parent:     1  Session:  8 User100    ",
+                "FileTotals: 2 Processes, 0 new, 2 exited, 0 permanent in 2 sessions of 2 users.",
+                "Totals: 4 Processes, 1 new, 3 exited, 1 permanent in 3 sessions of 3 users."
+            };
+
+            var lines = testOutput.GetSingleLines();
+            Assert.Equal(expectedOutput.Length, lines.Count);
+            for (int i = 0; i < expectedOutput.Length; i++)
+            {
+                Assert.Equal(expectedOutput[i], lines[i]);
+            }
+
+
+        }
+
+        [Fact]
+        public void TestSortOrderSessionAndPrint_ShowFileTotal()
+        {
+            using var testOutput = new ExceptionalPrinter(myWriter, true);
+
+            var data = CreateTestData();
+
+            DumpProcesses dumper = new DumpProcesses()
+            {
+                Session = Matcher.CreateMatcher("1;2;6;8;7;0"),
+                ShowDetails = true,
+                ShowUser = true,
+                ShowTotal = ETWAnalyzer.Commands.DumpCommand.TotalModes.File,
+                SortOrder = ETWAnalyzer.Commands.DumpCommand.SortOrders.Session,
+            };
+
+            dumper.Print(data);
+
+            testOutput.Flush();
+
+            string[] expectedOutput = new string[]
+            {
+                "1/1/0001 12:00:00 AM   File3 " ,
+                "PID: 111    Start: 2000-01-01 10:00:00.000 Stop: 2000-01-01 10:00:10.000 Duration:  RCode:  Parent:    11  Session:  1 User1      " ,
+                "1/1/0001 12:00:00 AM   File2 " ,
+                "PID: 999    Start: 2000-01-01 10:00:00.000 Stop: 2000-01-01 10:00:40.000 Duration:  RCode:  Parent:     1  Session:  6 UserAdmin  " ,
+                "1/1/0001 12:00:00 AM   File1 " ,
+                "PID: 111    Start: 2000-01-01 10:00:00.000 Stop: 2000-01-01 10:01:00.000 Duration:  RCode:  Parent:    11  Session:  1 UserAdmin  " ,
+                "PID: 666    Start: 2000-01-01 10:00:00.000 Stop: 2000-01-01 10:00:05.000 Duration:  RCode:  Parent:     1  Session:  8 User100    ",
+                "FileTotals: 2 Processes, 0 new, 2 exited, 0 permanent in 2 sessions of 2 users."
+            };
+
+            var lines = testOutput.GetSingleLines();
+            Assert.Equal(expectedOutput.Length, lines.Count);
+            for (int i = 0; i < expectedOutput.Length; i++)
+            {
+                Assert.Equal(expectedOutput[i], lines[i]);
+            }
+
+
+        }
+
+
+        [Fact]
+        public void TestSortOrderSessionAndPrint_ShowFileNone()
+        {
+            using var testOutput = new ExceptionalPrinter(myWriter, true);
+
+            var data = CreateTestData();
+
+            DumpProcesses dumper = new DumpProcesses()
+            {
+                Session = Matcher.CreateMatcher("1;2;6;8;7;0"),
+                ShowDetails = true,
+                ShowUser = true,
+                ShowTotal = ETWAnalyzer.Commands.DumpCommand.TotalModes.None,
+                SortOrder = ETWAnalyzer.Commands.DumpCommand.SortOrders.Session,
+            };
+
+            dumper.Print(data);
+
+            testOutput.Flush();
+
+            string[] expectedOutput = new string[]
+            {
+                "1/1/0001 12:00:00 AM   File3 " ,
+                "PID: 111    Start: 2000-01-01 10:00:00.000 Stop: 2000-01-01 10:00:10.000 Duration:  RCode:  Parent:    11  Session:  1 User1      " ,
+                "1/1/0001 12:00:00 AM   File2 " ,
+                "PID: 999    Start: 2000-01-01 10:00:00.000 Stop: 2000-01-01 10:00:40.000 Duration:  RCode:  Parent:     1  Session:  6 UserAdmin  " ,
+                "1/1/0001 12:00:00 AM   File1 " ,
+                "PID: 111    Start: 2000-01-01 10:00:00.000 Stop: 2000-01-01 10:01:00.000 Duration:  RCode:  Parent:    11  Session:  1 UserAdmin  " ,
+                "PID: 666    Start: 2000-01-01 10:00:00.000 Stop: 2000-01-01 10:00:05.000 Duration:  RCode:  Parent:     1  Session:  8 User100    "
+            };
+
+            var lines = testOutput.GetSingleLines();
+            Assert.Equal(expectedOutput.Length, lines.Count);
+            for (int i = 0; i < expectedOutput.Length; i++)
+            {
+                Assert.Equal(expectedOutput[i], lines[i]);
+            }
+
+
+        }
+
 
         DateTimeOffset TenClock = new DateTimeOffset(2000, 1, 1, 10, 0, 0, TimeSpan.Zero); // start at 10:00:00
 
