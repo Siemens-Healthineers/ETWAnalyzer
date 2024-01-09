@@ -56,11 +56,11 @@ namespace ETWAnalyzer_iTest
 
             // Check Folder
             DirectoryInfo directoryInfo = new(tmp.Name);
-            Assert.Equal(3, directoryInfo.GetFiles().Length);
+            Assert.Equal(4, directoryInfo.GetFiles().Length);
 
             // Check JsonFiles
             string[] extractJsonFiles =  Directory.GetFiles(Path.GetDirectoryName(outFile), "*"+TestRun.ExtractExtension);
-            Assert.Equal(2, extractJsonFiles.Length);
+            Assert.Equal(3, extractJsonFiles.Length);
             Assert.Contains(outFile, extractJsonFiles);
         }
         [Fact]
@@ -79,12 +79,12 @@ namespace ETWAnalyzer_iTest
 
             // Check Folder
             DirectoryInfo directoryInfo = new(tmp.Name);
-            Assert.Equal(4,directoryInfo.GetFiles().Length);
+            Assert.Equal(5,directoryInfo.GetFiles().Length);
             Assert.Empty(directoryInfo.GetDirectories());
 
             // Check JsonFiles
             string[] extractJsonFiles = Directory.GetFiles(Path.GetDirectoryName(outFile), "*" + TestRun.ExtractExtension);
-            Assert.Equal(2, extractJsonFiles.Length);
+            Assert.Equal(3, extractJsonFiles.Length);
             Assert.Contains(outFile, extractJsonFiles);
         }
 
@@ -104,13 +104,13 @@ namespace ETWAnalyzer_iTest
 
             // Check Folder
             DirectoryInfo directoryInfo = new(tmp.Name);
-            Assert.Equal(2, directoryInfo.GetFiles().Length);
+            Assert.Equal(3, directoryInfo.GetFiles().Length);
 
             // Check JsonFiles
             directoryInfo = new DirectoryInfo(Path.GetDirectoryName(outFile));
             string[] files = directoryInfo.GetFiles("*.json", SearchOption.AllDirectories).Select(x=>x.FullName).ToArray();
 
-            Assert.Equal(2, files.Length);
+            Assert.Equal(3, files.Length);
             Assert.Contains(Path.Combine(tmp.Name, Path.GetFileNameWithoutExtension(TestData.ServerEtlFile)) + TestRun.ExtractExtension, files);
 
             Assert.True(fileInfo.Exists, $"Output file {outFile} was not created");
@@ -494,11 +494,11 @@ namespace ETWAnalyzer_iTest
 
             // Check Folder
             DirectoryInfo directoryInfo = new(tmp.Name);
-            Assert.Equal(6, directoryInfo.GetFiles().Length);
+            Assert.Equal(7, directoryInfo.GetFiles().Length);
 
             // Check JsonFiles
             string[] jsonExtracts = Directory.GetFiles(Path.GetDirectoryName(outFile1), "*"+TestRun.ExtractExtension);
-            Assert.Equal(4, jsonExtracts.Length);
+            Assert.Equal(5, jsonExtracts.Length);
 
             Assert.Contains(outFile1, jsonExtracts);
             Assert.Contains(outFile2, jsonExtracts);
