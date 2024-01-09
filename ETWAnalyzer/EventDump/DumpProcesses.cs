@@ -45,6 +45,31 @@ namespace ETWAnalyzer.EventDump
         public MinMaxRange<double> MinMaxDurationS { get; internal set; } = new MinMaxRange<double>();
         public bool ShowUser { get; set; }
         public MinMaxRange<double> MinMaxStart { get; internal set; } = new MinMaxRange<double>();
+        public TotalModes? ShowTotal { get; internal set; }
+
+        /// <summary>
+        /// Show only summary per file
+        /// </summary>
+        bool IsTotalMode
+        {
+            get => ShowTotal == TotalModes.Total;
+        }
+
+        /// <summary>
+        /// Show everything, but show totals at the end of each File
+        /// </summary>
+        bool IsFileTotalMode
+        {
+            get => ShowTotal == TotalModes.File;
+        }
+
+        internal bool IsSummary => ShowTotal switch
+        {
+            TotalModes.None => false,
+            TotalModes.Total => true,
+            TotalModes.File => true,
+            _ => true,
+        };
 
         const string WerFault = "WerFault.exe";
 
@@ -82,6 +107,7 @@ namespace ETWAnalyzer.EventDump
             SortOrders.Time,
             SortOrders.StopTime,
             SortOrders.Tree,
+            SortOrders.Session,
             SortOrders.Default,
         };
 
@@ -93,7 +119,7 @@ namespace ETWAnalyzer.EventDump
         /// Print output to console
         /// </summary>
         /// <param name="data"></param>
-        private void Print(List<MatchData> data)
+        public void Print(List<MatchData> data)
         {
             if( data.Count == 0) // nothing to print and Max would throw otherwise for max column calculation
             {
@@ -122,6 +148,11 @@ namespace ETWAnalyzer.EventDump
                 data.AddRange(startedbutnotEnded);
                 data.AddRange(ended);
             }
+            else if (SortOrder == DumpCommand.SortOrders.Session)
+            {
+                var sortedData = data.GroupBy(x => x.SourceFile).Select(g => g.OrderBy(x => x.SessionId).ThenBy(x => x.ProcessName)).SelectMany(g => g);
+                data = sortedData.ToList();
+            }
             else if( SortOrder == DumpCommand.SortOrders.Tree) // Process tree visualization is different
             {
                 data = MatchData.ConvertToTree(data);
@@ -133,21 +164,34 @@ namespace ETWAnalyzer.EventDump
 
                 return;
             }
-
+            
             int userWidth = data.Max(x => x.User.Length);
             int lifeTimeWidth = data.Max(x => x.LifeTimeString.Length);
             int startTimeWidth = data.Max(x => x.StartTime.HasValue ? GetDateTimeString(x.StartTime.Value, x.SessionStart, TimeFormatOption).Length : 0);
             int stopTimeWidth = data.Max(x => x.EndTime.HasValue ? GetDateTimeString(x.EndTime.Value, x.SessionStart, TimeFormatOption).Length : 0);
             int returnCodeWidth = data.Max(x => (x.ReturnCodeString?.Length).GetValueOrDefault());
 
+            
+            var processTotals = new TotalCounter();
+            var globalProcessCounts = new TotalCounter();
 
             foreach (var m in data)
             {
-                if( currentSourceFile != m.SourceFile && !ShowFileOnLine)
+                
+                if ( currentSourceFile != m.SourceFile && !ShowFileOnLine )
                 {
+                    if (IsSummary || IsFileTotalMode)
+                    {
+                        processTotals.PrintFileSummary(isSummary: true);
+                        processTotals = new TotalCounter();
+                    }
+
                     PrintFileName(m.SourceFile, null, m.PerformedAt.DateTime, m.BaseLine);
                     currentSourceFile = m.SourceFile;
                 }
+
+                globalProcessCounts.Add(m);
+                processTotals.Add(m);
 
                 string startTime = "";
                 if (m.StartTime != null)
@@ -192,7 +236,21 @@ namespace ETWAnalyzer.EventDump
                              $"[yellow]{sessionId}[/yellow] " +
                              $"[yellow]{user}[/yellow]{cmdLine} {fileName}";
                 ColorConsole.WriteEmbeddedColorLine(str);
+
             }
+            
+            // print the summary for last file
+            if (IsSummary || IsFileTotalMode)
+            {
+                processTotals.PrintFileSummary(isSummary: true);
+            }
+
+            // print the totals summary
+            if  (IsSummary  && IsTotalMode)
+            {
+                globalProcessCounts.PrintTotalSummary(isSummary: true);
+            }
+
         }
 
         /// <summary>
@@ -914,5 +972,77 @@ namespace ETWAnalyzer.EventDump
                 return $"{ProcessName}({ProcessId}) Start: {StartTime ?? DateTime.MaxValue} End: {EndTime ?? DateTime.MaxValue} CmdLine: {CmdLine} TestCase: {TestCase}";
             }
         }
+
+        public class TotalCounter
+        {
+            public int ProcessCount { get; private set; }
+            public int FileCount { get; private set; }
+            public int SessionCount { get; private set; }
+            public int UniqueUserCount { get; private set; }
+            public int NewProcessCount { get; private set; }
+            public int ExitedProcessCount { get; private set; }
+            public int PermanentProcessCount { get; private set; }
+            public IEnumerable<ETWProcess> AllProcessIds => allProcessIds;
+            public IEnumerable<int> AllSessionIds => allSessionIds;
+            public IEnumerable<string> AllUsers => allUsers;
+            public IEnumerable<string> AllFiles => allFiles;
+
+            private readonly HashSet<ETWProcess> allProcessIds = [];
+            private readonly HashSet<int> allSessionIds = [];
+            private readonly HashSet<string> allUsers   = [];
+            private readonly HashSet<string> allFiles   = [];
+
+
+            public void Add(MatchData data)
+            {
+
+                ProcessCount ++;
+
+                NewProcessCount += data.IsNewProcess ? 1 : 0;
+                ExitedProcessCount += data.HasEnded ? 1 : 0;
+                PermanentProcessCount += (!data.IsNewProcess && !data.HasEnded) ? 1 : 0;
+                allSessionIds.Add(data.SessionId);
+                allUsers.Add(data.User);
+                allFiles.Add(data.SourceFile);
+                  
+                UniqueUserCount = allUsers.Count;
+                SessionCount    = allSessionIds.Count;
+                FileCount       = allFiles.Count;
+
+            }
+
+            public void PrintFileSummary(bool isSummary)
+            {
+                if (ProcessCount <= 1)
+                {
+                    return;
+                }
+
+                if (isSummary)
+                {
+                    ColorConsole.WriteEmbeddedColorLine($"[green]FileTotals: {ProcessCount} Processes, {NewProcessCount} new, {ExitedProcessCount} exited, " +
+                            $"{PermanentProcessCount} permanent in {SessionCount} sessions of {UniqueUserCount} users.[/green]");
+
+                }
+
+            }
+
+            public void PrintTotalSummary(bool isSummary)
+            {
+                if (FileCount <= 1)
+                {
+                    return;
+                }
+                // to accept the File Summary
+                if (isSummary)
+                {
+                    ColorConsole.WriteEmbeddedColorLine($"[red]Totals: {ProcessCount} Processes, {NewProcessCount} new, {ExitedProcessCount} exited, " +
+                                $"{PermanentProcessCount} permanent in {SessionCount} sessions of {UniqueUserCount} users.[/red]");
+                }
+
+            }
+
+        }
+
     }
 }
