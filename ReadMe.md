@@ -30,8 +30,17 @@ You want to contribute, miss specific data, or want to add your specific dump co
 See [Documentation Folder in Repo](https://github.com/Siemens-Healthineers/ETWAnalyzer/tree/2.5.10.0/ETWAnalyzer/Documentation)
 
 ## Data Generation
-There is a sample .wprp profile located at [MultiProfile.wprp](https://github.com/Alois-xx/FileWriter/blob/master/MultiProfile.wprp) to record ETW data in the way ETWAnalyzer likes best. To generate data in automated regression tests see the other example project [https://github.com/Alois-xx/FileWriter](https://github.com/Alois-xx/FileWriter).
-
+The easiest way to get ETW data is to install [ETWController](https://github.com/Alois-xx/etwcontroller) which comes with predefined WPR profiles. 
+ETWController supports
+ - Zipping ETW and NGEN pdbs with 7z.
+  - Taking Screenshots which are put besides profiling data which can be viewed in Browser.
+ - Capturing Keyboard/Mouse events.
+ - Distributed Profiling (Client/Server scenarios).
+The 7z archives created by ETWController can be directly consumed with ETWAnalyzer. To e.g. unpack all compressed 7z files in a folder generated
+by ETWController and keep the files uncompressed so you can analyze further with WPA:
+```
+ETWAnalyzer -extract all -fd c:\Cases\Failure\*.7z -keepTemp -symserver MS 
+```
 ## Use Cases
  - [Profiler Driven Development](https://aloiskraus.wordpress.com/2022/07/25/pdd-profiler-driven-development/)
  - [Run tests with ETW Profiling](https://github.com/Alois-xx/SerializerTests)
