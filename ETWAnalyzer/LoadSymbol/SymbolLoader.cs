@@ -2,6 +2,7 @@
 //// SPDX-License-Identifier:   MIT
 
 using ETWAnalyzer.Extract;
+using ETWAnalyzer.Extract.CPU.Extended;
 using ETWAnalyzer.Extract.FileIO;
 using ETWAnalyzer.Extract.Modules;
 using ETWAnalyzer.ProcessTools;
@@ -9,7 +10,6 @@ using Microsoft.Diagnostics.Symbols;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Numerics;
 using System.Runtime.InteropServices;
 
 namespace ETWAnalyzer.LoadSymbol
@@ -188,7 +188,7 @@ namespace ETWAnalyzer.LoadSymbol
             List<PdbIdentifier> newList =  newUnresolved.Cast<PdbIdentifier>().ToList();
             newList.Sort();
 
-            Dictionary<int, int> old2Newidx = GetMappingTable(baseExtract.Modules.UnresolvedPdbs, newList);
+            Dictionary<PdbIndex, PdbIndex> old2Newidx = GetMappingTable<PdbIdentifier,PdbIndex>(baseExtract.Modules.UnresolvedPdbs, newList);
             baseExtract.Modules.UnresolvedPdbs = newList;
             foreach(var module in baseExtract.Modules.Modules)
             {
@@ -197,9 +197,9 @@ namespace ETWAnalyzer.LoadSymbol
                     continue;
                 }
 
-                if (old2Newidx.ContainsKey((int)module.PdbIdx))
+                if (old2Newidx.ContainsKey(module.PdbIdx.GetValueOrDefault()))
                 {
-                    module.PdbIdx = (PdbIndex)old2Newidx[(int)module.PdbIdx];
+                    module.PdbIdx = old2Newidx[module.PdbIdx.GetValueOrDefault()];
                 }
                 else
                 {
@@ -213,18 +213,19 @@ namespace ETWAnalyzer.LoadSymbol
         /// Generate an index mapping table from an old list to a new list where the new list does not need to contain
         /// all old values.
         /// </summary>
-        /// <typeparam name="T"></typeparam>
+        /// <typeparam name="T">List Type</typeparam>
+        /// <typeparam name="U">Enum type</typeparam>
         /// <param name="old"></param>
         /// <param name="newList"></param>
         /// <returns></returns>
-        static Dictionary<int, int> GetMappingTable<T>(List<T> old, List<T> newList)
+        static Dictionary<U, U> GetMappingTable<T,U>(List<T> old, List<T> newList) where U : System.Enum
         {
             // build mapping between old and new MethodIdx which are now invalid in the MethodCosts
-            Dictionary<T, int> newIndicies = new();
-            Dictionary<int, int> oldNewIndex = new();
+            Dictionary<T, U> newIndicies = new();
+            Dictionary<U, U> oldNewIndex = new();
             for (int i = 0; i < newList.Count; i++)
             {
-                newIndicies[newList[i]] = i;
+                newIndicies[newList[i]] = (U)(object)i;
             }
 
             for(int j=0; j< old.Count;j++)
@@ -232,7 +233,7 @@ namespace ETWAnalyzer.LoadSymbol
                 T oldKey = old[j];
                 if (newIndicies.ContainsKey(oldKey))
                 {
-                    oldNewIndex[j] = newIndicies[oldKey];
+                    oldNewIndex[(U)(object)j] = newIndicies[oldKey];
                 }
                 else
                 {
@@ -250,7 +251,7 @@ namespace ETWAnalyzer.LoadSymbol
             uniqueMethods.Sort();
 
             // Map same values from old index to updated index
-            Dictionary<int, int> oldNewIndex = GetMappingTable(extract.CPU.PerProcessMethodCostsInclusive.MethodNames, uniqueMethods);
+            Dictionary<MethodIndex, MethodIndex> oldNewIndex = GetMappingTable<string,MethodIndex>(extract.CPU.PerProcessMethodCostsInclusive.MethodNames, uniqueMethods);
 
             // set global list
             extract.CPU.PerProcessMethodCostsInclusive.MethodNames = uniqueMethods;
@@ -264,7 +265,7 @@ namespace ETWAnalyzer.LoadSymbol
                 {
                     var cost = perProcess.Costs[i];
                     cost.MethodList = uniqueMethods;
-                    cost.MethodIdx = (MethodIndex) oldNewIndex[(int)cost.MethodIdx];  // update index
+                    cost.MethodIdx = oldNewIndex[cost.MethodIdx];  // update index
 
                     string currentMethod = cost.MethodList[(int)cost.MethodIdx];
 
@@ -296,8 +297,94 @@ namespace ETWAnalyzer.LoadSymbol
                 perProcess.Costs = summedCosts; // replace previous costs 
             }
 
+            // force loading of serialized Json via IETWExtract interface and set it to public property in ETWExtract to serialize changes back to Json file
+            IETWExtract iExtract = (IETWExtract)extract;
+            if (iExtract?.CPU?.ExtendedCPUMetrics?.MethodIndexToCPUMethodData != null)
+            {
+                MergeCPUMethodData(extract, oldNewIndex, iExtract);
+            }
+
             Console.WriteLine($"Resolved {resolvedMethods.Count} methods.");
 
+        }
+
+        /// <summary>
+        /// When symbols are resolved we have method+RVA1 method+RVA2 which either needs to be combined, or left in isolation.
+        /// To make things easy we merge on a best effort basis the extended CPU data.
+        /// CPU can be summed, for First/Last min/max are taken. Other things like Ready Time is left untouched because there is no clear
+        /// right way to merge the percentiles.
+        /// </summary>
+        /// <param name="extract"></param>
+        /// <param name="oldNewIndex"></param>
+        /// <param name="iExtract"></param>
+        private static void MergeCPUMethodData(ETWExtract extract, Dictionary<MethodIndex, MethodIndex> oldNewIndex, IETWExtract iExtract)
+        {
+            extract.CPU.ExtendedCPUMetrics = (CPUExtended)iExtract.CPU.ExtendedCPUMetrics;
+            List<CPUMethodData> methodData = extract.CPU.ExtendedCPUMetrics.MethodData;
+
+            // Update method index after method list has been sorted by method name again
+            foreach (var method in methodData)
+            {
+                method.Index = method.Index.ProcessIndex().Create(oldNewIndex[method.Index.MethodIndex()]);
+            }
+
+            // Merge methodData 
+            HashSet<int> skip = new(); // already merged entries which can be skipped
+            for (int i = 0; i < methodData.Count; i++)
+            {
+                if (skip.Contains(i))
+                {
+                    continue;
+                }
+
+                CPUMethodData methodI = methodData[i];
+
+                for (int k = i + 1; k < methodData.Count; k++)
+                {
+                    var methodK = methodData[k];
+                    if (skip.Contains(k))
+                    {
+                        continue;
+                    }
+
+                    if (methodI.Index == methodK.Index)
+                    {
+                        skip.Add(k);
+
+                        if (methodI.CPUConsumption != null && methodK.CPUConsumption != null)
+                        {
+                            foreach (var iMerge in methodI.CPUConsumption)
+                            {
+                                var found = methodK.CPUConsumption.FirstOrDefault(x => x.EfficiencyClass == iMerge.EfficiencyClass);
+                                if (found != null)
+                                {
+#if DEBUG
+                                    Console.WriteLine($"Merging index {methodI.Index}");
+#endif
+                                    iMerge.CPUMs += found.CPUMs;
+                                    iMerge.EnabledCPUsAvg = Math.Max(iMerge.EnabledCPUsAvg, found.EnabledCPUsAvg);
+                                    iMerge.FirstS = Math.Min(iMerge.FirstS, found.FirstS);
+                                    iMerge.LastS = Math.Max(iMerge.LastS, found.LastS);
+                                    iMerge.UsedCores = Math.Max(iMerge.UsedCores, found.UsedCores);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            List<CPUMethodData> merged = new();
+            for (int i = 0; i < methodData.Count; i++)
+            {
+                if (skip.Contains(i))
+                {
+                    continue;
+                }
+                merged.Add(methodData[i]);
+            }
+
+            // update array 
+            extract.CPU.ExtendedCPUMetrics.MethodData = merged;
         }
 
         /// <summary>

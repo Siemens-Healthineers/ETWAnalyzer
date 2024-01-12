@@ -17,7 +17,7 @@ namespace ETWAnalyzer.Commands
     internal class LoadSymbolCommand : ArgParser
     {
         internal static readonly string HelpString =
-           "ETWAnalyzer -LoadSymbol -filedir/-fd  xxx.json [-SymServer NtSymbolPath, MS, Google or syngo] [-SymFolder xxxx] [-NoOverwrite] [-OutDir xxxx] [-debug]" + Environment.NewLine +
+           "ETWAnalyzer -LoadSymbol -filedir/-fd  xxx.json [-SymServer NtSymbolPath, MS, Google or syngo] [-SymFolder xxxx] [-NoOverwrite] [-Indent] [-OutDir xxxx] [-debug]" + Environment.NewLine +
            "     This supports the use case to extract the data on a machine with no symbols and transfer the json files to another machine." + Environment.NewLine + 
            "     The extracted Json files are much smaller than the original ETL files which allows you to mass record ETW data, extract on the recording machines and send the small json files for analysis to HQ." + Environment.NewLine +
          " -SymFolder xxxx      Default is C:\\Symbols. Path to a short directory name in which links are created from the unzipped ETL files to prevent symbol loading issues due to MAX_PATH limitations." + Environment.NewLine +
@@ -26,6 +26,7 @@ namespace ETWAnalyzer.Commands
          "                      When using a custom remote symbol server use this form with a local folder: E.g. SRV*C:\\Symbols*https://msdl.microsoft.com/download/symbols" + Environment.NewLine +
         $"                      The config file {ConfigFiles.RequiredPDBs} declares which pdbs" + Environment.NewLine +
          "                      must have been successfully loaded during extraction. Otherwise a warning is printed due to symbol loading errors." + Environment.NewLine +
+         " -Indent              Write Json file indented to save space. Default is non indented." + Environment.NewLine +   
          " -NoOverwrite         By default the input json files will be overwritten." + Environment.NewLine +
         $" -OutDir xxxx         When -NoverWrite is used the extracted data will be put into the folder \"{Program.ExtractFolder}\" besides the input file. You can override the output folder with that switch." + Environment.NewLine +
          " -debug               Print a lot diagnostics messages during symbol lookup to console" + Environment.NewLine + 
@@ -87,6 +88,9 @@ namespace ETWAnalyzer.Commands
                         break;
                     case NoOverwriteFlag:
                         NoOverwrite = true;
+                        break;
+                    case IndentArg:
+                        ExtractSerializer.JsonFormatting = Newtonsoft.Json.Formatting.Indented;
                         break;
                     case SymFolderArg: // -symFolder
                         Symbols.SymbolFolder = GetNextNonArg(SymFolderArg);
