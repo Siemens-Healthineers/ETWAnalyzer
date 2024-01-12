@@ -143,7 +143,6 @@ namespace ETWAnalyzer.Commands
         internal const string AllCPUArg = "-allcpu";
         internal const string ConcurrencyArg = "-concurrency";
         internal const string DryRunArg = "-dryrun";
-        internal const string IndentArg = "-indent";
 
 
 

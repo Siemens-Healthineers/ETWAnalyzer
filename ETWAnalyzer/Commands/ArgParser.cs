@@ -24,6 +24,7 @@ abstract class ArgParser : ICommand
     internal const string FileOrDirectoryAlias = "-fd";
     internal const string ExtractArg = "-extract";
     internal const string SymFolderArg = "-symfolder";
+    internal const string IndentArg = "-indent";
     internal const string SymbolServerArg = "-symserver";
     internal const string SymCacheFolderArg = "-symcache";
     internal const string DumpArg = "-dump";

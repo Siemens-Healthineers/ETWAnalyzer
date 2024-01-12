@@ -130,7 +130,7 @@ namespace ETWAnalyzer.Commands
         static readonly string CPUHelpString =
         "   CPU      -filedir/fd Extract\\ or xxx.json [-recursive] [-csv xxx.csv] [-NoCSVSeparator] [-ProcessFmt timefmt] [-Methods method1;method2...] [-FirstLastDuration/fld [firsttimefmt] [lasttimefmt]] [-MinMaxCSwitchCount xx-yy] [-MinMaxReadyAvgus xx-yy]" + Environment.NewLine +
         "            [-ThreadCount] [-SortBy [CPU/Wait/CPUWait/CPUWaitReady/ReadyAvg/CSwitchCount/StackDepth/First/Last/TestTime/StartTime] [-StackTags tag1;tag2] [-CutMethod xx-yy] [-ShowOnMethod] [-ShowModuleInfo [Driver] or [filter]] [-NoCmdLine] [-Clip]" + Environment.NewLine +
-        "            [-Details [-NoFrequency]] [-NoReady] [-ShowTotal Total, Process, Method] [-topn dd nn] [-topNMethods dd nn] [-ZeroTime/zt Marker/First/Last/ProcessStart filter] [-ZeroProcessName/zpn filter] " + Environment.NewLine +
+        "            [-Details [-NoFrequency] [-Normalize]] [-NoReady] [-ShowTotal Total, Process, Method] [-topn dd nn] [-topNMethods dd nn] [-ZeroTime/zt Marker/First/Last/ProcessStart filter] [-ZeroProcessName/zpn filter] " + Environment.NewLine +
         "            [-includeDll] [-includeArgs] [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd] [-MinMaxMsTestTimes xx-yy ...] [-ProcessName/pn xxx.exe(pid)] [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-CmdLine substring]" + Environment.NewLine +
         "            [-ShowFullFileName/-sffn]" + Environment.NewLine +
         "                         Print CPU, Wait and Ready duration of selected methods of one extracted Json or a directory of Json files. To get output -extract CPU, All or Default must have been used during extraction." + Environment.NewLine +
@@ -178,6 +178,7 @@ namespace ETWAnalyzer.Commands
         "                         -MinMaxCpuMs xx-yy or xx   Only include methods/stacktags with a minimum CPU consumption of [xx,yy] ms." + Environment.NewLine +
         "                         -MinMaxWaitMs xx-yy or xx  Only include methods/stacktags with a minimum wait time of [xx,yy] ms." + Environment.NewLine +
         "                         -Details                   Show additionally Session Id, Ready Average time, Context Switch Count, average CPU frequency per CPU efficiency class and ready percentiles." + Environment.NewLine +
+        "                           -Normalize               Normalize CPU time to 100% of CPU frequency. Enables comparison of CPU time independant of the used power profile." + Environment.NewLine +
         "                           -NoFrequency             When -Details is present do not print average CPU frequency and CPU usage per processor efficiency class (e.g. P/E Cores)." + Environment.NewLine +
         "                         -NoReady                   Do not print Ready time, average or percentiles (when -Details is used) per method." + Environment.NewLine +
         "                         -Session dd;yy             Filter processes by Windows session id. Multiple filters are separated by ;" + Environment.NewLine +
@@ -830,6 +831,7 @@ namespace ETWAnalyzer.Commands
         public MinMaxRange<int> MinMaxCSwitch { get; private set; } = new();
         public bool NoReadyDetails { get; private set; }
         public bool NoFrequencyDetails { get; private set; }
+        public bool Normalize { get; private set; }
 
 
         public MinMaxRange<double> MinMaxFirstS { get; private set; } = new();
@@ -1448,6 +1450,9 @@ namespace ETWAnalyzer.Commands
                     case "-nofrequency":
                         NoFrequencyDetails = true;
                         break;
+                    case "-normalize":
+                        Normalize = true;
+                        break;
                     case "-firstlastduration":
                     case "-fld":
                         FirstLastDuration = true;
@@ -1806,6 +1811,7 @@ namespace ETWAnalyzer.Commands
                             MinMaxReadyMs = MinMaxReadyMs,
                             NoReadyDetails = NoReadyDetails,
                             NoFrequencyDetails = NoFrequencyDetails,
+                            Normalize = Normalize,
                             MinMaxReadyAverageUs = MinMaxReadyAverageUs,
                             MinMaxCSwitch = MinMaxCSwitch,
                             MinMaxFirstS = MinMaxFirstS,

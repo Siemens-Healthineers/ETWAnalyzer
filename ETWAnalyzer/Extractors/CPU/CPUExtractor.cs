@@ -407,7 +407,7 @@ namespace ETWAnalyzer.Extractors.CPU
 
                     string debugData=null;
 #if DEBUG
-                    debugData = $"Profiling: {process} {method}";
+                    debugData = $"Profiling: {process} {rvaMethod}";
 #endif
 
                     stats.AddForExtendedMetrics(extract.CPU, (CPUNumber) sample.Processor, (float) sample.Timestamp.RelativeTimestamp.TotalSeconds, ((float) sample.Timestamp.RelativeTimestamp.TotalSeconds)+(float) sample.Weight.Duration.TotalSeconds, sample.Thread.Id, sample.Thread.ProcessorAffinity, debugData);

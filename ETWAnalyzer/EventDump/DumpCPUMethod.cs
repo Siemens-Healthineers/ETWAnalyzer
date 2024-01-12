@@ -168,6 +168,12 @@ namespace ETWAnalyzer.EventDump
         /// </summary>
         public bool NoFrequencyDetails { get; internal set; }
 
+        /// <summary>
+        /// When -Details are enabled CPU consumption is normalized to 100% of the nominal CPU Frequency to make number of different runs with potentially 
+        /// different 
+        /// </summary>
+        public bool Normalize { get; internal set; }
+
 
 
         /// <summary>
@@ -951,12 +957,26 @@ namespace ETWAnalyzer.EventDump
             if( data.CPUUsage!= null )
             {
                 int totalCPUMs = data.CPUUsage.Sum(x => x.CPUMs);
+                int totalNormalizedCPUMs = 0;
                 foreach(var usage in data.CPUUsage.OrderByDescending(x=>x.EfficiencyClass))
                 {
-                    int percentAboveNominal = (int) (100.0f * usage.AverageMHz / data.Topology.First(x => x.Value.EfficiencyClass == usage.EfficiencyClass).Value.NominalFrequencyMHz);
+                    float percentAboveNominal = (100.0f * usage.AverageMHz / data.Topology.First(x => x.Value.EfficiencyClass == usage.EfficiencyClass).Value.NominalFrequencyMHz);
+                    
                     string cpuPercent = $"{(100.0f * usage.CPUMs / totalCPUMs):F0}".WithWidth(3);
+                    string normalizedCPU = "";
+                    if( Normalize )
+                    {
+                        float factor = (percentAboveNominal / 100.0f);
+                        int normalizedCPUMs = (int) (usage.CPUMs * factor);  // Scale CPU to 100% CPU Frequency
+                        totalNormalizedCPUMs += normalizedCPUMs;
+                        normalizedCPU = $"N0".WidthFormat(normalizedCPUMs, 10) + " ms ";
+                    }
+                    lret += "  [green]" +  $"N0".WidthFormat(usage.CPUMs, 10) + $" ms {normalizedCPU}[/green]"+ $"Class: {usage.EfficiencyClass} " + $"({cpuPercent} % CPU) on {usage.UsedCores,2} Cores "  + "N0".WidthFormat(usage.AverageMHz, 5) + $" MHz ({(int)percentAboveNominal,3}% Frequency) " + $"Enabled Cores: {usage.EnabledCPUsAvg,2} Duration: {usage.LastS- usage.FirstS:F3} s {((CPUUsage)usage).Debug}" + Environment.NewLine;
+                }
 
-                    lret += "  [green]" +  $"N0".WidthFormat(usage.CPUMs, 10) + " ms [/green]"+ $"Class: {usage.EfficiencyClass} " + $"({cpuPercent} % CPU) on {usage.UsedCores,2} Cores "  + "N0".WidthFormat(usage.AverageMHz, 5) + $" MHz ({percentAboveNominal,3}% Frequency) " + $"Enabled Cores: {usage.EnabledCPUsAvg,2} Duration: {usage.LastS- usage.FirstS:F3} s" + Environment.NewLine;
+                if( Normalize && data.CPUUsage.Length > 1 )
+                {
+                    lret += "".WithWidth(4) + $"[green]Normalized: {"N0".WidthFormat(totalNormalizedCPUMs,10)} ms [/green]";
                 }
             }
             return lret.TrimEnd(StringFormatExtensions.NewLineChars);
