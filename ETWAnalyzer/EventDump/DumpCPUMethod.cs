@@ -971,7 +971,7 @@ namespace ETWAnalyzer.EventDump
                         totalNormalizedCPUMs += normalizedCPUMs;
                         normalizedCPU = $"N0".WidthFormat(normalizedCPUMs, 10) + " ms ";
                     }
-                    lret += "  [green]" +  $"N0".WidthFormat(usage.CPUMs, 10) + $" ms {normalizedCPU}[/green]"+ $"Class: {usage.EfficiencyClass} " + $"({cpuPercent} % CPU) on {usage.UsedCores,2} Cores "  + "N0".WidthFormat(usage.AverageMHz, 5) + $" MHz ({(int)percentAboveNominal,3}% Frequency) " + $"Enabled Cores: {usage.EnabledCPUsAvg,2} Duration: {usage.LastS- usage.FirstS:F3} s {((CPUUsage)usage).Debug}" + Environment.NewLine;
+                    lret += "  [green]" +  $"N0".WidthFormat(usage.CPUMs, 10) + $" ms {normalizedCPU}[/green]"+ $"Class: {usage.EfficiencyClass} " + $"({cpuPercent} % CPU) on {usage.UsedCores,2} Cores "  + "N0".WidthFormat(usage.AverageMHz, 5) + $" MHz ({(int)percentAboveNominal,3}% Frequency) " + $"Enabled Cores: {usage.EnabledCPUsAvg,2} Duration: {usage.LastS- usage.FirstS:F3} s" + Environment.NewLine;
                 }
 
                 if( Normalize && data.CPUUsage.Length > 1 )
