@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <TargetFrameworks>net6.0-windows</TargetFrameworks>
+    <TargetFrameworks>net8.0-windows</TargetFrameworks>
     <RootNamespace>ETWAnalyzer_uTest</RootNamespace>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <PackageId>ETWAnalyzer_uTest</PackageId>
@@ -16,13 +16,8 @@
     <TestProjectType>UnitTest</TestProjectType>
     <NoWarn>$(NoWarn);SYSLIB0012</NoWarn>
     <Platforms>x64</Platforms>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(TargetFramework)' == 'net6.0-windows'">
-    <PublishReadyToRun>True</PublishReadyToRun>
-    <SelfContained>True</SelfContained>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
   </PropertyGroup>
-  
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
     <OutputPath>..\bin\Release\</OutputPath>
   </PropertyGroup>
@@ -145,20 +140,20 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.7.2" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
     <PackageReference Include="Microsoft.Windows.EventTracing.Processing.All">
       <Version>1.12.10</Version>
     </PackageReference>
-    <PackageReference Include="Moq" Version="4.20.69" />
+    <PackageReference Include="Moq" Version="4.20.70" />
     <PackageReference Include="Newtonsoft.Json">
       <Version>13.0.3</Version>
     </PackageReference>
-    <PackageReference Include="ReportGenerator" Version="5.1.25" />
+    <PackageReference Include="ReportGenerator" Version="5.2.0" />
     <PackageReference Include="xunit">
-      <Version>2.5.1</Version>
+      <Version>2.6.5</Version>
     </PackageReference>
     <PackageReference Include="xunit.runner.visualstudio">
-      <Version>2.5.1</Version>
+      <Version>2.5.6</Version>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
