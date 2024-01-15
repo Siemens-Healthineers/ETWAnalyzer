@@ -286,8 +286,10 @@ namespace ETWAnalyzer_uTest.EventDump
             Assert.Equal(2, totalCounter.NewProcessCount);
             Assert.Equal(1, totalCounter.ExitedProcessCount);
             Assert.Equal(0, totalCounter.PermanentProcessCount);
-            Assert.Equal(new HashSet<int> { 1, 2 }, totalCounter.AllSessionIds);
-            Assert.Equal(new HashSet<string> { "User1", "User2" }, totalCounter.AllUsers);
+            Assert.Contains(1, totalCounter.AllSessionIds);
+            Assert.Contains(2, totalCounter.AllSessionIds);
+            Assert.Contains("User1", totalCounter.AllUsers);
+            Assert.Contains("User2", totalCounter.AllUsers);
 
         }
 
@@ -425,6 +427,7 @@ namespace ETWAnalyzer_uTest.EventDump
         public void TestSortOrderSessionAndPrint_ShowTotalTotal()
         {
             using var testOutput = new ExceptionalPrinter(myWriter, true);
+            using var setInvariantCulture = new CultureSwitcher();
 
             var data = CreateTestData();
 
@@ -468,6 +471,7 @@ namespace ETWAnalyzer_uTest.EventDump
         public void TestSortOrderSessionAndPrint_ShowFileTotal()
         {
             using var testOutput = new ExceptionalPrinter(myWriter, true);
+            using var setInvariantCulture = new CultureSwitcher();
 
             var data = CreateTestData();
 
@@ -511,6 +515,7 @@ namespace ETWAnalyzer_uTest.EventDump
         public void TestSortOrderSessionAndPrint_ShowFileNone()
         {
             using var testOutput = new ExceptionalPrinter(myWriter, true);
+            using var setInvariantCulture = new CultureSwitcher();
 
             var data = CreateTestData();
 

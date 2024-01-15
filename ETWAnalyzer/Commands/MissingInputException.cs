@@ -27,8 +27,5 @@ namespace ETWAnalyzer.Commands
         {
         }
 
-        protected MissingInputException(SerializationInfo info, StreamingContext context) : base(info, context)
-        {
-        }
     }
 }
