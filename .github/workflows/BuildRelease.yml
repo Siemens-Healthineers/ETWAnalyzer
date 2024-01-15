@@ -41,7 +41,7 @@ jobs:
         - name: Upload .NET 8 Binaries
           uses: actions/upload-artifact@v3
           with:
-            name: Net6Binaries
+            name: Net8Binaries
             path: ${{ github.workspace }}/bin/Release/ETWAnalyzer_Net8.zip
             retention-days: 90
 
