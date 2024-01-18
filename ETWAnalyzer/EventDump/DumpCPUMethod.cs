@@ -174,6 +174,11 @@ namespace ETWAnalyzer.EventDump
         /// </summary>
         public bool Normalize { get; internal set; }
 
+        /// <summary>
+        /// Omit priority in output 
+        /// </summary>
+        public bool NoPriorityDetails { get; internal set; }
+
 
 
         /// <summary>
@@ -202,7 +207,13 @@ namespace ETWAnalyzer.EventDump
         /// <summary>
         /// Total CPU Header CPU column width
         /// </summary>
-        const int CPUTotal_CPUColumnWidth = 9; 
+        const int CPUTotal_CPUColumnWidth = 9;
+
+        /// <summary>
+        /// Total CPU column width
+        /// </summary>
+        const int CPUtotal_PriorityColumnWidth = 8;
+
 
         /// <summary>
         /// Total CPU Header Process Name column width
@@ -251,6 +262,7 @@ namespace ETWAnalyzer.EventDump
             public ICPUUsage[] CPUUsage { get; internal set; }
             public IReadOnlyDictionary<CPUNumber, ICPUTopology> Topology { get; internal set; }
             public IReadyTimes ReadyDetails { get; internal set; }
+            public float ProcessPriority { get; internal set; }
 
             public override string ToString()
             {
@@ -424,10 +436,13 @@ namespace ETWAnalyzer.EventDump
 
                         ICPUUsage[] cpuUsage = null;
                         IReadyTimes readyTimes = null;
+                        float prio = 0.0f;
 
                         if ( perProcess.Process.Pid >  WindowsConstants.IdleProcessId)
                         {
                             ETWProcessIndex idx = file.Extract.GetProcessIndexByPID(perProcess.Process.Pid, perProcess.Process.StartTime);
+                            file.Extract?.CPU?.PerProcessAvgCPUPriority?.TryGetValue(idx, out prio); // get process priority
+
                             ProcessMethodIdx procMethod = idx.Create(methodCost.MethodIdx);
                             if ( file.Extract.CPU?.ExtendedCPUMetrics?.MethodIndexToCPUMethodData?.ContainsKey(procMethod) == true )
                             {
@@ -442,6 +457,9 @@ namespace ETWAnalyzer.EventDump
                             }
                         }
 
+
+
+
                         matches.Add(new MatchData
                         {
                             TestName = file.TestName,
@@ -453,9 +471,10 @@ namespace ETWAnalyzer.EventDump
                             WaitMs = methodCost.WaitMs,
                             ReadyMs = methodCost.ReadyMs,
                             ReadyAverageUs = methodCost.ReadyAverageUs,
+                            ProcessPriority = prio,
                             ContextSwitchCount = methodCost.ContextSwitchCount,
                             Threads = methodCost.Threads,
-                            CPUUsage = cpuUsage,   
+                            CPUUsage = cpuUsage,
                             Topology = file?.Extract?.CPU?.Topology,
                             ReadyDetails = readyTimes,
                             HasCPUSamplingData = file.Extract.CPU.PerProcessMethodCostsInclusive.HasCPUSamplingData,
@@ -532,6 +551,7 @@ namespace ETWAnalyzer.EventDump
             // Then we skip the first N entries to show only the last TopNSafe results which are the highest values
 
             Dictionary<ProcessKey, ETWProcess> lookupCache = new();
+            Dictionary<ProcessKey, ETWProcessIndex> indexCache = new();
 
             ETWProcess Lookup(ProcessKey key)
             {
@@ -544,11 +564,26 @@ namespace ETWAnalyzer.EventDump
                 return process;
             }
 
+            ETWProcessIndex LookupIndex(ProcessKey key)
+            {
+                if( !indexCache.TryGetValue(key, out ETWProcessIndex processIndex))
+                {
+                    processIndex = file.Extract.GetProcessIndexByPidAtTime(key.Pid, key.StartTime);
+                    indexCache[key] = processIndex;
+                }
+                return processIndex;
+            }
+
             List<MatchData> filtered = file.Extract.CPU.PerProcessCPUConsumptionInMs.Where(ProcessFilter).Select(x =>
             {
                 ETWProcess process = Lookup(x.Key);
-
                 if (process == null)
+                {
+                    return null;
+                }
+
+                ETWProcessIndex index = LookupIndex(x.Key);
+                if( index == ETWProcessIndex.Invalid)
                 {
                     return null;
                 }
@@ -560,12 +595,16 @@ namespace ETWAnalyzer.EventDump
                     return null;
                 }
 
+                float prio = 0.0f;
+                file.Extract?.CPU.PerProcessAvgCPUPriority?.TryGetValue(index, out prio);
+
                 return new MatchData
                 {
                     TestName = file.TestName,
                     PerformedAt = file.PerformedAt,
                     DurationInMs = file.DurationInMs,
                     CPUMs = x.Value,
+                    ProcessPriority = prio,
                     BaseLine = file.Extract.MainModuleVersion != null ? file.Extract.MainModuleVersion.ToString() : "",
                     Method = "",
                     ProcessAndPid = process.GetProcessWithId(UsePrettyProcessName),
@@ -598,7 +637,7 @@ namespace ETWAnalyzer.EventDump
                 matches.Add(cpu);
                 if (!IsCSVEnabled && !Merge && !(ShowTotal == TotalModes.Total) )
                 {
-                    PrintCPUTotal(cpu.CPUMs, cpu.Process, Path.GetFileNameWithoutExtension(file.FileName), file.Extract.SessionStart, matches[matches.Count-1].Module);
+                    PrintCPUTotal(cpu.CPUMs, cpu.ProcessPriority, cpu.Process, Path.GetFileNameWithoutExtension(file.FileName), file.Extract.SessionStart, matches[matches.Count-1].Module);
                 }
             }
         }
@@ -608,18 +647,34 @@ namespace ETWAnalyzer.EventDump
             if (!IsCSVEnabled)
             {
                 string cpuHeaderName = "CPU";
+                string priorityHeaderName = NoPriorityDetails ? "" : "Priority".WithWidth(CPUtotal_PriorityColumnWidth);
                 string processHeaderName = "Process Name";
                 string sessionHeaderName = ShowDetails ? "Session ": "";
 
                 if (myCPUTotalHeaderShown == false)
                 {
-                    ColorConsole.WriteEmbeddedColorLine($"\t[Green]{cpuHeaderName.WithWidth(CPUTotal_CPUColumnWidth)} ms[/Green] [yellow]{sessionHeaderName}{processHeaderName.WithWidth(CPUTotal_ProcessNameWidth)}[/yellow]");
+                    ColorConsole.WriteEmbeddedColorLine($"\t[Green]{cpuHeaderName.WithWidth(CPUTotal_CPUColumnWidth)} ms[/Green] [red]{priorityHeaderName}[/red] [yellow]{sessionHeaderName}{processHeaderName.WithWidth(CPUTotal_ProcessNameWidth)}[/yellow]");
                     myCPUTotalHeaderShown = true;
                 }
             }
         }
 
-        void PrintCPUTotal(long cpu, ETWProcess process, string  sourceFile, DateTimeOffset sessionStart, ModuleDefinition exeModule)
+        /// <summary>
+        /// Format priority with color when it is greater 8 which is normal, or in a different color when it is below normal
+        /// </summary>
+        /// <param name="priority"></param>
+        /// <param name="width"></param>
+        /// <returns></returns>
+        string FormatPriorityColor(float priority, int width)
+        {
+            if (NoPriorityDetails || priority == 0)
+            {
+                return "";
+            }
+            return priority >= 8.0f ? $"[red]{"F1".WidthFormat(priority, width)}[/red]" : $"[green]{"F1".WidthFormat(priority, width)}[/green]";
+        }
+
+        void PrintCPUTotal(long cpu, float priority, ETWProcess process, string  sourceFile, DateTimeOffset sessionStart, ModuleDefinition exeModule)
         {
             string fileName = this.Merge ? $" {sourceFile}" : "";
 
@@ -633,13 +688,21 @@ namespace ETWAnalyzer.EventDump
                 moduleInfo = GetModuleString(exeModule, true);
             }
 
+            string prio = "";
+            if(NoPriorityDetails == false && priority > 0)
+            {
+                prio = FormatPriorityColor(priority, CPUtotal_PriorityColumnWidth) + " ";
+            }
+
+            prio = prio.WithWidth(CPUtotal_PriorityColumnWidth);
+
             if (NoCmdLine)
             {
-                ColorConsole.WriteEmbeddedColorLine($"\t[Green]{cpuStr,CPUTotal_CPUColumnWidth} ms[/Green] [yellow]{process.GetProcessWithId(UsePrettyProcessName),CPUTotal_ProcessNameWidth}{GetProcessTags(process, sessionStart)}[/yellow]{fileName} [red]{moduleInfo}[/red]");
+                ColorConsole.WriteEmbeddedColorLine($"\t[Green]{cpuStr,CPUTotal_CPUColumnWidth} ms[/Green] {prio}[yellow]{process.GetProcessWithId(UsePrettyProcessName),CPUTotal_ProcessNameWidth}{GetProcessTags(process, sessionStart)}[/yellow]{fileName} [red]{moduleInfo}[/red]");
             }
             else
             {
-                ColorConsole.WriteEmbeddedColorLine($"\t[Green]{cpuStr,CPUTotal_CPUColumnWidth} ms[/Green] [yellow]{sessionIdStr}{process.GetProcessWithId(UsePrettyProcessName),CPUTotal_ProcessNameWidth}{GetProcessTags(process, sessionStart)}[/yellow] {process.CommandLineNoExe}", ConsoleColor.DarkCyan, true);
+                ColorConsole.WriteEmbeddedColorLine($"\t[Green]{cpuStr,CPUTotal_CPUColumnWidth} ms[/Green] {prio}[yellow]{sessionIdStr}{process.GetProcessWithId(UsePrettyProcessName),CPUTotal_ProcessNameWidth}{GetProcessTags(process, sessionStart)}[/yellow] {process.CommandLineNoExe}", ConsoleColor.DarkCyan, true);
                 ColorConsole.WriteEmbeddedColorLine($" {fileName} [red]{moduleInfo}[/red]");
             }
         }
@@ -747,8 +810,13 @@ namespace ETWAnalyzer.EventDump
                         MatchData current = processGroup.First();
                         ETWProcess process = current.Process;
                         string moduleString = current.ExeModule != null ? " " + GetModuleString(current.ExeModule, true) : "";
-
-                        ColorConsole.WriteEmbeddedColorLine($"   {processTotalString}[grey]{process.GetProcessWithId(UsePrettyProcessName)}{GetProcessTags(process, current.SessionStart.AddSeconds(current.ZeroTimeS))}[/grey] {cmdLine}", ConsoleColor.DarkCyan, true);
+                        
+                        string processPriority = "";
+                        if (!NoPriorityDetails && current.ProcessPriority > 0)
+                        {
+                            processPriority = ShowDetails ? $"  Priority: {FormatPriorityColor(current.ProcessPriority,0)}" : "";
+                        }
+                        ColorConsole.WriteEmbeddedColorLine($"   {processTotalString}[grey]{process.GetProcessWithId(UsePrettyProcessName)}{GetProcessTags(process, current.SessionStart.AddSeconds(current.ZeroTimeS))}[/grey]{processPriority} {cmdLine}", ConsoleColor.DarkCyan, true);
                         ColorConsole.WriteEmbeddedColorLine($"[red]{moduleString}[/red]");
                     }
 
@@ -1144,7 +1212,9 @@ namespace ETWAnalyzer.EventDump
                     "FrequencyRelativeToNominal % Efficiency Class 1",
                     "UsedCores Class 1",
                     "Enabled Cores",
-                    "# Threads", Col_Baseline, Col_Process, Col_ProcessName, Col_Session, "Start Time", "StackDepth",
+                    "# Threads",
+                    Col_AveragePriority,
+                    Col_Baseline, Col_Process, Col_ProcessName, Col_Session, "Start Time", "StackDepth",
                                   "FirstLastCall Duration in s", $"First Call time in {GetAbbreviatedName(firstFormat)}", $"Last Call time in {GetAbbreviatedName(lastFormat)}", Col_CommandLine, "SourceFile", "IsNewProcess", "Module and Driver Info");
                 myCSVHeaderPrinted = true;
             }
@@ -1169,7 +1239,9 @@ namespace ETWAnalyzer.EventDump
                 frequencyRelativeToNominalPercentClass1,
                 usedCoresClass1,
                 enabledCores,
-                match.Threads, match.BaseLine, match.ProcessAndPid, match.Process.GetProcessName(UsePrettyProcessName), match.Process.SessionId, match.Process.StartTime, match.CPUMs / Math.Exp(match.StackDepth),
+                match.Threads,
+                GetNullIfDefault(match.ProcessPriority),
+                match.BaseLine, match.ProcessAndPid, match.Process.GetProcessName(UsePrettyProcessName), match.Process.SessionId, match.Process.StartTime, match.CPUMs / Math.Exp(match.StackDepth),
                          firstLastDurationS, GetDateTimeString(match.FirstCallTime, match.SessionStart, firstFormat), GetDateTimeString(match.LastCallTime, match.SessionStart, lastFormat), NoCmdLine ? "" : match.Process.CmdLine, match.SourceFile, (match.Process.IsNew ? 1 : 0), moduleDriverInfo);
         }
 
@@ -1209,6 +1281,8 @@ namespace ETWAnalyzer.EventDump
             }
         }
 
+
+
         private void PrintProcessTotalMatches(List<MatchData> matches)
         {
             foreach (var group in matches.GroupBy(x => x.Process.GetProcessName(this.UsePrettyProcessName)).OrderBy(x => x.Sum(SortBySortOrder)))
@@ -1219,14 +1293,14 @@ namespace ETWAnalyzer.EventDump
 
                     long diff = group.ETWMaxBy(x => x.PerformedAt).CPUMs - cpu;
 
-                    PrintCPUTotal(cpu, subgroup.First().Process, String.Join(" ", subgroup.Select(x => Path.GetFileNameWithoutExtension(x.SourceFile)).ToHashSet()) + $" Diff: {diff:N0} ms ", subgroup.First().SessionStart, subgroup.FirstOrDefault().Module);
+                    PrintCPUTotal(cpu, subgroup.First().ProcessPriority, subgroup.First().Process, String.Join(" ", subgroup.Select(x => Path.GetFileNameWithoutExtension(x.SourceFile)).ToHashSet()) + $" Diff: {diff:N0} ms ", subgroup.First().SessionStart, subgroup.FirstOrDefault().Module);
                 }
             }
         }
 
         private void WriteCSVProcessTotal(List<MatchData> matches)
         {
-            OpenCSVWithHeader(Col_CSVOptions, Col_TestCase, Col_Date, Col_TestTimeinms, "CPU ms", Col_Baseline, Col_Process, Col_ProcessName, 
+            OpenCSVWithHeader(Col_CSVOptions, Col_TestCase, Col_Date, Col_TestTimeinms, "CPU ms", Col_AveragePriority, Col_Baseline, Col_Process, "ParentPid", Col_ProcessName, 
                 Col_StartTime, Col_CommandLine, Col_SourceJsonFile, "SourceDirectory", "IsNewProcess", 
                 Col_FileVersion, Col_VersionString, Col_ProductVersion, Col_ProductName, Col_Description, Col_Directory);
 
@@ -1238,7 +1312,8 @@ namespace ETWAnalyzer.EventDump
                 string productName = match.Module?.ProductName?.Trim() ?? "";
                 string description = match.Module?.Description?.Trim() ?? "";
                 string directory = match.Module?.ModulePath ?? "";
-                WriteCSVLine(CSVOptions, match.TestName, match.PerformedAt, match.DurationInMs, match.CPUMs, match.BaseLine, match.ProcessAndPid, match.Process.GetProcessName(UsePrettyProcessName), match.Process.StartTime, match.Process.CmdLine, 
+                
+                WriteCSVLine(CSVOptions, match.TestName, match.PerformedAt, match.DurationInMs, match.CPUMs, GetNullIfDefault(match.ProcessPriority), match.BaseLine, match.ProcessAndPid, match.Process.ParentPid, match.Process.GetProcessName(UsePrettyProcessName), match.Process.StartTime, match.Process.CmdLine, 
                     Path.GetFileNameWithoutExtension(match.SourceFile), Path.GetDirectoryName(match.SourceFile), (match.Process.IsNew ? 1 : 0),
                     fileVersion, versionString, productVersion, productName, description, directory);
             }

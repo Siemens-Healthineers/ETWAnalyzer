@@ -35,6 +35,7 @@ namespace ETWAnalyzer.EventDump
         protected string Col_StartTime = "Start Time";
         protected string Col_Time = "Time";
         protected string Col_Machine = "Machine";
+        protected string Col_AveragePriority = "Average Priority";
 
 
         public override void Execute()
