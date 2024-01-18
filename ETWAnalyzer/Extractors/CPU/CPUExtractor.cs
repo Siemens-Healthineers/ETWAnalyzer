@@ -83,6 +83,11 @@ namespace ETWAnalyzer.Extractors.CPU
         /// </summary>
         readonly ConcurrentDictionary<ProcessKey, Duration> myPerProcessCPU = new();
 
+        /// <summary>
+        /// Per Process Priority
+        /// </summary>
+        readonly Dictionary<ETWProcessIndex, List<int>> myPerProcessPriority = new();
+
         public CPUExtractor()
         {
         }
@@ -112,7 +117,7 @@ namespace ETWAnalyzer.Extractors.CPU
             }
 
             // inspired by https://github.com/microsoft/eventtracing-processing-samples/blob/master/GetCpuSampleDuration/Program.cs
-            ConcurrentDictionary<ProcessKey, ConcurrentDictionary<string, CPUMethodData>> methodSamplesPerProcess = new(UsedConcurrency,1000);
+            ConcurrentDictionary<ProcessKey, ConcurrentDictionary<string, CPUMethodData>> methodSamplesPerProcess = new(UsedConcurrency, 1000);
             StackPrinter printer = new(StackFormat.DllAndMethod);
 
             ParallelOptions concurrency = new ParallelOptions
@@ -121,6 +126,7 @@ namespace ETWAnalyzer.Extractors.CPU
             };
 
             bool hasSamplesWithStacks = false;
+            Dictionary<ProcessKey, ETWProcessIndex> indexCache = BuildProcessIndexCache(results);
 
             if (mySamplingData.HasResult)
             {
@@ -138,7 +144,7 @@ namespace ETWAnalyzer.Extractors.CPU
 
                     var process = new ProcessKey(sample.Process.ImageName, sample.Process.Id, sample.Process.CreateTime.HasValue ? sample.Process.CreateTime.Value.DateTimeOffset : default(DateTimeOffset));
 
-                    AddTotalCPU(process, sample, myPerProcessCPU);
+                    AddTotalCPUAndPriority(process, indexCache, sample, myPerProcessCPU, myPerProcessPriority);
                     AddPerMethodAndProcessCPU(results, process, sample, methodSamplesPerProcess, printer);
                     if (myTimelineExtractor != null)
                     {
@@ -170,7 +176,7 @@ namespace ETWAnalyzer.Extractors.CPU
             // convert dictionary with kvp to format ProcessName(pid) and sample count in ms
             Dictionary<ProcessKey, uint> perProcessSamplesInMs = new();
             // sort by cpu then by process name and then by pid to get stable sort order
-            foreach (var kvp in myPerProcessCPU.OrderByDescending(x => x.Value).ThenBy(x => x.Key.Name).ThenBy( x=> x.Key.Pid) )
+            foreach (var kvp in myPerProcessCPU.OrderByDescending(x => x.Value).ThenBy(x => x.Key.Name).ThenBy(x => x.Key.Pid))
             {
                 perProcessSamplesInMs.Add(kvp.Key, (uint)kvp.Value.TotalMilliseconds);
             }
@@ -185,7 +191,7 @@ namespace ETWAnalyzer.Extractors.CPU
             // speed up time range calculation
             Parallel.ForEach(methodSamplesPerProcess, concurrency, (process) =>
             {
-                foreach(KeyValuePair<string, CPUMethodData> methodCPU in process.Value)
+                foreach (KeyValuePair<string, CPUMethodData> methodCPU in process.Value)
                 {
                     var tmp = methodCPU.Value.ReadyTimeRange.GetDuration();
                     tmp = methodCPU.Value.WaitTimeRange.GetDuration();
@@ -198,7 +204,7 @@ namespace ETWAnalyzer.Extractors.CPU
             {
                 foreach (KeyValuePair<string, CPUMethodData> methodToMs in process2Method.Value)
                 {
-                
+
                     MethodIndex methodIndex = inclusiveSamplesPerMethod.AddMethod(process2Method.Key, methodToMs.Key, methodToMs.Value, cutOffMs);
                     if (methodIndex != MethodIndex.Invalid && results?.CPU?.ExtendedCPUMetrics?.CPUToFrequencyDurations?.Count > 0)
                     {
@@ -243,14 +249,43 @@ namespace ETWAnalyzer.Extractors.CPU
                 results.CPU.ExtendedCPUMetrics.RemapMethodIndicies(methodIndexMap);
             }
 
-            results.CPU = new CPUStats(perProcessSamplesInMs, inclusiveSamplesPerMethod, myTimelineExtractor?.Timeline, results.CPU?.Topology, results.CPU?.ExtendedCPUMetrics);
+            Dictionary<ETWProcessIndex, float> processPriorities = GetProcessPriorities(myPerProcessPriority);
+
+            results.CPU = new CPUStats(perProcessSamplesInMs, processPriorities, inclusiveSamplesPerMethod, myTimelineExtractor?.Timeline, results.CPU?.Topology, results.CPU?.ExtendedCPUMetrics);
 
             // Try to release memory as early as possible
             mySamplingData = null;
             myCpuSchedlingData = null;
         }
 
+        private static Dictionary<ProcessKey, ETWProcessIndex> BuildProcessIndexCache(ETWExtract results)
+        {
+            Dictionary<ProcessKey, ETWProcessIndex> indexCache = new();
+            foreach (var process in results.Processes)
+            {
+                if (process.ProcessID > 0)
+                {
+                    ETWProcessIndex idx = results.GetProcessIndexByPID(process.ProcessID, process.StartTime);
+                    indexCache[process.ToProcessKey()] = idx;
+                }
+                else
+                {
+                    indexCache[process.ToProcessKey()] = ETWProcessIndex.Invalid;
+                }
+            }
 
+            return indexCache;
+        }
+
+        private Dictionary<ETWProcessIndex, float> GetProcessPriorities(Dictionary<ETWProcessIndex, List<int>> perProcessPriority)
+        {
+            Dictionary<ETWProcessIndex, float> lret = new();
+            foreach(var kvp in perProcessPriority)
+            {
+                lret[kvp.Key] = (float)Math.Round(kvp.Value.Average(), 1);
+            }
+            return lret;
+        }
 
         private void AddPerMethodAndProcessWaits(ETWExtract extract, ProcessKey process, ICpuThreadActivity slice, ConcurrentDictionary<ProcessKey, ConcurrentDictionary<string, CPUMethodData>> methodSamplesPerProcess, StackPrinter printer, bool hasCpuSampleData)
         {
@@ -451,9 +486,11 @@ namespace ETWAnalyzer.Extractors.CPU
         /// Update per process CPU usage from CPU Sampling data. This is preferred.
         /// </summary>
         /// <param name="process"></param>
+        /// <param name="indexCache">map of processKey instances to ETWProcessIndex</param>
         /// <param name="sample"></param>
         /// <param name="perProcessCPU"></param>
-        private static void AddTotalCPU(ProcessKey process, ICpuSample sample, ConcurrentDictionary<ProcessKey, Duration> perProcessCPU)
+        /// <param name="perProcessPriority"></param>
+        private static void AddTotalCPUAndPriority(ProcessKey process, Dictionary<ProcessKey, ETWProcessIndex> indexCache, ICpuSample sample, ConcurrentDictionary<ProcessKey, Duration> perProcessCPU, Dictionary<ETWProcessIndex, List<int>> perProcessPriority)
         {
             Duration duration = default;
             do
@@ -463,6 +500,23 @@ namespace ETWAnalyzer.Extractors.CPU
                     perProcessCPU.TryAdd(process, default);
                 }
             } while (!perProcessCPU.TryUpdate(process, sample.Weight + duration, duration));
+
+            lock(perProcessPriority)
+            {
+                if (indexCache.TryGetValue(process, out ETWProcessIndex idx))
+                {
+                    if (!perProcessPriority.TryGetValue(idx, out List<int> prios))
+                    {
+                        prios = new();
+                        perProcessPriority.Add(idx, prios);
+                    }
+
+                    if (sample.Priority != null)
+                    {
+                        prios.Add(sample.Priority.Value);
+                    }
+                }
+            }
         }
 
         /// <summary>

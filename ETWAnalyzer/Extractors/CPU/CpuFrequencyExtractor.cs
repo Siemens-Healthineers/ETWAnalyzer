@@ -47,7 +47,7 @@ namespace ETWAnalyzer.Extractors.CPU
                 }
 
                 // Frequency Extractor comes always before CPU extractor
-                results.CPU = new CPUStats(null, null, null, results?.CPU?.Topology, frequencyData);
+                results.CPU = new CPUStats(null, null, null, null, results?.CPU?.Topology, frequencyData);
             }
         }
     }

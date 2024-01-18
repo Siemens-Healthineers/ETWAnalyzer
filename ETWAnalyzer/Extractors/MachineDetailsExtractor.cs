@@ -83,7 +83,7 @@ namespace ETWAnalyzer.Extractors
                         };
                     }
 
-                    results.CPU = new CPUStats(results?.CPU?.PerProcessCPUConsumptionInMs, results?.CPU?.PerProcessMethodCostsInclusive, results?.CPU?.TimeLine, cpuTopology, null);
+                    results.CPU = new CPUStats(results?.CPU?.PerProcessCPUConsumptionInMs, results?.CPU?.PerProcessAvgCPUPriority, results?.CPU?.PerProcessMethodCostsInclusive, results?.CPU?.TimeLine, cpuTopology, null);
                 }
             }
             catch (InvalidTraceDataException ex)

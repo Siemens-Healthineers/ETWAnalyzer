@@ -184,7 +184,7 @@ namespace ETWAnalyzer_uTest.EventDump
                 DummyMethod,
             };
 
-            extract.CPU = new CPUStats(null, new CPUPerProcessMethodList()
+            extract.CPU = new CPUStats(null, null, new CPUPerProcessMethodList()
             {
                 MethodStatsPerProcess = new List<MethodsByProcess>
                 {
@@ -855,6 +855,7 @@ namespace ETWAnalyzer_uTest.EventDump
                         { proc1, 5000 },
                         { proc2, 6000 },
                     },
+                    null,
                     methodList,
                     null,
                     null, 
@@ -1158,7 +1159,7 @@ namespace ETWAnalyzer_uTest.EventDump
                     {
                         { myCmdProcess, 7 },
                         { myCmdProcess2, 16001 },
-                    }, null, null, null, null),
+                    }, null, null, null, null, null),
 
             };
 
@@ -1202,7 +1203,7 @@ namespace ETWAnalyzer_uTest.EventDump
                     {
                         { myCmdProcess, 7 },
                         { myCmdProcess2, 16001 },
-                    }, null, null, null, null),
+                    }, null, null, null, null, null),
 
             };
 

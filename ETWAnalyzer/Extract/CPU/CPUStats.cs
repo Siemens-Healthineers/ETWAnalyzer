@@ -21,13 +21,22 @@ namespace ETWAnalyzer.Extract
         public Dictionary<ProcessKey, uint> PerProcessCPUConsumptionInMs
         {
             get;
-        } = new Dictionary<ProcessKey, uint>();
+        } = new();
 
         /// <summary>
         /// Simple stat which contains the total CPU in ms per process
         /// </summary>
         IReadOnlyDictionary<ProcessKey, uint> ICPUStats.PerProcessCPUConsumptionInMs => PerProcessCPUConsumptionInMs;
 
+        /// <summary>
+        /// Average process priority of all threads taken from CPU sampling data if present.
+        /// </summary>
+        public Dictionary<ETWProcessIndex, float> PerProcessAvgCPUPriority
+        {
+            get;
+        } = new();
+
+        IReadOnlyDictionary<ETWProcessIndex, float> ICPUStats.PerProcessAvgCPUPriority => PerProcessAvgCPUPriority;
 
         /// <summary>
         /// Contains methods which have CPU/Wait > 10ms (default) 
@@ -107,17 +116,20 @@ namespace ETWAnalyzer.Extract
         internal string DeserializedFileName { get;  set; }
 
 
+
         /// <summary>
         /// Ctor which fills the data. This is also used by Json.NET during deserialization.
         /// </summary>
         /// <param name="perProcessCPUConsumptionInMs"></param>
+        /// <param name="perProcessAvgCPUPriority"></param>
         /// <param name="perProcessMethodCostsInclusive"></param>
         /// <param name="timeLine"></param>
         /// <param name="cpuInfos">CPU informations</param>
         /// <param name="extendedMetrics">Extended metrics</param>
-        public CPUStats(Dictionary<ProcessKey, uint> perProcessCPUConsumptionInMs, CPUPerProcessMethodList perProcessMethodCostsInclusive, CPUTimeLine timeLine, Dictionary<CPUNumber, CPUTopology> cpuInfos, CPUExtended extendedMetrics)
+        public CPUStats(Dictionary<ProcessKey, uint> perProcessCPUConsumptionInMs, Dictionary<ETWProcessIndex, float> perProcessAvgCPUPriority, CPUPerProcessMethodList perProcessMethodCostsInclusive, CPUTimeLine timeLine, Dictionary<CPUNumber, CPUTopology> cpuInfos, CPUExtended extendedMetrics)
         {
             PerProcessCPUConsumptionInMs = perProcessCPUConsumptionInMs;
+            PerProcessAvgCPUPriority = perProcessAvgCPUPriority;   
             PerProcessMethodCostsInclusive = perProcessMethodCostsInclusive;
             TimeLine = timeLine;
             Topology = cpuInfos;

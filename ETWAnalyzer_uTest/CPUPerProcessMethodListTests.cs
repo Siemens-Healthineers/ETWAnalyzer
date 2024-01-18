@@ -70,7 +70,7 @@ namespace ETWAnalyzer_uTest
         {
             ETWExtract extract = new ETWExtract();
             CPUPerProcessMethodList list = GetTestData();
-            extract.CPU = new CPUStats(null, list, null,null, null);
+            extract.CPU = new CPUStats(null, null, list, null,null, null);
 
             MemoryStream stream = new MemoryStream();
             ExtractSerializer.Serialize(stream, extract);
