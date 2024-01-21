@@ -156,8 +156,9 @@ namespace ETWAnalyzer.Extractors.CPU
             // When we have context switch data recorded we can also calculate the thread wait time stacktags
             if (myCpuSchedlingData.HasResult)
             {
-                Parallel.ForEach(myCpuSchedlingData.Result.ThreadActivity, concurrency, (ICpuThreadActivity slice) =>
+                Parallel.ForEach(myCpuSchedlingData.Result.ThreadActivity, concurrency, (ICpuThreadActivity sliceV1) =>
                 {
+                    ICpuThreadActivity2 slice = sliceV1.AsCpuThreadActivity2();
                     if (slice?.Process?.ImageName == null)
                     {
                         return;
@@ -210,7 +211,7 @@ namespace ETWAnalyzer.Extractors.CPU
                     {
                         if (process2Method.Key.Pid > WindowsConstants.IdleProcessId)
                         {
-                            var perCoreTypeCPUUsage = methodToMs.Value.GetAverageFrequenciesPerEfficiencyClass(results.CPU);
+                            CPUUsage[] perCoreTypeCPUUsage = methodToMs.Value.GetAverageFrequenciesPerEfficiencyClass(results.CPU);
                             if (perCoreTypeCPUUsage != null)
                             {
                                 ETWProcessIndex processIdx = results.GetProcessIndexByPID(process2Method.Key.Pid, process2Method.Key.StartTime);
@@ -287,7 +288,7 @@ namespace ETWAnalyzer.Extractors.CPU
             return lret;
         }
 
-        private void AddPerMethodAndProcessWaits(ETWExtract extract, ProcessKey process, ICpuThreadActivity slice, ConcurrentDictionary<ProcessKey, ConcurrentDictionary<string, CPUMethodData>> methodSamplesPerProcess, StackPrinter printer, bool hasCpuSampleData)
+        private void AddPerMethodAndProcessWaits(ETWExtract extract, ProcessKey process, ICpuThreadActivity2 slice, ConcurrentDictionary<ProcessKey, ConcurrentDictionary<string, CPUMethodData>> methodSamplesPerProcess, StackPrinter printer, bool hasCpuSampleData)
         {
             if (slice?.Process?.ImageName == null)  // Image Name can be null sometimes
             {
@@ -361,7 +362,7 @@ namespace ETWAnalyzer.Extractors.CPU
                 {
                     TraceTimestamp readyStart = slice.SwitchIn.ContextSwitch.Timestamp - slice.ReadyDuration.Value;
                     stats.ReadyTimeRange.Add(readyStart, slice.ReadyDuration.Value);
-                    stats.AddExtendedReadyMetrics(extract.CPU, (CPUNumber)slice.Processor, (float)readyStart.RelativeTimestamp.TotalSeconds, (float)slice.ReadyDuration.Value.TotalSeconds, slice.Thread.Id, slice.Thread.ProcessorAffinity);
+                    stats.AddExtendedReadyMetrics(slice);
                 }
 
                 decimal time = slice.StopTime.RelativeTimestamp.TotalSeconds;

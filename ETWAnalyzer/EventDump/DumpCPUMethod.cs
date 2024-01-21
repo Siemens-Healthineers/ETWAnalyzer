@@ -959,7 +959,7 @@ namespace ETWAnalyzer.EventDump
                 },
                 FormatterType.Wait => new Formatter<MatchData>
                 {
-                    Header = matches.Any(x => x.HasCSwitchData.GetValueOrDefault() || x.WaitMs != 0) ? "      Wait ms" : "",
+                    Header = matches.Any(x => x.HasCSwitchData.GetValueOrDefault() || x.WaitMs != 0) ? "      Wait ms " : "",
                     Print = matches.Any(x => x.HasCSwitchData.GetValueOrDefault() || x.WaitMs != 0) ? (data) => " " + "N0".WidthFormat(data.WaitMs, 9) + " ms " : (data) => "",
                 },
                 FormatterType.Ready => new Formatter<MatchData>
@@ -1009,7 +1009,23 @@ namespace ETWAnalyzer.EventDump
             string lret = "";
             if (data.ReadyDetails != null)
             {
-                lret = "".WithWidth(3) + $"Min: {data.ReadyDetails.MinUs:F1} us 5% {data.ReadyDetails.Percentile5:F1} us 25% {data.ReadyDetails.Percentile25:F1} us 50% {data.ReadyDetails.Percentile50:F1} us 90%: {data.ReadyDetails.Percentile90:F1} us 95%: {data.ReadyDetails.Percentile95:F1} us Max: {data.ReadyDetails.MaxUs:F1} us";
+                if (data.ReadyDetails.HasIdleTimes)
+                {
+                    lret = $"  Min: {"F1".WidthFormat(data.ReadyDetails.MinIdleUs,3)} us 5% {"F1".WidthFormat(data.ReadyDetails.Percentile5IdleUs,4)} us 25% {"F1".WidthFormat(data.ReadyDetails.Percentile25IdleUs,4)} us 50% {"F1".WidthFormat(data.ReadyDetails.Percentile50IdleUs,4)} "+
+                           $"us 90%: {"F0".WidthFormat(data.ReadyDetails.Percentile90IdleUs,5)} us 95%: {"F0".WidthFormat(data.ReadyDetails.Percentile95IdleUs,5)} us 99%: {"F0".WidthFormat(data.ReadyDetails.Percentile99IdleUs,5)} us Max: {"F0".WidthFormat(data.ReadyDetails.MaxIdleUs,7)} us "+
+                           $"Sum: {"F4".WidthFormat(data.ReadyDetails.SumIdleUs / 1_000_000.0d,8)} s Count: {"N0".WidthFormat(data.ReadyDetails.CSwitchCountIdle,10)}    Idle";
+                }
+                if( lret != "" && data.ReadyDetails.HasNonIdleTimes)
+                {
+                    lret +=Environment.NewLine;
+                }
+
+                if( data.ReadyDetails.HasNonIdleTimes)
+                {
+                    lret += "".WithWidth(2) + $"  Min: {"F1".WidthFormat(data.ReadyDetails.MinNonIdleUs,3)} us 5% {"F1".WidthFormat(data.ReadyDetails.Percentile5NonIdleUs,4)} us 25% {"F1".WidthFormat(data.ReadyDetails.Percentile25NonIdleUs,4)} us 50% {"F1".WidthFormat(data.ReadyDetails.Percentile50NonIdleUs,4)} us"+
+                        $" 90%: {"F0".WidthFormat(data.ReadyDetails.Percentile90NonIdleUs,5)} us 95%: {"F0".WidthFormat(data.ReadyDetails.Percentile95NonIdleUs,5)} us 99%: {"F0".WidthFormat(data.ReadyDetails.Percentile99NonIdleUs,5)} us Max: {"F0".WidthFormat(data.ReadyDetails.MaxNonIdleUs,7)} us "+
+                        $"Sum: {"F4".WidthFormat(data.ReadyDetails.SumNonIdleUs/1_000_000.0d,8)} s Count: {"N0".WidthFormat(data.ReadyDetails.CSwitchCountNonIdle,10)} NonIdle";
+                }
             }
             return lret;
         }
@@ -1194,14 +1210,15 @@ namespace ETWAnalyzer.EventDump
             if (!myCSVHeaderPrinted)
             {
                 OpenCSVWithHeader("CSVOptions", "Test Case", "Date", "Test Time in ms", "Module", "Method", "CPU ms", "Wait ms", "Ready ms", "Ready Average us", 
-                    "Ready Min us",
-                    "Ready Max us",
-                    "Ready 5% Percentile us",
-                    "Ready 25% Percentile us",
-                    "Ready 50% Percentile us (Median)",
-                    "Ready 90% Percentile us",
-                    "Ready 95% Percentile us",
-                    "Ready 99% Percentile us",
+                    "Idle Ready Count",
+                    "Idle Ready Min us",
+                    "Idle Ready Max us",
+                    "Idle Ready 5% Percentile us",
+                    "Idle Ready 25% Percentile us",
+                    "Idle Ready 50% Percentile us (Median)",
+                    "Idle Ready 90% Percentile us",
+                    "Idle Ready 95% Percentile us",
+                    "Idle Ready 99% Percentile us",
                     "Context Switch Count",
                     "CPU ms Efficiency Class 0",
                     "Average Frequency Efficiency Class 0",
@@ -1221,14 +1238,15 @@ namespace ETWAnalyzer.EventDump
 
 
             WriteCSVLine(CSVOptions, match.TestName, match.PerformedAt, match.DurationInMs, match.ModuleName, match.Method, match.CPUMs, match.WaitMs, match.ReadyMs, match.ReadyAverageUs, 
-                match?.ReadyDetails?.MinUs,
-                match?.ReadyDetails?.MaxUs,
-                match?.ReadyDetails?.Percentile5,
-                match?.ReadyDetails?.Percentile25,
-                match?.ReadyDetails?.Percentile50,
-                match?.ReadyDetails?.Percentile90,
-                match?.ReadyDetails?.Percentile95,
-                match?.ReadyDetails?.Percentile99,
+                match?.ReadyDetails?.CSwitchCountIdle,
+                match?.ReadyDetails?.MinIdleUs,
+                match?.ReadyDetails?.MaxIdleUs,
+                match?.ReadyDetails?.Percentile5IdleUs,
+                match?.ReadyDetails?.Percentile25IdleUs,
+                match?.ReadyDetails?.Percentile50IdleUs,
+                match?.ReadyDetails?.Percentile90IdleUs,
+                match?.ReadyDetails?.Percentile95IdleUs,
+                match?.ReadyDetails?.Percentile99IdleUs,
                 match.ContextSwitchCount, 
                 cpuClass0Ms,
                 frequencyClass0MHz,

@@ -7,6 +7,7 @@ using ETWAnalyzer.Extract.CPU.Extended;
 using ETWAnalyzer.Infrastructure;
 using ETWAnalyzer.TraceProcessorHelpers;
 using Microsoft.Windows.EventTracing;
+using Microsoft.Windows.EventTracing.Cpu;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -20,6 +21,11 @@ namespace ETWAnalyzer.Extractors.CPU
     /// </summary>
     internal class CPUMethodData
     {
+        /// <summary>
+        /// We calculate metrics only if at least this number of CSwitch events are present to get meaningful data
+        /// </summary>
+        const int MinCSwitchCount = 50;
+
         /// <summary>
         /// Contains CPU data summed across all threads
         /// </summary>
@@ -53,7 +59,7 @@ namespace ETWAnalyzer.Extractors.CPU
         class CPUDetails
         {
             public int UsedCores { get; set; }
-            public List<ProfilingData> ProfilingData { get; set; } = new();
+            public List<ProfilingData> ProfilingData { get; set; } = new(10);
         }
 
         /// <summary>
@@ -130,31 +136,61 @@ namespace ETWAnalyzer.Extractors.CPU
         public ReadyTimes GetReadyMetrics(CPUStats context)
         {
             ReadyTimes lret = new ReadyTimes();
-            List<float> readyDurations = [];
+            List<long> idleReadyDurationNanoS = [];
+            List<long> nonIdleReadyDurationNanoS = [];
+
             foreach(var ready in CPUToReadyDuration)
             {
-                readyDurations.AddRange(ready.Value.Select(x => x.DurationS));
+                idleReadyDurationNanoS.AddRange(    ready.Value.Where(x =>  x.IsIdle).Select(x => x.DurationNanoS));
+                nonIdleReadyDurationNanoS.AddRange( ready.Value.Where(x => !x.IsIdle).Select(x => x.DurationNanoS));
             }
 
-            if (readyDurations.Count > 50)
+            if (idleReadyDurationNanoS.Count > MinCSwitchCount)
             {
-                readyDurations.Sort();
-                lret.AddReadyTimes(readyDurations.Min(), 
-                    readyDurations.Max(),
-                    readyDurations.Percentile( 0.05f ),
-                    readyDurations.Percentile( 0.25f ),
-                    readyDurations.Percentile( 0.50f ),
-                    readyDurations.Percentile( 0.90f ),
-                    readyDurations.Percentile( 0.95f ),
-                    readyDurations.Percentile( 0.99f ));
+                idleReadyDurationNanoS.Sort();
+                decimal idleSumNanoS = 0.0m;
+                foreach(var idle in idleReadyDurationNanoS)
+                {
+                    idleSumNanoS += (decimal) idle;
+                }
 
-                return lret;
+                lret.AddReadyTimes(idle: true,
+                    idleReadyDurationNanoS.Count,
+                    idleReadyDurationNanoS.Min(),
+                    idleReadyDurationNanoS.Max(),
+                    idleReadyDurationNanoS.Percentile(0.05f),
+                    idleReadyDurationNanoS.Percentile(0.25f),
+                    idleReadyDurationNanoS.Percentile(0.50f),
+                    idleReadyDurationNanoS.Percentile(0.90f),
+                    idleReadyDurationNanoS.Percentile(0.95f),
+                    idleReadyDurationNanoS.Percentile(0.99f),
+                    idleSumNanoS);
             }
-            else
+
+            if (nonIdleReadyDurationNanoS.Count > MinCSwitchCount)
             {
-                return null;
+                nonIdleReadyDurationNanoS.Sort();
+                decimal nonIdleSumNanoS = 0.0m;
+                foreach(var nonidle in nonIdleReadyDurationNanoS)
+                {
+                    nonIdleSumNanoS += (decimal)nonidle;
+                }
+
+                lret.AddReadyTimes(idle: false,
+                    nonIdleReadyDurationNanoS.Count,
+                    nonIdleReadyDurationNanoS.Min(),
+                    nonIdleReadyDurationNanoS.Max(),
+                    nonIdleReadyDurationNanoS.Percentile(0.05f),
+                    nonIdleReadyDurationNanoS.Percentile(0.25f),
+                    nonIdleReadyDurationNanoS.Percentile(0.50f),
+                    nonIdleReadyDurationNanoS.Percentile(0.90f),
+                    nonIdleReadyDurationNanoS.Percentile(0.95f),
+                    nonIdleReadyDurationNanoS.Percentile(0.99f),
+                    nonIdleSumNanoS);
             }
 
+            // return null in case we have no events to make serialized data more compact
+            return (lret.Idle.Count > 0 || lret.NonIdle.Count > 0) ? lret: null;
         }
 
         /// <summary>
@@ -217,7 +253,7 @@ namespace ETWAnalyzer.Extractors.CPU
         {
         }
 
-        internal class ProfilingData
+        internal struct ProfilingData
         {
             public float DurationS { get; set; }
             public float StartTimeS { get; set; }
@@ -275,34 +311,50 @@ namespace ETWAnalyzer.Extractors.CPU
                 });
             }
         }
-
+        
+        /// <summary>
+        /// Working structure to collect intermediate data from context switch events. Not serialied to Json
+        /// </summary>
         internal class ReadyEvent
         {
-            public float StartTimeS { get; set; }
+            public long StartTimeNanoS { get; set; }
 
-            public float DurationS { get; set; }
+            public long DurationNanoS { get; set; }
             public int ThreadId { get; set; }
-            public long EnabledCPUs { get; set; }
+            public bool IsIdle { get; set; }
         }
 
-        internal void AddExtendedReadyMetrics(CPUStats cpu, CPUNumber processor, float readyStartS, float readyDurationS, int threadId, long cpuAffinityMask)
+
+        /// <summary>
+        /// Collect extended Ready delays coming from processor deep sleep states and cross thread interference. 
+        /// </summary>
+        /// <param name="slice">Thread activity which contains context switch events.</param>
+        internal void AddExtendedReadyMetrics(ICpuThreadActivity2 slice)
         {
             lock (this)
             {
-                if( !CPUToReadyDuration.TryGetValue(processor, out var readies) )
+                CPUNumber processor = (CPUNumber)slice.Processor;
+                if ( !CPUToReadyDuration.TryGetValue(processor, out var readies) )
                 {
                     readies = [];
                     CPUToReadyDuration[processor] = readies;
                 }
 
+                if( slice.PreviousActivityOnProcessor == null ) //
+                {
+                    return;
+                }
+
+                // just record data from idle thread to calculate cpu wakup time from sleep and deep sleep states
                 readies.Add(new ReadyEvent
                 {
-                    StartTimeS = readyStartS,
-                    DurationS = readyDurationS,
-                    ThreadId = threadId,
-#if NET6_0_OR_GREATER
-                    EnabledCPUs = (long)System.Runtime.Intrinsics.X86.Popcnt.X64.PopCount((ulong)cpuAffinityMask),
-#endif
+                    StartTimeNanoS = (slice.SwitchIn.ContextSwitch.Timestamp - slice.ReadyDuration.Value).RelativeTimestamp.Nanoseconds,
+                    DurationNanoS = slice.ReadyDuration.Value.Nanoseconds,
+                    ThreadId = slice.Thread.Id,
+                    // We are interested in the performance impact of deep sleep states which is the processor power up time.
+                    // All other delays are the ready times from shallow sleep states (should be fast) and thread interference from other threads of the same or other processes.
+                    // Windows abstracts shallow sleep states (C1/C1E) as CState = 0 and all deeper sleep states as CState = 1
+                    IsIdle = slice.PreviousActivityOnProcessor.Process.Id == WindowsConstants.IdleProcessId && slice?.SwitchIn?.ContextSwitch?.PreviousCState == 1,
                 });
             }
         }
