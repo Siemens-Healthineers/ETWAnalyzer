@@ -3,6 +3,7 @@
 
 using ETWAnalyzer;
 using ETWAnalyzer.Extract;
+using ETWAnalyzer.Extract.CPU.Extended;
 using ETWAnalyzer.Extract.Exceptions;
 using ETWAnalyzer.Extract.Modules;
 using ETWAnalyzer.Extractors;
@@ -394,9 +395,54 @@ namespace ETWAnalyzer_iTest
             Assert.Equal(1133445uL, extractedServer.Disk.TotalDiskServiceTimeInus);
             Assert.Equal(386783uL, extractedServer.Disk.TotalDiskWriteTimeTimeInus);
 
+
+            ETWProcessIndex serializerTestsProcIdx = extractedServer.GetProcessIndex("SerializerTests.exe (22416)");
             // Check CPU summary data
             Assert.Equal(121, extractedServer.CPU.PerProcessCPUConsumptionInMs.Count);
             Assert.Equal(3430u, extractedServer.CPU.PerProcessCPUConsumptionInMs.Where( x=> x.Key.Name == "SerializerTests.exe" && x.Key.Pid == 22416).FirstOrDefault().Value );
+            Assert.Equal(8.2f, extractedServer.CPU.PerProcessAvgCPUPriority[serializerTestsProcIdx]);
+
+            // we need to set file name to be able to deserialize extended CPU data
+            extractedServer.DeserializedFileName = extractJsonFileName;
+
+            // Check extended metrics
+            //          CPU ms       Wait ms  Ready ms ReadyAvg CSwitches Method
+            //        2,571 ms         91 ms      2 ms    17 us        125 SerializerTests.TestBase`2[System.__Canon,System.__Canon].Test 
+            //Min: 1.8 us 5 % 5.4 us 25 % 6.6 us 50 %  7.7 us 90 %:    32 us 95 %:    49 us 99 %:    59 us Max:      62 us Sum:   0.0009 s Count:         61    Idle
+            //Min: 1.5 us 5 % 6.3 us 25 % 7.8 us 50 % 11.4 us 90 %:    44 us 95 %:    68 us 99 %:    98 us Max:     115 us Sum:   0.0013 s Count:         64 NonIdle
+            MethodIndex idx = (MethodIndex)extractedServer.CPU.PerProcessMethodCostsInclusive.MethodNames.FindIndex(x => x == "SerializerTests.dll!SerializerTests.TestBase`2[System.__Canon,System.__Canon].Test");
+            ProcessMethodIdx procThreadIdx = serializerTestsProcIdx.Create(idx);
+            ICPUMethodData extendedCPUTestMethod = ((IETWExtract)extractedServer).CPU.ExtendedCPUMetrics.MethodIndexToCPUMethodData[procThreadIdx];
+            Assert.Equal(1.8, extendedCPUTestMethod.ReadyMetrics.MinIdleUs);
+            Assert.Equal(1.5, extendedCPUTestMethod.ReadyMetrics.MinNonIdleUs);
+
+            Assert.Equal(5.4, extendedCPUTestMethod.ReadyMetrics.Percentile5IdleUs);
+            Assert.Equal(6.3, Math.Round(extendedCPUTestMethod.ReadyMetrics.Percentile5NonIdleUs,1));
+
+            Assert.Equal(6.6, Math.Round(extendedCPUTestMethod.ReadyMetrics.Percentile25IdleUs,1));
+            Assert.Equal(7.8, Math.Round(extendedCPUTestMethod.ReadyMetrics.Percentile25NonIdleUs,1));
+
+            Assert.Equal(7.7,  Math.Round(extendedCPUTestMethod.ReadyMetrics.Percentile50IdleUs, 1));
+            Assert.Equal(11.4, Math.Round(extendedCPUTestMethod.ReadyMetrics.Percentile50NonIdleUs,1));
+
+            Assert.Equal(32, Math.Round(extendedCPUTestMethod.ReadyMetrics.Percentile90IdleUs,0));
+            Assert.Equal(44, Math.Round(extendedCPUTestMethod.ReadyMetrics.Percentile90NonIdleUs, 0));
+
+            Assert.Equal(48, Math.Round(extendedCPUTestMethod.ReadyMetrics.Percentile95IdleUs, 0, MidpointRounding.ToZero));
+            Assert.Equal(68, Math.Round(extendedCPUTestMethod.ReadyMetrics.Percentile95NonIdleUs, 0));
+
+            Assert.Equal(59, Math.Round(extendedCPUTestMethod.ReadyMetrics.Percentile99IdleUs, 0));
+            Assert.Equal(98, Math.Round(extendedCPUTestMethod.ReadyMetrics.Percentile99NonIdleUs, 0));
+
+            Assert.Equal(62,  Math.Round(extendedCPUTestMethod.ReadyMetrics.MaxIdleUs, 0));
+            Assert.Equal(115, Math.Round(extendedCPUTestMethod.ReadyMetrics.MaxNonIdleUs, 0));
+
+            Assert.Equal(852.5,  extendedCPUTestMethod.ReadyMetrics.SumIdleUs);
+            Assert.Equal(1283.5, extendedCPUTestMethod.ReadyMetrics.SumNonIdleUs);
+
+            Assert.Equal(61, extendedCPUTestMethod.ReadyMetrics.CSwitchCountIdle);
+            Assert.Equal(64, extendedCPUTestMethod.ReadyMetrics.CSwitchCountNonIdle);
+
 
             // Check CPU Method Level Data
             //
