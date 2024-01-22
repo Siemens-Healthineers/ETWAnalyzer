@@ -164,7 +164,7 @@ namespace ETWAnalyzer_iTest
                         
             if (!TestContext.IsInGithubPipeline()) // when we are executed with symbol server access then use it to resolve method names
             {
-    //            extractArgs = extractArgs.Concat(new string[] { "-symserver", "MS" }).ToArray();
+                extractArgs = extractArgs.Concat(new string[] { "-symserver", "MS" }).ToArray();
             }
 
             Program.MainCore(extractArgs);
