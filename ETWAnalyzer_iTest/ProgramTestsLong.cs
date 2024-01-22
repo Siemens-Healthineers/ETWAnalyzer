@@ -164,7 +164,7 @@ namespace ETWAnalyzer_iTest
                         
             if (!TestContext.IsInGithubPipeline()) // when we are executed with symbol server access then use it to resolve method names
             {
-                extractArgs = extractArgs.Concat(new string[] { "-symserver", "MS" }).ToArray();
+    //            extractArgs = extractArgs.Concat(new string[] { "-symserver", "MS" }).ToArray();
             }
 
             Program.MainCore(extractArgs);
@@ -406,42 +406,41 @@ namespace ETWAnalyzer_iTest
             extractedServer.DeserializedFileName = extractJsonFileName;
 
             // Check extended metrics
-            //          CPU ms       Wait ms  Ready ms ReadyAvg CSwitches Method
-            //        2,571 ms         91 ms      2 ms    17 us        125 SerializerTests.TestBase`2[System.__Canon,System.__Canon].Test 
-            //Min: 1.8 us 5 % 5.4 us 25 % 6.6 us 50 %  7.7 us 90 %:    32 us 95 %:    49 us 99 %:    59 us Max:      62 us Sum:   0.0009 s Count:         61    Idle
-            //Min: 1.5 us 5 % 6.3 us 25 % 7.8 us 50 % 11.4 us 90 %:    44 us 95 %:    68 us 99 %:    98 us Max:     115 us Sum:   0.0013 s Count:         64 NonIdle
-            MethodIndex idx = (MethodIndex)extractedServer.CPU.PerProcessMethodCostsInclusive.MethodNames.FindIndex(x => x == "SerializerTests.dll!SerializerTests.TestBase`2[System.__Canon,System.__Canon].Test");
+            //    2,898 ms      1,227 ms      5 ms    16 us        347 SerializerTests.Test_O_N_Behavior.TestCombined
+            // Min: 4.1 us 5 % 4.4 us 25 % 6.8 us 50 % 7.4 us 90 %:    32 us 95 %:    46 us 99 %:    59 us Max:      85 us Sum:   0.0026 s Count:        184    Idle
+            // Min: 1.5 us 5 % 5.4 us 25 % 7.3 us 50 % 10.4 us 90 %:    43 us 95 %:    49 us 99 %:    90 us Max:     115 us Sum:   0.0030 s Count:        163 NonIdle
+            MethodIndex idx = (MethodIndex)extractedServer.CPU.PerProcessMethodCostsInclusive.MethodNames.FindIndex(x => x == "SerializerTests.dll!SerializerTests.Test_O_N_Behavior.TestCombined");
             ProcessMethodIdx procThreadIdx = serializerTestsProcIdx.Create(idx);
             ICPUMethodData extendedCPUTestMethod = ((IETWExtract)extractedServer).CPU.ExtendedCPUMetrics.MethodIndexToCPUMethodData[procThreadIdx];
-            Assert.Equal(1.8, extendedCPUTestMethod.ReadyMetrics.MinIdleUs);
+            Assert.Equal(4.1, extendedCPUTestMethod.ReadyMetrics.MinIdleUs);
             Assert.Equal(1.5, extendedCPUTestMethod.ReadyMetrics.MinNonIdleUs);
 
-            Assert.Equal(5.4, extendedCPUTestMethod.ReadyMetrics.Percentile5IdleUs);
-            Assert.Equal(6.3, Math.Round(extendedCPUTestMethod.ReadyMetrics.Percentile5NonIdleUs,1));
+            Assert.Equal(4.4, extendedCPUTestMethod.ReadyMetrics.Percentile5IdleUs);
+            Assert.Equal(5.4, Math.Round(extendedCPUTestMethod.ReadyMetrics.Percentile5NonIdleUs,1));
 
-            Assert.Equal(6.6, Math.Round(extendedCPUTestMethod.ReadyMetrics.Percentile25IdleUs,1));
-            Assert.Equal(7.8, Math.Round(extendedCPUTestMethod.ReadyMetrics.Percentile25NonIdleUs,1));
+            Assert.Equal(6.8, Math.Round(extendedCPUTestMethod.ReadyMetrics.Percentile25IdleUs,1));
+            Assert.Equal(7.4, Math.Round(extendedCPUTestMethod.ReadyMetrics.Percentile25NonIdleUs,1));
 
-            Assert.Equal(7.7,  Math.Round(extendedCPUTestMethod.ReadyMetrics.Percentile50IdleUs, 1));
-            Assert.Equal(11.4, Math.Round(extendedCPUTestMethod.ReadyMetrics.Percentile50NonIdleUs,1));
+            Assert.Equal(7.4,  Math.Round(extendedCPUTestMethod.ReadyMetrics.Percentile50IdleUs, 1));
+            Assert.Equal(10.4, Math.Round(extendedCPUTestMethod.ReadyMetrics.Percentile50NonIdleUs,1));
 
             Assert.Equal(32, Math.Round(extendedCPUTestMethod.ReadyMetrics.Percentile90IdleUs,0));
-            Assert.Equal(44, Math.Round(extendedCPUTestMethod.ReadyMetrics.Percentile90NonIdleUs, 0));
+            Assert.Equal(43, Math.Round(extendedCPUTestMethod.ReadyMetrics.Percentile90NonIdleUs, 0));
 
-            Assert.Equal(48, Math.Round(extendedCPUTestMethod.ReadyMetrics.Percentile95IdleUs, 0, MidpointRounding.ToZero));
-            Assert.Equal(68, Math.Round(extendedCPUTestMethod.ReadyMetrics.Percentile95NonIdleUs, 0));
+            Assert.Equal(46, Math.Round(extendedCPUTestMethod.ReadyMetrics.Percentile95IdleUs, 0, MidpointRounding.ToZero));
+            Assert.Equal(49, Math.Round(extendedCPUTestMethod.ReadyMetrics.Percentile95NonIdleUs, 0));
 
             Assert.Equal(59, Math.Round(extendedCPUTestMethod.ReadyMetrics.Percentile99IdleUs, 0));
-            Assert.Equal(98, Math.Round(extendedCPUTestMethod.ReadyMetrics.Percentile99NonIdleUs, 0));
+            Assert.Equal(90, Math.Round(extendedCPUTestMethod.ReadyMetrics.Percentile99NonIdleUs, 0));
 
-            Assert.Equal(62,  Math.Round(extendedCPUTestMethod.ReadyMetrics.MaxIdleUs, 0));
+            Assert.Equal(85,  Math.Round(extendedCPUTestMethod.ReadyMetrics.MaxIdleUs, 0));
             Assert.Equal(115, Math.Round(extendedCPUTestMethod.ReadyMetrics.MaxNonIdleUs, 0));
 
-            Assert.Equal(852.5,  extendedCPUTestMethod.ReadyMetrics.SumIdleUs);
-            Assert.Equal(1283.5, extendedCPUTestMethod.ReadyMetrics.SumNonIdleUs);
+            Assert.Equal(2584.0999999999999,  extendedCPUTestMethod.ReadyMetrics.SumIdleUs);
+            Assert.Equal(3039.1999999999998, extendedCPUTestMethod.ReadyMetrics.SumNonIdleUs);
 
-            Assert.Equal(61, extendedCPUTestMethod.ReadyMetrics.CSwitchCountIdle);
-            Assert.Equal(64, extendedCPUTestMethod.ReadyMetrics.CSwitchCountNonIdle);
+            Assert.Equal(184, extendedCPUTestMethod.ReadyMetrics.CSwitchCountIdle);
+            Assert.Equal(163, extendedCPUTestMethod.ReadyMetrics.CSwitchCountNonIdle);
 
 
             // Check CPU Method Level Data
@@ -458,6 +457,8 @@ namespace ETWAnalyzer_iTest
             MethodCost cost = methods.Costs.Where(x => x.Method == "SerializerTests.dll!SerializerTests.Program.Combined").First();
             Assert.Equal(2899u, cost.CPUMs);
             Assert.Equal(5u, cost.ReadyMs);
+            Assert.Equal(16u, cost.ReadyAverageUs);
+            Assert.Equal(347u, cost.ContextSwitchCount);
             Assert.Equal(1227u, cost.WaitMs);
             Assert.Equal(1, cost.Threads);
             Assert.Equal(3.7385f, cost.FirstOccurenceInSecond);
