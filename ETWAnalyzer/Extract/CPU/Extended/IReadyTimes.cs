@@ -12,132 +12,132 @@ namespace ETWAnalyzer.Extract.CPU.Extended
     public interface IReadyTimes
     {
         /// <summary>
-        /// true when Idle ready times are present. 
+        /// true when DeepSleep ready times are present. 
         /// </summary>
-        bool HasIdleTimes { get; }
+        bool HasDeepSleepTimes { get; }
 
         /// <summary>
-        /// true hwen non Idle ready times are present
+        /// true when non DeepSleep ready times are present
         /// </summary>
-        bool HasNonIdleTimes { get; }
+        bool HasNonDeepSleepTimes { get; }
 
         /// <summary>
         /// Number of context switch events.
-        /// Idle Context Switch events did originate from an idle thread in deep power state which allows to measure CPU unpark time without other process interference because the Idle thread was owning the CPU before. 
+        /// Context Switch events did originate from idle or own process in Windows C-State 1 which allows to measure CPU unpark time without other process interference. 
         /// </summary>
-        int CSwitchCountIdle { get; }
+        int CSwitchCountDeepSleep { get; }
 
         /// <summary>
-        /// Number of context switch events which did not originate from an idle thread.
+        /// Number of context switch events which did not originate from an DeepSleep thread.
         /// </summary>
-        int CSwitchCountNonIdle { get; }
-
-        /// <summary>
-        /// Minimum Ready time in microseconds.
-        /// </summary>
-        double MinNonIdleUs { get; }
+        int CSwitchCountNonDeepSleep { get; }
 
         /// <summary>
         /// Minimum Ready time in microseconds.
-        /// Idle Context Switch events did originate from an idle thread in deep power state which allows to measure CPU unpark time without other process interference because the Idle thread was owning the CPU before. 
         /// </summary>
-        double MinIdleUs { get; }
+        double MinNonDeepSleepUs { get; }
+
+        /// <summary>
+        /// Minimum Ready time in microseconds.
+        /// Context Switch events did originate from idle or own process in Windows C-State 1 which allows to measure CPU unpark time without other process interference. 
+        /// </summary>
+        double MinDeepSleepUs { get; }
 
 
         /// <summary>
         /// Maximum Ready time in microseconds.
         /// </summary>
-        double MaxNonIdleUs { get; }
+        double MaxNonDeepSleepUs { get; }
 
         /// <summary>
         /// Maximum Ready time in microseconds.
-        /// Idle Context Switch events did originate from an idle thread in deep power state which allows to measure CPU unpark time without other process interference because the Idle thread was owning the CPU before. 
+        /// Context Switch events did originate from idle or own process in Windows C-State 1 which allows to measure CPU unpark time without other process interference. 
         /// </summary>
-        double MaxIdleUs { get; }
+        double MaxDeepSleepUs { get; }
 
 
         /// <summary>
         /// 5% Percentile Ready time in microseconds.
         /// </summary>
-        double Percentile5NonIdleUs { get; }
+        double Percentile5NonDeepSleepUs { get; }
 
         /// <summary>
         /// 5% Percentile Ready time in microseconds.
-        /// Idle Context Switch events did originate from an idle thread in deep power state which allows to measure CPU unpark time without other process interference because the Idle thread was owning the CPU before. 
+        /// Context Switch events did originate from idle or own process in Windows C-State 1 which allows to measure CPU unpark time without other process interference. 
         /// </summary>
-        double Percentile5IdleUs { get; }
+        double Percentile5DeepSleepUs { get; }
 
 
         /// <summary>
         /// 25% Percentile Ready time in microseconds.
-        /// Idle Context Switch events did originate from an idle thread in deep power state which allows to measure CPU unpark time without other process interference because the Idle thread was owning the CPU before. 
+        /// Context Switch events did originate from idle or own process in Windows C-State 1 which allows to measure CPU unpark time without other process interference. 
         /// </summary>
-        double Percentile25IdleUs { get; }
+        double Percentile25DeepSleepUs { get; }
 
         /// <summary>
         /// 25% Percentile Ready time in microseconds.
         /// </summary>
-        double Percentile25NonIdleUs { get; }
+        double Percentile25NonDeepSleepUs { get; }
 
 
         /// <summary>
         /// Median = 50% Percentile Ready time in microseconds.
-        /// Idle Context Switch events did originate from an idle thread in deep power state which allows to measure CPU unpark time without other process interference because the Idle thread was owning the CPU before. 
+        /// Context Switch events did originate from idle or own process in Windows C-State 1 which allows to measure CPU unpark time without other process interference. 
         /// </summary>
-        double Percentile50IdleUs { get; }
+        double Percentile50DeepSleepUs { get; }
 
 
         /// <summary>
         /// Median = 50% Percentile Ready time in microseconds.
         /// </summary>
-        double Percentile50NonIdleUs { get; }
+        double Percentile50NonDeepSleepUs { get; }
 
         /// <summary>
         /// 90% Percentile Ready time in microseconds.
         /// </summary>
-        double Percentile90NonIdleUs { get; }
+        double Percentile90NonDeepSleepUs { get; }
 
         /// <summary>
         /// 90% Percentile Ready time in microseconds.
-        /// Idle Context Switch events did originate from an idle thread in deep power state which allows to measure CPU unpark time without other process interference because the Idle thread was owning the CPU before. 
+        /// Context Switch events did originate from idle or own process in Windows C-State 1 which allows to measure CPU unpark time without other process interference. 
         /// </summary>
-        double Percentile90IdleUs { get; }
+        double Percentile90DeepSleepUs { get; }
 
 
         /// <summary>
         /// 95% Percentile Ready time in microseconds.
         /// </summary>
-        double Percentile95NonIdleUs { get; }
+        double Percentile95NonDeepSleepUs { get; }
 
         /// <summary>
         /// 95% Percentile Ready time in microseconds.
-        /// Idle Context Switch events did originate from an idle thread in deep power state which allows to measure CPU unpark time without other process interference because the Idle thread was owning the CPU before. 
+        /// Context Switch events did originate from idle or own process in Windows C-State 1 which allows to measure CPU unpark time without other process interference. 
         /// </summary>
-        double Percentile95IdleUs { get; }
+        double Percentile95DeepSleepUs { get; }
 
 
         /// <summary>
         /// 99% Percentile Ready time in microseconds.
         /// </summary>
-        double Percentile99NonIdleUs { get; }
+        double Percentile99NonDeepSleepUs { get; }
 
         /// <summary>
         /// 99% Percentile Ready time in microseconds.
-        /// Idle Context Switch events did originate from an idle thread in deep power state which allows to measure CPU unpark time without other process interference because the Idle thread was owning the CPU before. 
+        /// Context Switch events did originate from idle or own process in Windows C-State 1 which allows to measure CPU unpark time without other process interference. 
         /// </summary>
-        double Percentile99IdleUs { get; }
+        double Percentile99DeepSleepUs { get; }
 
         /// <summary>
-        /// Sum of Idle Ready time in microseconds.
-        /// Idle Context Switch events did originate from an idle thread in deep power state which allows to measure CPU unpark time without other process interference because the Idle thread was owning the CPU before. 
+        /// Sum of DeepSleep Ready time in microseconds.
+        /// Context Switch events did originate from idle or own process in Windows C-State 1 which allows to measure CPU unpark time without other process interference. 
         /// </summary>
-        public double SumIdleUs { get; }
+        public double SumDeepSleepUs { get; }
 
         /// <summary>
-        /// Sum of Non Idle Ready time in microseconds.
-        /// This sums the idle time from process interference beacause we did need to wait for a CPU to become free. Additionally the shallow idle events which did not originate from deep sleep states are also part of this metric.
+        /// Sum of Non DeepSleep Ready time in microseconds.
+        /// This sums the Ready time from other processes which interfere. Additionally all other events which are not summed by <see cref="SumDeepSleepUs"/> are part of this metric.
         /// </summary>
-        public double SumNonIdleUs { get; }
+        public double SumNonDeepSleepUs { get; }
     }
 
 
@@ -151,12 +151,12 @@ namespace ETWAnalyzer.Extract.CPU.Extended
         /// <summary>
         /// Contains when filled Version, Count, Ready Min,Max,Percentiles 5,25,50,90,95,99,Sum
         /// </summary>
-        public List<double> NonIdle { get; set; } = [];
+        public List<double> Other { get; set; } = [];
 
         /// <summary>
-        /// Idle Ready times
+        /// DeepSleep Ready times
         /// </summary>
-        public List<double> Idle { get;set; } = [];
+        public List<double> DeepSleep { get;set; } = [];
 
         /// <summary>
         /// Ready Time version
@@ -178,149 +178,149 @@ namespace ETWAnalyzer.Extract.CPU.Extended
         const int SumV1Idx = 10;
 
         /// <summary>
-        /// true when Idle ready times are present. 
+        /// true when DeepSleep ready times are present. 
         /// </summary>
         [JsonIgnore]
-        public bool HasIdleTimes { get => Idle.Count > 0; }
+        public bool HasDeepSleepTimes { get => DeepSleep.Count > 0; }
 
         /// <summary>
-        /// true hwen non Idle ready times are present
+        /// true hwen non DeepSleep ready times are present
         /// </summary>
         [JsonIgnore]
-        public bool HasNonIdleTimes { get => NonIdle.Count > 0; }
+        public bool HasNonDeepSleepTimes { get => Other.Count > 0; }
 
         /// <summary>
-        /// Number of context switch events which did originate from an idle thread. 
-        /// Idle Ready thread events are useful to find how long a parked CPU did need to wake up from deep power states.
+        /// Number of context switch events which did originate from an DeepSleep thread. 
+        /// DeepSleep Ready thread events are useful to find how long a parked CPU did need to wake up from deep power states.
         /// </summary>
         [JsonIgnore]
-        public int CSwitchCountIdle { get => (int)Idle[CountV1Idx]; }
+        public int CSwitchCountDeepSleep { get => (int)DeepSleep[CountV1Idx]; }
 
         /// <summary>
-        /// Number of context switch events which did not originate from an idle thread.
+        /// Number of context switch events which did not originate from an DeepSleep thread.
         /// </summary>
         [JsonIgnore]
-        public int CSwitchCountNonIdle { get => (int)NonIdle[CountV1Idx]; }
-
-        /// <summary>
-        /// Minimum Ready time in microseconds.
-        /// </summary>
-        [JsonIgnore]
-        public double MinNonIdleUs { get => NonIdle[MinV1Idx]; }
+        public int CSwitchCountNonDeepSleep { get => (int)Other[CountV1Idx]; }
 
         /// <summary>
         /// Minimum Ready time in microseconds.
         /// </summary>
         [JsonIgnore]
-        public double MinIdleUs { get => Idle[MinV1Idx]; }
+        public double MinNonDeepSleepUs { get => Other[MinV1Idx]; }
+
+        /// <summary>
+        /// Minimum Ready time in microseconds.
+        /// </summary>
+        [JsonIgnore]
+        public double MinDeepSleepUs { get => DeepSleep[MinV1Idx]; }
 
         /// <summary>
         /// Maximum Ready time in microseconds.
         /// </summary>
         [JsonIgnore]
-        public double MaxNonIdleUs { get => NonIdle[MaxV1Idx]; }
+        public double MaxNonDeepSleepUs { get => Other[MaxV1Idx]; }
 
         /// <summary>
         /// Maximum Ready time in microseconds.
         /// </summary>
         [JsonIgnore]
-        public double MaxIdleUs { get => Idle[MaxV1Idx]; }
+        public double MaxDeepSleepUs { get => DeepSleep[MaxV1Idx]; }
 
 
         /// <summary>
         /// 5% Percentile Ready time in microseconds.
         /// </summary>
         [JsonIgnore]
-        public double Percentile5NonIdleUs { get => NonIdle[Percentile5V1Idx]; }
+        public double Percentile5NonDeepSleepUs { get => Other[Percentile5V1Idx]; }
 
         /// <summary>
         /// 5% Percentile Ready time in microseconds.
         /// </summary>
         [JsonIgnore]
-        public double Percentile5IdleUs { get => Idle[Percentile5V1Idx]; }
+        public double Percentile5DeepSleepUs { get => DeepSleep[Percentile5V1Idx]; }
 
 
         /// <summary>
         /// 25% Percentile Ready time in microseconds.
         /// </summary>
         [JsonIgnore]
-        public double Percentile25NonIdleUs { get => NonIdle[Percentile25V1Idx]; }
+        public double Percentile25NonDeepSleepUs { get => Other[Percentile25V1Idx]; }
 
         /// <summary>
         /// 25% Percentile Ready time in microseconds.
         /// </summary>
         [JsonIgnore]
-        public double Percentile25IdleUs { get => Idle[Percentile25V1Idx]; }
+        public double Percentile25DeepSleepUs { get => DeepSleep[Percentile25V1Idx]; }
 
 
         /// <summary>
         /// Median = 50% Percentile Ready time in microseconds.
         /// </summary>
         [JsonIgnore]
-        public double Percentile50NonIdleUs { get => NonIdle[Percentile50V1Idx]; }
+        public double Percentile50NonDeepSleepUs { get => Other[Percentile50V1Idx]; }
 
         /// <summary>
         /// Median = 50% Percentile Ready time in microseconds.
         /// </summary>
         [JsonIgnore]
-        public double Percentile50IdleUs { get => Idle[Percentile50V1Idx]; }
+        public double Percentile50DeepSleepUs { get => DeepSleep[Percentile50V1Idx]; }
 
 
         /// <summary>
         /// 90% Percentile Ready time in microseconds.
         /// </summary>
         [JsonIgnore]
-        public double Percentile90NonIdleUs { get => NonIdle[Percentile90V1Idx]; }
+        public double Percentile90NonDeepSleepUs { get => Other[Percentile90V1Idx]; }
 
         /// <summary>
         /// 90% Percentile Ready time in microseconds.
         /// </summary>
         [JsonIgnore]
-        public double Percentile90IdleUs { get => Idle[Percentile90V1Idx]; }
+        public double Percentile90DeepSleepUs { get => DeepSleep[Percentile90V1Idx]; }
 
 
         /// <summary>
         /// 95% Percentile Ready time in microseconds.
         /// </summary>
         [JsonIgnore]
-        public double Percentile95NonIdleUs { get => NonIdle[Percentile95V1Idx]; }
+        public double Percentile95NonDeepSleepUs { get => Other[Percentile95V1Idx]; }
 
         /// <summary>
         /// 95% Percentile Ready time in microseconds.
         /// </summary>
         [JsonIgnore]
-        public double Percentile95IdleUs { get => Idle[Percentile95V1Idx]; }
+        public double Percentile95DeepSleepUs { get => DeepSleep[Percentile95V1Idx]; }
 
 
         /// <summary>
         /// 99% Percentile Ready time in microseconds.
         /// </summary>
         [JsonIgnore]
-        public double Percentile99NonIdleUs { get => NonIdle[Percentile99V1Idx]; }
+        public double Percentile99NonDeepSleepUs { get => Other[Percentile99V1Idx]; }
 
         /// <summary>
         /// 99% Percentile Ready time in microseconds.
         /// </summary>
         [JsonIgnore]
-        public double Percentile99IdleUs { get => Idle[Percentile99V1Idx]; }
+        public double Percentile99DeepSleepUs { get => DeepSleep[Percentile99V1Idx]; }
 
 
         /// <summary>
-        /// Sum of Idle Ready time in seconds 
+        /// Sum of DeepSleep Ready time in seconds 
         /// </summary>
         [JsonIgnore]
-        public double SumIdleUs { get => Idle[SumV1Idx]; }
+        public double SumDeepSleepUs { get => DeepSleep[SumV1Idx]; }
 
         /// <summary>
-        /// Sum of Non Idle Ready time in seconds
+        /// Sum of Non DeepSleep Ready time in seconds
         /// </summary>
         [JsonIgnore]
-        public double SumNonIdleUs { get => NonIdle[SumV1Idx]; }
+        public double SumNonDeepSleepUs { get => Other[SumV1Idx]; }
 
         /// <summary>
         /// Add Ready time details for a given method. The data must be supplied in nanoseconds. Internally it will be stored in microsecond precision to get short strings in the serialized format.
         /// </summary>
-        /// <param name="idle">if true idle ready times are added otherwise non idle times</param>
+        /// <param name="deepSleep">if true DeepSleep ready times are added to Other times</param>
         /// <param name="count">count of cswitch events</param>
         /// <param name="sumNanoS">sum of all context switch events in Nanoseconds</param>
         /// <param name="minNanoS">Minimum Ready time in Nanoseconds</param>
@@ -331,35 +331,35 @@ namespace ETWAnalyzer.Extract.CPU.Extended
         /// <param name="percentile90NanoS">90% Percentile Ready Time in Nanoseconds</param>
         /// <param name="percentile95NanoS">95% Percentile Ready Time in Nanoseconds</param>
         /// <param name="percentile99NanoS">99% Percentile Ready Time in Nanoseconds</param>
-        public void AddReadyTimes(bool idle, int count, long minNanoS, long maxNanoS, long percentile5NanoS, long percentile25NanoS, long percentile50NanoS, long percentile90NanoS, long percentile95NanoS, long percentile99NanoS, decimal sumNanoS)
+        public void AddReadyTimes(bool deepSleep, int count, long minNanoS, long maxNanoS, long percentile5NanoS, long percentile25NanoS, long percentile50NanoS, long percentile90NanoS, long percentile95NanoS, long percentile99NanoS, decimal sumNanoS)
         {
-            if (idle)
+            if (deepSleep)
             {
-                Idle.Add(Version);
-                Idle.Add(count);
-                Idle.Add((double) minNanoS / Thousand);
-                Idle.Add((double) maxNanoS / Thousand);
-                Idle.Add((double) percentile5NanoS / Thousand);
-                Idle.Add((double) percentile25NanoS / Thousand);
-                Idle.Add((double) percentile50NanoS / Thousand);
-                Idle.Add((double) percentile90NanoS / Thousand);
-                Idle.Add((double) percentile95NanoS / Thousand);
-                Idle.Add((double) percentile99NanoS / Thousand);
-                Idle.Add((double) sumNanoS / Thousand);
+                DeepSleep.Add(Version);
+                DeepSleep.Add(count);
+                DeepSleep.Add((double) minNanoS / Thousand);
+                DeepSleep.Add((double) maxNanoS / Thousand);
+                DeepSleep.Add((double) percentile5NanoS / Thousand);
+                DeepSleep.Add((double) percentile25NanoS / Thousand);
+                DeepSleep.Add((double) percentile50NanoS / Thousand);
+                DeepSleep.Add((double) percentile90NanoS / Thousand);
+                DeepSleep.Add((double) percentile95NanoS / Thousand);
+                DeepSleep.Add((double) percentile99NanoS / Thousand);
+                DeepSleep.Add((double) sumNanoS / Thousand);
             }
             else
             {
-                NonIdle.Add(Version);
-                NonIdle.Add(count);
-                NonIdle.Add((double) minNanoS / Thousand);
-                NonIdle.Add((double) maxNanoS / Thousand);
-                NonIdle.Add((double) percentile5NanoS  / Thousand);
-                NonIdle.Add((double) percentile25NanoS /Thousand);
-                NonIdle.Add((double) percentile50NanoS /Thousand);
-                NonIdle.Add((double) percentile90NanoS /Thousand);
-                NonIdle.Add((double) percentile95NanoS /Thousand);
-                NonIdle.Add((double) percentile99NanoS / Thousand);
-                NonIdle.Add((double) sumNanoS / Thousand);
+                Other.Add(Version);
+                Other.Add(count);
+                Other.Add((double) minNanoS / Thousand);
+                Other.Add((double) maxNanoS / Thousand);
+                Other.Add((double) percentile5NanoS  / Thousand);
+                Other.Add((double) percentile25NanoS /Thousand);
+                Other.Add((double) percentile50NanoS /Thousand);
+                Other.Add((double) percentile90NanoS /Thousand);
+                Other.Add((double) percentile95NanoS /Thousand);
+                Other.Add((double) percentile99NanoS / Thousand);
+                Other.Add((double) sumNanoS / Thousand);
             }
         }
 

@@ -531,7 +531,7 @@ namespace ETWAnalyzer.EventDump
                     }
                     else
                     {
-                        if (process.ProcessID == 0) // exclude idle process
+                        if (process.ProcessID == 0) // exclude DeepSleep process
                         {
                             lret = false;
                         }
@@ -1009,22 +1009,22 @@ namespace ETWAnalyzer.EventDump
             string lret = "";
             if (data.ReadyDetails != null)
             {
-                if (data.ReadyDetails.HasIdleTimes)
+                if (data.ReadyDetails.HasDeepSleepTimes)
                 {
-                    lret = $"  Min: {"F1".WidthFormat(data.ReadyDetails.MinIdleUs, 3)} us 5% {"F1".WidthFormat(data.ReadyDetails.Percentile5IdleUs, 4)} us 25% {"F1".WidthFormat(data.ReadyDetails.Percentile25IdleUs, 4)} us 50% {"F1".WidthFormat(data.ReadyDetails.Percentile50IdleUs, 4)} " +
-                           $"us 90%: {"F0".WidthFormat(data.ReadyDetails.Percentile90IdleUs, 5)} us 95%: {"F0".WidthFormat(data.ReadyDetails.Percentile95IdleUs, 5)} us 99%: {"F0".WidthFormat(data.ReadyDetails.Percentile99IdleUs, 5)} us Max: {"F0".WidthFormat(data.ReadyDetails.MaxIdleUs, 7)} us " +
-                           $"Sum: {"F4".WidthFormat(data.ReadyDetails.SumIdleUs / 1_000_000.0d, 8)} s Count: {"N0".WidthFormat(data.ReadyDetails.CSwitchCountIdle, 10)}    Idle";
+                    lret = $"  Min: {"F1".WidthFormat(data.ReadyDetails.MinDeepSleepUs, 3)} us 5% {"F1".WidthFormat(data.ReadyDetails.Percentile5DeepSleepUs, 4)} us 25% {"F1".WidthFormat(data.ReadyDetails.Percentile25DeepSleepUs, 4)} us 50% {"F1".WidthFormat(data.ReadyDetails.Percentile50DeepSleepUs, 4)} " +
+                           $"us 90%: {"F0".WidthFormat(data.ReadyDetails.Percentile90DeepSleepUs, 5)} us 95%: {"F0".WidthFormat(data.ReadyDetails.Percentile95DeepSleepUs, 5)} us 99%: {"F0".WidthFormat(data.ReadyDetails.Percentile99DeepSleepUs, 5)} us Max: {"F0".WidthFormat(data.ReadyDetails.MaxDeepSleepUs, 7)} us " +
+                           $"Sum: {"F4".WidthFormat(data.ReadyDetails.SumDeepSleepUs / 1_000_000.0d, 8)} s Count: {"N0".WidthFormat(data.ReadyDetails.CSwitchCountDeepSleep, 10)}    DeepSleep";
                 }
-                if (lret != "" && data.ReadyDetails.HasNonIdleTimes)
+                if (lret != "" && data.ReadyDetails.HasNonDeepSleepTimes)
                 {
                     lret += Environment.NewLine;
                 }
 
-                if (data.ReadyDetails.HasNonIdleTimes)
+                if (data.ReadyDetails.HasNonDeepSleepTimes)
                 {
-                    lret += "".WithWidth(2) + $"  Min: {"F1".WidthFormat(data.ReadyDetails.MinNonIdleUs, 3)} us 5% {"F1".WidthFormat(data.ReadyDetails.Percentile5NonIdleUs, 4)} us 25% {"F1".WidthFormat(data.ReadyDetails.Percentile25NonIdleUs, 4)} us 50% {"F1".WidthFormat(data.ReadyDetails.Percentile50NonIdleUs, 4)} us" +
-                        $" 90%: {"F0".WidthFormat(data.ReadyDetails.Percentile90NonIdleUs, 5)} us 95%: {"F0".WidthFormat(data.ReadyDetails.Percentile95NonIdleUs, 5)} us 99%: {"F0".WidthFormat(data.ReadyDetails.Percentile99NonIdleUs, 5)} us Max: {"F0".WidthFormat(data.ReadyDetails.MaxNonIdleUs, 7)} us " +
-                        $"Sum: {"F4".WidthFormat(data.ReadyDetails.SumNonIdleUs / 1_000_000.0d, 8)} s Count: {"N0".WidthFormat(data.ReadyDetails.CSwitchCountNonIdle, 10)} NonIdle";
+                    lret += "".WithWidth(2) + $"  Min: {"F1".WidthFormat(data.ReadyDetails.MinNonDeepSleepUs, 3)} us 5% {"F1".WidthFormat(data.ReadyDetails.Percentile5NonDeepSleepUs, 4)} us 25% {"F1".WidthFormat(data.ReadyDetails.Percentile25NonDeepSleepUs, 4)} us 50% {"F1".WidthFormat(data.ReadyDetails.Percentile50NonDeepSleepUs, 4)} us" +
+                        $" 90%: {"F0".WidthFormat(data.ReadyDetails.Percentile90NonDeepSleepUs, 5)} us 95%: {"F0".WidthFormat(data.ReadyDetails.Percentile95NonDeepSleepUs, 5)} us 99%: {"F0".WidthFormat(data.ReadyDetails.Percentile99NonDeepSleepUs, 5)} us Max: {"F0".WidthFormat(data.ReadyDetails.MaxNonDeepSleepUs, 7)} us " +
+                        $"Sum: {"F4".WidthFormat(data.ReadyDetails.SumNonDeepSleepUs / 1_000_000.0d, 8)} s Count: {"N0".WidthFormat(data.ReadyDetails.CSwitchCountNonDeepSleep, 10)} NonDeepSleep";
                 }
             }
             return lret;
@@ -1223,24 +1223,24 @@ namespace ETWAnalyzer.EventDump
                     Col_AveragePriority,
                     Col_Baseline, Col_Process, Col_ProcessName, Col_Session, "Start Time", "StackDepth",
                                   "FirstLastCall Duration in s", $"First Call time in {GetAbbreviatedName(firstFormat)}", $"Last Call time in {GetAbbreviatedName(lastFormat)}", Col_CommandLine, "SourceFile", "IsNewProcess", "Module and Driver Info",
-                       "Idle Ready Min us",
-                    "NonIdle Ready Min us",
-                       "Idle Ready Max us",
-                    "NonIdle Ready Max us",
-                       "Idle Ready 5% Percentile us",
-                    "NonIdle Ready 5% Percentile us",
-                       "Idle Ready 25% Percentile us",
-                    "NonIdle Ready 25% Percentile us",
-                       "Idle Ready 50% Percentile us (Median)",
-                    "NonIdle Ready 50% Percentile us (Median)",
-                       "Idle Ready 90% Percentile us",
-                    "NonIdle Ready 90% Percentile us",
-                       "Idle Ready 95% Percentile us",
-                    "NonIdle Ready 95% Percentile us",
-                       "Idle Ready 99% Percentile us",
-                    "NonIdle Ready 99% Percentile us",
-                       "Idle Ready Count",
-                    "NonIdle Ready Count",
+                       "DeepSleep Ready Min us",
+                    "NonDeepSleep Ready Min us",
+                       "DeepSleep Ready Max us",
+                    "NonDeepSleep Ready Max us",
+                       "DeepSleep Ready 5% Percentile us",
+                    "NonDeepSleep Ready 5% Percentile us",
+                       "DeepSleep Ready 25% Percentile us",
+                    "NonDeepSleep Ready 25% Percentile us",
+                       "DeepSleep Ready 50% Percentile us (Median)",
+                    "NonDeepSleep Ready 50% Percentile us (Median)",
+                       "DeepSleep Ready 90% Percentile us",
+                    "NonDeepSleep Ready 90% Percentile us",
+                       "DeepSleep Ready 95% Percentile us",
+                    "NonDeepSleep Ready 95% Percentile us",
+                       "DeepSleep Ready 99% Percentile us",
+                    "NonDeepSleep Ready 99% Percentile us",
+                       "DeepSleep Ready Count",
+                    "NonDeepSleep Ready Count",
                     "Context Switch Count"
                 );
                 myCSVHeaderPrinted = true;
@@ -1263,32 +1263,32 @@ namespace ETWAnalyzer.EventDump
                 firstLastDurationS, GetDateTimeString(match.FirstCallTime, match.SessionStart, firstFormat), GetDateTimeString(match.LastCallTime, match.SessionStart, lastFormat), NoCmdLine ? "" : match.Process.CmdLine, match.SourceFile, (match.Process.IsNew ? 1 : 0), 
                 moduleDriverInfo,
 
-                match?.ReadyDetails?.HasIdleTimes == true ?    match?.ReadyDetails?.MinIdleUs : (double?) null,
-                match?.ReadyDetails?.HasNonIdleTimes == true ? match?.ReadyDetails?.MinNonIdleUs : (double?)null,
+                match?.ReadyDetails?.HasDeepSleepTimes == true ?    match?.ReadyDetails?.MinDeepSleepUs : (double?) null,
+                match?.ReadyDetails?.HasNonDeepSleepTimes == true ? match?.ReadyDetails?.MinNonDeepSleepUs : (double?)null,
 
-                match?.ReadyDetails?.HasIdleTimes == true ?    match?.ReadyDetails?.MaxIdleUs : (double?)null,
-                match?.ReadyDetails?.HasNonIdleTimes == true ? match?.ReadyDetails?.MaxNonIdleUs : (double?)null,
+                match?.ReadyDetails?.HasDeepSleepTimes == true ?    match?.ReadyDetails?.MaxDeepSleepUs : (double?)null,
+                match?.ReadyDetails?.HasNonDeepSleepTimes == true ? match?.ReadyDetails?.MaxNonDeepSleepUs : (double?)null,
 
-                match?.ReadyDetails?.HasIdleTimes == true ?    match?.ReadyDetails?.Percentile5IdleUs : (double?)null,
-                match?.ReadyDetails?.HasNonIdleTimes == true ? match?.ReadyDetails?.Percentile5NonIdleUs : (double?)null,
+                match?.ReadyDetails?.HasDeepSleepTimes == true ?    match?.ReadyDetails?.Percentile5DeepSleepUs : (double?)null,
+                match?.ReadyDetails?.HasNonDeepSleepTimes == true ? match?.ReadyDetails?.Percentile5NonDeepSleepUs : (double?)null,
 
-                match?.ReadyDetails?.HasIdleTimes == true ?    match?.ReadyDetails?.Percentile25IdleUs : (double?)null,
-                match?.ReadyDetails?.HasNonIdleTimes == true ? match?.ReadyDetails?.Percentile25NonIdleUs : (double?)null,
+                match?.ReadyDetails?.HasDeepSleepTimes == true ?    match?.ReadyDetails?.Percentile25DeepSleepUs : (double?)null,
+                match?.ReadyDetails?.HasNonDeepSleepTimes == true ? match?.ReadyDetails?.Percentile25NonDeepSleepUs : (double?)null,
 
-                match?.ReadyDetails?.HasIdleTimes == true ? match?.ReadyDetails?.Percentile50IdleUs : (double?)null,
-                match?.ReadyDetails?.HasNonIdleTimes == true ? match?.ReadyDetails?.Percentile50NonIdleUs : (double?)null,
+                match?.ReadyDetails?.HasDeepSleepTimes == true ? match?.ReadyDetails?.Percentile50DeepSleepUs : (double?)null,
+                match?.ReadyDetails?.HasNonDeepSleepTimes == true ? match?.ReadyDetails?.Percentile50NonDeepSleepUs : (double?)null,
 
-                match?.ReadyDetails?.HasIdleTimes == true ?    match?.ReadyDetails?.Percentile90IdleUs : (double?)null,
-                match?.ReadyDetails?.HasNonIdleTimes == true ? match?.ReadyDetails?.Percentile90NonIdleUs : (double?)null,
+                match?.ReadyDetails?.HasDeepSleepTimes == true ?    match?.ReadyDetails?.Percentile90DeepSleepUs : (double?)null,
+                match?.ReadyDetails?.HasNonDeepSleepTimes == true ? match?.ReadyDetails?.Percentile90NonDeepSleepUs : (double?)null,
 
-                match?.ReadyDetails?.HasIdleTimes == true ?    match?.ReadyDetails?.Percentile95IdleUs : (double?)null,
-                match?.ReadyDetails?.HasNonIdleTimes == true ? match?.ReadyDetails?.Percentile95NonIdleUs : (double?)null,
+                match?.ReadyDetails?.HasDeepSleepTimes == true ?    match?.ReadyDetails?.Percentile95DeepSleepUs : (double?)null,
+                match?.ReadyDetails?.HasNonDeepSleepTimes == true ? match?.ReadyDetails?.Percentile95NonDeepSleepUs : (double?)null,
 
-                match?.ReadyDetails?.HasIdleTimes == true ?    match?.ReadyDetails?.Percentile99IdleUs : (double?)null,
-                match?.ReadyDetails?.HasNonIdleTimes == true ? match?.ReadyDetails?.Percentile99NonIdleUs : (double?)null,
+                match?.ReadyDetails?.HasDeepSleepTimes == true ?    match?.ReadyDetails?.Percentile99DeepSleepUs : (double?)null,
+                match?.ReadyDetails?.HasNonDeepSleepTimes == true ? match?.ReadyDetails?.Percentile99NonDeepSleepUs : (double?)null,
 
-                match?.ReadyDetails?.HasIdleTimes == true ? match?.ReadyDetails?.CSwitchCountIdle : (double?)null,
-                match?.ReadyDetails?.HasNonIdleTimes == true ? match?.ReadyDetails?.CSwitchCountNonIdle : (double?)null,
+                match?.ReadyDetails?.HasDeepSleepTimes == true ? match?.ReadyDetails?.CSwitchCountDeepSleep : (double?)null,
+                match?.ReadyDetails?.HasNonDeepSleepTimes == true ? match?.ReadyDetails?.CSwitchCountNonDeepSleep : (double?)null,
                 match.ContextSwitchCount
             );
         }

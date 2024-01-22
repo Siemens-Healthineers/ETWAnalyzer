@@ -136,61 +136,61 @@ namespace ETWAnalyzer.Extractors.CPU
         public ReadyTimes GetReadyMetrics(CPUStats context)
         {
             ReadyTimes lret = new ReadyTimes();
-            List<long> idleReadyDurationNanoS = [];
-            List<long> nonIdleReadyDurationNanoS = [];
+            List<long> deepSleepReadyDurationNanoS = [];
+            List<long> interferenceReadyDurationNanoS = [];
 
             foreach(var ready in CPUToReadyDuration)
             {
-                idleReadyDurationNanoS.AddRange(    ready.Value.Where(x =>  x.IsIdle).Select(x => x.DurationNanoS));
-                nonIdleReadyDurationNanoS.AddRange( ready.Value.Where(x => !x.IsIdle).Select(x => x.DurationNanoS));
+                deepSleepReadyDurationNanoS.AddRange(    ready.Value.Where(x =>  x.DeepSleepReady).Select(x => x.DurationNanoS));
+                interferenceReadyDurationNanoS.AddRange( ready.Value.Where(x => !x.DeepSleepReady).Select(x => x.DurationNanoS));
             }
 
-            if (idleReadyDurationNanoS.Count > MinCSwitchCount)
+            if (deepSleepReadyDurationNanoS.Count > MinCSwitchCount)
             {
-                idleReadyDurationNanoS.Sort();
+                deepSleepReadyDurationNanoS.Sort();
                 decimal idleSumNanoS = 0.0m;
-                foreach(var idle in idleReadyDurationNanoS)
+                foreach(var idle in deepSleepReadyDurationNanoS)
                 {
                     idleSumNanoS += (decimal) idle;
                 }
 
-                lret.AddReadyTimes(idle: true,
-                    idleReadyDurationNanoS.Count,
-                    idleReadyDurationNanoS.Min(),
-                    idleReadyDurationNanoS.Max(),
-                    idleReadyDurationNanoS.Percentile(0.05f),
-                    idleReadyDurationNanoS.Percentile(0.25f),
-                    idleReadyDurationNanoS.Percentile(0.50f),
-                    idleReadyDurationNanoS.Percentile(0.90f),
-                    idleReadyDurationNanoS.Percentile(0.95f),
-                    idleReadyDurationNanoS.Percentile(0.99f),
+                lret.AddReadyTimes(deepSleep: true,
+                    deepSleepReadyDurationNanoS.Count,
+                    deepSleepReadyDurationNanoS.Min(),
+                    deepSleepReadyDurationNanoS.Max(),
+                    deepSleepReadyDurationNanoS.Percentile(0.05f),
+                    deepSleepReadyDurationNanoS.Percentile(0.25f),
+                    deepSleepReadyDurationNanoS.Percentile(0.50f),
+                    deepSleepReadyDurationNanoS.Percentile(0.90f),
+                    deepSleepReadyDurationNanoS.Percentile(0.95f),
+                    deepSleepReadyDurationNanoS.Percentile(0.99f),
                     idleSumNanoS);
             }
 
-            if (nonIdleReadyDurationNanoS.Count > MinCSwitchCount)
+            if (interferenceReadyDurationNanoS.Count > MinCSwitchCount)
             {
-                nonIdleReadyDurationNanoS.Sort();
+                interferenceReadyDurationNanoS.Sort();
                 decimal nonIdleSumNanoS = 0.0m;
-                foreach(var nonidle in nonIdleReadyDurationNanoS)
+                foreach(var nonidle in interferenceReadyDurationNanoS)
                 {
                     nonIdleSumNanoS += (decimal)nonidle;
                 }
 
-                lret.AddReadyTimes(idle: false,
-                    nonIdleReadyDurationNanoS.Count,
-                    nonIdleReadyDurationNanoS.Min(),
-                    nonIdleReadyDurationNanoS.Max(),
-                    nonIdleReadyDurationNanoS.Percentile(0.05f),
-                    nonIdleReadyDurationNanoS.Percentile(0.25f),
-                    nonIdleReadyDurationNanoS.Percentile(0.50f),
-                    nonIdleReadyDurationNanoS.Percentile(0.90f),
-                    nonIdleReadyDurationNanoS.Percentile(0.95f),
-                    nonIdleReadyDurationNanoS.Percentile(0.99f),
+                lret.AddReadyTimes(deepSleep: false,
+                    interferenceReadyDurationNanoS.Count,
+                    interferenceReadyDurationNanoS.Min(),
+                    interferenceReadyDurationNanoS.Max(),
+                    interferenceReadyDurationNanoS.Percentile(0.05f),
+                    interferenceReadyDurationNanoS.Percentile(0.25f),
+                    interferenceReadyDurationNanoS.Percentile(0.50f),
+                    interferenceReadyDurationNanoS.Percentile(0.90f),
+                    interferenceReadyDurationNanoS.Percentile(0.95f),
+                    interferenceReadyDurationNanoS.Percentile(0.99f),
                     nonIdleSumNanoS);
             }
 
             // return null in case we have no events to make serialized data more compact
-            return (lret.Idle.Count > 0 || lret.NonIdle.Count > 0) ? lret: null;
+            return (lret.DeepSleep.Count > 0 || lret.Other.Count > 0) ? lret: null;
         }
 
         /// <summary>
@@ -321,7 +321,7 @@ namespace ETWAnalyzer.Extractors.CPU
 
             public long DurationNanoS { get; set; }
             public int ThreadId { get; set; }
-            public bool IsIdle { get; set; }
+            public bool DeepSleepReady { get; set; }
         }
 
 
@@ -354,7 +354,7 @@ namespace ETWAnalyzer.Extractors.CPU
                     // We are interested in the performance impact of deep sleep states which is the processor power up time.
                     // All other delays are the ready times from shallow sleep states (should be fast) and thread interference from other threads of the same or other processes.
                     // Windows abstracts shallow sleep states (C1/C1E) as CState = 0 and all deeper sleep states as CState = 1
-                    IsIdle = slice?.Wait?.ReadyThreadEvent?.ReadyingProcess?.Id == WindowsConstants.IdleProcessId && slice?.SwitchIn?.ContextSwitch?.PreviousCState == 1,
+                    DeepSleepReady = (slice?.Wait?.ReadyThreadEvent?.ReadyingProcess?.Id == WindowsConstants.IdleProcessId || slice?.Wait?.ReadyThreadEvent?.ReadyingProcess?.Id == slice.Process.Id) && slice?.SwitchIn?.ContextSwitch?.PreviousCState == 1,
                 });
             }
         }
