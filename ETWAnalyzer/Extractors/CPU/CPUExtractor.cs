@@ -264,14 +264,17 @@ namespace ETWAnalyzer.Extractors.CPU
             Dictionary<ProcessKey, ETWProcessIndex> indexCache = new();
             foreach (var process in results.Processes)
             {
-                if (process.ProcessID > 0)
+                if (process.ProcessID > WindowsConstants.IdleProcessId && !String.IsNullOrEmpty(process.ProcessName)) 
                 {
                     ETWProcessIndex idx = results.GetProcessIndexByPID(process.ProcessID, process.StartTime);
                     indexCache[process.ToProcessKey()] = idx;
                 }
                 else
                 {
-                    indexCache[process.ToProcessKey()] = ETWProcessIndex.Invalid;
+                    if (process.ProcessName != null)  // name can be null but pid can exist.
+                    {
+                        indexCache[process.ToProcessKey()] = ETWProcessIndex.Invalid;
+                    }
                 }
             }
 
