@@ -155,7 +155,7 @@ namespace ETWAnalyzer.EventDump
             }
         }
 
-        protected object GetNullIfDefault<V>(V value)
+        protected object GetNullIfZero<V>(V value)
         {
             return value.Equals(default(V)) ? null : value;
         }
