@@ -138,6 +138,18 @@ namespace ETWAnalyzer.Extract.CPU.Extended
         /// This sums the Ready time from other processes which interfere. Additionally all other events which are not summed by <see cref="SumDeepSleepUs"/> are part of this metric.
         /// </summary>
         public double SumNonDeepSleepUs { get; }
+
+        /// <summary>
+        /// Sum of Non DeepSleep Ready time of all events which are abover the 99% percentile in microseconds.
+        /// That value is useful to check if most of our waits are originating from rare but very slow peak ready times.
+        /// </summary>
+        public double SumGreater99PercentNonDeepSleepUs { get; }
+
+        /// <summary>
+        /// Sum of DeepSleep Ready time of all events which are abover the 99% percentile in microseconds.
+        /// That value is useful to check if most of our waits are originating from rare but very slow peak ready times.
+        /// </summary>
+        public double SumGreater99PercentDeepSleepUs { get; }
     }
 
 
@@ -176,6 +188,7 @@ namespace ETWAnalyzer.Extract.CPU.Extended
         const int Percentile95V1Idx = 8;
         const int Percentile99V1Idx = 9;
         const int SumV1Idx = 10;
+        const int SumV1_99PercentIdx = 11;
 
         /// <summary>
         /// true when DeepSleep ready times are present. 
@@ -306,32 +319,50 @@ namespace ETWAnalyzer.Extract.CPU.Extended
 
 
         /// <summary>
-        /// Sum of DeepSleep Ready time in seconds 
+        /// Sum of DeepSleep Ready time in microseconds 
         /// </summary>
         [JsonIgnore]
         public double SumDeepSleepUs { get => DeepSleep[SumV1Idx]; }
 
         /// <summary>
-        /// Sum of Non DeepSleep Ready time in seconds
+        /// Sum of DeepSleep Ready time of all events which are abover the 99% percentile in microseconds.
+        /// That value is useful to check if most of our waits are originating from rare but very slow peak ready times.
+        /// </summary>
+        [JsonIgnore]
+        public double SumGreater99PercentDeepSleepUs { get => DeepSleep[SumV1_99PercentIdx]; }
+
+        /// <summary>
+        /// Sum of Non DeepSleep Ready time in microseconds
         /// </summary>
         [JsonIgnore]
         public double SumNonDeepSleepUs { get => Other[SumV1Idx]; }
+
+        /// <summary>
+        /// Sum of Non DeepSleep Ready time of all events which are abover the 99% percentile in microseconds.
+        /// That value is useful to check if most of our waits are originating from rare but very slow peak ready times.
+        /// </summary>
+        [JsonIgnore]
+        public double SumGreater99PercentNonDeepSleepUs { get => Other[SumV1_99PercentIdx]; }
+
+
+        
 
         /// <summary>
         /// Add Ready time details for a given method. The data must be supplied in nanoseconds. Internally it will be stored in microsecond precision to get short strings in the serialized format.
         /// </summary>
         /// <param name="deepSleep">if true DeepSleep ready times are added to Other times</param>
         /// <param name="count">count of cswitch events</param>
-        /// <param name="sumNanoS">sum of all context switch events in Nanoseconds</param>
-        /// <param name="minNanoS">Minimum Ready time in Nanoseconds</param>
-        /// <param name="maxNanoS">Maximum Ready time in Nanoseconds</param>
-        /// <param name="percentile5NanoS">5% Percentile Ready Time in Nanoseconds</param>
-        /// <param name="percentile25NanoS">25% Percentile Ready Time in Nanoseconds</param>
-        /// <param name="percentile50NanoS">50% Percentile Ready Time in Nanoseconds</param>
-        /// <param name="percentile90NanoS">90% Percentile Ready Time in Nanoseconds</param>
-        /// <param name="percentile95NanoS">95% Percentile Ready Time in Nanoseconds</param>
-        /// <param name="percentile99NanoS">99% Percentile Ready Time in Nanoseconds</param>
-        public void AddReadyTimes(bool deepSleep, int count, long minNanoS, long maxNanoS, long percentile5NanoS, long percentile25NanoS, long percentile50NanoS, long percentile90NanoS, long percentile95NanoS, long percentile99NanoS, decimal sumNanoS)
+        /// <param name="sumNanoS">sum of all context switch events in nanoseconds</param>
+        /// <param name="minNanoS">Minimum Ready time in nanoseconds</param>
+        /// <param name="maxNanoS">Maximum Ready time in nanoseconds</param>
+        /// <param name="percentile5NanoS">5% Percentile Ready Time in nanoseconds</param>
+        /// <param name="percentile25NanoS">25% Percentile Ready Time in nanoseconds</param>
+        /// <param name="percentile50NanoS">50% Percentile Ready Time in nanoseconds</param>
+        /// <param name="percentile90NanoS">90% Percentile Ready Time in nanoseconds</param>
+        /// <param name="percentile95NanoS">95% Percentile Ready Time in nanoseconds</param>
+        /// <param name="percentile99NanoS">99% Percentile Ready Time in nanoseconds</param>
+        /// <param name="sumAbove99PercentileNanoS">Sum of all ready events which are above the 99% percentile in nanoseconds.</param>
+        public void AddReadyTimes(bool deepSleep, int count, long minNanoS, long maxNanoS, long percentile5NanoS, long percentile25NanoS, long percentile50NanoS, long percentile90NanoS, long percentile95NanoS, long percentile99NanoS, decimal sumNanoS, decimal sumAbove99PercentileNanoS)
         {
             if (deepSleep)
             {
@@ -346,6 +377,7 @@ namespace ETWAnalyzer.Extract.CPU.Extended
                 DeepSleep.Add((double) percentile95NanoS / Thousand);
                 DeepSleep.Add((double) percentile99NanoS / Thousand);
                 DeepSleep.Add((double) sumNanoS / Thousand);
+                DeepSleep.Add((double) sumAbove99PercentileNanoS / Thousand);
             }
             else
             {
@@ -360,6 +392,7 @@ namespace ETWAnalyzer.Extract.CPU.Extended
                 Other.Add((double) percentile95NanoS /Thousand);
                 Other.Add((double) percentile99NanoS / Thousand);
                 Other.Add((double) sumNanoS / Thousand);
+                Other.Add((double) sumAbove99PercentileNanoS / Thousand);
             }
         }
 

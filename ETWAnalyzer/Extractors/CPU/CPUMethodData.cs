@@ -148,11 +148,6 @@ namespace ETWAnalyzer.Extractors.CPU
             if (deepSleepReadyDurationNanoS.Count > MinCSwitchCount)
             {
                 deepSleepReadyDurationNanoS.Sort();
-                decimal idleSumNanoS = 0.0m;
-                foreach(var idle in deepSleepReadyDurationNanoS)
-                {
-                    idleSumNanoS += (decimal) idle;
-                }
 
                 lret.AddReadyTimes(deepSleep: true,
                     deepSleepReadyDurationNanoS.Count,
@@ -164,17 +159,13 @@ namespace ETWAnalyzer.Extractors.CPU
                     deepSleepReadyDurationNanoS.Percentile(0.90f),
                     deepSleepReadyDurationNanoS.Percentile(0.95f),
                     deepSleepReadyDurationNanoS.Percentile(0.99f),
-                    idleSumNanoS);
+                    GetSum(deepSleepReadyDurationNanoS),
+                    GetSumAbove99Percentile(deepSleepReadyDurationNanoS));
             }
 
             if (interferenceReadyDurationNanoS.Count > MinCSwitchCount)
             {
                 interferenceReadyDurationNanoS.Sort();
-                decimal nonIdleSumNanoS = 0.0m;
-                foreach(var nonidle in interferenceReadyDurationNanoS)
-                {
-                    nonIdleSumNanoS += (decimal)nonidle;
-                }
 
                 lret.AddReadyTimes(deepSleep: false,
                     interferenceReadyDurationNanoS.Count,
@@ -186,11 +177,45 @@ namespace ETWAnalyzer.Extractors.CPU
                     interferenceReadyDurationNanoS.Percentile(0.90f),
                     interferenceReadyDurationNanoS.Percentile(0.95f),
                     interferenceReadyDurationNanoS.Percentile(0.99f),
-                    nonIdleSumNanoS);
+                    GetSum(interferenceReadyDurationNanoS),
+                    GetSumAbove99Percentile(interferenceReadyDurationNanoS));
             }
 
             // return null in case we have no events to make serialized data more compact
             return (lret.DeepSleep.Count > 0 || lret.Other.Count > 0) ? lret: null;
+        }
+
+        /// <summary>
+        /// Get sum of sorted list for all values which are above the 99% percentile.
+        /// </summary>
+        /// <param name="values"></param>
+        /// <returns>99 Percentile sum.</returns>
+        decimal GetSumAbove99Percentile(List<long> values)
+        {
+            decimal sum = 0.0m;
+            int skip = (int)(values.Count * 0.99);
+            for (int i = skip; i < values.Count; i++)
+            {
+                sum += (decimal)values[i];
+            }
+
+            return sum;
+        }
+
+        /// <summary>
+        /// Get sum of long values with decimal precision.
+        /// </summary>
+        /// <param name="values"></param>
+        /// <returns></returns>
+        decimal GetSum(List<long> values)
+        {
+            decimal sum = 0.0m;
+            foreach(var value in values)
+            {
+                sum += (decimal)value;
+            }
+
+            return sum;
         }
 
         /// <summary>

@@ -909,6 +909,14 @@ namespace ETWAnalyzer.EventDump
             ReadyDetails,
         }
 
+        /// <summary>
+        /// true when only stacktags are printed. Some details like Ready, ThreadCount are not supported/implemented at stacktag level.
+        /// </summary>
+        bool IsOnlyStackTagActive
+        {
+            get => StackTagFilter.Key != null && (MethodFilter.Key == null || !TopNMethods.IsEmpty);
+        }
+
         private Formatter<MatchData> GetHeaderFormatter(List<MatchData> matches, FormatterType type)
         {
             return type switch
@@ -964,21 +972,21 @@ namespace ETWAnalyzer.EventDump
                 },
                 FormatterType.Ready => new Formatter<MatchData>
                 {
-                    // only data in enhanced format can contain ready data
-                    Header = matches.Any(x => x.HasCSwitchData.GetValueOrDefault()) && !NoReadyDetails ? " Ready ms " : "",
-                    Print = matches.Any(x => x.HasCSwitchData.GetValueOrDefault()) && !NoReadyDetails ? (data) => "N0".WidthFormat(data.ReadyMs, 6) + " ms " : (data) => "",
+                    // only data in enhanced format can contain ready data and if not just stacktags are enabled
+                    Header = !IsOnlyStackTagActive && matches.Any(x => x.HasCSwitchData.GetValueOrDefault()) && !NoReadyDetails ? " Ready ms " : "",
+                    Print = !IsOnlyStackTagActive && matches.Any(x => x.HasCSwitchData.GetValueOrDefault()) && !NoReadyDetails ? (data) => "N0".WidthFormat(data.ReadyMs, 6) + " ms " : (data) => "",
                 },
                 FormatterType.ReadyAverage => new Formatter<MatchData>
                 {
-                    Header = (matches.Any(x => x.HasCSwitchData.GetValueOrDefault()) && ShowDetails && !NoReadyDetails) ? "ReadyAvg " : "",
-                    Print = (matches.Any(x => x.HasCSwitchData.GetValueOrDefault()) && ShowDetails && !NoReadyDetails) ?
+                    Header = (!IsOnlyStackTagActive && matches.Any(x => x.HasCSwitchData.GetValueOrDefault()) && ShowDetails && !NoReadyDetails) ? "ReadyAvg " : "",
+                    Print = (!IsOnlyStackTagActive && matches.Any(x => x.HasCSwitchData.GetValueOrDefault()) && ShowDetails && !NoReadyDetails) ?
                                             (data) => (data.ReadyAverageUs > 0 ? $"{data.ReadyAverageUs,5} us " : "".WithWidth(5 + 4)) :
                                             (data) => "",
                 },
                 FormatterType.CSwitchCount => new Formatter<MatchData>
                 {
-                    Header = matches.Any(x => x.HasCSwitchData.GetValueOrDefault()) && ShowDetails ? " CSwitches " : "",
-                    Print = matches.Any(x => x.HasCSwitchData.GetValueOrDefault()) && ShowDetails ? (data) => "N0".WidthFormat(data.ContextSwitchCount, 10) + " " : (data) => "",
+                    Header = !IsOnlyStackTagActive && matches.Any(x => x.HasCSwitchData.GetValueOrDefault()) && ShowDetails ? " CSwitches " : "",
+                    Print = !IsOnlyStackTagActive && matches.Any(x => x.HasCSwitchData.GetValueOrDefault()) && ShowDetails ? (data) => "N0".WidthFormat(data.ContextSwitchCount, 10) + " " : (data) => "",
                 },
                 FormatterType.Frequency => new Formatter<MatchData>
                 {
@@ -987,8 +995,8 @@ namespace ETWAnalyzer.EventDump
                 },
                 FormatterType.ThreadCount => new Formatter<MatchData>
                 {
-                    Header = ThreadCount ? "#Threads " : "",
-                    Print = (data) => ThreadCount ? "#" + "N0".WidthFormat(data.Threads, -9) : "",
+                    Header = !IsOnlyStackTagActive && ThreadCount ? "#Threads " : "",
+                    Print = (data) => !IsOnlyStackTagActive && ThreadCount ? "#" + "N0".WidthFormat(data.Threads, -9) : "",
                 },
                 FormatterType.ReadyDetails => new Formatter<MatchData>
                 {
@@ -1011,9 +1019,8 @@ namespace ETWAnalyzer.EventDump
             {
                 if (data.ReadyDetails.HasDeepSleepTimes)
                 {
-                    double outlierSumS = 0.01 * data.ReadyDetails.CSwitchCountDeepSleep * data.ReadyDetails.Percentile99DeepSleepUs/1_000_000.0;
                     lret = $"  CPU Wakeup Ready Min/5%/25%/50%/90%/95%/99%/Max Percentiles in us: {"F1".WidthFormat(data.ReadyDetails.MinDeepSleepUs, 3)} {"F1".WidthFormat(data.ReadyDetails.Percentile5DeepSleepUs, 4)} {"F1".WidthFormat(data.ReadyDetails.Percentile25DeepSleepUs, 4)} {"F1".WidthFormat(data.ReadyDetails.Percentile50DeepSleepUs, 4)} " +
-                           $"{"F0".WidthFormat(data.ReadyDetails.Percentile90DeepSleepUs, 5)} {"F0".WidthFormat(data.ReadyDetails.Percentile95DeepSleepUs, 5)} {"F0".WidthFormat(data.ReadyDetails.Percentile99DeepSleepUs, 5)} {"F0".WidthFormat(data.ReadyDetails.MaxDeepSleepUs, 7)} us >99% Sum: {"F4".WidthFormat(outlierSumS,8)} s " +
+                           $"{"F0".WidthFormat(data.ReadyDetails.Percentile90DeepSleepUs, 5)} {"F0".WidthFormat(data.ReadyDetails.Percentile95DeepSleepUs, 5)} {"F0".WidthFormat(data.ReadyDetails.Percentile99DeepSleepUs, 5)} {"F0".WidthFormat(data.ReadyDetails.MaxDeepSleepUs, 7)} us >99% Sum: {"F4".WidthFormat(data.ReadyDetails.SumGreater99PercentDeepSleepUs/1_000_000.0,8)} s " +
                            $"Sum: {"F4".WidthFormat(data.ReadyDetails.SumDeepSleepUs / 1_000_000.0d, 8)} s Count: {"N0".WidthFormat(data.ReadyDetails.CSwitchCountDeepSleep, 10)}";
                 }
                 if (lret != "" && data.ReadyDetails.HasNonDeepSleepTimes)
@@ -1024,10 +1031,9 @@ namespace ETWAnalyzer.EventDump
                 if (data.ReadyDetails.HasNonDeepSleepTimes)
                 {
                     int spaces = data.ReadyDetails.HasNonDeepSleepTimes ? 5 : 0;
-                    double outlierOtherSumS = 0.01 * data.ReadyDetails.CSwitchCountNonDeepSleep * data.ReadyDetails.Percentile99NonDeepSleepUs / 1_000_000.0;
                     lret += "".WithWidth(spaces) + $"  Other Ready Min/5%/25%/50%/90%/95%/99%/Max Percentiles in us: {"F1".WidthFormat(data.ReadyDetails.MinNonDeepSleepUs, 3)} {"F1".WidthFormat(data.ReadyDetails.Percentile5NonDeepSleepUs, 4)} {"F1".WidthFormat(data.ReadyDetails.Percentile25NonDeepSleepUs, 4)} {"F1".WidthFormat(data.ReadyDetails.Percentile50NonDeepSleepUs, 4)} " +
                         $"{"F0".WidthFormat(data.ReadyDetails.Percentile90NonDeepSleepUs, 5)} {"F0".WidthFormat(data.ReadyDetails.Percentile95NonDeepSleepUs, 5)} {"F0".WidthFormat(data.ReadyDetails.Percentile99NonDeepSleepUs, 5)} {"F0".WidthFormat(data.ReadyDetails.MaxNonDeepSleepUs, 7)} us " +
-                        $">99% Sum: {"F4".WidthFormat(outlierOtherSumS, 8)} s Sum: {"F4".WidthFormat(data.ReadyDetails.SumNonDeepSleepUs / 1_000_000.0d, 8)} s Count: {"N0".WidthFormat(data.ReadyDetails.CSwitchCountNonDeepSleep, 10)}";
+                        $">99% Sum: {"F4".WidthFormat(data.ReadyDetails.SumGreater99PercentNonDeepSleepUs/1_000_000.0d, 8)} s Sum: {"F4".WidthFormat(data.ReadyDetails.SumNonDeepSleepUs / 1_000_000.0d, 8)} s Count: {"N0".WidthFormat(data.ReadyDetails.CSwitchCountNonDeepSleep, 10)}";
                 }
             }
             return lret;
@@ -1242,6 +1248,10 @@ namespace ETWAnalyzer.EventDump
                     "NonDeepSleep Ready 95% Percentile us",
                        "DeepSleep Ready 99% Percentile us",
                     "NonDeepSleep Ready 99% Percentile us",
+                    "NonDeepSleep Sum for > 99% Percentile us",
+                       "DeepSleep Sum for > 99% Percentile us",
+                    "NonDeepSleep Sum us",
+                       "DeepSleep Sum us",
                        "DeepSleep Ready Count",
                     "NonDeepSleep Ready Count",
                     "Context Switch Count"
@@ -1289,6 +1299,12 @@ namespace ETWAnalyzer.EventDump
 
                 match?.ReadyDetails?.HasDeepSleepTimes == true ?    match?.ReadyDetails?.Percentile99DeepSleepUs : (double?)null,
                 match?.ReadyDetails?.HasNonDeepSleepTimes == true ? match?.ReadyDetails?.Percentile99NonDeepSleepUs : (double?)null,
+
+                match?.ReadyDetails?.HasDeepSleepTimes == true ? match?.ReadyDetails?.SumGreater99PercentDeepSleepUs : (double?)null,
+                match?.ReadyDetails?.HasNonDeepSleepTimes == true ? match?.ReadyDetails?.SumGreater99PercentNonDeepSleepUs : (double?)null,
+
+                match?.ReadyDetails?.HasDeepSleepTimes == true ? match?.ReadyDetails?.SumDeepSleepUs : (double?)null,
+                match?.ReadyDetails?.HasNonDeepSleepTimes == true ? match?.ReadyDetails?.SumNonDeepSleepUs : (double?)null,
 
                 match?.ReadyDetails?.HasDeepSleepTimes == true ? match?.ReadyDetails?.CSwitchCountDeepSleep : (double?)null,
                 match?.ReadyDetails?.HasNonDeepSleepTimes == true ? match?.ReadyDetails?.CSwitchCountNonDeepSleep : (double?)null,
