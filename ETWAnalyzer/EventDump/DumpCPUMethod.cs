@@ -854,8 +854,8 @@ namespace ETWAnalyzer.EventDump
 
                             if (readyDetailsFormatter.Header != "" && match.ReadyDetails != null)
                             {
-                                Console.WriteLine();
-                                ColorConsole.WriteEmbeddedColorLine($"[red]  {readyDetailsFormatter.Print(match)}[/red]", null, true);
+                                ColorConsole.WriteLine("");
+                                ColorConsole.WriteEmbeddedColorLine($"[red]{readyDetailsFormatter.Print(match)}[/red]", null, true);
                             }
 
 
@@ -1011,9 +1011,10 @@ namespace ETWAnalyzer.EventDump
             {
                 if (data.ReadyDetails.HasDeepSleepTimes)
                 {
-                    lret = $"  Min: {"F1".WidthFormat(data.ReadyDetails.MinDeepSleepUs, 3)} us 5% {"F1".WidthFormat(data.ReadyDetails.Percentile5DeepSleepUs, 4)} us 25% {"F1".WidthFormat(data.ReadyDetails.Percentile25DeepSleepUs, 4)} us 50% {"F1".WidthFormat(data.ReadyDetails.Percentile50DeepSleepUs, 4)} " +
-                           $"us 90%: {"F0".WidthFormat(data.ReadyDetails.Percentile90DeepSleepUs, 5)} us 95%: {"F0".WidthFormat(data.ReadyDetails.Percentile95DeepSleepUs, 5)} us 99%: {"F0".WidthFormat(data.ReadyDetails.Percentile99DeepSleepUs, 5)} us Max: {"F0".WidthFormat(data.ReadyDetails.MaxDeepSleepUs, 7)} us " +
-                           $"Sum: {"F4".WidthFormat(data.ReadyDetails.SumDeepSleepUs / 1_000_000.0d, 8)} s Count: {"N0".WidthFormat(data.ReadyDetails.CSwitchCountDeepSleep, 10)}    DeepSleep";
+                    double outlierSumS = 0.01 * data.ReadyDetails.CSwitchCountDeepSleep * data.ReadyDetails.Percentile99DeepSleepUs/1_000_000.0;
+                    lret = $"  CPU Wakeup Ready Min/5%/25%/50%/90%/95%/99%/Max Percentiles in us: {"F1".WidthFormat(data.ReadyDetails.MinDeepSleepUs, 3)} {"F1".WidthFormat(data.ReadyDetails.Percentile5DeepSleepUs, 4)} {"F1".WidthFormat(data.ReadyDetails.Percentile25DeepSleepUs, 4)} {"F1".WidthFormat(data.ReadyDetails.Percentile50DeepSleepUs, 4)} " +
+                           $"{"F0".WidthFormat(data.ReadyDetails.Percentile90DeepSleepUs, 5)} {"F0".WidthFormat(data.ReadyDetails.Percentile95DeepSleepUs, 5)} {"F0".WidthFormat(data.ReadyDetails.Percentile99DeepSleepUs, 5)} {"F0".WidthFormat(data.ReadyDetails.MaxDeepSleepUs, 7)} us >99% Sum: {"F4".WidthFormat(outlierSumS,8)} s " +
+                           $"Sum: {"F4".WidthFormat(data.ReadyDetails.SumDeepSleepUs / 1_000_000.0d, 8)} s Count: {"N0".WidthFormat(data.ReadyDetails.CSwitchCountDeepSleep, 10)}";
                 }
                 if (lret != "" && data.ReadyDetails.HasNonDeepSleepTimes)
                 {
@@ -1022,9 +1023,11 @@ namespace ETWAnalyzer.EventDump
 
                 if (data.ReadyDetails.HasNonDeepSleepTimes)
                 {
-                    lret += "".WithWidth(2) + $"  Min: {"F1".WidthFormat(data.ReadyDetails.MinNonDeepSleepUs, 3)} us 5% {"F1".WidthFormat(data.ReadyDetails.Percentile5NonDeepSleepUs, 4)} us 25% {"F1".WidthFormat(data.ReadyDetails.Percentile25NonDeepSleepUs, 4)} us 50% {"F1".WidthFormat(data.ReadyDetails.Percentile50NonDeepSleepUs, 4)} us" +
-                        $" 90%: {"F0".WidthFormat(data.ReadyDetails.Percentile90NonDeepSleepUs, 5)} us 95%: {"F0".WidthFormat(data.ReadyDetails.Percentile95NonDeepSleepUs, 5)} us 99%: {"F0".WidthFormat(data.ReadyDetails.Percentile99NonDeepSleepUs, 5)} us Max: {"F0".WidthFormat(data.ReadyDetails.MaxNonDeepSleepUs, 7)} us " +
-                        $"Sum: {"F4".WidthFormat(data.ReadyDetails.SumNonDeepSleepUs / 1_000_000.0d, 8)} s Count: {"N0".WidthFormat(data.ReadyDetails.CSwitchCountNonDeepSleep, 10)} NonDeepSleep";
+                    int spaces = data.ReadyDetails.HasNonDeepSleepTimes ? 5 : 0;
+                    double outlierOtherSumS = 0.01 * data.ReadyDetails.CSwitchCountNonDeepSleep * data.ReadyDetails.Percentile99NonDeepSleepUs / 1_000_000.0;
+                    lret += "".WithWidth(spaces) + $"  Other Ready Min/5%/25%/50%/90%/95%/99%/Max Percentiles in us: {"F1".WidthFormat(data.ReadyDetails.MinNonDeepSleepUs, 3)} {"F1".WidthFormat(data.ReadyDetails.Percentile5NonDeepSleepUs, 4)} {"F1".WidthFormat(data.ReadyDetails.Percentile25NonDeepSleepUs, 4)} {"F1".WidthFormat(data.ReadyDetails.Percentile50NonDeepSleepUs, 4)} " +
+                        $"{"F0".WidthFormat(data.ReadyDetails.Percentile90NonDeepSleepUs, 5)} {"F0".WidthFormat(data.ReadyDetails.Percentile95NonDeepSleepUs, 5)} {"F0".WidthFormat(data.ReadyDetails.Percentile99NonDeepSleepUs, 5)} {"F0".WidthFormat(data.ReadyDetails.MaxNonDeepSleepUs, 7)} us " +
+                        $">99% Sum: {"F4".WidthFormat(outlierOtherSumS, 8)} s Sum: {"F4".WidthFormat(data.ReadyDetails.SumNonDeepSleepUs / 1_000_000.0d, 8)} s Count: {"N0".WidthFormat(data.ReadyDetails.CSwitchCountNonDeepSleep, 10)}";
                 }
             }
             return lret;
