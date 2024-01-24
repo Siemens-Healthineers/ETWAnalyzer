@@ -5,6 +5,7 @@ using ETWAnalyzer.Extract;
 using ETWAnalyzer.Extract.Power;
 using ETWAnalyzer.Infrastructure;
 using ETWAnalyzer.ProcessTools;
+using Microsoft.Windows.EventTracing.Processes;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -120,7 +121,7 @@ namespace ETWAnalyzer.EventDump
 
             ColorConsole.WriteEmbeddedColorLine($"{"File Date ",ColumnWidth}: ", null, true);
 
-            foreach(var match in matches)
+            foreach (var match in matches)
             {
                 ColorConsole.WriteEmbeddedColorLine($"{match.PerformedAt,ColumnWidth}", FileConsoleColor, true);
             }
@@ -128,19 +129,17 @@ namespace ETWAnalyzer.EventDump
             Console.WriteLine();
 
             ColorConsole.WriteEmbeddedColorLine($"{"File Name ",ColumnWidth}: ", null, true);
-            foreach (var match in matches)
-            {
-                ColorConsole.WriteEmbeddedColorLine($"{GetPrintFileName(match.SourceFile),ColumnWidth}", FileConsoleColor, true);
-            }
-            Console.WriteLine();
+
+            PrintFileNameMultiLineIndented(matches, ColumnWidth);
+
             ColorConsole.WriteEmbeddedColorLine("[green]CPU Power Configuration[/green]");
 
 
-            foreach (Formatter<IPowerConfiguration> formatter in formatters.Where( x => ShowOnlyDiffValuesWhenEnabled(matches,x)) )
+            foreach (Formatter<IPowerConfiguration> formatter in formatters.Where(x => ShowOnlyDiffValuesWhenEnabled(matches, x)))
             {
                 PrintDetails(formatter);
                 ColorConsole.WriteEmbeddedColorLine($"{formatter.Header,ColumnWidth}: ", null, true);
-                
+
                 foreach (MatchData data in matches)
                 {
                     ColorConsole.WriteEmbeddedColorLine($"{formatter.PrintNoDup(data.PowerConfiguration),-40}", null, true);
@@ -152,12 +151,12 @@ namespace ETWAnalyzer.EventDump
             List<Formatter<IPowerConfiguration>> idleFormatters = GetIdleFormatters();
 
             ColorConsole.WriteEmbeddedColorLine("[green]Idle Configuration[/green]");
-            foreach(Formatter<IPowerConfiguration> idleformatter in idleFormatters.Where(x => ShowOnlyDiffValuesWhenEnabled(matches, x)))
+            foreach (Formatter<IPowerConfiguration> idleformatter in idleFormatters.Where(x => ShowOnlyDiffValuesWhenEnabled(matches, x)))
             {
 
                 PrintDetails(idleformatter);
                 ColorConsole.WriteEmbeddedColorLine($"{idleformatter.Header,ColumnWidth}: ", null, true);
-                
+
                 foreach (MatchData data in matches)
                 {
                     ColorConsole.WriteEmbeddedColorLine($"{idleformatter.PrintNoDup(data.PowerConfiguration),ColumnWidth}", null, true);
@@ -179,6 +178,60 @@ namespace ETWAnalyzer.EventDump
                 }
 
                 Console.WriteLine();
+            }
+        }
+
+
+        /// <summary>
+        /// Print a list of file names column wise to console with a given width.
+        /// </summary>
+        /// <param name="matches">List of matches</param>
+        /// <param name="columnWidth"></param>
+        private void PrintFileNameMultiLineIndented(List<MatchData> matches, int columnWidth)
+        {
+            List<string> fileNames = new();
+            foreach (var match in matches)
+            {
+                fileNames.Add(match.SourceFile);
+            }
+
+            int iteration = 0;
+            int filenameWidth = Math.Abs(columnWidth) - 3;
+
+            while (true)
+            {
+                bool hasData = false;
+                List<string> parts = new List<string>();
+                foreach (var file in fileNames)
+                {
+                    var str = new string(file.Skip(iteration * filenameWidth).Take(filenameWidth).ToArray());
+                    if (!hasData)
+                    {
+                        hasData = str.Length > 0;
+                    }
+                    parts.Add(str);
+                }
+
+                if( !parts.All(String.IsNullOrEmpty) )
+                {
+                    if (iteration > 0)  // print first column again but empty
+                    {
+                        ColorConsole.Write(" ".WithWidth(Math.Abs(columnWidth) + 2));
+                    }
+
+                    foreach (var part in parts)
+                    {
+                        ColorConsole.WriteEmbeddedColorLine(part.WithWidth(columnWidth), FileConsoleColor, true);
+                    }
+                    Console.WriteLine();
+                }
+
+                if (!hasData)
+                {
+                    break;
+                }
+               
+                iteration++;
             }
         }
 
