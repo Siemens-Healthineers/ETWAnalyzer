@@ -8,7 +8,6 @@ using ETWAnalyzer.ProcessTools;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Transactions;
 
 namespace ETWAnalyzer.EventDump
 {
@@ -101,13 +100,12 @@ namespace ETWAnalyzer.EventDump
                         if (lret[i].PowerConfiguration.Equals(lret[k].PowerConfiguration))
                         { 
                             skipped.Add(lret[i].PowerConfiguration);
-                            skipped.Add(lret[k].PowerConfiguration);
                         }
                     }
                 }
 
                 Console.WriteLine($"Skipped {skipped.Count} entries with identical power configurations.");
-                lret = lret.TakeWhile(x => !skipped.Contains(x.PowerConfiguration)).ToList();
+                lret = lret.Where(x => !skipped.Contains(x.PowerConfiguration)).ToList();
                 Console.WriteLine($"Remaining {lret.Count} entries.");
             }
 
@@ -434,6 +432,52 @@ namespace ETWAnalyzer.EventDump
         private List<Formatter<IPowerConfiguration>> GetProcessorFormatters()
         {
             List<Formatter<IPowerConfiguration>> formatters = [];
+
+            var baseProfile = new Formatter<IPowerConfiguration>()
+            {
+                Header = "Base Profile",
+                Description = "Used base profile from which not set settings are inherited.",
+                Help = "",
+                Print = (power) => power.BaseProfile.ToString(),
+            };
+            formatters.Add(baseProfile);
+
+            var autonomous = new Formatter<IPowerConfiguration>()
+            {
+                Header = "Autonomous Mode",
+                Description = "Processor performance autonomous mode",
+                Help = "  Specify whether processors should autonomously determine their target performance state."+Environment.NewLine+"Subgroup:"+Environment.NewLine+"  Processor power management"+Environment.NewLine+"Possible values (index - hexadecimal or string value - friendly name - descr):"+Environment.NewLine+"  0 - 00000000 - Disabled - Determine target performance state using operating system algorithms."+Environment.NewLine+"  1 - 00000001 - Enabled - Determine target performance state using autonomous selection."+Environment.NewLine+"Subgroup / Setting GUIDs:"+Environment.NewLine+"  54533251-82be-4824-96c1-47b60b740d00 / 8baa4a8a-14c6-4451-8e8b-14bdbd197537",
+                Print = (power) => power.AutonomousMode.ToString(),
+            };
+            formatters.Add(autonomous);
+
+            var heteroPolicyInEffect = new Formatter<IPowerConfiguration>()
+            {
+                Header = "HeteroPolicyInEffect",
+                Description = "Heterogeneous policy in effect",
+                Help = "Specify what policy to be used on systems with at least two different Processor Power Efficiency Classes."+Environment.NewLine+"Subgroup:"+Environment.NewLine+"  Processor power management"+Environment.NewLine+"Possible values (index - hexadecimal or string value - friendly name - descr):"+Environment.NewLine+"  0 - 00000000 - Use heterogeneous policy 0 - Heterogeneous policy 0."+Environment.NewLine+"  1 - 00000001 - Use heterogeneous policy 1 - Heterogeneous policy 1."+Environment.NewLine+"  2 - 00000002 - Use heterogeneous policy 2 - Heterogeneous policy 2."+Environment.NewLine+"  3 - 00000003 - Use heterogeneous policy 3 - Heterogeneous policy 3."+Environment.NewLine+"  4 - 00000004 - Use heterogeneous policy 4 - Heterogeneous policy 4."+Environment.NewLine+"Subgroup / Setting GUIDs:"+Environment.NewLine+"  54533251-82be-4824-96c1-47b60b740d00 / 7f2f5cfa-f10c-4823-b5e1-e93ae85f46b5",
+                Print = (power) => power.HeteroPolicyInEffect.ToString(),   
+            };
+            formatters.Add(heteroPolicyInEffect);
+
+            var heteroThreadSchedulingPolicy = new Formatter<IPowerConfiguration>()
+            {
+                Header = "HeteroPolicyThreadScheduling",
+                Description = "Heterogeneous thread scheduling policy",
+                Help = "Specify what thread scheduling policy to use on heterogeneous systems."+Environment.NewLine+"Subgroup:"+Environment.NewLine+"  Processor power management"+Environment.NewLine+"Possible values (index - hexadecimal or string value - friendly name - descr):"+Environment.NewLine+"  0 - 00000000 - All processors - Schedule to any available processor."+Environment.NewLine+"  1 - 00000001 - Performant processors - Schedule exclusively to more performant processors."+Environment.NewLine+"  2 - 00000002 - Prefer performant processors - Schedule to more performant processors when possible."+Environment.NewLine+"  3 - 00000003 - Efficient processors - Schedule exclusively to more efficient processors."+Environment.NewLine+"  4 - 00000004 - Prefer efficient processors - Schedule to more efficient processors when possible."+Environment.NewLine+"  5 - 00000005 - Automatic - Let the system choose an appropriate policy."+Environment.NewLine+"Subgroup / Setting GUIDs:"+Environment.NewLine+"  54533251-82be-4824-96c1-47b60b740d00 / 93b8b6dc-0698-4d1c-9ee4-0644e900c85d",
+                Print = (power) => power.HeteroPolicyThreadScheduling.ToString(),
+            };
+            formatters.Add(heteroThreadSchedulingPolicy);
+
+            var heteroThreadSchedulingPolicyShort = new Formatter<IPowerConfiguration>()
+            {
+                Header = "HeteroPolicyThreadSchedulingShort",
+                Description = "Heterogeneous short running thread scheduling policy",
+                Help = "Specify what thread scheduling policy to use for short running threads on heterogeneous systems."+Environment.NewLine+"Subgroup:"+Environment.NewLine+"  Processor power management"+Environment.NewLine+"Possible values (index - hexadecimal or string value - friendly name - descr):"+Environment.NewLine+"  0 - 00000000 - All processors - Schedule to any available processor."+Environment.NewLine+"  1 - 00000001 - Performant processors - Schedule exclusively to more performant processors."+Environment.NewLine+"  2 - 00000002 - Prefer performant processors - Schedule to more performant processors when possible."+Environment.NewLine+"  3 - 00000003 - Efficient processors - Schedule exclusively to more efficient processors."+Environment.NewLine+"  4 - 00000004 - Prefer efficient processors - Schedule to more efficient processors when possible."+Environment.NewLine+"  5 - 00000005 - Automatic - Let the system choose an appropriate policy."+Environment.NewLine+"Subgroup / Setting GUIDs:"+Environment.NewLine+"  54533251-82be-4824-96c1-47b60b740d00 / bae08b81-2d5e-4688-ad6a-13243356654b",
+                Print = (power) => power.HeteroPolicyThreadSchedulingShort.ToString(),
+            };
+            formatters.Add(heteroThreadSchedulingPolicyShort);
+
 
             var boostMode = new Formatter<IPowerConfiguration>
             {

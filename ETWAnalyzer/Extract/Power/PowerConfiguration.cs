@@ -51,6 +51,10 @@ namespace ETWAnalyzer.Extract.Power
         /// </summary>
         public PercentValue BoostPolicyPercent { get; set; }
 
+        /// <summary>
+        /// Power profiles inherit settings from their base profile
+        /// </summary>
+        public BasePowerProfile BaseProfile { get; set; }
 
         /// <summary>
         /// Gets a value that indicates how aggressive the performance states should be changed
@@ -161,6 +165,26 @@ namespace ETWAnalyzer.Extract.Power
         public ProcessorParkingConfiguration ProcessorParkingConfiguration { get; set; } = new();
 
         /// <summary>
+        /// Hetero Policy which is active.
+        /// </summary>
+        public int HeteroPolicyInEffect { get; set; }
+
+        /// <summary>
+        /// Short running thread scheduling policy
+        /// </summary>
+        public HeteroThreadSchedulingPolicy HeteroPolicyThreadSchedulingShort { get; set; }
+
+        /// <summary>
+        /// Long running thread scheduling policy
+        /// </summary>
+        public HeteroThreadSchedulingPolicy HeteroPolicyThreadScheduling { get; set; }
+
+        /// <summary>
+        /// When true CPU manages frequency on its own.
+        /// </summary>
+        public bool AutonomousMode { get; set; }
+
+        /// <summary>
         /// 
         /// </summary>
         /// <param name="other"></param>
@@ -190,6 +214,11 @@ namespace ETWAnalyzer.Extract.Power
                 this.SystemCoolingPolicy == other.SystemCoolingPolicy &&
                 this.ThrottlePolicy == other.ThrottlePolicy &&
                 this.TimeWindowSize == other.TimeWindowSize &&
+                this.AutonomousMode == other.AutonomousMode &&
+                this.BaseProfile == other.BaseProfile &&
+                this.HeteroPolicyInEffect == other.HeteroPolicyInEffect &&  
+                this.HeteroPolicyThreadScheduling == other.HeteroPolicyThreadScheduling &&  
+                this.HeteroPolicyThreadSchedulingShort == other.HeteroPolicyThreadSchedulingShort &&
                 this.ProcessorParkingConfiguration.Equals(other.ProcessorParkingConfiguration) &&
                 this.IdleConfiguration.Equals(other.IdleConfiguration);
         }
