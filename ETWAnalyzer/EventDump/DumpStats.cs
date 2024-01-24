@@ -3,6 +3,7 @@
 
 using ETWAnalyzer.EventDump;
 using ETWAnalyzer.Extract;
+using ETWAnalyzer.Extract.CPU.Extended;
 using ETWAnalyzer.Extract.Disk;
 using ETWAnalyzer.Infrastructure;
 using ETWAnalyzer.ProcessTools;
@@ -102,8 +103,8 @@ namespace ETWAnalyzer
             { "OSBuild",            m => m.OSBuild },
             { "OSVersion",          m => m.OSVersion },
             { "MemorySizeMB",       m => m.MemorySizeMB },
-            { "NumberOfProcessors", m => m.NumberOfProcessors },
-            { "CPUSpeedMHz",        m => m.CPUSpeedMHz },
+            { "NumberOfProcessors", FormatNumberOfProcessors },
+            { "CPUSpeedMHz",        FormatSpeedMHz },
             { "CPUVendor",          m => m.CPUVendor },
             { "CPUName",            m => m.CPUName },
             { "Disk",               m => FormatDisks(m.Disks) },
@@ -120,6 +121,54 @@ namespace ETWAnalyzer
             { "Displays",           m => $"Horizontal: {m.DisplaysHorizontalResolution} Vertical: {m.DisplaysVerticalResolution} MemoryMiB: {m.DisplaysMemoryMiB} Name: {m.DisplaysNames}" }
 
         };
+
+        /// <summary>
+        /// Print when existing number of P and E Cores separately.
+        /// </summary>
+        /// <param name="data"></param>
+        /// <returns></returns>
+        static string FormatNumberOfProcessors(Match data)
+        {
+            string lret = data.NumberOfProcessors.ToString();
+            if( data?.Topology?.Count > 0)
+            {
+                var lookup = data.Topology.Values.ToLookup(x => x.EfficiencyClass);
+                if (lookup.Count > 1) // we have P and E Cores at all
+                {
+                    foreach (var group in lookup.OrderBy(x => x.First().EfficiencyClass))
+                    {
+                        lret += $" Efficiency Class {group.Key}: {group.Count(),5}    ";
+                    }
+                }
+            }
+            return lret.TrimEnd();
+        }
+
+        /// <summary>
+        /// Print for P and E-Cores nominal CPU Frequency 
+        /// </summary>
+        /// <param name="data"></param>
+        /// <returns></returns>
+        static string FormatSpeedMHz(Match data)
+        {
+            string lret = data.CPUSpeedMHz.ToString();
+            if (data?.Topology?.Count > 0)
+            {
+                var lookup = data.Topology.Values.ToLookup(x => x.EfficiencyClass);
+ 
+                if (lookup.Count > 1) // just print when we have P and E Cores
+                {
+                    lret = "".WithWidth(3);
+
+                    foreach (var group in lookup.OrderBy(x => x.First().EfficiencyClass))
+                    {
+                        lret += $"Efficiency Class {group.Key}: {group.First().NominalFrequencyMHz,5} MHz ";
+                    }
+                }
+            }
+
+            return lret.TrimEnd(); ;
+        }
 
         private static string FormatDisks(IReadOnlyList<IDiskLayout> disks)
         {
@@ -174,6 +223,7 @@ namespace ETWAnalyzer
             public string CPUName { get; internal set; }
             public bool? CPUHyperThreadingEnabled { get; internal set; }
             public string BaseLine { get; internal set; }
+            public IReadOnlyDictionary<CPUNumber, ICPUTopology> Topology { get; internal set; }
         }
 
 
@@ -226,6 +276,9 @@ namespace ETWAnalyzer
                                 continue;
                             }
 
+                            var cpuToplogy = file.Extract?.CPU?.Topology;
+
+
                             Match m = new()
                             {
                                 TestCase = file.TestName,
@@ -240,6 +293,7 @@ namespace ETWAnalyzer
                                 OSBuild = file.Extract.OSBuild,
                                 OSVersion = file.Extract.OSVersion.ToString(),
                                 MemorySizeMB = file.Extract.MemorySizeMB,
+                                Topology = cpuToplogy,
                                 NumberOfProcessors = file.Extract.NumberOfProcessors,
                                 CPUSpeedMHz = file.Extract.CPUSpeedMHz,
                                 CPUName = file.Extract.CPUName,
