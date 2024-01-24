@@ -406,39 +406,44 @@ namespace ETWAnalyzer_iTest
             extractedServer.DeserializedFileName = extractJsonFileName;
 
             // Check extended metrics
-            //    2,898 ms      1,227 ms      5 ms    16 us        347 SerializerTests.Test_O_N_Behavior.TestCombined
-            MethodIndex idx = (MethodIndex)extractedServer.CPU.PerProcessMethodCostsInclusive.MethodNames.FindIndex(x => x == "SerializerTests.dll!SerializerTests.Test_O_N_Behavior.TestCombined");
+            //          CPU ms       Wait ms  Ready ms ReadyAvg CSwitches Method
+            //        2,571 ms         91 ms      2 ms    17 us        125 SerializerTests.TestBase`2[System.__Canon,System.__Canon].Test 
+            //Min: 1.8 us 5 % 5.4 us 25 % 6.6 us 50 %  7.7 us 90 %:    32 us 95 %:    49 us 99 %:    59 us Max:      62 us Sum:   0.0009 s Count:         61    DeepSleep
+            //Min: 1.5 us 5 % 6.3 us 25 % 7.8 us 50 % 11.4 us 90 %:    44 us 95 %:    68 us 99 %:    98 us Max:     115 us Sum:   0.0013 s Count:         64 NonDeepSleep
+            MethodIndex idx = (MethodIndex)extractedServer.CPU.PerProcessMethodCostsInclusive.MethodNames.FindIndex(x => x == "SerializerTests.dll!SerializerTests.TestBase`2[System.__Canon,System.__Canon].Test");
             ProcessMethodIdx procThreadIdx = serializerTestsProcIdx.Create(idx);
             ICPUMethodData extendedCPUTestMethod = ((IETWExtract)extractedServer).CPU.ExtendedCPUMetrics.MethodIndexToCPUMethodData[procThreadIdx];
-            Assert.Equal(4.1, extendedCPUTestMethod.ReadyMetrics.MinDeepSleepUs);
+            Assert.Equal(1.8, extendedCPUTestMethod.ReadyMetrics.MinDeepSleepUs);
             Assert.Equal(1.5, extendedCPUTestMethod.ReadyMetrics.MinNonDeepSleepUs);
 
-            Assert.Equal(4.4, extendedCPUTestMethod.ReadyMetrics.Percentile5DeepSleepUs);
-            Assert.Equal(5.4, Math.Round(extendedCPUTestMethod.ReadyMetrics.Percentile5NonDeepSleepUs,1));
+            Assert.Equal(5.4, extendedCPUTestMethod.ReadyMetrics.Percentile5DeepSleepUs);
+            Assert.Equal(6.3, Math.Round(extendedCPUTestMethod.ReadyMetrics.Percentile5NonDeepSleepUs, 1));
 
-            Assert.Equal(6.8, Math.Round(extendedCPUTestMethod.ReadyMetrics.Percentile25DeepSleepUs,1));
-            Assert.Equal(7.0999999999999996, Math.Round(extendedCPUTestMethod.ReadyMetrics.Percentile25NonDeepSleepUs,1));
+            Assert.Equal(6.6, Math.Round(extendedCPUTestMethod.ReadyMetrics.Percentile25DeepSleepUs, 1));
+            Assert.Equal(7.8, Math.Round(extendedCPUTestMethod.ReadyMetrics.Percentile25NonDeepSleepUs, 1));
 
-            Assert.Equal(7.5999999999999996,  Math.Round(extendedCPUTestMethod.ReadyMetrics.Percentile50DeepSleepUs, 1));
-            Assert.Equal(9.6999999999999993, Math.Round(extendedCPUTestMethod.ReadyMetrics.Percentile50NonDeepSleepUs,1));
+            Assert.Equal(7.7, Math.Round(extendedCPUTestMethod.ReadyMetrics.Percentile50DeepSleepUs, 1));
+            Assert.Equal(11.4, Math.Round(extendedCPUTestMethod.ReadyMetrics.Percentile50NonDeepSleepUs, 1));
 
-            Assert.Equal(33, Math.Round(extendedCPUTestMethod.ReadyMetrics.Percentile90DeepSleepUs,0));
-            Assert.Equal(43, Math.Round(extendedCPUTestMethod.ReadyMetrics.Percentile90NonDeepSleepUs, 0));
+            Assert.Equal(32, Math.Round(extendedCPUTestMethod.ReadyMetrics.Percentile90DeepSleepUs, 0));
+            Assert.Equal(44, Math.Round(extendedCPUTestMethod.ReadyMetrics.Percentile90NonDeepSleepUs, 0));
 
-            Assert.Equal(46, Math.Round(extendedCPUTestMethod.ReadyMetrics.Percentile95DeepSleepUs, 0, MidpointRounding.ToZero));
-            Assert.Equal(49, Math.Round(extendedCPUTestMethod.ReadyMetrics.Percentile95NonDeepSleepUs, 0));
+            Assert.Equal(48, Math.Round(extendedCPUTestMethod.ReadyMetrics.Percentile95DeepSleepUs, 0, MidpointRounding.ToZero));
+            Assert.Equal(68, Math.Round(extendedCPUTestMethod.ReadyMetrics.Percentile95NonDeepSleepUs, 0));
 
             Assert.Equal(59, Math.Round(extendedCPUTestMethod.ReadyMetrics.Percentile99DeepSleepUs, 0));
-            Assert.Equal(90, Math.Round(extendedCPUTestMethod.ReadyMetrics.Percentile99NonDeepSleepUs, 0));
+            Assert.Equal(98, Math.Round(extendedCPUTestMethod.ReadyMetrics.Percentile99NonDeepSleepUs, 0));
 
-            Assert.Equal(85,  Math.Round(extendedCPUTestMethod.ReadyMetrics.MaxDeepSleepUs, 0));
+            Assert.Equal(62, Math.Round(extendedCPUTestMethod.ReadyMetrics.MaxDeepSleepUs, 0));
             Assert.Equal(115, Math.Round(extendedCPUTestMethod.ReadyMetrics.MaxNonDeepSleepUs, 0));
 
-            Assert.Equal(3004.4000000000001,  extendedCPUTestMethod.ReadyMetrics.SumDeepSleepUs);
-            Assert.Equal(2618.9000000000001, extendedCPUTestMethod.ReadyMetrics.SumNonDeepSleepUs);
+            Assert.Equal(852.5, extendedCPUTestMethod.ReadyMetrics.SumDeepSleepUs);
+            Assert.Equal(1283.5, extendedCPUTestMethod.ReadyMetrics.SumNonDeepSleepUs);
 
-            Assert.Equal(198, extendedCPUTestMethod.ReadyMetrics.CSwitchCountDeepSleep);
-            Assert.Equal(149, extendedCPUTestMethod.ReadyMetrics.CSwitchCountNonDeepSleep);
+            Assert.Equal(61, extendedCPUTestMethod.ReadyMetrics.CSwitchCountDeepSleep);
+            Assert.Equal(64, extendedCPUTestMethod.ReadyMetrics.CSwitchCountNonDeepSleep);
+
+
 
 
             // Check CPU Method Level Data
