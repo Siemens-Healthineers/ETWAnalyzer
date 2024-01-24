@@ -1424,6 +1424,7 @@ namespace ETWAnalyzer.EventDump
                 SortOrders.StartTime,
                 SortOrders.CSwitchCount,
                 SortOrders.ReadyAvg,
+                SortOrders.Priority,
             };
 
         /// <summary>
@@ -1449,6 +1450,7 @@ namespace ETWAnalyzer.EventDump
                 SortOrders.Last => IsProcessTotalMode  ?  (data.Process.EndTime == DateTimeOffset.MaxValue ? 0 : data.Process.EndTime.Ticks) : data.LastCallTime.Ticks,     // in CPU total mode we can sort by process end time with -SortBy Last
                 SortOrders.ReadyAvg => data.ReadyAverageUs,
                 SortOrders.CSwitchCount => data.ContextSwitchCount,
+                SortOrders.Priority => data.ProcessPriority,
                 _ => data.CPUMs,  // by default sort by CPU
             };
         }
