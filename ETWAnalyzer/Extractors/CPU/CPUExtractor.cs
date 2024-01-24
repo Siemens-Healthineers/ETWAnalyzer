@@ -207,7 +207,7 @@ namespace ETWAnalyzer.Extractors.CPU
                 {
 
                     MethodIndex methodIndex = inclusiveSamplesPerMethod.AddMethod(process2Method.Key, methodToMs.Key, methodToMs.Value, cutOffMs);
-                    if (methodIndex != MethodIndex.Invalid && results?.CPU?.ExtendedCPUMetrics?.CPUToFrequencyDurations?.Count > 0)
+                    if (methodIndex != MethodIndex.Invalid && results?.CPU?.HasECores == true)
                     {
                         if (process2Method.Key.Pid > WindowsConstants.IdleProcessId)
                         {

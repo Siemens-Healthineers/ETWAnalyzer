@@ -1,17 +1,8 @@
-﻿using Microsoft.Windows.EventTracing.Cpu;
+﻿using ETWAnalyzer.Extract;
+using ETWAnalyzer.Extract.CPU.Extended;
+using ETWAnalyzer.Infrastructure;
 using Microsoft.Windows.EventTracing;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using ETWAnalyzer.Infrastructure;
-using ETWAnalyzer.Extract;
-using ETWAnalyzer.TraceProcessorHelpers;
-using ETWAnalyzer.Extract.CPU;
-using ETWAnalyzer.Analyzers.Exception.ResultPrinter;
-using ETWAnalyzer.ProcessTools;
-using ETWAnalyzer.Extract.CPU.Extended;
 
 namespace ETWAnalyzer.Extractors.CPU
 {

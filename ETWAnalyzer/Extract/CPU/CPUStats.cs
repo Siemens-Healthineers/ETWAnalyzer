@@ -4,9 +4,11 @@
 using ETWAnalyzer.Extract.CPU;
 using ETWAnalyzer.Extract.CPU.Extended;
 using ETWAnalyzer.Extractors;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace ETWAnalyzer.Extract
 {
@@ -69,6 +71,14 @@ namespace ETWAnalyzer.Extract
         /// </summary>
         public Dictionary<CPUNumber, CPUTopology> Topology { get; set; } = new();
 
+        /// <summary>
+        /// Returns true if CPU data is set and CPU has E-Cores
+        /// </summary>
+        [JsonIgnore]
+        public bool HasECores
+        {
+            get => Topology != null && Topology.Count > 0 && Topology.Values.Any(x => x.EfficiencyClass > 0);
+        }
 
         IReadOnlyDictionary<CPUNumber, ICPUTopology> myReadOnly;
 
