@@ -32,7 +32,7 @@ namespace ETWAnalyzer.Extract.CPU.Extended
         List<FrequencyDuration> myDurations;
 
         /// <summary>
-        /// Round flaot to 4 decimal places which is by far enough precision since the CPU frequency is sampled only every 15-30ms.
+        /// Round float to 4 decimal places which is by far enough precision since the CPU frequency is sampled only every 15-30ms.
         /// </summary>
         /// <param name="number">number to round.</param>
         /// <returns>rounded number to 4 decimal places.</returns>

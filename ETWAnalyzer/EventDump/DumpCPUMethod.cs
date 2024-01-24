@@ -263,6 +263,7 @@ namespace ETWAnalyzer.EventDump
             public IReadOnlyDictionary<CPUNumber, ICPUTopology> Topology { get; internal set; }
             public IReadyTimes ReadyDetails { get; internal set; }
             public float ProcessPriority { get; internal set; }
+            public bool HasFrequencyData { get; internal set; }
 
             public override string ToString()
             {
@@ -437,6 +438,7 @@ namespace ETWAnalyzer.EventDump
                         ICPUUsage[] cpuUsage = null;
                         IReadyTimes readyTimes = null;
                         float prio = 0.0f;
+                        bool hasFrequencyData = false;
 
                         if (perProcess.Process.Pid > WindowsConstants.IdleProcessId)
                         {
@@ -447,6 +449,7 @@ namespace ETWAnalyzer.EventDump
                             if (file.Extract.CPU?.ExtendedCPUMetrics?.MethodIndexToCPUMethodData?.ContainsKey(procMethod) == true)
                             {
                                 cpuUsage = file.Extract.CPU.ExtendedCPUMetrics.MethodIndexToCPUMethodData[procMethod].CPUConsumption;
+                                hasFrequencyData = file.Extract.CPU.ExtendedCPUMetrics.HasFrequencyData;
                             }
 
                             IReadOnlyDictionary<ProcessMethodIdx, ICPUMethodData> extendedCPUMetrics = file?.Extract?.CPU?.ExtendedCPUMetrics?.MethodIndexToCPUMethodData;
@@ -475,6 +478,7 @@ namespace ETWAnalyzer.EventDump
                             ContextSwitchCount = methodCost.ContextSwitchCount,
                             Threads = methodCost.Threads,
                             CPUUsage = cpuUsage,
+                            HasFrequencyData = hasFrequencyData,
                             Topology = file?.Extract?.CPU?.Topology,
                             ReadyDetails = readyTimes,
                             HasCPUSamplingData = file.Extract.CPU.PerProcessMethodCostsInclusive.HasCPUSamplingData,
@@ -1064,7 +1068,13 @@ namespace ETWAnalyzer.EventDump
                         totalNormalizedCPUMs += normalizedCPUMs;
                         normalizedCPU = $"N0".WidthFormat(normalizedCPUMs, 10) + " ms ";
                     }
-                    lret += "  [green]" + $"N0".WidthFormat(usage.CPUMs, 10) + $" ms {normalizedCPU}[/green]" + $"Class: {usage.EfficiencyClass} " + $"({cpuPercent} % CPU) on {usage.UsedCores,2} Cores " + "N0".WidthFormat(usage.AverageMHz, 5) + $" MHz ({(int)percentAboveNominal,3}% Frequency) " + $"Enabled Cores: {usage.EnabledCPUsAvg,2} Duration: {usage.LastS - usage.FirstS:F3} s" + Environment.NewLine;
+
+                    string frequencyPart = "";
+                    if( data.HasFrequencyData)
+                    {
+                        frequencyPart = "N0".WidthFormat(usage.AverageMHz, 5) + $" MHz ({(int)percentAboveNominal,3}% Frequency) ";
+                    }
+                    lret += "  [green]" + $"N0".WidthFormat(usage.CPUMs, 10) + $" ms {normalizedCPU}[/green]" + $"Class: {usage.EfficiencyClass} " + $"({cpuPercent} % CPU) on {usage.UsedCores,2} Cores " + frequencyPart + $"Enabled Cores: {usage.EnabledCPUsAvg,2} Duration: {usage.LastS - usage.FirstS:F3} s" + Environment.NewLine;
                 }
 
                 if (Normalize && data.CPUUsage.Length > 1)
