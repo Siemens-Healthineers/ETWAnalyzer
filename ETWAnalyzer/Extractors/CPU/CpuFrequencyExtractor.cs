@@ -34,7 +34,11 @@ namespace ETWAnalyzer.Extractors.CPU
                         Console.WriteLine($"Warning: File {results.SourceETLFileName} contains no CPU frequency ETW data, but CPU Frequency is null. This happens when the CaptureState for the Microsoft-Windows-Kernel-Processor-Power provider is missing.");
                         break;
                     }
-                    frequencyData.AddFrequencyDuration((CPUNumber)cpu.Processor, (float) cpu.StartTime.RelativeTimestamp.TotalSeconds, (float) cpu.StopTime.RelativeTimestamp.TotalSeconds, (int) cpu.AverageFrequency.Value.TotalMegahertz);
+
+                    if (cpu.AverageFrequency.Value.TotalMegahertz > 0.0m)  // sometimes we get 0 readings which are spurious events which are arriving also sometimes even if we did not record Frequency data
+                    {
+                        frequencyData.AddFrequencyDuration((CPUNumber)cpu.Processor, (float)cpu.StartTime.RelativeTimestamp.TotalSeconds, (float)cpu.StopTime.RelativeTimestamp.TotalSeconds, (int)cpu.AverageFrequency.Value.TotalMegahertz);
+                    }
                 }
 
                 // Frequency Extractor comes always before CPU extractor
