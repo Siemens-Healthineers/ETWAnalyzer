@@ -20,7 +20,5 @@ namespace ETWAnalyzer.TraceProcessorHelpers
             { new Guid("a1841308-3541-4fab-bc81-f71556f20b4a"), BasePowerProfile.PowerSaver },
             { new Guid("e9a42b02-d5df-448d-aa00-03f14749eb61"), BasePowerProfile.UltimatePerformance },
         };
-
-
     }
 }

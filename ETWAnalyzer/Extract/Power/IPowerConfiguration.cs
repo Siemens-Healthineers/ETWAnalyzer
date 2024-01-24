@@ -164,6 +164,16 @@ namespace ETWAnalyzer.Extract.Power
         public bool AutonomousMode { get; }
 
         /// <summary>
+        /// Currently active Power profile
+        /// </summary>
+        public BasePowerProfile ActivePowerProfile { get; }
+
+        /// <summary>
+        /// Active Power profile Guid
+        /// </summary>
+        public Guid ActivePowerProfileGuid { get; }
+
+        /// <summary>
         /// Idle Configuration parameters
         /// </summary>
         IIdleConfiguration IdleConfiguration { get; }

@@ -39,7 +39,8 @@ namespace ETWAnalyzer.Extractors.Power
             { new Guid("8baa4a8a-14c6-4451-8e8b-14bdbd197537"), ParseProcessorAutonomousMode },
             { new Guid("93b8b6dc-0698-4d1c-9ee4-0644e900c85d"), ParseHeteroThreadSchedulingPolicy },
             { new Guid("bae08b81-2d5e-4688-ad6a-13243356654b"), ParseHeteroThreadSchedulingPolicyShort },
-            { new Guid("7f2f5cfa-f10c-4823-b5e1-e93ae85f46b5"), ParseHeteroPolicyInEffect }
+            { new Guid("7f2f5cfa-f10c-4823-b5e1-e93ae85f46b5"), ParseHeteroPolicyInEffect },
+            { new Guid("31f9f286-5084-42fe-b720-2b0264993763"), ParseActivePowerScheme },
         };
 
         /// <summary>
@@ -189,11 +190,27 @@ namespace ETWAnalyzer.Extractors.Power
 
         }
 
+        private static void ParseActivePowerScheme(IGenericEvent @event, ETWExtract extract)
+        {
+            PowerConfiguration cfg = Get(extract);
+            if (cfg != null)
+            {
+                Guid currentProfile = new Guid(@event.Fields[2].AsBinary.ToArray());
+                KernelPowerConstants.BasePowerProfiles.TryGetValue(currentProfile, out var powerProfile);
+                cfg.ActivePowerProfile = powerProfile;
+                cfg.ActivePowerProfileGuid = currentProfile;
+            }
+        }
+
         static void ParsePowerProfileBaseGuid(IGenericEvent ev, ETWExtract extract)
         {
-            Guid baseProfile = new Guid(ev.Fields[2].AsBinary.ToArray());
-            KernelPowerConstants.BasePowerProfiles.TryGetValue(baseProfile, out var powerProfile);
-            extract.PowerConfiguration[0].BaseProfile = powerProfile;
+            PowerConfiguration cfg = Get(extract);
+            if (cfg != null)
+            {
+                Guid baseProfile = new Guid(ev.Fields[2].AsBinary.ToArray());
+                KernelPowerConstants.BasePowerProfiles.TryGetValue(baseProfile, out var powerProfile);
+                cfg.BaseProfile = powerProfile;
+            }
         }
 
 

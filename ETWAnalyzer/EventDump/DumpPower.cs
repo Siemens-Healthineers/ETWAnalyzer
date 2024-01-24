@@ -491,6 +491,15 @@ namespace ETWAnalyzer.EventDump
         {
             List<Formatter<IPowerConfiguration>> formatters = [];
 
+            var activeProfile = new Formatter<IPowerConfiguration>()
+            {
+                Header = "ActiveProfile",
+                Description = "Curently active Power Profile",
+                Help = "",
+                Print = (power) => power.ActivePowerProfile == BasePowerProfile.Custom ? $"{power.ActivePowerProfile}: {power.ActivePowerProfileGuid}" : power.ActivePowerProfile.ToString(),
+            };
+            formatters.Add(activeProfile);
+
             var baseProfile = new Formatter<IPowerConfiguration>()
             {
                 Header = "Base Profile",

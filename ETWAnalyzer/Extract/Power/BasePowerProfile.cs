@@ -9,9 +9,9 @@ namespace ETWAnalyzer.Extract.Power
     public enum BasePowerProfile
     {
         /// <summary>
-        /// Not known
+        /// Custom power profile
         /// </summary>
-        Unknown = 0,
+        Custom = 0,
 
         /// <summary>
         /// 
