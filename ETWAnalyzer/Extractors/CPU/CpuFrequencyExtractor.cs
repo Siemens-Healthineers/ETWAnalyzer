@@ -31,7 +31,7 @@ namespace ETWAnalyzer.Extractors.CPU
                 {
                     if( cpu.AverageFrequency == null)
                     {
-                        Console.WriteLine($"Warning: File {results.SourceETLFileName} contains no CPU frequency ETW data, but CPU Frequency is null. This happens when the CaptureState for the Microsoft-Windows-Kernel-Processor-Power provider is missing.");
+                        Console.WriteLine($"Warning: File {results.SourceETLFileName} contains CPU frequency ETW data, but AverageFrequency is null. This happens when the CaptureState for the Microsoft-Windows-Kernel-Processor-Power provider is missing.");
                         break;
                     }
 
