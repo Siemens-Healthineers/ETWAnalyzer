@@ -195,6 +195,11 @@ namespace ETWAnalyzer.EventDump
                 fileNames.Add(match.SourceFile);
             }
 
+            if( fileNames.Count == 1)
+            {
+                columnWidth = -1000;
+            }
+
             int iteration = 0;
             int filenameWidth = Math.Abs(columnWidth) - 3;
 
