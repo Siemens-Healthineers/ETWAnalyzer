@@ -9,7 +9,7 @@ namespace ETWAnalyzer.Extract.Power
     /// <summary>
     /// Windows Power Profile settings
     /// </summary>
-    public interface IPowerConfiguration : IEquatable<IPowerConfiguration>
+    public interface IPowerConfiguration
     {
         /// <summary>
         /// Time stamp when this snapshot was taken.

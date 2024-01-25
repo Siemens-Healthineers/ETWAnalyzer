@@ -19,7 +19,7 @@ namespace ETWAnalyzer.Extract.Power
     /// <summary>
     /// Windows Power Profile settings
     /// </summary>
-    public class PowerConfiguration : IPowerConfiguration 
+    public class PowerConfiguration : IPowerConfiguration, IEquatable<PowerConfiguration>
     {
         /// <summary>
         /// Time stamp when this snapshot was taken.
@@ -197,21 +197,37 @@ namespace ETWAnalyzer.Extract.Power
         /// <summary>
         /// 
         /// </summary>
+        /// <param name="obj"></param>
+        /// <returns></returns>
+        public override bool Equals(object obj)
+        {
+            return Equals(obj as PowerConfiguration);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
         /// <param name="other"></param>
         /// <returns></returns>
-        public bool Equals(IPowerConfiguration other)
+        public bool Equals(PowerConfiguration other)
         {
-            if(ReferenceEquals(null, other))
+            if (ReferenceEquals(null, other))
             {
                 return false;
-            } 
-                
-                
-            return this.BoostMode == other.BoostMode &&
+            }
+
+            return
+                this.ActivePowerProfile == other.ActivePowerProfile &&
+                this.AutonomousMode == other.AutonomousMode &&
+                this.BaseProfile == other.BaseProfile &&
+                this.BoostMode == other.BoostMode &&
                 this.BoostPolicyPercent == other.BoostPolicyPercent &&
                 this.DecreasePolicy == other.DecreasePolicy &&
                 this.DecreaseStabilizationInterval == other.DecreaseStabilizationInterval &&
                 this.DecreaseThresholdPercent == other.DecreaseThresholdPercent &&
+                this.HeteroPolicyInEffect == other.HeteroPolicyInEffect &&
+                this.HeteroPolicyThreadScheduling == other.HeteroPolicyThreadScheduling &&
+                this.HeteroPolicyThreadSchedulingShort == other.HeteroPolicyThreadSchedulingShort &&
                 this.IncreasePolicy == other.IncreasePolicy &&
                 this.IncreaseStabilizationInterval == other.IncreaseStabilizationInterval &&
                 this.IncreaseThresholdPercent == other.IncreaseThresholdPercent &&
@@ -224,13 +240,18 @@ namespace ETWAnalyzer.Extract.Power
                 this.SystemCoolingPolicy == other.SystemCoolingPolicy &&
                 this.ThrottlePolicy == other.ThrottlePolicy &&
                 this.TimeWindowSize == other.TimeWindowSize &&
-                this.AutonomousMode == other.AutonomousMode &&
-                this.BaseProfile == other.BaseProfile &&
-                this.HeteroPolicyInEffect == other.HeteroPolicyInEffect &&  
-                this.HeteroPolicyThreadScheduling == other.HeteroPolicyThreadScheduling &&  
-                this.HeteroPolicyThreadSchedulingShort == other.HeteroPolicyThreadSchedulingShort &&
                 this.ProcessorParkingConfiguration.Equals(other.ProcessorParkingConfiguration) &&
                 this.IdleConfiguration.Equals(other.IdleConfiguration);
+        }
+
+        /// <summary>
+        /// Should not be used. 
+        /// </summary>
+        /// <returns></returns>
+        /// <exception cref="NotImplementedException"></exception>
+        public override int GetHashCode()
+        {
+            throw new NotImplementedException();
         }
     }
 }

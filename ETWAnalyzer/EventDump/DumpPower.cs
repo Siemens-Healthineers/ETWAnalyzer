@@ -105,9 +105,31 @@ namespace ETWAnalyzer.EventDump
                     }
                 }
 
-                Console.WriteLine($"Skipped {skipped.Count} entries with identical power configurations.");
-                lret = lret.Where(x => !skipped.Contains(x.PowerConfiguration)).ToList();
-                Console.WriteLine($"Remaining {lret.Count} entries.");
+                // Keep of each skip group one file. Otherwise we would print of a large list of files with duplicates 0 entries. 
+                List<IPowerConfiguration> alreadySkipped = new();
+                int origCount = lret.Count;
+
+                lret = lret.Where(x =>
+                {
+                    if (skipped.Contains(x.PowerConfiguration))
+                    {
+                        if (alreadySkipped.Contains(x.PowerConfiguration))
+                        {
+                            return false;
+                        }
+                        else
+                        {
+                            alreadySkipped.Add(x.PowerConfiguration);
+                            ColorConsole.WriteLine($"Skipped {x.SourceFile}");
+                            return true;
+                        }
+                    }
+                    else
+                    {
+                        return true;
+                    }
+                }).ToList();
+                Console.WriteLine($"Remaining {lret.Count}/{origCount} entries.");
             }
 
             return lret;
