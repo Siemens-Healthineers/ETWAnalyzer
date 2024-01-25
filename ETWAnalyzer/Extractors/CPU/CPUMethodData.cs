@@ -316,7 +316,11 @@ namespace ETWAnalyzer.Extractors.CPU
                 {
                     // Use default frequency if we get no frequency data or CPU was turned off but this is not possible if we get sampling/CWSwitch data
                     // CPU Frequency data from ETW provider is sampled with a granularity of 15-30ms. 
-                    averageFrequency = cpuStats.Topology[cpu].NominalFrequencyMHz; 
+                    
+                    if( cpuStats.Topology.TryGetValue(cpu, out var topology) )  // sometimes not all cores are covered by topology
+                    {
+                        averageFrequency = topology.NominalFrequencyMHz;
+                    }
                 }
 
                 ulong enabledCPUs = 0;
