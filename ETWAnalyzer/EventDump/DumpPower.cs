@@ -115,12 +115,12 @@ namespace ETWAnalyzer.EventDump
                     {
                         if (alreadySkipped.Contains(x.PowerConfiguration))
                         {
+                            ColorConsole.WriteLine($"Skipped {x.SourceFile}");
                             return false;
                         }
                         else
                         {
                             alreadySkipped.Add(x.PowerConfiguration);
-                            ColorConsole.WriteLine($"Skipped {x.SourceFile}");
                             return true;
                         }
                     }
