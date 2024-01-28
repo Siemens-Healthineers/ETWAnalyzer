@@ -38,11 +38,11 @@ jobs:
         - name: Build Release
           run: ${{ github.workspace }}\ETWAnalyzer\MakeRelease.cmd
             
-        - name: Upload .NET 6 Binaries
+        - name: Upload .NET 8 Binaries
           uses: actions/upload-artifact@v3
           with:
-            name: Net6Binaries
-            path: ${{ github.workspace }}/bin/Release/ETWAnalyzer_Net6.zip
+            name: Net8Binaries
+            path: ${{ github.workspace }}/bin/Release/ETWAnalyzer_Net8.zip
             retention-days: 90
 
         - name: Upload .NET 4.8 Binaries
