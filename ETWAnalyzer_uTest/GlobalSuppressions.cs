@@ -6,3 +6,4 @@
 using System.Diagnostics.CodeAnalysis;
 
 [assembly: SuppressMessage("Usage", "xUnit1013:Public method should be marked as test", Justification = "<Pending>", Scope = "member", Target = "~M:ETWAnalyzer_uTest.ExceptionOccurrenceAnalyzerTests.Can_Update_ArisenExceptionHistoryFile_For_TestRuns_Of_Two_TestTypes")]
+[assembly: SuppressMessage("Interoperability", "CA1416:Plattformkompatibilität überprüfen", Justification = "<Ausstehend>", Scope = "member", Target = "~M:ETWAnalyzer_uTest.TestInfrastructure.TestContext.IsAdministrator~System.Boolean")]

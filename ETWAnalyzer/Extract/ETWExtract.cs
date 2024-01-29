@@ -502,7 +502,7 @@ namespace ETWAnalyzer.Extract
 
             for (int i = 0; i < Processes.Count; i++)
             {
-                if (Processes[i].ProcessID == pid && timeWhenProcessDidExist > Processes[i].StartTime &&  timeWhenProcessDidExist < Processes[i].EndTime)
+                if (Processes[i].ProcessID == pid && timeWhenProcessDidExist >= Processes[i].StartTime &&  timeWhenProcessDidExist <= Processes[i].EndTime)
                 {
                     lret = (ETWProcessIndex)i;
                 }

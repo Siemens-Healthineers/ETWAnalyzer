@@ -1,17 +1,8 @@
-﻿using Microsoft.Windows.EventTracing.Cpu;
+﻿using ETWAnalyzer.Extract;
+using ETWAnalyzer.Extract.CPU.Extended;
+using ETWAnalyzer.Infrastructure;
 using Microsoft.Windows.EventTracing;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using ETWAnalyzer.Infrastructure;
-using ETWAnalyzer.Extract;
-using ETWAnalyzer.TraceProcessorHelpers;
-using ETWAnalyzer.Extract.CPU;
-using ETWAnalyzer.Analyzers.Exception.ResultPrinter;
-using ETWAnalyzer.ProcessTools;
-using ETWAnalyzer.Extract.CPU.Extended;
 
 namespace ETWAnalyzer.Extractors.CPU
 {
@@ -40,14 +31,18 @@ namespace ETWAnalyzer.Extractors.CPU
                 {
                     if( cpu.AverageFrequency == null)
                     {
-                        Console.WriteLine($"Warning: File {results.SourceETLFileName} contains no CPU frequency ETW data, but CPU Frequency is null. This happens when the CaptureState for the Microsoft-Windows-Kernel-Processor-Power provider is missing.");
+                        Console.WriteLine($"Warning: File {results.SourceETLFileName} contains CPU frequency ETW data, but AverageFrequency is null. This happens when the CaptureState for the Microsoft-Windows-Kernel-Processor-Power provider is missing.");
                         break;
                     }
-                    frequencyData.AddFrequencyDuration((CPUNumber)cpu.Processor, (float) cpu.StartTime.RelativeTimestamp.TotalSeconds, (float) cpu.StopTime.RelativeTimestamp.TotalSeconds, (int) cpu.AverageFrequency.Value.TotalMegahertz);
+
+                    if (cpu.AverageFrequency.Value.TotalMegahertz > 0.0m)  // sometimes we get 0 readings which are spurious events which are arriving also sometimes even if we did not record Frequency data
+                    {
+                        frequencyData.AddFrequencyDuration((CPUNumber)cpu.Processor, (float)cpu.StartTime.RelativeTimestamp.TotalSeconds, (float)cpu.StopTime.RelativeTimestamp.TotalSeconds, (int)cpu.AverageFrequency.Value.TotalMegahertz);
+                    }
                 }
 
                 // Frequency Extractor comes always before CPU extractor
-                results.CPU = new CPUStats(null, null, null, results?.CPU?.Topology, frequencyData);
+                results.CPU = new CPUStats(null, null, null, null, results?.CPU?.Topology, frequencyData);
             }
         }
     }

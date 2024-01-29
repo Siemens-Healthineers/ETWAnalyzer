@@ -22,8 +22,10 @@
     <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
     <PackageProjectUrl>https://github.com/Siemens-Healthineers/ETWAnalyzer</PackageProjectUrl>
     <PackageReadmeFile>ProgramaticAccess.md</PackageReadmeFile>
-    <Version>3.0.0.0</Version>
+    <Version>3.0.0.1</Version>
     <Platforms>x64</Platforms>
+    <ServerGarbageCollection>true</ServerGarbageCollection>
+    <GarbageCollectionAdaptationMode>1</GarbageCollectionAdaptationMode>
   </PropertyGroup>
   <PropertyGroup Condition="'$(TargetFramework)' == 'net8.0-windows'">
     <SuppressTrimAnalysisWarnings>false</SuppressTrimAnalysisWarnings>

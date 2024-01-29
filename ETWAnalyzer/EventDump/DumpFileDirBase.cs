@@ -155,6 +155,10 @@ namespace ETWAnalyzer.EventDump
             }
         }
 
+        protected object GetNullIfZero<V>(V value)
+        {
+            return value.Equals(default(V)) ? null : value;
+        }
 
         protected void WriteCSVLine(params object[] columnArgs)
         {

@@ -5,10 +5,10 @@ using ETWAnalyzer.Extract;
 using ETWAnalyzer.Extract.Power;
 using ETWAnalyzer.Infrastructure;
 using ETWAnalyzer.ProcessTools;
+using Microsoft.Windows.EventTracing.Processes;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Transactions;
 
 namespace ETWAnalyzer.EventDump
 {
@@ -101,14 +101,35 @@ namespace ETWAnalyzer.EventDump
                         if (lret[i].PowerConfiguration.Equals(lret[k].PowerConfiguration))
                         { 
                             skipped.Add(lret[i].PowerConfiguration);
-                            skipped.Add(lret[k].PowerConfiguration);
                         }
                     }
                 }
 
-                Console.WriteLine($"Skipped {skipped.Count} entries with identical power configurations.");
-                lret = lret.TakeWhile(x => !skipped.Contains(x.PowerConfiguration)).ToList();
-                Console.WriteLine($"Remaining {lret.Count} entries.");
+                // Keep of each skip group one file. Otherwise we would print of a large list of files with duplicates 0 entries. 
+                List<IPowerConfiguration> alreadySkipped = new();
+                int origCount = lret.Count;
+
+                lret = lret.Where(x =>
+                {
+                    if (skipped.Contains(x.PowerConfiguration))
+                    {
+                        if (alreadySkipped.Contains(x.PowerConfiguration))
+                        {
+                            ColorConsole.WriteLine($"Skipped {x.SourceFile}");
+                            return false;
+                        }
+                        else
+                        {
+                            alreadySkipped.Add(x.PowerConfiguration);
+                            return true;
+                        }
+                    }
+                    else
+                    {
+                        return true;
+                    }
+                }).ToList();
+                Console.WriteLine($"Remaining {lret.Count}/{origCount} entries.");
             }
 
             return lret;
@@ -122,7 +143,7 @@ namespace ETWAnalyzer.EventDump
 
             ColorConsole.WriteEmbeddedColorLine($"{"File Date ",ColumnWidth}: ", null, true);
 
-            foreach(var match in matches)
+            foreach (var match in matches)
             {
                 ColorConsole.WriteEmbeddedColorLine($"{match.PerformedAt,ColumnWidth}", FileConsoleColor, true);
             }
@@ -130,19 +151,17 @@ namespace ETWAnalyzer.EventDump
             Console.WriteLine();
 
             ColorConsole.WriteEmbeddedColorLine($"{"File Name ",ColumnWidth}: ", null, true);
-            foreach (var match in matches)
-            {
-                ColorConsole.WriteEmbeddedColorLine($"{GetPrintFileName(match.SourceFile),ColumnWidth}", FileConsoleColor, true);
-            }
-            Console.WriteLine();
+
+            PrintFileNameMultiLineIndented(matches, ColumnWidth);
+
             ColorConsole.WriteEmbeddedColorLine("[green]CPU Power Configuration[/green]");
 
 
-            foreach (Formatter<IPowerConfiguration> formatter in formatters.Where( x => ShowOnlyDiffValuesWhenEnabled(matches,x)) )
+            foreach (Formatter<IPowerConfiguration> formatter in formatters.Where(x => ShowOnlyDiffValuesWhenEnabled(matches, x)))
             {
                 PrintDetails(formatter);
                 ColorConsole.WriteEmbeddedColorLine($"{formatter.Header,ColumnWidth}: ", null, true);
-                
+
                 foreach (MatchData data in matches)
                 {
                     ColorConsole.WriteEmbeddedColorLine($"{formatter.PrintNoDup(data.PowerConfiguration),-40}", null, true);
@@ -154,12 +173,12 @@ namespace ETWAnalyzer.EventDump
             List<Formatter<IPowerConfiguration>> idleFormatters = GetIdleFormatters();
 
             ColorConsole.WriteEmbeddedColorLine("[green]Idle Configuration[/green]");
-            foreach(Formatter<IPowerConfiguration> idleformatter in idleFormatters.Where(x => ShowOnlyDiffValuesWhenEnabled(matches, x)))
+            foreach (Formatter<IPowerConfiguration> idleformatter in idleFormatters.Where(x => ShowOnlyDiffValuesWhenEnabled(matches, x)))
             {
 
                 PrintDetails(idleformatter);
                 ColorConsole.WriteEmbeddedColorLine($"{idleformatter.Header,ColumnWidth}: ", null, true);
-                
+
                 foreach (MatchData data in matches)
                 {
                     ColorConsole.WriteEmbeddedColorLine($"{idleformatter.PrintNoDup(data.PowerConfiguration),ColumnWidth}", null, true);
@@ -181,6 +200,65 @@ namespace ETWAnalyzer.EventDump
                 }
 
                 Console.WriteLine();
+            }
+        }
+
+
+        /// <summary>
+        /// Print a list of file names column wise to console with a given width.
+        /// </summary>
+        /// <param name="matches">List of matches</param>
+        /// <param name="columnWidth"></param>
+        private void PrintFileNameMultiLineIndented(List<MatchData> matches, int columnWidth)
+        {
+            List<string> fileNames = new();
+            foreach (var match in matches)
+            {
+                fileNames.Add(match.SourceFile);
+            }
+
+            if( fileNames.Count == 1)
+            {
+                columnWidth = -1000;
+            }
+
+            int iteration = 0;
+            int filenameWidth = Math.Abs(columnWidth) - 3;
+
+            while (true)
+            {
+                bool hasData = false;
+                List<string> parts = new List<string>();
+                foreach (var file in fileNames)
+                {
+                    var str = new string(file.Skip(iteration * filenameWidth).Take(filenameWidth).ToArray());
+                    if (!hasData)
+                    {
+                        hasData = str.Length > 0;
+                    }
+                    parts.Add(str);
+                }
+
+                if( !parts.All(String.IsNullOrEmpty) )
+                {
+                    if (iteration > 0)  // print first column again but empty
+                    {
+                        ColorConsole.Write(" ".WithWidth(Math.Abs(columnWidth) + 2));
+                    }
+
+                    foreach (var part in parts)
+                    {
+                        ColorConsole.WriteEmbeddedColorLine(part.WithWidth(columnWidth), FileConsoleColor, true);
+                    }
+                    Console.WriteLine();
+                }
+
+                if (!hasData)
+                {
+                    break;
+                }
+               
+                iteration++;
             }
         }
 
@@ -435,6 +513,61 @@ namespace ETWAnalyzer.EventDump
         {
             List<Formatter<IPowerConfiguration>> formatters = [];
 
+            var activeProfile = new Formatter<IPowerConfiguration>()
+            {
+                Header = "ActiveProfile",
+                Description = "Curently active Power Profile",
+                Help = "",
+                Print = (power) => power.ActivePowerProfile == BasePowerProfile.Custom ? $"{power.ActivePowerProfile}: {power.ActivePowerProfileGuid}" : power.ActivePowerProfile.ToString(),
+            };
+            formatters.Add(activeProfile);
+
+            var baseProfile = new Formatter<IPowerConfiguration>()
+            {
+                Header = "Base Profile",
+                Description = "Used base profile from which not set settings are inherited.",
+                Help = "",
+                Print = (power) => power.BaseProfile.ToString(),
+            };
+            formatters.Add(baseProfile);
+
+            var autonomous = new Formatter<IPowerConfiguration>()
+            {
+                Header = "Autonomous Mode",
+                Description = "Processor performance autonomous mode",
+                Help = "  Specify whether processors should autonomously determine their target performance state."+Environment.NewLine+"Subgroup:"+Environment.NewLine+"  Processor power management"+Environment.NewLine+"Possible values (index - hexadecimal or string value - friendly name - descr):"+Environment.NewLine+"  0 - 00000000 - Disabled - Determine target performance state using operating system algorithms."+Environment.NewLine+"  1 - 00000001 - Enabled - Determine target performance state using autonomous selection."+Environment.NewLine+"Subgroup / Setting GUIDs:"+Environment.NewLine+"  54533251-82be-4824-96c1-47b60b740d00 / 8baa4a8a-14c6-4451-8e8b-14bdbd197537",
+                Print = (power) => power.AutonomousMode.ToString(),
+            };
+            formatters.Add(autonomous);
+
+            var heteroPolicyInEffect = new Formatter<IPowerConfiguration>()
+            {
+                Header = "HeteroPolicyInEffect",
+                Description = "Heterogeneous policy in effect",
+                Help = "Specify what policy to be used on systems with at least two different Processor Power Efficiency Classes."+Environment.NewLine+"Subgroup:"+Environment.NewLine+"  Processor power management"+Environment.NewLine+"Possible values (index - hexadecimal or string value - friendly name - descr):"+Environment.NewLine+"  0 - 00000000 - Use heterogeneous policy 0 - Heterogeneous policy 0."+Environment.NewLine+"  1 - 00000001 - Use heterogeneous policy 1 - Heterogeneous policy 1."+Environment.NewLine+"  2 - 00000002 - Use heterogeneous policy 2 - Heterogeneous policy 2."+Environment.NewLine+"  3 - 00000003 - Use heterogeneous policy 3 - Heterogeneous policy 3."+Environment.NewLine+"  4 - 00000004 - Use heterogeneous policy 4 - Heterogeneous policy 4."+Environment.NewLine+"Subgroup / Setting GUIDs:"+Environment.NewLine+"  54533251-82be-4824-96c1-47b60b740d00 / 7f2f5cfa-f10c-4823-b5e1-e93ae85f46b5",
+                Print = (power) => power.HeteroPolicyInEffect.ToString(),   
+            };
+            formatters.Add(heteroPolicyInEffect);
+
+            var heteroThreadSchedulingPolicy = new Formatter<IPowerConfiguration>()
+            {
+                Header = "HeteroPolicyThreadScheduling",
+                Description = "Heterogeneous thread scheduling policy",
+                Help = "Specify what thread scheduling policy to use on heterogeneous systems."+Environment.NewLine+"Subgroup:"+Environment.NewLine+"  Processor power management"+Environment.NewLine+"Possible values (index - hexadecimal or string value - friendly name - descr):"+Environment.NewLine+"  0 - 00000000 - All processors - Schedule to any available processor."+Environment.NewLine+"  1 - 00000001 - Performant processors - Schedule exclusively to more performant processors."+Environment.NewLine+"  2 - 00000002 - Prefer performant processors - Schedule to more performant processors when possible."+Environment.NewLine+"  3 - 00000003 - Efficient processors - Schedule exclusively to more efficient processors."+Environment.NewLine+"  4 - 00000004 - Prefer efficient processors - Schedule to more efficient processors when possible."+Environment.NewLine+"  5 - 00000005 - Automatic - Let the system choose an appropriate policy."+Environment.NewLine+"Subgroup / Setting GUIDs:"+Environment.NewLine+"  54533251-82be-4824-96c1-47b60b740d00 / 93b8b6dc-0698-4d1c-9ee4-0644e900c85d",
+                Print = (power) => power.HeteroPolicyThreadScheduling.ToString(),
+            };
+            formatters.Add(heteroThreadSchedulingPolicy);
+
+            var heteroThreadSchedulingPolicyShort = new Formatter<IPowerConfiguration>()
+            {
+                Header = "HeteroPolicyThreadSchedulingShort",
+                Description = "Heterogeneous short running thread scheduling policy",
+                Help = "Specify what thread scheduling policy to use for short running threads on heterogeneous systems."+Environment.NewLine+"Subgroup:"+Environment.NewLine+"  Processor power management"+Environment.NewLine+"Possible values (index - hexadecimal or string value - friendly name - descr):"+Environment.NewLine+"  0 - 00000000 - All processors - Schedule to any available processor."+Environment.NewLine+"  1 - 00000001 - Performant processors - Schedule exclusively to more performant processors."+Environment.NewLine+"  2 - 00000002 - Prefer performant processors - Schedule to more performant processors when possible."+Environment.NewLine+"  3 - 00000003 - Efficient processors - Schedule exclusively to more efficient processors."+Environment.NewLine+"  4 - 00000004 - Prefer efficient processors - Schedule to more efficient processors when possible."+Environment.NewLine+"  5 - 00000005 - Automatic - Let the system choose an appropriate policy."+Environment.NewLine+"Subgroup / Setting GUIDs:"+Environment.NewLine+"  54533251-82be-4824-96c1-47b60b740d00 / bae08b81-2d5e-4688-ad6a-13243356654b",
+                Print = (power) => power.HeteroPolicyThreadSchedulingShort.ToString(),
+            };
+            formatters.Add(heteroThreadSchedulingPolicyShort);
+
+
             var boostMode = new Formatter<IPowerConfiguration>
             {
                 Header = "BoostMode",
@@ -599,6 +732,13 @@ namespace ETWAnalyzer.EventDump
         {
             OpenCSVWithHeader(Col_CSVOptions, Col_TestCase, Col_TestTimeinms, Col_SourceJsonFile, Col_Machine,
                 "Profile Recorded At (s)",
+                "Active Profile",
+                "Active Profile Guid",
+                "Base Profile",
+                "Autonomous Mode",
+                "Hetero Policy In Effect",
+                "Hetero Policy Thread Scheduling",
+                "Hetero Policy Thread Scheduling Short",
                 "BoostMode","Boost Policy %", 
                 "DecreasePolicy", "DecreaseStabilizationInterval", "DecreaseThreshold %", "IncreasePolicy",
                 "IncreaseStabilizationInterval", "IncreaseThreshold %", "LatencySensitivityPerformance %", "MaxEfficiencyClass0Frequency",
@@ -623,6 +763,13 @@ namespace ETWAnalyzer.EventDump
 
                 WriteCSVLine(CSVOptions, match.TestName, match.TestDurationInMs, match.SourceFile, match.Machine, 
                     power.TimeSinceTraceStartS,
+                    power.ActivePowerProfile,
+                    power.ActivePowerProfileGuid,
+                    power.BaseProfile,
+                    power.AutonomousMode,
+                    power.HeteroPolicyInEffect,
+                    power.HeteroPolicyThreadScheduling,
+                    power.HeteroPolicyThreadSchedulingShort,
                     power.BoostMode, power.BoostPolicyPercent,
                     power.DecreasePolicy, power.DecreaseStabilizationInterval, power.DecreaseThresholdPercent, power.IncreasePolicy,
                     power.IncreaseStabilizationInterval, power.IncreaseThresholdPercent, power.LatencySensitivityPerformancePercent, power.MaxEfficiencyClass0Frequency,

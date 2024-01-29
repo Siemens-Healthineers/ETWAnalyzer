@@ -112,7 +112,7 @@ namespace ETWAnalyzer_uTest.Extract
 
             ProcessKey key = new("tester.exe", 100, DateTimeOffset.MinValue);
 
-            extract.CPU = new CPUStats(null, null, GetSampleData(key),null, null);
+            extract.CPU = new CPUStats(null, null, null, GetSampleData(key),null, null);
 
             MemoryStream stream = new();
             ExtractSerializer.Serialize(stream, extract);

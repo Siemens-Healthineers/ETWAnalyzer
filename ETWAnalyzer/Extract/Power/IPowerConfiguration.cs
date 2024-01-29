@@ -9,7 +9,7 @@ namespace ETWAnalyzer.Extract.Power
     /// <summary>
     /// Windows Power Profile settings
     /// </summary>
-    public interface IPowerConfiguration : IEquatable<IPowerConfiguration>
+    public interface IPowerConfiguration
     {
         /// <summary>
         /// Time stamp when this snapshot was taken.
@@ -136,6 +136,42 @@ namespace ETWAnalyzer.Extract.Power
         /// when calculating a processor's busy percentage.
         /// </summary>
         int TimeWindowSize { get; }
+
+
+        /// <summary>
+        /// Power profiles inherit settings from their base profile
+        /// </summary>
+        public BasePowerProfile BaseProfile { get; }
+
+        /// <summary>
+        /// Hetero Policy which is active.
+        /// </summary>
+        public int HeteroPolicyInEffect { get; }
+
+        /// <summary>
+        /// Short running thread scheduling policy
+        /// </summary>
+        public HeteroThreadSchedulingPolicy HeteroPolicyThreadSchedulingShort { get; }
+
+        /// <summary>
+        /// Long running thread scheduling policy
+        /// </summary>
+        public HeteroThreadSchedulingPolicy HeteroPolicyThreadScheduling { get; }
+
+        /// <summary>
+        /// When true CPU manages frequency on its own.
+        /// </summary>
+        public bool AutonomousMode { get; }
+
+        /// <summary>
+        /// Currently active Power profile
+        /// </summary>
+        public BasePowerProfile ActivePowerProfile { get; }
+
+        /// <summary>
+        /// Active Power profile Guid
+        /// </summary>
+        public Guid ActivePowerProfileGuid { get; }
 
         /// <summary>
         /// Idle Configuration parameters

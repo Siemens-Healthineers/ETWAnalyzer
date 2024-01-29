@@ -46,6 +46,12 @@ namespace ETWAnalyzer.Extract.CPU.Extended
         }
 
         /// <summary>
+        /// When true CPU frequency data was collected.
+        /// </summary>
+        [JsonIgnore]
+        public bool HasFrequencyData { get => CPUToFrequencyDurations.Count > 0; }
+
+        /// <summary>
         /// Get for a given core the sampled CPU Frequency at a given time which is present in ETL when Microsoft-Windows-Kernel-Processor-Power provider is enabled.
         /// </summary>
         /// <param name="nCore">Core for which to get the frequency.</param>
@@ -334,6 +340,11 @@ namespace ETWAnalyzer.Extract.CPU.Extended
         /// <param name="timeS">Time in WPA trace Time in seconds since Session start for which you want to get the current time.</param>
         /// <returns>Average CPU Frequency in MHz which was sampled in 15-30ms time slices.</returns>
         int GetFrequency(CPUNumber nCore, float timeS);
+
+        /// <summary>
+        /// When true CPU frequency data was collected.
+        /// </summary>
+        public bool HasFrequencyData { get; }
     }
 
  
