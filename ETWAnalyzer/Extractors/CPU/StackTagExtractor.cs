@@ -63,6 +63,28 @@ namespace ETWAnalyzer.Extractors.CPU
         public int? Concurrency { get; internal set; }
 
         /// <summary>
+        /// Ignore CPU sampling data. Used when CPU sampling data is corrupt
+        /// </summary>
+        public bool NoSampling { get; internal set; }
+
+
+        /// <summary>
+        /// Ignore Context Switch data. Can conserve memory during extraction at the cost of missing thread wait/ready data.
+        /// </summary>
+        public bool NoCSwitch {  get; internal set; }   
+
+        /// <summary>
+        /// True when it is not disabled and we have data
+        /// </summary>
+        bool CanUseCpuSamplingData { get => mySamplingData?.HasResult == true && !NoSampling; }
+
+        /// <summary>
+        /// True when it is not disabld and we have CSwitch data
+        /// </summary>
+        bool CanUseCPUCSwitchData {  get => myCpuSchedlingData?.HasResult == true && !NoCSwitch; }
+
+
+        /// <summary>
         /// GC/JIT Stacktags are thrown away when smaller 10ms
         /// </summary>
         const double MinProcessGCJITTimeInMs = 10.0;
@@ -76,8 +98,16 @@ namespace ETWAnalyzer.Extractors.CPU
         {
             NeedsSymbols = true;
             myStackTags = processor.UseStackTags();
-            mySamplingData = processor.UseCpuSamplingData();
-            myCpuSchedlingData = processor.UseCpuSchedulingData();
+
+            if (!NoSampling)
+            {
+                mySamplingData = processor.UseCpuSamplingData();
+            }
+
+            if (!NoCSwitch)
+            {
+                myCpuSchedlingData = processor.UseCpuSchedulingData();
+            }
         }
 
         public override void Extract(ITraceProcessor processor, ETWExtract results)
@@ -134,30 +164,33 @@ namespace ETWAnalyzer.Extractors.CPU
 
         void ExtractStackTagsFromProfilingAndContextSwitchEvents(IStackTagMapper mapper, Dictionary<ProcessKey, Dictionary<string, StackTagDuration>> tags, bool addDefaultStackTag)
         {
-            // Get Stack Tag information from CPU Sampling data
-            foreach (ICpuSample sample in mySamplingData.Result.Samples)
+            if (CanUseCpuSamplingData)
             {
-                DateTimeOffset createTime = DateTimeOffset.MinValue;
-                if ((sample?.Process?.CreateTime).HasValue)
+                // Get Stack Tag information from CPU Sampling data
+                foreach (ICpuSample sample in mySamplingData.Result.Samples)
                 {
-                    createTime = sample.Process.CreateTime.Value.DateTimeOffset;
+                    DateTimeOffset createTime = DateTimeOffset.MinValue;
+                    if ((sample?.Process?.CreateTime).HasValue)
+                    {
+                        createTime = sample.Process.CreateTime.Value.DateTimeOffset;
+                    }
+
+                    string imageName = sample?.Process?.ImageName;
+                    if (imageName == null)
+                    {
+                        continue;
+                    }
+
+                    var key = new ProcessKey(imageName, sample.Process.Id, createTime);
+
+
+                    AddSampleDuration(mapper, tags, sample, key, addDefaultStackTag);
                 }
-
-                string imageName = sample?.Process?.ImageName;
-                if (imageName == null)
-                {
-                    continue;
-                }
-
-                var key = new ProcessKey(imageName, sample.Process.Id, createTime);
-
-
-                AddSampleDuration(mapper, tags, sample, key, addDefaultStackTag);
             }
 
 
             // When we have context switch data recorded we can also calculate the thread wait time stacktags
-            if (myCpuSchedlingData.HasResult)
+            if( CanUseCPUCSwitchData )
             {
                 foreach (ICpuThreadActivity slice in myCpuSchedlingData.Result.ThreadActivity)
                 {
