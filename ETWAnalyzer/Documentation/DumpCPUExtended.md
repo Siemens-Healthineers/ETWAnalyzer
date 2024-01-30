@@ -22,7 +22,7 @@ wpr -stop %temp%\FirstLight.etl
 By default extended CPU metrics is captured. If you add during extraction ```-NoReady``` you can prevent the generation of extended ready metrics data. When CPU Frequency data
 was recorded it is always extracted with the CPU extractor. To get everything use
 ```
-C>EtwAnalyzer -extract all -fd %temp%\FirstLight.etl -SymServer ms 
+EtwAnalyzer -extract all -fd %temp%\FirstLight.etl -SymServer ms 
 1 - files found to extract.
 Success Extraction of C:\Users\kraualaz\AppData\Local\Temp\Extract\FirstLight.json
 Extracted 1/1 - Failed 0 files.
@@ -47,7 +47,7 @@ Since the output is multiple lines per method it is usually best to limit it to 
 ```-NoPriority ``` to omit the process priority besides the executable name and ```-NoReady ``` to omit ready and extended ready data. 
 
 ```
-C:\Builds\ETWAnalyzer\ETWAnalyzer>Etwanalyzer -fd %temp%\Extract\FirstLight.json -dump cpu  -topn 1  -topnmethods 1 -details 
+Etwanalyzer -fd %temp%\Extract\FirstLight.json -dump cpu  -topn 1  -topnmethods 1 -details 
 ```
 Below is an example of a real case where for two processes the runtime differs by over a factor 6. Because of the large speed difference only partial recordings were done.
 The Duration field which is the time the method was seen last-first time during the trace cannot be used to compare performance. 
