@@ -71,7 +71,8 @@ Since hardware sleep states are so impactful to performance ETWAnalyzer collects
 CPU (Idle process was owning the CPU) is waking up from a potentially hardware enabled deep sleep state. 
 If you look at picture in the first process (OpenMPTest 17336) the 50% percentile (also known as median) is 66,9 us which is in line with the expected wakeup time from a deep C6 sleep state. 
 You will find such high wakeup times mostly on server machines, where the C6 sleep state is enabled in the BIOS. On consumer machines you will see usually a much lower wakeup time of (see second process) e.g. 5.8 us.
-The reason is that consumer machines have set a (Intel only) CPU flag to enable C1 Demotion which is telling the CPU to ignore deep sleep requests by the idle threads if the number of sleep requests per time frame is too high.
+The reason is that consumer machines have set a (Intel only) CPU flag to enable [C1 Demotion](https://edc.intel.com/content/www/us/en/design/ipla/software-development-platforms/client/platforms/alder-lake-desktop/12th-generation-intel-core-processors-datasheet-volume-1-of-2/processor-ia-core-c-state-rules/)
+which is telling the CPU to ignore deep sleep requests depending on the cores immediate residency history.
 
 The other Ready times are all non idle ready times which can show cross process interference or thread ping pong inside one application. In our case by far most events were context switch events from blocking calls which were
 also performed from deep sleep states but the previous owner of the CPU was OpenMPTest and not Idle which is the reason why it shows up under ```Other Ready```. 
