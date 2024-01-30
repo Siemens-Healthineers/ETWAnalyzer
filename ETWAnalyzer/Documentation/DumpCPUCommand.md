@@ -4,41 +4,58 @@ Print CPU consumption of processes as total or by method.
 The data in the extracted JSON file is stored for all processes in method granularity. During extraction the default setting is to skip all 
 methods with a *CPU/Wait Time < 10ms*. If you want to see all methods like you do in WPA you need to add *-allCPU* during extraction.
 
-The picture below illustrates what data is stored per method for all processes of the ETL file: 
+The picture below illustrates what data is stored per method for all processes of the ETL file without [extended](DumpCPUExtended.md)  data: 
 
 ![alt text](Images/CPUTimeFirstLast.png "CPU Time First Last")
 
 The extracted data contains for each method in a process
 - CPU usage from sampling data summed across all threads
-- Wait time from Context Switch data summed across all threads where overlapping wait times are counted only once
+- Wait time from Context Switch data summed across all threads where overlapping wait times are counted only once  
+   - This is different in multithreaded applications what WPA shows!
 - Ready time from Context Switch data summed accross all threads where overlapping ready times are counted only once
+   - This is different in multithreaded applications what WPA shows!
+- Average Ready time for all threads
 - Number of threads this method was seen
-- First time this method was seen on any thread
-- Last time this method was seen on any thread
+- First time this method was seen on any thread (from Sampling and CSwitch events hence the small time difference).
+- Last time this method was seen on any thread (from Sampling and CSwitch events hence the small time difference).
+- Number of Context Switch events
 - Average stack depth
 
-To get an overview you would start with -dump CPU and a file name without further options. Since file names tend to be long you simplify
-the command line by putting the file name into an environment variable in your favorite shell. We can then dump the top 5 CPU consuming processes
-with the following command:
+To get an overview you would start with -dump CPU and a file name without further options in the extract folder which will print all files in the current folder. 
+We can then dump the top 5 CPU consuming processes with the following command:
+```
+C:\tmp\Extract>EtwAnalyzer -dump CPU -topN 5
+```
 ![](Images/DumpCPUTop5.png "Dump CPU Top 5")
+
+In this view also the average dynamic process priority is shown. The priority data is taken either from CPU sampling or Context Switch data. 
+Dynamic priority means that this is not the priority you did set for your process/thread but the prority the OS did use after applying priority
+boosts. The priority can be important to spot scheduling issues when CPU is low or when hybrid CPUs (Alder Lake+) on Windows 10 are used. 
+On Windows 10 for Below Normal priority processes the work is scheduled almost 100% to the Efficicency Cores. 
 
 Did you notice the +- after the process SerializerTests? These characters signal that the process was started + and has ended - during 
 the recording. The other processes did run since trace start. You can print also the process start time instead of the +- signs to analyze 
-startup/shutdown performance issues with the *-ProcessFmt* option:
+startup/shutdown performance issues with the ```-ProcessFmt``` option:
+```
+C:\tmp\Extract>EtwAnalyzer -dump CPU -topN 2 -ProcessFmt s 
+```
+![](Images/DumpCPUTopN2ProcessFmt.png "Dump CPU Top 2 Processes")
 
-
-![](Images/DumpCPUTopN1ProcessFmt.png "Dump CPU Top 20 Methods")
-
+The +- signs are replaced by start/stop and duration for the process.
 The blue part after the process name is its command line. If you are using custom color schemes in your shell you can add *-nocolor* to omit coloring output.
 If you are experiencing word wrapping in your shell you can add *-clip* to prevent word wrapping while omitting the additional output which did clutter
 your console. This is very useful to copy the output into an Email to show the issue a colleague.
 
 Lets look inside the top 20 methods of SerializerTests
-
+```
+C:\tmp\Extract>EtwAnalyzer -dump CPU -pn SerializerTests -topNMethods 20
+```
 ![](Images/DumpCPUTop20Methods.png "Dump CPU Top 20 Methods")
 
 The dump command supports many additional options to add context data depending on what you are after:
-
+```
+C:\tmp\Extract>EtwAnalyzer -dump CPU -pn SerializerTests -methods * -threadcount -fld s s -showtotal method -includedll -includeargs -showmoduleinfo
+```
 ![alt text](Images/DumpCPU_All.png "Dump CPU All")
 
 The CPU consumption and wait time of a method in a process are summed over all threads. This is the main reason 
@@ -159,7 +176,9 @@ Because we know that this test runs single threaded we have therefore a true tes
 slowdown and we can trust this number. 
 
 To identify the region where Defender did intercept our calls we can use WPA, or we can interleave method names and Stacktags in one common output. 
-
+```
+EtwAnalyzer -dump CPU -pn SerializerTests -stacktags *virus* -methods * -minmaxWaitMs 500-900 -SortBy wait
+```
 ![](Images/DumpCPUAV_SortByWait.png "Dump AV Sort By Wait")
 
 We dump all methods which have a wait time between 500-900ms, then we sort by wait time ascending. 
@@ -168,7 +187,9 @@ to the pretty high wait times in the CreateFile method calls. Microsoft does not
 but there is a list of pretty much all Filter Driver altitudes published by Microsoft which is a collection
 of the Who’s Who of AV device drivers. ETWAnalyzer can use that to our advantage and print module infos for well known
 driver names:
-
+```
+EtwAnalyzer -dump CPU -pn SerializerTests -stacktags *virus* -methods * -MinMaxWaitMs 500-900 -SortBy Wait -id -smi -clip -NoReady
+```
 ![alt text](Images/WindowsDefender_SMI.png)
 
 WdFilter.sys is one the Windows Filter drivers used by Defender to intercept central operations such as process creation, file 
