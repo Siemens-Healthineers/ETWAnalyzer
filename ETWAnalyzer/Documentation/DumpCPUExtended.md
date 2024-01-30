@@ -52,7 +52,8 @@ C:\Builds\ETWAnalyzer\ETWAnalyzer>Etwanalyzer -fd %temp%\Extract\FirstLight.json
 Below is an example of a real case where for two processes the runtime differs by over a factor 6. Because of the large speed difference only partial recordings were done.
 The Duration field which is the time the method was seen last-first time during the trace cannot be used to compare performance. 
 
-![](Images/DumpCpuExtended.png "Dump CPU Extended")
+![](Images/DumpCPUExtended.png "Dump CPU Extended")
+
 Windows differentiates P (Power) and E (Efficiency) Cores by an Efficiency Class number which is returned by [GetSystemCpuSetInformation](https://learn.microsoft.com/en-us/windows/win32/procthread/getsystemcpusetinformation) where the 
 SYSTEM_CPU_SET_INFORMATION structure contains the byte field EfficiencyClass. The EfficiencyClass numbering starts at 0 which mark the most power efficient CPUs (usually E-Cores), and then continues with more power hungry
 cores at efficiency class 1 (P-Cores) and so on. It is unclear if with this numbering scheme P cores get an always changing number if more than two efficiency core types exist in one CPU. 
