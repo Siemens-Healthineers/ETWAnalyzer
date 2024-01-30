@@ -33,8 +33,6 @@ which is expanded in your shell so you have a short command line. You can combin
 filter by substrings like ```-fd C:\...\*fast*.json -fd c:\....\*slow*.json```.
 
 ## Dumping Extended Data
-
-
 When you have a hybrid CPU and captured CPU topology data then you get also more details about how many CPUs of each core type you have and what the base frequency for each core type is.
 ```
 ETWAnalyzer %f% -dump stats
@@ -59,7 +57,7 @@ SYSTEM_CPU_SET_INFORMATION structure contains the byte field EfficiencyClass. Th
 cores at efficiency class 1 (P-Cores) and so on. It is unclear if with this numbering scheme P cores get an always changing number if more than two efficiency core types exist in one CPU. 
 
 ETWAnalyzer prints the CPU consumption per core type and average frequency. It also prints the CPU affinity of
-the executing threads. That is a best effort because when one pins threads to specific cores no ETW event is generated (to my knowledge). The affinity is determined only during start or stop of an ETW recording for
+the executing threads. That is a best effort because when one pins threads to specific cores no ETW event is generated (to our knowledge). The affinity is determined only during start or stop of an ETW recording for
 still running threads which might be helpful but do not interpret too much into that one. 
 
 Besides frequency and core type also the CPU sleep state plays an important role for performance. A  [Context Switch event](https://learn.microsoft.com/en-us/windows/win32/etw/cswitch) contains a 
@@ -69,15 +67,15 @@ The processor can be powered down completely (including caches) when reaching [C
 
 Since hardware sleep states are so impactful to performance ETWAnalyzer collects this in an extra metric named ```CPU Wakeup Ready``` times which contains the Ready percentiles and total sum of all context switch events where a free 
 CPU (Idle process was owning the CPU) is waking up from a potentially hardware enabled deep sleep state. 
-If you look at picture in the first process (OpenMPTest 17336) the 50% percentile (also known as median) is 66,9 us which is in line with the expected wakeup time from a deep C6 sleep state. 
+If you look at the picture in the first process (OpenMPTest 17336) the 50% percentile (also known as median) is 66,9 us which is in line with the expected wakeup time from a deep C6 sleep state. 
 You will find such high wakeup times mostly on server machines, where the C6 sleep state is enabled in the BIOS. On consumer machines you will see usually a much lower wakeup time of (see second process) e.g. 5.8 us.
-The reason is that consumer machines have set a (Intel only) CPU flag to enable [C1 Demotion](https://edc.intel.com/content/www/us/en/design/ipla/software-development-platforms/client/platforms/alder-lake-desktop/12th-generation-intel-core-processors-datasheet-volume-1-of-2/processor-ia-core-c-state-rules/)
+The reason is that (most) consumer machines have set a (Intel only) CPU flag to enable [C1 Demotion](https://edc.intel.com/content/www/us/en/design/ipla/software-development-platforms/client/platforms/alder-lake-desktop/12th-generation-intel-core-processors-datasheet-volume-1-of-2/processor-ia-core-c-state-rules/)
 which is telling the CPU to ignore deep sleep requests depending on the cores immediate residency history.
 
 The other Ready times are all non idle ready times which can show cross process interference or thread ping pong inside one application. In our case by far most events were context switch events from blocking calls which were
 also performed from deep sleep states but the previous owner of the CPU was OpenMPTest and not Idle which is the reason why it shows up under ```Other Ready```. 
 
-The second OpenMPTest run did have a much lower ```CPU Wakeup Ready``` time because the CPU Feature flags C1 Demotion was enabled resulting in much less C6 state transitions which results in higher power consumption but
+The second [OpenMPTest](https://github.com/Alois-xx/OpenMPTest) run did have a much lower ```CPU Wakeup Ready``` time because the CPU Feature flags C1 Demotion was enabled resulting in much less C6 state transitions which results in higher power consumption but
 lower latencies.
 
 
