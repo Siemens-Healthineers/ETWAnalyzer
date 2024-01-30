@@ -369,7 +369,10 @@ namespace ETWAnalyzer.Extractors.CPU
                     CPUToReadyDuration[processor] = readies;
                 }
 
-                if( slice.PreviousActivityOnProcessor == null ) //
+                if( slice?.PreviousActivityOnProcessor?.Process == null || 
+                    slice?.Thread == null ||
+                    slice?.SwitchIn?.ContextSwitch == null || 
+                    slice?.ReadyDuration == null )
                 {
                     return;
                 }
@@ -383,7 +386,7 @@ namespace ETWAnalyzer.Extractors.CPU
                     // We are interested in the performance impact of deep sleep states which is the processor power up time.
                     // All other delays are the ready times from shallow sleep states (should be fast) and thread interference from other threads of the same or other processes.
                     // Windows abstracts shallow sleep states (C1/C1E) as CState = 0 and all deeper sleep states as CState = 1
-                    DeepSleepReady = slice.PreviousActivityOnProcessor.Process.Id == WindowsConstants.IdleProcessId && slice?.SwitchIn?.ContextSwitch?.PreviousCState == 1,
+                    DeepSleepReady = slice.PreviousActivityOnProcessor?.Process?.Id == WindowsConstants.IdleProcessId && slice?.SwitchIn?.ContextSwitch?.PreviousCState == 1,
                 });
             }
         }
