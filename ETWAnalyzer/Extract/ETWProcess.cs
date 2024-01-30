@@ -321,7 +321,7 @@ namespace ETWAnalyzer.Extract
         {
             if( myKey == null)
             {
-                myKey = new ProcessKey(ProcessName, ProcessID, StartTime);
+                myKey = new ProcessKey(ProcessName ?? "ExitedProcess", ProcessID, StartTime);
             }
 
             return myKey;
