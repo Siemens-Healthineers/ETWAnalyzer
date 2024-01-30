@@ -29,7 +29,7 @@ Extracted 1/1 - Failed 0 files.
 Extracted: 1 files in 00 00:04:37, Failed Files 0
 ```
 After extraction you can go to the Extract folder or you can define a variable ```set f=-fd C:\Users\kraualaz\AppData\Local\Temp\Extract\FirstLight.json```
-which is expanded in your shell so you have a short command line. You can combine as many ```-fd``` clauses as you like. It can be folder of extracted files, or you
+which is expanded in your shell so you have a short command line. You can combine as many ```-fd``` clauses as you like. It can be a folder of extracted files, or you
 filter by substrings like ```-fd C:\...\*fast*.json -fd c:\....\*slow*.json```.
 
 ## Dumping Extended Data
