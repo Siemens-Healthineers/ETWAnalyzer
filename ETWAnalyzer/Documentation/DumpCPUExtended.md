@@ -96,6 +96,8 @@ ETWAnalyzer %f% -dump process -pn OpenMPTest
 
 WPA dynamically adds columns to CPU Usage (Sampled/Precise) when your record frequency data. 
 The new WPA columns are 
+ - CPU Type
+    - This is the EfficiencyClass number which identifies P or E-cores.
  - CPU Frequency
 	- You can plot frequency over time or average it in the table
  - CPU Frequency (in view)
@@ -105,7 +107,7 @@ The new WPA columns are
  - (%) Weight by Normalized Utility
 	- Calculates CPU consumption to normalized 100% frequency (no boost)
  - (%) Weight by Utility
-	- Same as Normalized Utiliy
+	- Same as Normalized Utility
 
 ![](Images/WPA_Frequency.png "WPA Frequency")
 
