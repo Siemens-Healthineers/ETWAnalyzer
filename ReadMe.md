@@ -70,26 +70,8 @@ ETWAnalyzer -extract all -fd c:\Cases\Failure\*.7z -keepTemp -symserver MS
  - [Build Profiling At Scale At Github](ETWAnalyzer/Documentation/BuildProfiling.md)
 
 ## Data Extraction
-Data extraction is done for one or a directory of ETL files. Zipped ETL files are extracted. By default 75% of all cores are used.
-Normally you would want to use all builtin extractors which include 
-
-
-| Extractor  | What is extracted from ETL Into Json? |
-| ------------- | ------------- |
-| All  | Include all extractors  |
-| Default  | Include all extractors except File  |
-| CPU|CPU consumption and priority of all proceses part of the recording. Includes CPU Frequency per method and CPU wakeup metrics. CPU Sampling (*PROFILE*) and/or Context Switch tracing (*CSWITCH*) data with stacks must be present. |
-| Stacktag | Get from all processes the CPU call stack summary by the WPA stacktag names. Same recording settings as for CPU are needed. |
-| Memory| Get workingset/committed memory machine wide and of all processes at trace start and a second time at trace end. *MEMINFO_WS* must be present. |
-| Exception|Get all .NET Exception Messages, Type and their call stacks when present with Process,ThreadId and TimeStamp. The *Microsoft-Windows-DotNETRuntime* ETW provider with *ExceptionKeyword 0x8000* and stacks must be present. |
-| Disk| Disk IO summary and a per file summary of read/write/flush disk service times. *DISK_IO* data must be present in trace to get this data.|
-| File| Open/Close/Read/Write summary of all accessed files per process. The ETL file must contain *FILEIO* data.|
-| Module| Dump all loaded modules with file path and version. *LOADER* data must be present in trace. |
-| Frequency | Get sampled CPU frequency data and calculate CPU consumption/average frequencies for E and P Cores per method. *Microsoft-Windows-Kernel-Processor-Power* and *Microsoft-Windows-Kernel-Power* needs to be enabled.  |
-| Power     | Extract Power Plan settings. A capture state needs to be executed for *Microsoft-Windows-Kernel-Processor-Power* provider to get data. |
-| PMC      | Extract CPU cache misses, branch mispredictions. This reads low level CPU performance data. Additionally LBR (Last Branch Record) traces are processed to estimate call counts without the need to instrument any code. The ETL file must have enabled PMC tracing in counting mode or LBR (Last Branch Record) tracing. To enable see [PMC Help](https://github.com/Siemens-Healthineers/ETWAnalyzer/blob/main/ETWAnalyzer/Documentation/DumpPMCCommand.md). |
-| DNS      | Extract DNS requests and their timing. *Microsoft-Windows-DNS-Client* provider needs to be enabled along with *PROC_THREAD*. |
-| TCP      | Extract TCP connection metrics and retransmision statistics. *Microsoft-Windows-TCPIP* provider needs to be enabled along with *PROC_THREAD*. |
+Data extraction is done for one or a directory of ETL files. Zipped ETL files are also extracted. By default 75% of all cores are used.
+See [Extract](ETWAnalyzer/Documentation/ExtractCommand.md) for more information.
 
 ### Example
 
