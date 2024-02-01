@@ -155,6 +155,10 @@ namespace ETWAnalyzer.EventDump
             }
         }
 
+        protected object GetNullIfZero<V>(V value)
+        {
+            return value.Equals(default(V)) ? null : value;
+        }
 
         protected void WriteCSVLine(params object[] columnArgs)
         {
@@ -544,6 +548,12 @@ namespace ETWAnalyzer.EventDump
                 {
                     Thread.Sleep(1);
                 }
+
+                while( completedOrNot[i] == null) //  ensure that task has been added which is not null. List.Add is not atomic. We do not want to take a lock here because it invites deadlocks
+                {
+                    Thread.Sleep(1);
+                }
+
                 readIndex = i;  // publish read index so we can read more data. We MUST never be behind the actual reader or we will prefetch data which will never be released
                                 // resulting in multi GB Heaps because the reader will not null out the TestDataFile.Extract value anymore.
                 return completedOrNot[i].Result;

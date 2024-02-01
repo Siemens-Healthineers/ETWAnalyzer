@@ -18,6 +18,11 @@ namespace ETWAnalyzer.Extract
         IReadOnlyDictionary<ProcessKey, uint> PerProcessCPUConsumptionInMs { get; }
 
         /// <summary>
+        /// Average process priority taken from CPU sampling data when present
+        /// </summary>
+        IReadOnlyDictionary<ETWProcessIndex, float> PerProcessAvgCPUPriority { get; }
+
+        /// <summary>
         /// Contains methods which have CPU/Wait > 10ms (default) 
         /// </summary>
         ICPUPerProcessMethodList PerProcessMethodCostsInclusive { get; }

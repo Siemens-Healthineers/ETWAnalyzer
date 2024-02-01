@@ -156,9 +156,6 @@ not surface the following CPU Power settings.
 
 - A floor performance for Processor Power Efficiency Class 0 when there are Processor Power Efficiency Class 1 processors unparked
 - Complex unpark policy
-- Heterogeneous policy in effect
-- Heterogeneous short running thread scheduling policy
-- Heterogeneous thread scheduling policy
 - Initial performance for Processor Power Efficiency Class 1 when unparked
 - Latency sensitivity hint min unparked cores/packages
 - Latency sensitivity hint min unparked cores/packages for Processor Power Efficiency Class 1
@@ -172,7 +169,6 @@ not surface the following CPU Power settings.
 - Processor Duty Cycling
 - Processor energy performance preference policy
 - Processor energy performance preference policy for Processor Power Efficiency Class 1
-- Processor performance autonomous mode
 - Processor performance core parking parked performance state for Processor Power Efficiency Class 1
 - Processor performance core parking soft park latency
 - Processor performance decrease policy for Processor Power Efficiency Class 1
@@ -192,6 +188,15 @@ not surface the following CPU Power settings.
 - Short running threads' processor architecture upper limit
 - Short vs. long running thread threshold
 - Smt threads unpark policy
+ 
+The following settings are parsed by ETWAnalyzer on its own because they are important and not surfaced by TraceProcessing
+
+- Processor performance autonomous mode
+- Heterogeneous thread scheduling policy
+- Heterogeneous short running thread scheduling policy
+- Heterogeneous policy in effect
+- Active Profile Guid
+- Base Profile Guid
 
 This list was extracted from a Windows 11 machine. The vigilant reader may have spotted Efficiency Class 2 settings which indicate that 
 there can exist not only one E-Core type inside one CPU. With the release of Intel Meteor lake CPUs we have P/E and Lower Energy E Cores. 
@@ -246,3 +251,19 @@ Below is the official Documentation from TraceProcessing Library:
 >higher ones (e.g. efficiency class 0 should be treated as more efficient than
 >efficiency class 1). However, absolute values of this number have no meaning:
 >2 isn't necessarily half as efficient as 1.
+
+## Recording Data
+The easiest way is to download [ETWController](https://github.com/Alois-xx/etwcontroller), select the Default profile, press Start and wait until the state turns green. Then press stop and extract the ETL file/s with ETWAnalyzer. All profiles from [Multiprofile.wprp](https://github.com/Alois-xx/etwcontroller/blob/master/ETWController/ETW/MultiProfile.wprp) record the currently selected power profile data. From the built-in wpr profiles only the *Power* profile will activate the right providers, which will also enable Frequency data recording.
+```
+C>EtwAnalyzer -extract all -fd C:\PowerProfiles  
+3 - files found to extract.
+Success Extraction of C:\PowerProfiles\Extract\Power_Balanced_Win11_2024-01-30_224446_MAGNON.json
+Extracted 1/3 - Failed 0 files.
+Success Extraction of C:\PowerProfiles\Extract\Power_HighPerformance_Win11_2024-01-30_224505_MAGNON.json
+Extracted 2/3 - Failed 0 files.
+Success Extraction of C:\PowerProfiles\Extract\Power_PowerSaver_Win11_2024-01-30_224546_MAGNON.json
+Extracted 3/3 - Failed 0 files.
+Extracted: 3 files in 00 00:00:04, Failed Files 0
+```
+
+![grafik](https://github.com/Siemens-Healthineers/ETWAnalyzer/assets/408821/d130380d-7849-428d-bedb-a853ece77c31)

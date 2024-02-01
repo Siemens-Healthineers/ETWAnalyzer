@@ -19,7 +19,7 @@ namespace ETWAnalyzer.Extract.Power
     /// <summary>
     /// Windows Power Profile settings
     /// </summary>
-    public class PowerConfiguration : IPowerConfiguration 
+    public class PowerConfiguration : IPowerConfiguration, IEquatable<PowerConfiguration>
     {
         /// <summary>
         /// Time stamp when this snapshot was taken.
@@ -51,6 +51,10 @@ namespace ETWAnalyzer.Extract.Power
         /// </summary>
         public PercentValue BoostPolicyPercent { get; set; }
 
+        /// <summary>
+        /// Power profiles inherit settings from their base profile
+        /// </summary>
+        public BasePowerProfile BaseProfile { get; set; }
 
         /// <summary>
         /// Gets a value that indicates how aggressive the performance states should be changed
@@ -161,23 +165,69 @@ namespace ETWAnalyzer.Extract.Power
         public ProcessorParkingConfiguration ProcessorParkingConfiguration { get; set; } = new();
 
         /// <summary>
+        /// Hetero Policy which is active.
+        /// </summary>
+        public int HeteroPolicyInEffect { get; set; }
+
+        /// <summary>
+        /// Short running thread scheduling policy
+        /// </summary>
+        public HeteroThreadSchedulingPolicy HeteroPolicyThreadSchedulingShort { get; set; }
+
+        /// <summary>
+        /// Long running thread scheduling policy
+        /// </summary>
+        public HeteroThreadSchedulingPolicy HeteroPolicyThreadScheduling { get; set; }
+
+        /// <summary>
+        /// When true CPU manages frequency on its own.
+        /// </summary>
+        public bool AutonomousMode { get; set; }
+
+        /// <summary>
+        /// Currently active Power profile
+        /// </summary>
+        public BasePowerProfile ActivePowerProfile { get; set; }
+
+        /// <summary>
+        /// Active Power profile Guid
+        /// </summary>
+        public Guid ActivePowerProfileGuid { get; set; }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <returns></returns>
+        public override bool Equals(object obj)
+        {
+            return Equals(obj as PowerConfiguration);
+        }
+
+        /// <summary>
         /// 
         /// </summary>
         /// <param name="other"></param>
         /// <returns></returns>
-        public bool Equals(IPowerConfiguration other)
+        public bool Equals(PowerConfiguration other)
         {
-            if(ReferenceEquals(null, other))
+            if (ReferenceEquals(null, other))
             {
                 return false;
-            } 
-                
-                
-            return this.BoostMode == other.BoostMode &&
+            }
+
+            return
+                this.ActivePowerProfile == other.ActivePowerProfile &&
+                this.AutonomousMode == other.AutonomousMode &&
+                this.BaseProfile == other.BaseProfile &&
+                this.BoostMode == other.BoostMode &&
                 this.BoostPolicyPercent == other.BoostPolicyPercent &&
                 this.DecreasePolicy == other.DecreasePolicy &&
                 this.DecreaseStabilizationInterval == other.DecreaseStabilizationInterval &&
                 this.DecreaseThresholdPercent == other.DecreaseThresholdPercent &&
+                this.HeteroPolicyInEffect == other.HeteroPolicyInEffect &&
+                this.HeteroPolicyThreadScheduling == other.HeteroPolicyThreadScheduling &&
+                this.HeteroPolicyThreadSchedulingShort == other.HeteroPolicyThreadSchedulingShort &&
                 this.IncreasePolicy == other.IncreasePolicy &&
                 this.IncreaseStabilizationInterval == other.IncreaseStabilizationInterval &&
                 this.IncreaseThresholdPercent == other.IncreaseThresholdPercent &&
@@ -192,6 +242,16 @@ namespace ETWAnalyzer.Extract.Power
                 this.TimeWindowSize == other.TimeWindowSize &&
                 this.ProcessorParkingConfiguration.Equals(other.ProcessorParkingConfiguration) &&
                 this.IdleConfiguration.Equals(other.IdleConfiguration);
+        }
+
+        /// <summary>
+        /// Should not be used. 
+        /// </summary>
+        /// <returns></returns>
+        /// <exception cref="NotImplementedException"></exception>
+        public override int GetHashCode()
+        {
+            throw new NotImplementedException();
         }
     }
 }

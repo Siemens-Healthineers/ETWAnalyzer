@@ -90,6 +90,8 @@ namespace ETWAnalyzer.Commands
          "                      must have been successfully loaded during extraction. Otherwise a warning is printed due to symbol loading errors." + Environment.NewLine +
          " -keepTemp            If you want to analyze the ETL files more than once from compressed files you can use this option to keep the uncompressed ETL files in the output folder. " + Environment.NewLine +
          " -allCPU              By default only methods with CPU or Wait > 10 ms are extracted. Used together with -extract CPU." + Environment.NewLine +
+         " -NoSampling          Do not process CPU sampling data. Sometimes VMWare VMs produce invalid CPU sampling data. In that case you can ignore it and process only the Context Switch data. " + Environment.NewLine + 
+         " -NoCSwitch           Do not process Context Switch data. Useful to reduce memory consumption if you do not need CPU Wait/Ready timings." + Environment.NewLine +
          " -NoReady             By default when Context switch data is present an extra Json file with extended CPU data is created." + Environment.NewLine +
          "                      You will miss with -Dump CPU -Details Ready time percentiles." + Environment.NewLine +
          " -allExceptions       By default exceptions are filtered away by the rules configured in Configuration\\ExceptionFilters.xml. To get all specify this flag." + Environment.NewLine +
@@ -143,6 +145,8 @@ namespace ETWAnalyzer.Commands
         internal const string AllCPUArg = "-allcpu";
         internal const string ConcurrencyArg = "-concurrency";
         internal const string DryRunArg = "-dryrun";
+        internal const string NoSampling = "-nosampling";
+        internal const string NoCSwitch = "-nocswitch";
 
 
 
@@ -335,6 +339,16 @@ namespace ETWAnalyzer.Commands
         /// </summary>
         public int? Concurrency { get; private set; }
 
+        /// <summary>
+        /// -NoSampling Ignore CPU sampling data 
+        /// </summary>
+        public bool IgnoreCPUSampling { get; private set; }
+
+        /// <summary>
+        /// -NoCSwitch Ignore Context Switch data
+        /// </summary>
+        public bool IgnoreCSwitchData { get; private set; } 
+
 
         /// <summary>
         /// Create an extract command with given command line switches
@@ -418,6 +432,12 @@ namespace ETWAnalyzer.Commands
                     case ChildArg: // -child
                         IsChildProcess = true;
                         break;
+                    case NoSampling:
+                        IgnoreCPUSampling = true;
+                        break;
+                    case NoCSwitch:
+                        IgnoreCSwitchData = true;
+                        break;
                     case AllCPUArg:   // -allcpu
                         ExtractAllCPUData = true;
                         break;
@@ -493,7 +513,7 @@ namespace ETWAnalyzer.Commands
             }
 
             ConfigureExtractors(Extractors, myProcessingActionList);
-            SetExtractorFilters(Extractors, ExtractAllCPUData, DisableExceptionFilter, TimelineDataExtractionIntervalS, Concurrency, NoReady);
+            SetExtractorFilters(Extractors, ExtractAllCPUData, DisableExceptionFilter, TimelineDataExtractionIntervalS, Concurrency, NoReady, IgnoreCPUSampling, IgnoreCSwitchData);
 
         }
 
@@ -568,7 +588,7 @@ namespace ETWAnalyzer.Commands
             }
         }
 
-        static void SetExtractorFilters(List<ExtractorBase> extractors, bool extractAllCpuData, bool disableExceptionFilter, float? timelineExtractionInterval, int ?concurrency, bool noReady)
+        static void SetExtractorFilters(List<ExtractorBase> extractors, bool extractAllCpuData, bool disableExceptionFilter, float? timelineExtractionInterval, int ?concurrency, bool noReady, bool noSampling, bool noCSwitch)
         {
             var cpu = extractors.OfType<CPUExtractor>().SingleOrDefault();
             if (cpu != null)
@@ -576,6 +596,8 @@ namespace ETWAnalyzer.Commands
                 cpu.ExtractAllCPUData = extractAllCpuData;
                 cpu.Concurrency = concurrency;
                 cpu.NoReady = noReady;
+                cpu.NoSampling = noSampling;
+                cpu.NoCSwitch = noCSwitch;
                 cpu.TimelineDataExtractionIntervalS = timelineExtractionInterval;
             }
 
@@ -583,6 +605,8 @@ namespace ETWAnalyzer.Commands
             if( stacktag != null)
             {
                 stacktag.Concurrency = concurrency;
+                stacktag.NoSampling = noSampling;
+                stacktag.NoCSwitch = noCSwitch;
             }
 
             var exception = extractors.OfType<ExceptionExtractor>().SingleOrDefault();

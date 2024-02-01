@@ -184,7 +184,7 @@ namespace ETWAnalyzer_uTest.EventDump
                 DummyMethod,
             };
 
-            extract.CPU = new CPUStats(null, new CPUPerProcessMethodList()
+            extract.CPU = new CPUStats(null, null, new CPUPerProcessMethodList()
             {
                 MethodStatsPerProcess = new List<MethodsByProcess>
                 {
@@ -212,6 +212,7 @@ namespace ETWAnalyzer_uTest.EventDump
             ProcessName = "cmd.exe",
             CmdLine = "hi",
             StartTime = new DateTimeOffset(1, 1, 1, 0, 2, 0, TimeSpan.Zero),
+            EndTime = DateTimeOffset.MaxValue,
             IsNew = true,
         };
 
@@ -223,6 +224,7 @@ namespace ETWAnalyzer_uTest.EventDump
             ProcessName = "2222.exe",
             CmdLine = "hi",
             StartTime = new DateTimeOffset(1, 1, 1, 0, 1, 0, TimeSpan.Zero),
+            EndTime = DateTimeOffset.MaxValue,
             IsNew = true,
         };
         static readonly ProcessKey myCmdProcessKey2 = myCmdProcess2.ToProcessKey();
@@ -266,6 +268,7 @@ namespace ETWAnalyzer_uTest.EventDump
                 new DumpCPUMethod.MatchData
                 {
                     CPUMs = 15000,
+                    ProcessPriority = 8.0f,
                     WaitMs = 900,
                     ReadyMs = 40,
                     Method = "Wait900MsMethod_15000msCPU",
@@ -277,6 +280,7 @@ namespace ETWAnalyzer_uTest.EventDump
                 new DumpCPUMethod.MatchData
                 {
                     CPUMs = 1000,
+                    ProcessPriority= 8.0f,
                     WaitMs = 5000,
                     ReadyMs = 100,
                     Method = "Wait5000MsMethod_1000msCPU",
@@ -855,6 +859,11 @@ namespace ETWAnalyzer_uTest.EventDump
                         { proc1, 5000 },
                         { proc2, 6000 },
                     },
+                    new Dictionary<ETWProcessIndex, float>
+                    {
+                        { (ETWProcessIndex) 0, 8.0f},
+                        { (ETWProcessIndex) 1, 6.0f},
+                    },
                     methodList,
                     null,
                     null, 
@@ -868,12 +877,13 @@ namespace ETWAnalyzer_uTest.EventDump
 
 
        [Fact]
-        public void TotalMode_Not_SetMeans_It_Is_Off_CPU_Summary()
+        public void TotalMode_Not_SetMeans_It_Is_Off_CPU_NoPriority_Summary()
         {
             using ExceptionalPrinter redirect = new(myWriter,true);
             using CultureSwitcher invariant = new();
 
             DumpCPUMethod dumper = new();
+            dumper.NoPriorityDetails = true;    
             dumper.ShowTotal = null;
 
             List<DumpCPUMethod.MatchData> matches = new();
@@ -894,6 +904,33 @@ namespace ETWAnalyzer_uTest.EventDump
             Assert.Equal("\t    6,000 ms test2.exe(2000)        ", lines[3]);
         }
 
+        [Fact]
+        public void TotalMode_Not_SetMeans_It_Is_Off_CPU_Summary()
+        {
+            using ExceptionalPrinter redirect = new(myWriter, true);
+            using CultureSwitcher invariant = new();
+
+            DumpCPUMethod dumper = new();
+            dumper.ShowTotal = null;
+
+            List<DumpCPUMethod.MatchData> matches = new();
+
+            List<TestDataFile> files = GetTestData();
+
+            foreach (var file in files)
+            {
+                dumper.AddAndPrintTotalStats(matches, file);
+            }
+
+            redirect.Flush();
+            var lines = redirect.GetSingleLines();
+            Assert.Equal(4, lines.Count);
+            Assert.Equal("\t      CPU ms Priority Process Name        ", lines[0]);
+            Assert.Equal("1/1/2000 12:00:00 AM    ", lines[1]);
+            Assert.Equal("\t    5,000 ms      8.0 test1.exe(1024)        ", lines[2]);
+            Assert.Equal("\t    6,000 ms      6.0 test2.exe(2000)        ", lines[3]);
+        }
+
 
         [Fact]
         public void TotalMode_Total_CPU_Summary()
@@ -901,11 +938,12 @@ namespace ETWAnalyzer_uTest.EventDump
             using ExceptionalPrinter redirect = new(myWriter, true);
             using CultureSwitcher invariant = new();
 
-            DumpCPUMethod dumper = new();
-            // prevent parsing random json files in test directory
-            dumper.FileOrDirectoryQueries = new List<string> { "dummy" };
-
-            dumper.ShowTotal = TotalModes.Total;
+            DumpCPUMethod dumper = new()
+            {
+                // prevent parsing random json files in test directory
+                FileOrDirectoryQueries = new List<string> { "dummy" },
+                ShowTotal = TotalModes.Total,
+            };
 
             List<DumpCPUMethod.MatchData> matches = new();
 
@@ -926,15 +964,18 @@ namespace ETWAnalyzer_uTest.EventDump
 
 
         [Fact]
-        public void TotalMode_Process_CPU_Summary()
+        public void TotalMode_Process_CPU_NoPriority_Summary()
         {
             using ExceptionalPrinter redirect = new(myWriter, true);
             using CultureSwitcher invariant = new();
 
-            DumpCPUMethod dumper = new();
-            // prevent parsing random json files in test directory
-            dumper.FileOrDirectoryQueries = new List<string> { "dummy" };
-            dumper.ShowTotal = TotalModes.Process;
+            DumpCPUMethod dumper = new()
+            {
+                // prevent parsing random json files in test directory
+                FileOrDirectoryQueries = new List<string> { "dummy" },
+                ShowTotal = TotalModes.Process,
+                NoPriorityDetails=true,
+            };
 
             List<DumpCPUMethod.MatchData> matches = new();
 
@@ -953,6 +994,39 @@ namespace ETWAnalyzer_uTest.EventDump
             Assert.Equal("1/1/2000 12:00:00 AM    CPU 11,000 ms  ", lines[1]);
             Assert.Equal("\t    5,000 ms test1.exe(1024)        ",  lines[2]);
             Assert.Equal("\t    6,000 ms test2.exe(2000)        ",  lines[3]);
+        }
+
+        [Fact]
+        public void TotalMode_Process_CPU_Summary()
+        {
+            using ExceptionalPrinter redirect = new(myWriter, true);
+            using CultureSwitcher invariant = new();
+
+            DumpCPUMethod dumper = new()
+            {
+                // prevent parsing random json files in test directory
+                FileOrDirectoryQueries = new List<string> { "dummy" },
+                ShowTotal = TotalModes.Process,
+            };
+
+
+            List<DumpCPUMethod.MatchData> matches = new();
+
+            List<TestDataFile> files = GetTestData();
+
+            foreach (var file in files)
+            {
+                dumper.AddAndPrintTotalStats(matches, file);
+            }
+
+            redirect.Flush();
+            var lines = redirect.GetSingleLines();
+
+            Assert.Equal(4, lines.Count);
+            Assert.Equal("\t      CPU ms Priority Process Name        ", lines[0]);
+            Assert.Equal("1/1/2000 12:00:00 AM    CPU 11,000 ms  ", lines[1]);
+            Assert.Equal("\t    5,000 ms      8.0 test1.exe(1024)        ", lines[2]);
+            Assert.Equal("\t    6,000 ms      6.0 test2.exe(2000)        ", lines[3]);
         }
 
         [Fact]
@@ -978,7 +1052,7 @@ namespace ETWAnalyzer_uTest.EventDump
 
 
             Assert.Equal(14, lines.Count);
-            Assert.Equal("         CPU ms       Wait msMethod",                    lines[0]);
+            Assert.Equal("         CPU ms       Wait ms Method",                    lines[0]);
             Assert.Equal("1/1/0500 12:00:00 AM   File3 ",                             lines[1]);
             Assert.Equal("   2222.exe(2222) + hi",                                      lines[2]);
             Assert.Equal("           1 ms          1 ms Wait1MsMethod_1msCPU ",       lines[3]);
@@ -1036,7 +1110,7 @@ namespace ETWAnalyzer_uTest.EventDump
 
 
             Assert.Equal(15, lines.Count);
-            Assert.Equal("         CPU ms       Wait msMethod"                                                          ,lines[0]);
+            Assert.Equal("         CPU ms       Wait ms Method"                                                          ,lines[0]);
             Assert.Equal("1/1/0500 12:00:00 AM    CPU            2 ms Wait            2 ms Total            4 ms File3 ", lines[1]);
             Assert.Equal("   CPU            1 ms Wait:            1 ms Total:            2 ms 2222.exe(2222) + hi"        , lines[2]);
             Assert.Equal("           1 ms          1 ms Wait1MsMethod_1msCPU "                                          , lines[3]);
@@ -1081,6 +1155,7 @@ namespace ETWAnalyzer_uTest.EventDump
 
             DumpCPUMethod dumper = new()
             {
+                NoPriorityDetails =true,
                 FileOrDirectoryQueries = new List<string> { "dummy" },
                 ProcessFormatOption = DumpBase.TimeFormats.s,
                 SortOrder = SortOrders.StartTime,
@@ -1109,6 +1184,33 @@ namespace ETWAnalyzer_uTest.EventDump
 
             DumpCPUMethod dumper = new()
             {
+                FileOrDirectoryQueries = new List<string> { "dummy" },
+                ProcessFormatOption = DumpBase.TimeFormats.s,
+            };
+
+
+            Assert.True(dumper.IsProcessTotalMode);
+
+            var matches = CreateTestData();
+            dumper.PrintMatches(matches);
+
+            redirect.Flush();
+            var lines = redirect.GetSingleLines();
+
+            Assert.Equal(3, lines.Count);
+            Assert.Equal("\t      CPU ms Priority Process Name        ", lines[0]);
+            Assert.Equal("\t   16,001 ms      8.0 2222.exe(2222)       +60.000 hi  ", lines[2]);
+        }
+
+        [Fact]
+        public void CPU_ProcessTotalMode_NoPriority_SortsByCPU()
+        {
+            using ExceptionalPrinter redirect = new(myWriter, true);
+            using CultureSwitcher invariant = new();
+
+            DumpCPUMethod dumper = new()
+            {
+                NoPriorityDetails = true,
                 FileOrDirectoryQueries = new List<string> { "dummy" },
                 ProcessFormatOption = DumpBase.TimeFormats.s,
             };
@@ -1158,7 +1260,7 @@ namespace ETWAnalyzer_uTest.EventDump
                     {
                         { myCmdProcess, 7 },
                         { myCmdProcess2, 16001 },
-                    }, null, null, null, null),
+                    }, new Dictionary<ETWProcessIndex, float>(), null, null, null, null),
 
             };
 
@@ -1202,7 +1304,7 @@ namespace ETWAnalyzer_uTest.EventDump
                     {
                         { myCmdProcess, 7 },
                         { myCmdProcess2, 16001 },
-                    }, null, null, null, null),
+                    }, null, null, null, null, null),
 
             };
 

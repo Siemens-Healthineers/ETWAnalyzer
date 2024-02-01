@@ -29,6 +29,28 @@ You want to contribute, miss specific data, or want to add your specific dump co
 ## Documentation
 See [Documentation Folder in Repo](https://github.com/Siemens-Healthineers/ETWAnalyzer/tree/2.5.10.0/ETWAnalyzer/Documentation)
 
+## Dump Commands
+- [CPU](ETWAnalyzer/Documentation/DumpCPUCommand.md) 
+- [CPU Extended](ETWAnalyzer/Documentation/DumpCPUExtended.md) 
+- [Disk](ETWAnalyzer/Documentation/DumpDiskCommand.md) 
+- [Dns](ETWAnalyzer/Documentation/DumpDNSCommand.md)
+- [Exception](ETWAnalyzer/Documentation/DumpExceptionCommand.md)
+- [File](ETWAnalyzer/Documentation/DumpFileCommand.md) 
+- [LBR](ETWAnalyzer/Documentation/DumpLBRCommand.md)
+- [Mark](ETWAnalyzer/Documentation/DumpMarkCommand.md)
+- [Memory](ETWAnalyzer/Documentation/DumpMemoryCommand.md) 
+- [PMC](ETWAnalyzer/Documentation/DumpPMCCommand.md)
+- [Power](ETWAnalyzer/Documentation/DumpPower.md)
+- [Process](ETWAnalyzer/Documentation/DumpProcessCommand.md)  
+- [Stats](ETWAnalyzer/Documentation/StatsCommand.md)
+- [TCP](ETWAnalyzer/Documentation/DumpTCPCommand.md)
+- [TestRun](ETWAnalyzer/Documentation/DumpTestRunCommand.md)
+- [ThreadPool](ETWAnalyzer/Documentation/DumpThreadPoolCommand.md) 
+- [Version](ETWAnalyzer/Documentation/DumpVersionCommand.md)
+
+They all support -filedir/-fd and an extensive command line help what you can dump from the extracted data. 
+
+
 ## Data Generation
 The easiest way to get ETW data is to install [ETWController](https://github.com/Alois-xx/etwcontroller) which comes with predefined WPR profiles. 
 ETWController supports
@@ -48,26 +70,8 @@ ETWAnalyzer -extract all -fd c:\Cases\Failure\*.7z -keepTemp -symserver MS
  - [Build Profiling At Scale At Github](ETWAnalyzer/Documentation/BuildProfiling.md)
 
 ## Data Extraction
-Data extraction is done for one or a directory of ETL files. Zipped ETL files are extracted. By default 75% of all cores are used.
-Normally you would want to use all builtin extractors which include 
-
-
-| Extractor  | What is extracted from ETL Into Json? |
-| ------------- | ------------- |
-| All  | Include all extractors  |
-| Default  | Include all extractors except File  |
-| CPU|CPU consumption of all proceses part of the recording. CPU Sampling (*PROFILE*) and/or Context Switch tracing (*CSWITCH*) data with stacks must be present. |
-| Stacktag | Get from all processes the CPU call stack summary by the WPA stacktag names. Same recording settings as for CPU are needed. |
-| Memory| Get workingset/committed memory machine wide and of all processes at trace start and a second time at trace end. *MEMINFO_WS* must be present. |
-| Exception|Get all .NET Exception Messages, Type and their call stacks when present with Process,ThreadId and TimeStamp. The *Microsoft-Windows-DotNETRuntime* ETW provider with *ExceptionKeyword 0x8000* and stacks must be present. |
-| Disk| Disk IO summary and a per file summary of read/write/flush disk service times. *DISK_IO* data must be present in trace to get this data.|
-| File| Open/Close/Read/Write summary of all accessed files per process. The ETL file must contain *FILEIO* data.|
-| Module| Dump all loaded modules with file path and version. *LOADER* data must be present in trace. |
-| Frequency | Get sampled CPU frequency data and calculate CPU consumption/average frequencies for E and P Cores per method. *Microsoft-Windows-Kernel-Processor-Power* and *Microsoft-Windows-Kernel-Power* needs to be enabled.  |
-| Power     | Extract Power Plan settings. A capture state needs to be executed for *Microsoft-Windows-Kernel-Processor-Power* provider to get data. |
-| PMC      | Extract CPU cache misses, branch mispredictions. This reads low level CPU performance data. Additionally LBR (Last Branch Record) traces are processed to estimate call counts without the need to instrument any code. The ETL file must have enabled PMC tracing in counting mode or LBR (Last Branch Record) tracing. To enable see [PMC Help](https://github.com/Siemens-Healthineers/ETWAnalyzer/blob/main/ETWAnalyzer/Documentation/DumpPMCCommand.md). |
-| DNS      | Extract DNS requests and their timing. *Microsoft-Windows-DNS-Client* provider needs to be enabled along with *PROC_THREAD*. |
-| TCP      | Extract TCP connection metrics and retransmision statistics. *Microsoft-Windows-TCPIP* provider needs to be enabled along with *PROC_THREAD*. |
+Data extraction is done for one or a directory of ETL files. Zipped ETL files are also extracted. By default 75% of all cores are used.
+See [Extract](ETWAnalyzer/Documentation/ExtractCommand.md) for more information.
 
 ### Example
 
@@ -87,7 +91,7 @@ ETWAnalyzer %f% -dump CPU -topN 1 -methods * -sortby stackdepth -MinMaxCPUMs 100
 ETWAnalyzer %f% -dump CPU -topN 1 -methods * -sortby stackdepth -MinMaxCPUMs 1000 -includedll -threadcount
 ETWAnalyzer %f% -dump CPU -topN 1 -methods * -sortby stackdepth -MinMaxCPUMs 1000 -FirstLastDuration s s
 ETWAnalyzer %f% -dump Stats -Properties SessionDurations
-```
+``` 
 
 This shows a Microsoft Bug at work while some serialization performance test was executed.
 
@@ -98,24 +102,33 @@ After extraction from a > 600 MB input file a small ca. 6 MB file in the output 
 
 ETWAnalyzer will query all files in the current directory if you do not use -filedir/-fd xxx.  
 The first query would be to check on which machine with how much memory, CPU and Windows version it was running. 
-
+```
+set f=-fd c:\Temp\C:\Temp\Extract\ZScaler_Download_Slow_100KB_Over100MBit_MouseLags
+EtwAnalyzer %f% -dump Stats 
+```
 ![alt text](ETWAnalyzer/Documentation/Images/DumpStatsCommand.png "Dump Stats")
 
 If you have a directory of files you can limit the output to specific properties with e.g. *-Properties MemorySizeMB,OSName,NumberOfProcessors,CPUSpeedMHz,CPUVendor,CPUName* to
 get a quick overview of the machine specs of a bunch of extracted ETL files. 
 
 Now we want to get an overview what the CPU consumption was of the top 9 CPU consumers of that file
-
+```
+EtwAnalyzer %f% -dump CPU -topN 9 
+```
 ![alt text](ETWAnalyzer/Documentation/Images/DumpCPUTop9.png "Dump CPU Top 9")
 
 The mouse was hanging while I was downloading data. At the same time the CPU was fully utilized on my quad core notebook.
 The by far highest CPU consumer was the Windows Kernel which sits in the System process. Lets pick that one and print the top 30 methods.
 
-
+```
+EtwAnalyzer %f% -dump CPU -processName System -TopNMethods 30 
+```
 ![alt text](ETWAnalyzer/Documentation/Images/DumpCPUTop30Methods.png "Dump CPU Top 30 Methods")
 
 To understand the data you need to know that ETWAnalyzer keeps for every method in a process the method inclusive times 
-for CPU and Wait summed accross all threads. CPU timing is extracted from CPU sampling data. Wait times are determined from Context Switch data which signal the time a
+for CPU summed accross all threads. The Wait and Ready time is summed accross all threads but overlapping regions are only counted once.
+This means that the maximum Wait/Ready time can get the recording time when at least one thread was always waiting or in the ready queue.
+CPU timing is extracted from CPU sampling data. Wait/Ready times are determined from Context Switch data which is mainly generated when the
 method was moved off a CPU due to a blocking OS call. That is the reason why Main or other entry point methods for a thread have the highest CPU
 consumption but are not the performance bottleneck. The actual issue is in one of the methods which consume CPU which is not directly visible
 in the extracted data.
@@ -132,7 +145,9 @@ lot of time. Since WPA and ETWAnalyzer support stacktags we can dump the top 10 
 After adding "-stacktags *" to the command line we get all stacktags. If you add "-stacktags * -methods *" all methods and stacktags are printed together in one list.
 
 **Note: There is only one filter named -topNMethods which filters for the overall top CPU consumers for methods and stacktags.**
-
+```
+Etwanalyzer %f% -dump CPU -pn System -StackTags * -TopNMethods 10
+```
 ![alt text](ETWAnalyzer/Documentation/Images/DumpCPUTop10Stacktags.png "Dump CPU Top 10 Stacktags")
 
 
@@ -154,35 +169,18 @@ There you can find the exact patch level of the OS or your application dlls whic
 ETWAnalyzer amends version information to CPU data if you add to **-dump CPU** *-ShowModuleInfo* or *-smi*. That will show besides the method names module version data. 
 If you are not using a console with a high console buffer width the output becomes unreadable due to word wrapping. To better support non wraping consoles
 you can add -Clip to all commands of ETWAnalyzer to prevent wraparound of output. Besides the version we would need the dll which is by default
-not printed. But you can add *-IncludeDll* or *-id* to get besides method names also the dll name. 
+not printed. But you can add *-IncludeDll* or *-id* to get besides method names also the dll name. To get rid of the Ready time we can add *-NoReady*.
 
-![alt text](ETWAnalyzer/Documentation/Images/ETWAnalyzer_ClippedOutput.png "Clipped Output")
+```
+Etwanalyzer %f% -dump CPU -pn System -methods * -MinMaxCPUMs 50s-51s -smi -id -clip -NoReady 
+```
+![alt text](ETWAnalyzer/Documentation/Images/ETWAnalyzer_ClippedOutput.png "Clipped Output") 
 
 That small intro showed some of the key features of ETWAnalyzer. With this tool it is easy to detect patterns in thousands of ETL files which
 was an impossible task with other publicly available tools. If you have performance trending tests it makes a lot of sense to run them with ETW profiling enabled 
 so you can later find systematic deviations with a simple query. Issues which were before that tool 
 too much work to track down are now a simple query. If your test is e.g. 3/30 times 20% slower you can query all tests for common patterns to 
 see if e.g. a running Windows Installer did have an effect to your test execution time or if that did occur in other fast tests as well. 
-
-## Dump Commands
-- [CPU](ETWAnalyzer/Documentation/DumpCPUCommand.md) 
-- [Disk](ETWAnalyzer/Documentation/DumpDiskCommand.md) 
-- [File](ETWAnalyzer/Documentation/DumpFileCommand.md) 
-- [Stats](ETWAnalyzer/Documentation/StatsCommand.md)
-- [Process](ETWAnalyzer/Documentation/DumpProcessCommand.md) 
-- [Memory](ETWAnalyzer/Documentation/DumpMemoryCommand.md) 
-- [Version](ETWAnalyzer/Documentation/DumpVersionCommand.md)
-- [Power](ETWAnalyzer/Documentation/DumpPower.md)
-- [Exception](ETWAnalyzer/Documentation/DumpExceptionCommand.md)
-- [ThreadPool](ETWAnalyzer/Documentation/DumpThreadPoolCommand.md) 
-- [Mark](ETWAnalyzer/Documentation/DumpMarkCommand.md)
-- [TestRun](ETWAnalyzer/Documentation/DumpTestRunCommand.md)
-- [PMC](ETWAnalyzer/Documentation/DumpPMCCommand.md)
-- [LBR](ETWAnalyzer/Documentation/DumpLBRCommand.md)
-- [Dns](ETWAnalyzer/Documentation/DumpDNSCommand.md)
-- [TCP](ETWAnalyzer/Documentation/DumpTCPCommand.md)
-
-They all support -filedir and an extensive command line help what you can dump from the extracted data. 
 
 
 

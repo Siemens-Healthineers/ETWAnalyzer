@@ -168,10 +168,11 @@ namespace ETWAnalyzer.Commands
         "                         -topNMethods dd nn         Include dd most expensive methods/stacktags which consume most CPU in trace. Optional nn skips the first nn lines." + Environment.NewLine +
         "                         -ThreadCount               Show # of unique threads that did execute that method." + Environment.NewLine +
         "                         -ProcessFmt timefmt        Add besides process name start/stop time and duration. See -TimeFmt for available options." + Environment.NewLine +
-        "                         -SortBy [CPU/Wait/CPUWait/CPUWaitReady/ReadyAvg/CSwitchCount/StackDepth/First/Last/TestTime/StartTime] Default method sort order is CPU consumption. Wait sorts by wait time, First/Last sorts by first/last occurrence of method/stacktags." + Environment.NewLine +
+        "                         -SortBy [CPU/Wait/CPUWait/CPUWaitReady/ReadyAvg/CSwitchCount/StackDepth/First/Last/Priority/TestTime/StartTime] Default method sort order is CPU consumption. Wait sorts by wait time, First/Last sorts by first/last occurrence of method/stacktags." + Environment.NewLine +
         "                                                    StackDepth shows hottest methods which consume most CPU but are deepest in the call stack." + Environment.NewLine +
         "                                                    StartTime sorts by process start time to correlate things in the order the processes were started." + Environment.NewLine +   
         "                                                    TestTime can be used to force sort order of files by test time when -ShowTotal is used. When totals are enabled the files are sorted by highest totals." + Environment.NewLine +
+        "                                                    Sorting by process Priority is only applicable when you sort CPU totals without methods. " + Environment.NewLine + 
         "                         -MinMaxCSwitchCount xx-yy or xx  Filter by context switch count." + Environment.NewLine +
         "                         -MinMaxReadyAvgus xx-yy    Filter by Ready Average time in us." + Environment.NewLine +
         "                         -MinMaxReadyMs xx-yy or xx Only include methods (stacktags have no recorded ready times) with a minimum ready time of [xx, yy] ms." + Environment.NewLine +
@@ -179,7 +180,8 @@ namespace ETWAnalyzer.Commands
         "                         -MinMaxWaitMs xx-yy or xx  Only include methods/stacktags with a minimum wait time of [xx,yy] ms." + Environment.NewLine +
         "                         -Details                   Show additionally Session Id, Ready Average time, Context Switch Count, average CPU frequency per CPU efficiency class and ready percentiles." + Environment.NewLine +
         "                           -Normalize               Normalize CPU time to 100% of CPU frequency. Enables comparison of CPU time independant of the used power profile." + Environment.NewLine +
-        "                           -NoFrequency             When -Details is present do not print average CPU frequency and CPU usage per processor efficiency class (e.g. P/E Cores)." + Environment.NewLine +
+        "                           -NoFrequency             When -Details is present do not print P/E core CPU usage and average frequency." + Environment.NewLine +
+        "                         -NoPriority                Omit process Priority in total cpu mode and when methods are printed in -Details mode." + Environment.NewLine +   
         "                         -NoReady                   Do not print Ready time, average or percentiles (when -Details is used) per method." + Environment.NewLine +
         "                         -Session dd;yy             Filter processes by Windows session id. Multiple filters are separated by ;" + Environment.NewLine +
         "                                                    E.g. dd;dd2 will filter for all dd instances and dd2. The wildcards * and ? are supported for all filter strings." + Environment.NewLine +
@@ -653,6 +655,7 @@ namespace ETWAnalyzer.Commands
             StartTime,
             ReadyAvg,
             CSwitchCount,
+            Priority,
 
             // Process sort order
             StopTime,
@@ -831,6 +834,8 @@ namespace ETWAnalyzer.Commands
         public MinMaxRange<int> MinMaxCSwitch { get; private set; } = new();
         public bool NoReadyDetails { get; private set; }
         public bool NoFrequencyDetails { get; private set; }
+        public bool NoPriorityDetails { get; private set; }
+        
         public bool Normalize { get; private set; }
 
 
@@ -1450,6 +1455,9 @@ namespace ETWAnalyzer.Commands
                     case "-nofrequency":
                         NoFrequencyDetails = true;
                         break;
+                    case "-nopriority":
+                        NoPriorityDetails = true;
+                        break;
                     case "-normalize":
                         Normalize = true;
                         break;
@@ -1811,6 +1819,7 @@ namespace ETWAnalyzer.Commands
                             MinMaxReadyMs = MinMaxReadyMs,
                             NoReadyDetails = NoReadyDetails,
                             NoFrequencyDetails = NoFrequencyDetails,
+                            NoPriorityDetails = NoPriorityDetails,
                             Normalize = Normalize,
                             MinMaxReadyAverageUs = MinMaxReadyAverageUs,
                             MinMaxCSwitch = MinMaxCSwitch,

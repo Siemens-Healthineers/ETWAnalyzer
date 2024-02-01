@@ -47,7 +47,7 @@ namespace ETWAnalyzer.EventDump
         /// <summary>
         /// Key is filter string, value is filter method 
         /// </summary>
-        public KeyValuePair<string, Func<string,bool>> StackTagFilter { get; internal set; }
+        public KeyValuePair<string, Func<string, bool>> StackTagFilter { get; internal set; }
 
         /// <summary>
         /// When true we print only process total CPU information
@@ -70,7 +70,7 @@ namespace ETWAnalyzer.EventDump
         /// <summary>
         /// Do not indent by process but show process name on same line as method
         /// </summary>
-        public bool ShowDetailsOnMethodLine { get; internal set; }  
+        public bool ShowDetailsOnMethodLine { get; internal set; }
 
         /// <summary>
         /// Omit command line in console and if configured in CSV output to reduce CSV size which is one of the largest string per line
@@ -174,6 +174,11 @@ namespace ETWAnalyzer.EventDump
         /// </summary>
         public bool Normalize { get; internal set; }
 
+        /// <summary>
+        /// Omit priority in output 
+        /// </summary>
+        public bool NoPriorityDetails { get; internal set; }
+
 
 
         /// <summary>
@@ -202,7 +207,13 @@ namespace ETWAnalyzer.EventDump
         /// <summary>
         /// Total CPU Header CPU column width
         /// </summary>
-        const int CPUTotal_CPUColumnWidth = 9; 
+        const int CPUTotal_CPUColumnWidth = 9;
+
+        /// <summary>
+        /// Total CPU column width
+        /// </summary>
+        const int CPUtotal_PriorityColumnWidth = 8;
+
 
         /// <summary>
         /// Total CPU Header Process Name column width
@@ -251,6 +262,8 @@ namespace ETWAnalyzer.EventDump
             public ICPUUsage[] CPUUsage { get; internal set; }
             public IReadOnlyDictionary<CPUNumber, ICPUTopology> Topology { get; internal set; }
             public IReadyTimes ReadyDetails { get; internal set; }
+            public float ProcessPriority { get; internal set; }
+            public bool HasFrequencyData { get; internal set; }
 
             public override string ToString()
             {
@@ -265,7 +278,7 @@ namespace ETWAnalyzer.EventDump
 
             List<MatchData> matches = new();
 
-            foreach(var test in testsOrderedByTime)
+            foreach (var test in testsOrderedByTime)
             {
                 using (test.Value) // Release deserialized ETWExtract to keep memory footprint in check
                 {
@@ -279,7 +292,7 @@ namespace ETWAnalyzer.EventDump
                         {
                             double zeroS = GetZeroTimeInS(file.Extract);
                             // by default print only methods
-                            if( (MethodFilter.Key == null && StackTagFilter.Key == null) || MethodFilter.Key != null)
+                            if ((MethodFilter.Key == null && StackTagFilter.Key == null) || MethodFilter.Key != null)
                             {
                                 AddPerMethodStats(matches, file, zeroS);
                             }
@@ -325,7 +338,7 @@ namespace ETWAnalyzer.EventDump
 
         private void AddMatchingStackTags(List<MatchData> matches, TestDataFile file, IProcessStackTags tags, double zeroTimeS)
         {
-            if( tags == null)
+            if (tags == null)
             {
                 return;
             }
@@ -366,8 +379,8 @@ namespace ETWAnalyzer.EventDump
                             ProcessAndPid = process.GetProcessWithId(UsePrettyProcessName),
                             ProcessKey = process.ToProcessKey(),
                             SourceFile = file.JsonExtractFileWhenPresent,
-                            FirstCallTime = stacktag.FirstOccurence.AddSeconds(-1.0d* zeroTimeS),
-                            LastCallTime =  stacktag.FirstOccurence.AddSeconds(-1.0d* zeroTimeS) + stacktag.FirstLastOccurenceDuration,
+                            FirstCallTime = stacktag.FirstOccurence.AddSeconds(-1.0d * zeroTimeS),
+                            LastCallTime = stacktag.FirstOccurence.AddSeconds(-1.0d * zeroTimeS) + stacktag.FirstLastOccurenceDuration,
                             FirstLastCallDurationS = (float)stacktag.FirstLastOccurenceDuration.TotalSeconds,
                             SessionStart = file.Extract.SessionStart,
                             Process = process,
@@ -382,7 +395,7 @@ namespace ETWAnalyzer.EventDump
 
         private void AddPerMethodStats(List<MatchData> matches, TestDataFile file, double zeroTimeS)
         {
-            if( file.Extract?.CPU?.PerProcessMethodCostsInclusive == null)
+            if (file.Extract?.CPU?.PerProcessMethodCostsInclusive == null)
             {
                 ColorConsole.WriteWarning($"Warning: File {file.JsonExtractFileWhenPresent} contains no CPU data.");
                 return;
@@ -392,7 +405,7 @@ namespace ETWAnalyzer.EventDump
 
             foreach (var perProcess in file.Extract.CPU.PerProcessMethodCostsInclusive.MethodStatsPerProcess)
             {
-                if ( !IsMatchingProcessAndCmdLine(file, perProcess.Process))
+                if (!IsMatchingProcessAndCmdLine(file, perProcess.Process))
                 {
                     continue;
                 }
@@ -403,35 +416,40 @@ namespace ETWAnalyzer.EventDump
 
                     if (process != null)
                     {
-                        
-                        DateTimeOffset lastCallTime = file.Extract.ConvertTraceRelativeToAbsoluteTime (methodCost.LastOccurenceInSecond  - (float) zeroTimeS );
-                        DateTimeOffset firstCallTime = file.Extract.ConvertTraceRelativeToAbsoluteTime(methodCost.FirstOccurenceInSecond - (float) zeroTimeS );
+
+                        DateTimeOffset lastCallTime = file.Extract.ConvertTraceRelativeToAbsoluteTime(methodCost.LastOccurenceInSecond - (float)zeroTimeS);
+                        DateTimeOffset firstCallTime = file.Extract.ConvertTraceRelativeToAbsoluteTime(methodCost.FirstOccurenceInSecond - (float)zeroTimeS);
                         ModuleDefinition module = null;
                         ModuleDefinition exeModule = null;
                         Driver driver = null;
 
-                        if (ShowModuleInfo && file.Extract.Modules != null )
+                        if (ShowModuleInfo && file.Extract.Modules != null)
                         {
                             driver = Drivers.Default.TryGetDriverForModule(methodCost.Module);
                             module = file.Extract.Modules.FindModule(methodCost.Module, process);
                             exeModule = file.Extract.Modules.FindModule(process.ProcessName, process);
                         }
 
-                        if( !IsMatchingModule(module) ) // filter by module string
+                        if (!IsMatchingModule(module)) // filter by module string
                         {
                             continue;
                         }
 
                         ICPUUsage[] cpuUsage = null;
                         IReadyTimes readyTimes = null;
+                        float prio = 0.0f;
+                        bool hasFrequencyData = false;
 
-                        if ( perProcess.Process.Pid >  WindowsConstants.IdleProcessId)
+                        if (perProcess.Process.Pid > WindowsConstants.IdleProcessId)
                         {
                             ETWProcessIndex idx = file.Extract.GetProcessIndexByPID(perProcess.Process.Pid, perProcess.Process.StartTime);
+                            file.Extract?.CPU?.PerProcessAvgCPUPriority?.TryGetValue(idx, out prio); // get process priority
+
                             ProcessMethodIdx procMethod = idx.Create(methodCost.MethodIdx);
-                            if ( file.Extract.CPU?.ExtendedCPUMetrics?.MethodIndexToCPUMethodData?.ContainsKey(procMethod) == true )
+                            if (file.Extract.CPU?.ExtendedCPUMetrics?.MethodIndexToCPUMethodData?.ContainsKey(procMethod) == true)
                             {
                                 cpuUsage = file.Extract.CPU.ExtendedCPUMetrics.MethodIndexToCPUMethodData[procMethod].CPUConsumption;
+                                hasFrequencyData = file.Extract.CPU.ExtendedCPUMetrics.HasFrequencyData;
                             }
 
                             IReadOnlyDictionary<ProcessMethodIdx, ICPUMethodData> extendedCPUMetrics = file?.Extract?.CPU?.ExtendedCPUMetrics?.MethodIndexToCPUMethodData;
@@ -441,6 +459,9 @@ namespace ETWAnalyzer.EventDump
                                 readyTimes = extendedCPUData.ReadyMetrics;
                             }
                         }
+
+
+
 
                         matches.Add(new MatchData
                         {
@@ -453,9 +474,11 @@ namespace ETWAnalyzer.EventDump
                             WaitMs = methodCost.WaitMs,
                             ReadyMs = methodCost.ReadyMs,
                             ReadyAverageUs = methodCost.ReadyAverageUs,
+                            ProcessPriority = prio,
                             ContextSwitchCount = methodCost.ContextSwitchCount,
                             Threads = methodCost.Threads,
-                            CPUUsage = cpuUsage,   
+                            CPUUsage = cpuUsage,
+                            HasFrequencyData = hasFrequencyData,
                             Topology = file?.Extract?.CPU?.Topology,
                             ReadyDetails = readyTimes,
                             HasCPUSamplingData = file.Extract.CPU.PerProcessMethodCostsInclusive.HasCPUSamplingData,
@@ -475,7 +498,7 @@ namespace ETWAnalyzer.EventDump
                             ExeModule = exeModule,
                             Driver = driver,
                             ZeroTimeS = zeroTimeS,
-                        }) ;
+                        });
                     }
                 }
             }
@@ -498,7 +521,7 @@ namespace ETWAnalyzer.EventDump
             bool ProcessFilter(KeyValuePair<ProcessKey, uint> procCPU)
             {
                 bool lret = true;
-                if( !IsMatchingProcessAndCmdLine(file, procCPU.Key))
+                if (!IsMatchingProcessAndCmdLine(file, procCPU.Key))
                 {
                     lret = false;
                 }
@@ -512,7 +535,7 @@ namespace ETWAnalyzer.EventDump
                     }
                     else
                     {
-                        if( process.ProcessID == 0) // exclude idle process
+                        if (process.ProcessID == 0) // exclude DeepSleep process
                         {
                             lret = false;
                         }
@@ -520,7 +543,7 @@ namespace ETWAnalyzer.EventDump
 
                 }
 
-                if( lret && !MinMaxCPUMs.IsWithin( (int) procCPU.Value) )
+                if (lret && !MinMaxCPUMs.IsWithin((int)procCPU.Value))
                 {
                     lret = false;
                 }
@@ -532,6 +555,7 @@ namespace ETWAnalyzer.EventDump
             // Then we skip the first N entries to show only the last TopNSafe results which are the highest values
 
             Dictionary<ProcessKey, ETWProcess> lookupCache = new();
+            Dictionary<ProcessKey, ETWProcessIndex> indexCache = new();
 
             ETWProcess Lookup(ProcessKey key)
             {
@@ -544,11 +568,26 @@ namespace ETWAnalyzer.EventDump
                 return process;
             }
 
+            ETWProcessIndex LookupIndex(ProcessKey key)
+            {
+                if (!indexCache.TryGetValue(key, out ETWProcessIndex processIndex))
+                {
+                    processIndex = file.Extract.GetProcessIndexByPidAtTime(key.Pid, key.StartTime);
+                    indexCache[key] = processIndex;
+                }
+                return processIndex;
+            }
+
             List<MatchData> filtered = file.Extract.CPU.PerProcessCPUConsumptionInMs.Where(ProcessFilter).Select(x =>
             {
                 ETWProcess process = Lookup(x.Key);
-
                 if (process == null)
+                {
+                    return null;
+                }
+
+                ETWProcessIndex index = LookupIndex(x.Key);
+                if (index == ETWProcessIndex.Invalid)
                 {
                     return null;
                 }
@@ -560,12 +599,16 @@ namespace ETWAnalyzer.EventDump
                     return null;
                 }
 
+                float prio = 0.0f;
+                file.Extract?.CPU.PerProcessAvgCPUPriority?.TryGetValue(index, out prio);
+
                 return new MatchData
                 {
                     TestName = file.TestName,
                     PerformedAt = file.PerformedAt,
                     DurationInMs = file.DurationInMs,
                     CPUMs = x.Value,
+                    ProcessPriority = prio,
                     BaseLine = file.Extract.MainModuleVersion != null ? file.Extract.MainModuleVersion.ToString() : "",
                     Method = "",
                     ProcessAndPid = process.GetProcessWithId(UsePrettyProcessName),
@@ -576,7 +619,7 @@ namespace ETWAnalyzer.EventDump
                     Module = module,
 
                 };
-            }).Where(x=> x!=null).SortAscendingGetTopNLast(SortBySortOrder, null, TopN).ToList();
+            }).Where(x => x != null).SortAscendingGetTopNLast(SortBySortOrder, null, TopN).ToList();
 
 
             PrintTotalCPUHeaderOnce();
@@ -584,21 +627,21 @@ namespace ETWAnalyzer.EventDump
             if (!Merge)
             {
                 string CpuString = "";
-                if( (ShowTotal != null && ShowTotal != TotalModes.None))
+                if ((ShowTotal != null && ShowTotal != TotalModes.None))
                 {
-                    long cpuTotal = filtered.Select(x => (long) x.CPUMs).Sum();
+                    long cpuTotal = filtered.Select(x => (long)x.CPUMs).Sum();
                     CpuString = $" [green]CPU {cpuTotal:N0} ms[/green] ";
                 }
                 PrintFileName(file.JsonExtractFileWhenPresent, CpuString, file.PerformedAt, file.Extract.MainModuleVersion?.ToString());
             }
 
-          
+
             foreach (var cpu in filtered)
             {
                 matches.Add(cpu);
-                if (!IsCSVEnabled && !Merge && !(ShowTotal == TotalModes.Total) )
+                if (!IsCSVEnabled && !Merge && !(ShowTotal == TotalModes.Total))
                 {
-                    PrintCPUTotal(cpu.CPUMs, cpu.Process, Path.GetFileNameWithoutExtension(file.FileName), file.Extract.SessionStart, matches[matches.Count-1].Module);
+                    PrintCPUTotal(cpu.CPUMs, cpu.ProcessPriority, cpu.Process, Path.GetFileNameWithoutExtension(file.FileName), file.Extract.SessionStart, matches[matches.Count - 1].Module);
                 }
             }
         }
@@ -608,38 +651,62 @@ namespace ETWAnalyzer.EventDump
             if (!IsCSVEnabled)
             {
                 string cpuHeaderName = "CPU";
+                string priorityHeaderName = ShowTotal == TotalModes.Total || NoPriorityDetails ? "" : "Priority".WithWidth(CPUtotal_PriorityColumnWidth)+" ";
                 string processHeaderName = "Process Name";
-                string sessionHeaderName = ShowDetails ? "Session ": "";
+                string sessionHeaderName = ShowDetails ? "Session " : "";
 
                 if (myCPUTotalHeaderShown == false)
                 {
-                    ColorConsole.WriteEmbeddedColorLine($"\t[Green]{cpuHeaderName.WithWidth(CPUTotal_CPUColumnWidth)} ms[/Green] [yellow]{sessionHeaderName}{processHeaderName.WithWidth(CPUTotal_ProcessNameWidth)}[/yellow]");
+                    ColorConsole.WriteEmbeddedColorLine($"\t[Green]{cpuHeaderName.WithWidth(CPUTotal_CPUColumnWidth)} ms[/Green] [red]{priorityHeaderName}[/red][yellow]{sessionHeaderName}{processHeaderName.WithWidth(CPUTotal_ProcessNameWidth)}[/yellow]");
                     myCPUTotalHeaderShown = true;
                 }
             }
         }
 
-        void PrintCPUTotal(long cpu, ETWProcess process, string  sourceFile, DateTimeOffset sessionStart, ModuleDefinition exeModule)
+        /// <summary>
+        /// Format priority with color when it is greater 8 which is normal, or in a different color when it is below normal
+        /// </summary>
+        /// <param name="priority"></param>
+        /// <param name="width"></param>
+        /// <returns></returns>
+        string FormatPriorityColor(float priority, int width)
+        {
+            if (NoPriorityDetails || priority == 0)
+            {
+                return "";
+            }
+            return priority >= 8.0f ? $"[red]{"F1".WidthFormat(priority, width)}[/red]" : $"[green]{"F1".WidthFormat(priority, width)}[/green]";
+        }
+
+        void PrintCPUTotal(long cpu, float priority, ETWProcess process, string sourceFile, DateTimeOffset sessionStart, ModuleDefinition exeModule)
         {
             string fileName = this.Merge ? $" {sourceFile}" : "";
 
             string cpuStr = cpu.ToString("N0");
 
-            string sessionIdStr = ShowDetails ? $"{process.SessionId, 7} " : "";
+            string sessionIdStr = ShowDetails ? $"{process.SessionId,7} " : "";
 
             string moduleInfo = "";
-            if(exeModule != null)
+            if (exeModule != null)
             {
                 moduleInfo = GetModuleString(exeModule, true);
             }
 
+            string prio = "";
+            if (NoPriorityDetails == false && priority > 0)
+            {
+                prio = FormatPriorityColor(priority, CPUtotal_PriorityColumnWidth) + " ";
+            }
+
+            
+
             if (NoCmdLine)
             {
-                ColorConsole.WriteEmbeddedColorLine($"\t[Green]{cpuStr,CPUTotal_CPUColumnWidth} ms[/Green] [yellow]{process.GetProcessWithId(UsePrettyProcessName),CPUTotal_ProcessNameWidth}{GetProcessTags(process, sessionStart)}[/yellow]{fileName} [red]{moduleInfo}[/red]");
+                ColorConsole.WriteEmbeddedColorLine($"\t[Green]{cpuStr,CPUTotal_CPUColumnWidth} ms[/Green] {prio}[yellow]{process.GetProcessWithId(UsePrettyProcessName),CPUTotal_ProcessNameWidth}{GetProcessTags(process, sessionStart)}[/yellow]{fileName} [red]{moduleInfo}[/red]");
             }
             else
             {
-                ColorConsole.WriteEmbeddedColorLine($"\t[Green]{cpuStr,CPUTotal_CPUColumnWidth} ms[/Green] [yellow]{sessionIdStr}{process.GetProcessWithId(UsePrettyProcessName),CPUTotal_ProcessNameWidth}{GetProcessTags(process, sessionStart)}[/yellow] {process.CommandLineNoExe}", ConsoleColor.DarkCyan, true);
+                ColorConsole.WriteEmbeddedColorLine($"\t[Green]{cpuStr,CPUTotal_CPUColumnWidth} ms[/Green] {prio}[yellow]{sessionIdStr}{process.GetProcessWithId(UsePrettyProcessName),CPUTotal_ProcessNameWidth}{GetProcessTags(process, sessionStart)}[/yellow] {process.CommandLineNoExe}", ConsoleColor.DarkCyan, true);
                 ColorConsole.WriteEmbeddedColorLine($" {fileName} [red]{moduleInfo}[/red]");
             }
         }
@@ -648,7 +715,7 @@ namespace ETWAnalyzer.EventDump
         {
             List<MatchData> printed = new();
 
-            if(IsProcessTotalMode)
+            if (IsProcessTotalMode)
             {
                 ProcessTotalMatches(matches);
             }
@@ -681,11 +748,11 @@ namespace ETWAnalyzer.EventDump
             decimal overallCPUTotal = 0;
             decimal overallWaitTotal = 0;
 
-            (Dictionary<string, FileTotals> fileTotals, 
-             Dictionary<string, Dictionary<ProcessKey,ProcessTotals>> fileProcessTotals ) = GetFileAndProcessTotals(matches);
+            (Dictionary<string, FileTotals> fileTotals,
+             Dictionary<string, Dictionary<ProcessKey, ProcessTotals>> fileProcessTotals) = GetFileAndProcessTotals(matches);
 
             // order files by test time (default) or by totals if enabled
-            List<IGrouping<string,MatchData>> byFileOrdered = matches.GroupBy(GetFileGroupName)
+            List<IGrouping<string, MatchData>> byFileOrdered = matches.GroupBy(GetFileGroupName)
                                                 .OrderBy(CreateFileSorter(fileTotals)).ToList();
 
             foreach (var fileGroup in byFileOrdered)
@@ -709,11 +776,11 @@ namespace ETWAnalyzer.EventDump
                     FileTotals total = fileTotals[GetFileGroupName(firstFileGroup)];
                     overallCPUTotal += total.CPUMs;
                     overallWaitTotal += total.WaitMs;
-                   
+
                     fileTotalString = $" [green]CPU {"N0".WidthFormat(total.CPUMs, totalWidth)} ms[/green] " +
-                                      (waitFormatter.Header == "" ? ""  : $"[yellow]Wait {"N0".WidthFormat(total.WaitMs, totalWidth)} ms[/yellow] ")+
+                                      (waitFormatter.Header == "" ? "" : $"[yellow]Wait {"N0".WidthFormat(total.WaitMs, totalWidth)} ms[/yellow] ") +
                                       (readyFormatter.Header == "" ? "" : $"[red]Ready: {"N0".WidthFormat(total.ReadyMs, totalWidth)} ms[/red] ") +
-                                      ( (waitFormatter.Header == "" && readyFormatter.Header == "") ? "" : $"[magenta]Total {"N0".WidthFormat(total.GetTotal(SortOrder), totalWidth)} ms[/magenta] ");
+                                      ((waitFormatter.Header == "" && readyFormatter.Header == "") ? "" : $"[magenta]Total {"N0".WidthFormat(total.GetTotal(SortOrder), totalWidth)} ms[/magenta] ");
                 }
 
                 PrintFileName(firstFileGroup.SourceFile, fileTotalString, firstFileGroup.PerformedAt, firstFileGroup.BaseLine);
@@ -734,12 +801,12 @@ namespace ETWAnalyzer.EventDump
                     if (String.IsNullOrEmpty(CSVFile) && !ShowDetailsOnMethodLine)
                     {
                         string processTotalString = "";
-                        if(ShowTotal == TotalModes.Process || ShowTotal == TotalModes.Method)
+                        if (ShowTotal == TotalModes.Process || ShowTotal == TotalModes.Method)
                         {
                             ProcessTotals processTotals = fileProcessTotals[GetFileGroupName(firstFileGroup)][firstProcessGroup.ProcessKey];
-                            processTotalString = $"[green]CPU {"N0".WidthFormat(processTotals.CPUMs, totalWidth)} ms[/green] "+
-                                                 (waitFormatter.Header == "" ? "" :  $"[yellow]Wait: {"N0".WidthFormat(processTotals.WaitMs, totalWidth)} ms[/yellow] ")+
-                                                 (readyFormatter.Header == "" ? "" : $"[red]Ready: {"N0".WidthFormat(processTotals.ReadyMs, totalWidth)} ms[/red] ")+
+                            processTotalString = $"[green]CPU {"N0".WidthFormat(processTotals.CPUMs, totalWidth)} ms[/green] " +
+                                                 (waitFormatter.Header == "" ? "" : $"[yellow]Wait: {"N0".WidthFormat(processTotals.WaitMs, totalWidth)} ms[/yellow] ") +
+                                                 (readyFormatter.Header == "" ? "" : $"[red]Ready: {"N0".WidthFormat(processTotals.ReadyMs, totalWidth)} ms[/red] ") +
                                                  ((waitFormatter.Header == "" && readyFormatter.Header == "") ? "" : $"[magenta]Total: {"N0".WidthFormat(processTotals.GetTotal(SortOrder), totalWidth)} ms[/magenta] ");
                         }
 
@@ -748,7 +815,12 @@ namespace ETWAnalyzer.EventDump
                         ETWProcess process = current.Process;
                         string moduleString = current.ExeModule != null ? " " + GetModuleString(current.ExeModule, true) : "";
 
-                        ColorConsole.WriteEmbeddedColorLine($"   {processTotalString}[grey]{process.GetProcessWithId(UsePrettyProcessName)}{GetProcessTags(process, current.SessionStart.AddSeconds(current.ZeroTimeS))}[/grey] {cmdLine}", ConsoleColor.DarkCyan, true);
+                        string processPriority = "";
+                        if (!NoPriorityDetails && current.ProcessPriority > 0)
+                        {
+                            processPriority = ShowDetails ? $"  Priority: {FormatPriorityColor(current.ProcessPriority, 0)}" : "";
+                        }
+                        ColorConsole.WriteEmbeddedColorLine($"   {processTotalString}[grey]{process.GetProcessWithId(UsePrettyProcessName)}{GetProcessTags(process, current.SessionStart.AddSeconds(current.ZeroTimeS))}[/grey]{processPriority} {cmdLine}", ConsoleColor.DarkCyan, true);
                         ColorConsole.WriteEmbeddedColorLine($"[red]{moduleString}[/red]");
                     }
 
@@ -784,10 +856,10 @@ namespace ETWAnalyzer.EventDump
                                 ColorConsole.WriteEmbeddedColorLine($"{coreFrequencyFormatter.Print(match)}", ConsoleColor.Cyan, true);
                             }
 
-                            if ( readyDetailsFormatter.Header != "" && match.ReadyDetails != null)
+                            if (readyDetailsFormatter.Header != "" && match.ReadyDetails != null)
                             {
-                                Console.WriteLine();
-                                ColorConsole.WriteEmbeddedColorLine($"[red]  {readyDetailsFormatter.Print(match)}[/red]", null, true);
+                                ColorConsole.WriteLine("");
+                                ColorConsole.WriteEmbeddedColorLine($"[red]{readyDetailsFormatter.Print(match)}[/red]", null, true);
                             }
 
 
@@ -820,7 +892,7 @@ namespace ETWAnalyzer.EventDump
 
             if ((ShowTotal != null && ShowTotal != TotalModes.None) && !IsCSVEnabled)
             {
-                string crossFileTotal =  (overallWaitTotal == 0 ? "Total " : $"[magenta]Total {overallCPUTotal + overallWaitTotal:N0} ms[/magenta] ") +
+                string crossFileTotal = (overallWaitTotal == 0 ? "Total " : $"[magenta]Total {overallCPUTotal + overallWaitTotal:N0} ms[/magenta] ") +
                                                                        $"[green]CPU {overallCPUTotal:N0} ms[/green] " +
                                          (overallWaitTotal == 0 ? "" : $"[yellow]Wait {overallWaitTotal:N0} ms[/yellow]");
                 ColorConsole.WriteEmbeddedColorLine(crossFileTotal);
@@ -832,13 +904,21 @@ namespace ETWAnalyzer.EventDump
             Invalid = 0,
             CPU,
             FirstLast,
-            Wait, 
+            Wait,
             Ready,
             ReadyAverage,
             CSwitchCount,
             Frequency,
             ThreadCount,
             ReadyDetails,
+        }
+
+        /// <summary>
+        /// true when only stacktags are printed. Some details like Ready, ThreadCount are not supported/implemented at stacktag level.
+        /// </summary>
+        bool IsOnlyStackTagActive
+        {
+            get => StackTagFilter.Key != null && (MethodFilter.Key == null || !TopNMethods.IsEmpty);
         }
 
         private Formatter<MatchData> GetHeaderFormatter(List<MatchData> matches, FormatterType type)
@@ -891,41 +971,41 @@ namespace ETWAnalyzer.EventDump
                 },
                 FormatterType.Wait => new Formatter<MatchData>
                 {
-                    Header = matches.Any(x => x.HasCSwitchData.GetValueOrDefault() || x.WaitMs != 0) ? "      Wait ms" : "",
+                    Header = matches.Any(x => x.HasCSwitchData.GetValueOrDefault() || x.WaitMs != 0) ? "      Wait ms " : "",
                     Print = matches.Any(x => x.HasCSwitchData.GetValueOrDefault() || x.WaitMs != 0) ? (data) => " " + "N0".WidthFormat(data.WaitMs, 9) + " ms " : (data) => "",
                 },
                 FormatterType.Ready => new Formatter<MatchData>
                 {
-                    // only data in enhanced format can contain ready data
-                    Header = matches.Any(x => x.HasCSwitchData.GetValueOrDefault()) && !NoReadyDetails ? "  Ready ms " : "",
-                    Print =  matches.Any(x => x.HasCSwitchData.GetValueOrDefault()) && !NoReadyDetails ? (data) => "N0".WidthFormat(data.ReadyMs, 6) + " ms " : (data) => "",
+                    // only data in enhanced format can contain ready data and if not just stacktags are enabled
+                    Header = !IsOnlyStackTagActive && matches.Any(x => x.HasCSwitchData.GetValueOrDefault()) && !NoReadyDetails ? " Ready ms " : "",
+                    Print = !IsOnlyStackTagActive && matches.Any(x => x.HasCSwitchData.GetValueOrDefault()) && !NoReadyDetails ? (data) => "N0".WidthFormat(data.ReadyMs, 6) + " ms " : (data) => "",
                 },
                 FormatterType.ReadyAverage => new Formatter<MatchData>
                 {
-                    Header = (matches.Any(x => x.HasCSwitchData.GetValueOrDefault()) && ShowDetails && !NoReadyDetails) ? "ReadyAvg " : "",
-                    Print =  (matches.Any(x => x.HasCSwitchData.GetValueOrDefault()) && ShowDetails && !NoReadyDetails) ? 
-                                            (data) => (data.ReadyAverageUs > 0 ? $"{data.ReadyAverageUs,5} us " : "".WithWidth(5+4)) :
+                    Header = (!IsOnlyStackTagActive && matches.Any(x => x.HasCSwitchData.GetValueOrDefault()) && ShowDetails && !NoReadyDetails) ? "ReadyAvg " : "",
+                    Print = (!IsOnlyStackTagActive && matches.Any(x => x.HasCSwitchData.GetValueOrDefault()) && ShowDetails && !NoReadyDetails) ?
+                                            (data) => (data.ReadyAverageUs > 0 ? $"{data.ReadyAverageUs,5} us " : "".WithWidth(5 + 4)) :
                                             (data) => "",
                 },
                 FormatterType.CSwitchCount => new Formatter<MatchData>
                 {
-                    Header = matches.Any(x => x.HasCSwitchData.GetValueOrDefault()) && ShowDetails ? " CSwitches " : "",
-                    Print = matches.Any(x => x.HasCSwitchData.GetValueOrDefault()) && ShowDetails ? (data) => "N0".WidthFormat(data.ContextSwitchCount, 10) + " " : (data) => "",
+                    Header = !IsOnlyStackTagActive && matches.Any(x => x.HasCSwitchData.GetValueOrDefault()) && ShowDetails ? " CSwitches " : "",
+                    Print = !IsOnlyStackTagActive && matches.Any(x => x.HasCSwitchData.GetValueOrDefault()) && ShowDetails ? (data) => "N0".WidthFormat(data.ContextSwitchCount, 10) + " " : (data) => "",
                 },
                 FormatterType.Frequency => new Formatter<MatchData>
                 {
                     Header = ShowDetails && !NoFrequencyDetails && matches.Any(x => x.CPUUsage != null) ? "CoreData" : "",
-                    Print =  ShowDetails && !NoFrequencyDetails && matches.Any(x => x.CPUUsage != null) ? FormatCoreData : (data) => "",
+                    Print = ShowDetails && !NoFrequencyDetails && matches.Any(x => x.CPUUsage != null) ? FormatCoreData : (data) => "",
                 },
                 FormatterType.ThreadCount => new Formatter<MatchData>
                 {
-                    Header = ThreadCount ? "#Threads " : "",
-                    Print = (data) => ThreadCount ? "#" + "N0".WidthFormat(data.Threads, -9) : "",
+                    Header = !IsOnlyStackTagActive && ThreadCount ? "#Threads " : "",
+                    Print = (data) => !IsOnlyStackTagActive && ThreadCount ? "#" + "N0".WidthFormat(data.Threads, -9) : "",
                 },
                 FormatterType.ReadyDetails => new Formatter<MatchData>
                 {
                     Header = ShowDetails && !NoReadyDetails && matches.Any(x => x.ReadyDetails != null) ? "ReadyDetails" : "",
-                    Print =  ShowDetails && !NoReadyDetails && matches.Any(x=> x.ReadyDetails != null ) ? FormatReadyData : (data) => "",
+                    Print = ShowDetails && !NoReadyDetails && matches.Any(x => x.ReadyDetails != null) ? FormatReadyData : (data) => "",
                 },
                 _ => throw new NotSupportedException($"Formatter {type} is not supported"),
             };
@@ -941,7 +1021,24 @@ namespace ETWAnalyzer.EventDump
             string lret = "";
             if (data.ReadyDetails != null)
             {
-                lret = "".WithWidth(3) + $"Min: {data.ReadyDetails.MinUs:F1} us 5% {data.ReadyDetails.Percentile5:F1} us 25% {data.ReadyDetails.Percentile25:F1} us 50% {data.ReadyDetails.Percentile50:F1} us 90%: {data.ReadyDetails.Percentile90:F1} us 95%: {data.ReadyDetails.Percentile95:F1} us Max: {data.ReadyDetails.MaxUs:F1} us";
+                if (data.ReadyDetails.HasDeepSleepTimes)
+                {
+                    lret = $"  CPU Wakeup Ready Min/5%/25%/50%/90%/95%/99%/Max Percentiles in us: {"F1".WidthFormat(data.ReadyDetails.MinDeepSleepUs, 3)} {"F1".WidthFormat(data.ReadyDetails.Percentile5DeepSleepUs, 4)} {"F1".WidthFormat(data.ReadyDetails.Percentile25DeepSleepUs, 4)} {"F1".WidthFormat(data.ReadyDetails.Percentile50DeepSleepUs, 4)} " +
+                           $"{"F0".WidthFormat(data.ReadyDetails.Percentile90DeepSleepUs, 5)} {"F0".WidthFormat(data.ReadyDetails.Percentile95DeepSleepUs, 5)} {"F0".WidthFormat(data.ReadyDetails.Percentile99DeepSleepUs, 5)} {"F0".WidthFormat(data.ReadyDetails.MaxDeepSleepUs, 7)} us >99% Sum: {"F4".WidthFormat(data.ReadyDetails.SumGreater99PercentDeepSleepUs/1_000_000.0,8)} s " +
+                           $"Sum: {"F4".WidthFormat(data.ReadyDetails.SumDeepSleepUs / 1_000_000.0d, 8)} s Count: {"N0".WidthFormat(data.ReadyDetails.CSwitchCountDeepSleep, 10)}";
+                }
+                if (lret != "" && data.ReadyDetails.HasNonDeepSleepTimes)
+                {
+                    lret += Environment.NewLine;
+                }
+
+                if (data.ReadyDetails.HasNonDeepSleepTimes)
+                {
+                    int spaces = data.ReadyDetails.HasNonDeepSleepTimes ? 5 : 0;
+                    lret += "".WithWidth(spaces) + $"  Other Ready Min/5%/25%/50%/90%/95%/99%/Max Percentiles in us: {"F1".WidthFormat(data.ReadyDetails.MinNonDeepSleepUs, 3)} {"F1".WidthFormat(data.ReadyDetails.Percentile5NonDeepSleepUs, 4)} {"F1".WidthFormat(data.ReadyDetails.Percentile25NonDeepSleepUs, 4)} {"F1".WidthFormat(data.ReadyDetails.Percentile50NonDeepSleepUs, 4)} " +
+                        $"{"F0".WidthFormat(data.ReadyDetails.Percentile90NonDeepSleepUs, 5)} {"F0".WidthFormat(data.ReadyDetails.Percentile95NonDeepSleepUs, 5)} {"F0".WidthFormat(data.ReadyDetails.Percentile99NonDeepSleepUs, 5)} {"F0".WidthFormat(data.ReadyDetails.MaxNonDeepSleepUs, 7)} us " +
+                        $">99% Sum: {"F4".WidthFormat(data.ReadyDetails.SumGreater99PercentNonDeepSleepUs/1_000_000.0d, 8)} s Sum: {"F4".WidthFormat(data.ReadyDetails.SumNonDeepSleepUs / 1_000_000.0d, 8)} s Count: {"N0".WidthFormat(data.ReadyDetails.CSwitchCountNonDeepSleep, 10)}";
+                }
             }
             return lret;
         }
@@ -954,29 +1051,35 @@ namespace ETWAnalyzer.EventDump
         string FormatCoreData(MatchData data)
         {
             string lret = "";
-            if( data.CPUUsage!= null )
+            if (data.CPUUsage != null)
             {
                 int totalCPUMs = data.CPUUsage.Sum(x => x.CPUMs);
                 int totalNormalizedCPUMs = 0;
-                foreach(var usage in data.CPUUsage.OrderByDescending(x=>x.EfficiencyClass))
+                foreach (var usage in data.CPUUsage.OrderByDescending(x => x.EfficiencyClass))
                 {
                     float percentAboveNominal = (100.0f * usage.AverageMHz / data.Topology.First(x => x.Value.EfficiencyClass == usage.EfficiencyClass).Value.NominalFrequencyMHz);
-                    
+
                     string cpuPercent = $"{(100.0f * usage.CPUMs / totalCPUMs):F0}".WithWidth(3);
                     string normalizedCPU = "";
-                    if( Normalize )
+                    if (Normalize)
                     {
                         float factor = (percentAboveNominal / 100.0f);
-                        int normalizedCPUMs = (int) (usage.CPUMs * factor);  // Scale CPU to 100% CPU Frequency
+                        int normalizedCPUMs = (int)(usage.CPUMs * factor);  // Scale CPU to 100% CPU Frequency
                         totalNormalizedCPUMs += normalizedCPUMs;
                         normalizedCPU = $"N0".WidthFormat(normalizedCPUMs, 10) + " ms ";
                     }
-                    lret += "  [green]" +  $"N0".WidthFormat(usage.CPUMs, 10) + $" ms {normalizedCPU}[/green]"+ $"Class: {usage.EfficiencyClass} " + $"({cpuPercent} % CPU) on {usage.UsedCores,2} Cores "  + "N0".WidthFormat(usage.AverageMHz, 5) + $" MHz ({(int)percentAboveNominal,3}% Frequency) " + $"Enabled Cores: {usage.EnabledCPUsAvg,2} Duration: {usage.LastS- usage.FirstS:F3} s" + Environment.NewLine;
+
+                    string frequencyPart = "";
+                    if( data.HasFrequencyData)
+                    {
+                        frequencyPart = "N0".WidthFormat(usage.AverageMHz, 5) + $" MHz ({(int)percentAboveNominal,3}% Frequency) ";
+                    }
+                    lret += "  [green]" + $"N0".WidthFormat(usage.CPUMs, 10) + $" ms {normalizedCPU}[/green]" + $"Class: {usage.EfficiencyClass} " + $"({cpuPercent} % CPU) on {usage.UsedCores,2} Cores " + frequencyPart + $"Enabled Cores: {usage.EnabledCPUsAvg,2} Duration: {usage.LastS - usage.FirstS:F3} s" + Environment.NewLine;
                 }
 
-                if( Normalize && data.CPUUsage.Length > 1 )
+                if (Normalize && data.CPUUsage.Length > 1)
                 {
-                    lret += "".WithWidth(4) + $"[green]Normalized: {"N0".WidthFormat(totalNormalizedCPUMs,10)} ms [/green]";
+                    lret += "".WithWidth(4) + $"[green]Normalized: {"N0".WidthFormat(totalNormalizedCPUMs, 10)} ms [/green]";
                 }
             }
             return lret.TrimEnd(StringFormatExtensions.NewLineChars);
@@ -1013,7 +1116,7 @@ namespace ETWAnalyzer.EventDump
 
         internal class ProcessTotals : FileTotals
         {
-            
+
         }
 
         /// <summary>
@@ -1021,7 +1124,7 @@ namespace ETWAnalyzer.EventDump
         /// </summary>
         /// <param name="matches"></param>
         /// <returns>Dictionary of file name as key and value is the total per file sum</returns>
-        internal (Dictionary<string, FileTotals>, Dictionary<string,Dictionary<ProcessKey, ProcessTotals>>) GetFileAndProcessTotals(List<MatchData> matches)
+        internal (Dictionary<string, FileTotals>, Dictionary<string, Dictionary<ProcessKey, ProcessTotals>>) GetFileAndProcessTotals(List<MatchData> matches)
         {
             Dictionary<string, FileTotals> fileTotals = new();
             Dictionary<string, Dictionary<ProcessKey, ProcessTotals>> fileProcessTotals = new();
@@ -1047,13 +1150,13 @@ namespace ETWAnalyzer.EventDump
 
                 foreach (MatchData data in filteredSubItems)
                 {
-                    if( !fileProcessTotals.TryGetValue(GetFileGroupName(data), out Dictionary<ProcessKey, ProcessTotals> processDict) )
+                    if (!fileProcessTotals.TryGetValue(GetFileGroupName(data), out Dictionary<ProcessKey, ProcessTotals> processDict))
                     {
                         processDict = new();
                         fileProcessTotals.Add(GetFileGroupName(data), processDict);
                     }
 
-                    if ( !processDict.TryGetValue(data.ProcessKey, out ProcessTotals processTotals))
+                    if (!processDict.TryGetValue(data.ProcessKey, out ProcessTotals processTotals))
                     {
                         processTotals = new();
                         processDict[data.ProcessKey] = processTotals;
@@ -1126,15 +1229,6 @@ namespace ETWAnalyzer.EventDump
             if (!myCSVHeaderPrinted)
             {
                 OpenCSVWithHeader("CSVOptions", "Test Case", "Date", "Test Time in ms", "Module", "Method", "CPU ms", "Wait ms", "Ready ms", "Ready Average us", 
-                    "Ready Min us",
-                    "Ready Max us",
-                    "Ready 5% Percentile us",
-                    "Ready 25% Percentile us",
-                    "Ready 50% Percentile us (Median)",
-                    "Ready 90% Percentile us",
-                    "Ready 95% Percentile us",
-                    "Ready 99% Percentile us",
-                    "Context Switch Count",
                     "CPU ms Efficiency Class 0",
                     "Average Frequency Efficiency Class 0",
                     "FrequencyRelativeToNominal % Efficiency Class 0",
@@ -1144,22 +1238,39 @@ namespace ETWAnalyzer.EventDump
                     "FrequencyRelativeToNominal % Efficiency Class 1",
                     "UsedCores Class 1",
                     "Enabled Cores",
-                    "# Threads", Col_Baseline, Col_Process, Col_ProcessName, Col_Session, "Start Time", "StackDepth",
-                                  "FirstLastCall Duration in s", $"First Call time in {GetAbbreviatedName(firstFormat)}", $"Last Call time in {GetAbbreviatedName(lastFormat)}", Col_CommandLine, "SourceFile", "IsNewProcess", "Module and Driver Info");
+                    "# Threads",
+                    Col_AveragePriority,
+                    Col_Baseline, Col_Process, Col_ProcessName, Col_Session, "Start Time", "StackDepth",
+                                  "FirstLastCall Duration in s", $"First Call time in {GetAbbreviatedName(firstFormat)}", $"Last Call time in {GetAbbreviatedName(lastFormat)}", Col_CommandLine, "SourceFile", "IsNewProcess", "Module and Driver Info",
+                       "DeepSleep Ready Min us",
+                    "NonDeepSleep Ready Min us",
+                       "DeepSleep Ready Max us",
+                    "NonDeepSleep Ready Max us",
+                       "DeepSleep Ready 5% Percentile us",
+                    "NonDeepSleep Ready 5% Percentile us",
+                       "DeepSleep Ready 25% Percentile us",
+                    "NonDeepSleep Ready 25% Percentile us",
+                       "DeepSleep Ready 50% Percentile us (Median)",
+                    "NonDeepSleep Ready 50% Percentile us (Median)",
+                       "DeepSleep Ready 90% Percentile us",
+                    "NonDeepSleep Ready 90% Percentile us",
+                       "DeepSleep Ready 95% Percentile us",
+                    "NonDeepSleep Ready 95% Percentile us",
+                       "DeepSleep Ready 99% Percentile us",
+                    "NonDeepSleep Ready 99% Percentile us",
+                    "NonDeepSleep Sum for > 99% Percentile us",
+                       "DeepSleep Sum for > 99% Percentile us",
+                    "NonDeepSleep Sum us",
+                       "DeepSleep Sum us",
+                       "DeepSleep Ready Count",
+                    "NonDeepSleep Ready Count",
+                    "Context Switch Count"
+                );
                 myCSVHeaderPrinted = true;
             }
 
 
             WriteCSVLine(CSVOptions, match.TestName, match.PerformedAt, match.DurationInMs, match.ModuleName, match.Method, match.CPUMs, match.WaitMs, match.ReadyMs, match.ReadyAverageUs, 
-                match?.ReadyDetails?.MinUs,
-                match?.ReadyDetails?.MaxUs,
-                match?.ReadyDetails?.Percentile5,
-                match?.ReadyDetails?.Percentile25,
-                match?.ReadyDetails?.Percentile50,
-                match?.ReadyDetails?.Percentile90,
-                match?.ReadyDetails?.Percentile95,
-                match?.ReadyDetails?.Percentile99,
-                match.ContextSwitchCount, 
                 cpuClass0Ms,
                 frequencyClass0MHz,
                 frequencyRelativeToNominalPercentClass0,
@@ -1169,8 +1280,46 @@ namespace ETWAnalyzer.EventDump
                 frequencyRelativeToNominalPercentClass1,
                 usedCoresClass1,
                 enabledCores,
-                match.Threads, match.BaseLine, match.ProcessAndPid, match.Process.GetProcessName(UsePrettyProcessName), match.Process.SessionId, match.Process.StartTime, match.CPUMs / Math.Exp(match.StackDepth),
-                         firstLastDurationS, GetDateTimeString(match.FirstCallTime, match.SessionStart, firstFormat), GetDateTimeString(match.LastCallTime, match.SessionStart, lastFormat), NoCmdLine ? "" : match.Process.CmdLine, match.SourceFile, (match.Process.IsNew ? 1 : 0), moduleDriverInfo);
+                match.Threads,
+                GetNullIfZero(match.ProcessPriority),
+                match.BaseLine, match.ProcessAndPid, match.Process.GetProcessName(UsePrettyProcessName), match.Process.SessionId, match.Process.StartTime, match.CPUMs / Math.Exp(match.StackDepth),
+                firstLastDurationS, GetDateTimeString(match.FirstCallTime, match.SessionStart, firstFormat), GetDateTimeString(match.LastCallTime, match.SessionStart, lastFormat), NoCmdLine ? "" : match.Process.CmdLine, match.SourceFile, (match.Process.IsNew ? 1 : 0), 
+                moduleDriverInfo,
+
+                match?.ReadyDetails?.HasDeepSleepTimes == true ?    match?.ReadyDetails?.MinDeepSleepUs : (double?) null,
+                match?.ReadyDetails?.HasNonDeepSleepTimes == true ? match?.ReadyDetails?.MinNonDeepSleepUs : (double?)null,
+
+                match?.ReadyDetails?.HasDeepSleepTimes == true ?    match?.ReadyDetails?.MaxDeepSleepUs : (double?)null,
+                match?.ReadyDetails?.HasNonDeepSleepTimes == true ? match?.ReadyDetails?.MaxNonDeepSleepUs : (double?)null,
+
+                match?.ReadyDetails?.HasDeepSleepTimes == true ?    match?.ReadyDetails?.Percentile5DeepSleepUs : (double?)null,
+                match?.ReadyDetails?.HasNonDeepSleepTimes == true ? match?.ReadyDetails?.Percentile5NonDeepSleepUs : (double?)null,
+
+                match?.ReadyDetails?.HasDeepSleepTimes == true ?    match?.ReadyDetails?.Percentile25DeepSleepUs : (double?)null,
+                match?.ReadyDetails?.HasNonDeepSleepTimes == true ? match?.ReadyDetails?.Percentile25NonDeepSleepUs : (double?)null,
+
+                match?.ReadyDetails?.HasDeepSleepTimes == true ? match?.ReadyDetails?.Percentile50DeepSleepUs : (double?)null,
+                match?.ReadyDetails?.HasNonDeepSleepTimes == true ? match?.ReadyDetails?.Percentile50NonDeepSleepUs : (double?)null,
+
+                match?.ReadyDetails?.HasDeepSleepTimes == true ?    match?.ReadyDetails?.Percentile90DeepSleepUs : (double?)null,
+                match?.ReadyDetails?.HasNonDeepSleepTimes == true ? match?.ReadyDetails?.Percentile90NonDeepSleepUs : (double?)null,
+
+                match?.ReadyDetails?.HasDeepSleepTimes == true ?    match?.ReadyDetails?.Percentile95DeepSleepUs : (double?)null,
+                match?.ReadyDetails?.HasNonDeepSleepTimes == true ? match?.ReadyDetails?.Percentile95NonDeepSleepUs : (double?)null,
+
+                match?.ReadyDetails?.HasDeepSleepTimes == true ?    match?.ReadyDetails?.Percentile99DeepSleepUs : (double?)null,
+                match?.ReadyDetails?.HasNonDeepSleepTimes == true ? match?.ReadyDetails?.Percentile99NonDeepSleepUs : (double?)null,
+
+                match?.ReadyDetails?.HasDeepSleepTimes == true ? match?.ReadyDetails?.SumGreater99PercentDeepSleepUs : (double?)null,
+                match?.ReadyDetails?.HasNonDeepSleepTimes == true ? match?.ReadyDetails?.SumGreater99PercentNonDeepSleepUs : (double?)null,
+
+                match?.ReadyDetails?.HasDeepSleepTimes == true ? match?.ReadyDetails?.SumDeepSleepUs : (double?)null,
+                match?.ReadyDetails?.HasNonDeepSleepTimes == true ? match?.ReadyDetails?.SumNonDeepSleepUs : (double?)null,
+
+                match?.ReadyDetails?.HasDeepSleepTimes == true ? match?.ReadyDetails?.CSwitchCountDeepSleep : (double?)null,
+                match?.ReadyDetails?.HasNonDeepSleepTimes == true ? match?.ReadyDetails?.CSwitchCountNonDeepSleep : (double?)null,
+                match.ContextSwitchCount
+            );
         }
 
         /// <summary>
@@ -1209,6 +1358,8 @@ namespace ETWAnalyzer.EventDump
             }
         }
 
+
+
         private void PrintProcessTotalMatches(List<MatchData> matches)
         {
             foreach (var group in matches.GroupBy(x => x.Process.GetProcessName(this.UsePrettyProcessName)).OrderBy(x => x.Sum(SortBySortOrder)))
@@ -1219,14 +1370,14 @@ namespace ETWAnalyzer.EventDump
 
                     long diff = group.ETWMaxBy(x => x.PerformedAt).CPUMs - cpu;
 
-                    PrintCPUTotal(cpu, subgroup.First().Process, String.Join(" ", subgroup.Select(x => Path.GetFileNameWithoutExtension(x.SourceFile)).ToHashSet()) + $" Diff: {diff:N0} ms ", subgroup.First().SessionStart, subgroup.FirstOrDefault().Module);
+                    PrintCPUTotal(cpu, subgroup.First().ProcessPriority, subgroup.First().Process, String.Join(" ", subgroup.Select(x => Path.GetFileNameWithoutExtension(x.SourceFile)).ToHashSet()) + $" Diff: {diff:N0} ms ", subgroup.First().SessionStart, subgroup.FirstOrDefault().Module);
                 }
             }
         }
 
         private void WriteCSVProcessTotal(List<MatchData> matches)
         {
-            OpenCSVWithHeader(Col_CSVOptions, Col_TestCase, Col_Date, Col_TestTimeinms, "CPU ms", Col_Baseline, Col_Process, Col_ProcessName, 
+            OpenCSVWithHeader(Col_CSVOptions, Col_TestCase, Col_Date, Col_TestTimeinms, "CPU ms", Col_AveragePriority, Col_Baseline, Col_Process, "ParentPid", Col_ProcessName, 
                 Col_StartTime, Col_CommandLine, Col_SourceJsonFile, "SourceDirectory", "IsNewProcess", 
                 Col_FileVersion, Col_VersionString, Col_ProductVersion, Col_ProductName, Col_Description, Col_Directory);
 
@@ -1238,7 +1389,8 @@ namespace ETWAnalyzer.EventDump
                 string productName = match.Module?.ProductName?.Trim() ?? "";
                 string description = match.Module?.Description?.Trim() ?? "";
                 string directory = match.Module?.ModulePath ?? "";
-                WriteCSVLine(CSVOptions, match.TestName, match.PerformedAt, match.DurationInMs, match.CPUMs, match.BaseLine, match.ProcessAndPid, match.Process.GetProcessName(UsePrettyProcessName), match.Process.StartTime, match.Process.CmdLine, 
+                
+                WriteCSVLine(CSVOptions, match.TestName, match.PerformedAt, match.DurationInMs, match.CPUMs, GetNullIfZero(match.ProcessPriority), match.BaseLine, match.ProcessAndPid, match.Process.ParentPid, match.Process.GetProcessName(UsePrettyProcessName), match.Process.StartTime, match.Process.CmdLine, 
                     Path.GetFileNameWithoutExtension(match.SourceFile), Path.GetDirectoryName(match.SourceFile), (match.Process.IsNew ? 1 : 0),
                     fileVersion, versionString, productVersion, productName, description, directory);
             }
@@ -1272,6 +1424,7 @@ namespace ETWAnalyzer.EventDump
                 SortOrders.StartTime,
                 SortOrders.CSwitchCount,
                 SortOrders.ReadyAvg,
+                SortOrders.Priority,
             };
 
         /// <summary>
@@ -1297,6 +1450,7 @@ namespace ETWAnalyzer.EventDump
                 SortOrders.Last => IsProcessTotalMode  ?  (data.Process.EndTime == DateTimeOffset.MaxValue ? 0 : data.Process.EndTime.Ticks) : data.LastCallTime.Ticks,     // in CPU total mode we can sort by process end time with -SortBy Last
                 SortOrders.ReadyAvg => data.ReadyAverageUs,
                 SortOrders.CSwitchCount => data.ContextSwitchCount,
+                SortOrders.Priority => data.ProcessPriority,
                 _ => data.CPUMs,  // by default sort by CPU
             };
         }
