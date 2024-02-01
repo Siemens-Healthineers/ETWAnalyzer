@@ -156,7 +156,6 @@ not surface the following CPU Power settings.
 
 - A floor performance for Processor Power Efficiency Class 0 when there are Processor Power Efficiency Class 1 processors unparked
 - Complex unpark policy
-- Heterogeneous short running thread scheduling policy
 - Initial performance for Processor Power Efficiency Class 1 when unparked
 - Latency sensitivity hint min unparked cores/packages
 - Latency sensitivity hint min unparked cores/packages for Processor Power Efficiency Class 1
@@ -194,6 +193,7 @@ The following settings are parsed by ETWAnalyzer on its own because they are imp
 
 - Processor performance autonomous mode
 - Heterogeneous thread scheduling policy
+- Heterogeneous short running thread scheduling policy
 - Heterogeneous policy in effect
 - Active Profile Guid
 - Base Profile Guid
