@@ -214,7 +214,7 @@ namespace ETWAnalyzer.EventDump
             List<string> fileNames = new();
             foreach (var match in matches)
             {
-                fileNames.Add(match.SourceFile);
+                fileNames.Add(GetPrintFileName(match.SourceFile));
             }
 
             if( fileNames.Count == 1)
@@ -412,7 +412,7 @@ namespace ETWAnalyzer.EventDump
                 Header = "MinParkedDuration",
                 Description = "Processor performance core parking increase time",
                 Help = "Specify the minimum number of perf check intervals that must elapse before more cores/packages can be unparked."+Environment.NewLine+"Range, Units:"+Environment.NewLine+"  1 .. 100 Time check intervals"+Environment.NewLine+"Subgroup / Setting GUIDs:"+Environment.NewLine+"  54533251-82be-4824-96c1-47b60b740d00 / 2ddd5a84-5a71-437e-912a-db0b8c788732",
-                Print = (power) => power.ProcessorParkingConfiguration.MinParkedDuration.ToString(),
+                Print = (power) => FormatTimeSpan(power.ProcessorParkingConfiguration.MinParkedDuration),
             };
             formatters.Add(minParkedDuration);
 
@@ -424,7 +424,7 @@ namespace ETWAnalyzer.EventDump
                 Help = "Specify the minimum number of perf check intervals that must elapse before more cores/packages can be parked." + Environment.NewLine +
                        "Range, Units:" + Environment.NewLine + 
                        "  1 .. 100 Time check intervals",
-                Print = (power) => power.ProcessorParkingConfiguration.MinUnparkedDuration.ToString(),
+                Print = (power) => FormatTimeSpan(power.ProcessorParkingConfiguration.MinUnparkedDuration),
             };
             formatters.Add(minUnparkedDuration);
 
@@ -502,6 +502,11 @@ namespace ETWAnalyzer.EventDump
             formatters.Add(utilityDistributionThreshold);
 
             return formatters;
+        }
+
+        string FormatTimeSpan(TimeSpan timeSpan)
+        {
+            return timeSpan.TotalMilliseconds.ToString("F0") + " ms";
         }
 
         /// <summary>
@@ -602,7 +607,7 @@ namespace ETWAnalyzer.EventDump
                 Help = "Specifies the global threshold that designates which threads have a short versus a long runtime." + Environment.NewLine +
                        "Range, Units:"+Environment.NewLine+"  0 .. 100000 Microseconds",
 
-                Print = (power) => power.DecreaseStabilizationInterval.ToString(),
+                Print = (power) => FormatTimeSpan(power.DecreaseStabilizationInterval),
             };
             formatters.Add(decreaseStabilizationInterval);
 
@@ -629,7 +634,7 @@ namespace ETWAnalyzer.EventDump
                 Header = "IncreaseStabilizationInterval",
                 Description = "Processor performance increase time",
                 Help = "Specify the minimum number of perf check intervals since the last performance state change before the performance state may be increased."+Environment.NewLine+"Range, Units:"+Environment.NewLine+"  1 .. 100 Time check intervals",
-                Print = (power) => power.IncreaseStabilizationInterval.ToString(),
+                Print = (power) => FormatTimeSpan(power.IncreaseStabilizationInterval),
             };
             formatters.Add(increasePolicyPercent);
 
@@ -692,7 +697,7 @@ namespace ETWAnalyzer.EventDump
                 Header = "StabilizationInterval",
                 Description = "Processor performance time check interval",
                 Help = "Specify the amount that must expire before processor performance states and parked cores may be reevaluated (in milliseconds)."+Environment.NewLine+"Range, Units:"+Environment.NewLine+"  1 .. 5000 Milliseconds",
-                Print = (power) => power.StabilizationInterval.ToString(),
+                Print = (power) => FormatTimeSpan(power.StabilizationInterval),
             };
             formatters.Add(stabilizationInterval);
 
@@ -761,7 +766,7 @@ namespace ETWAnalyzer.EventDump
                 ProcessorParkingConfiguration parking = power.ProcessorParkingConfiguration;
                 IIdleConfiguration idle = power.IdleConfiguration;
 
-                WriteCSVLine(CSVOptions, match.TestName, match.TestDurationInMs, match.SourceFile, match.Machine, 
+                WriteCSVLine(CSVOptions, match.TestName, match.TestDurationInMs, GetPrintFileName(match.SourceFile), match.Machine, 
                     power.TimeSinceTraceStartS,
                     power.ActivePowerProfile,
                     power.ActivePowerProfileGuid,
