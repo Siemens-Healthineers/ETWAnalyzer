@@ -16,6 +16,18 @@ namespace ETWAnalyzer.Extract.Power
         Invalid = -1
     }
 
+
+    /// <summary>
+    /// The uint value is split into 4 byte sized values
+    /// </summary>
+    public enum MultiHexValue
+    {
+        /// <summary>
+        /// 
+        /// </summary>
+        Invalid = -1,
+    }
+
     /// <summary>
     /// Processor Parking Configuration.
     /// </summary>
@@ -148,6 +160,17 @@ namespace ETWAnalyzer.Extract.Power
 
 
         /// <summary>
+        /// Initial performance for Processor Power Efficiency Class 1 when unparked
+        /// </summary>
+        public PercentValue InitialPerformancePercentClass1 { get; set; }
+
+        /// <summary>
+        /// Processor performance core parking soft park latency
+        /// </summary>
+        public uint SoftParkLatencyUs { get;  set; }
+
+
+        /// <summary>
         /// 
         /// </summary>
         /// <param name="other"></param>
@@ -161,6 +184,7 @@ namespace ETWAnalyzer.Extract.Power
 
             return this.ConcurrencyHeadroomThresholdPercent == other.ConcurrencyHeadroomThresholdPercent &&
                    this.ConcurrencyThresholdPercent == other.ConcurrencyThresholdPercent &&
+                   this.InitialPerformancePercentClass1 == other.InitialPerformancePercentClass1 &&
                    this.MaxEfficiencyClass1UnparkedProcessorPercent == other.MaxEfficiencyClass1UnparkedProcessorPercent &&
                    this.MaxUnparkedProcessorPercent == other.MaxUnparkedProcessorPercent &&
                    this.MinEfficiencyClass1UnparkedProcessorPercent == other.MinEfficiencyClass1UnparkedProcessorPercent &&
@@ -170,6 +194,7 @@ namespace ETWAnalyzer.Extract.Power
                    this.OverUtilizationThresholdPercent == other.OverUtilizationThresholdPercent &&
                    this.ParkingPerformanceState == this.ParkingPerformanceState &&
                    this.ParkingPolicy == this.ParkingPolicy &&
+                   this.SoftParkLatencyUs == other.SoftParkLatencyUs &&
                    this.UnparkingPolicy == this.UnparkingPolicy &&
                    this.UtilityDistributionEnabled == this.UtilityDistributionEnabled &&
                    this.UtilityDistributionThresholdPercent == other.UtilityDistributionThresholdPercent;
