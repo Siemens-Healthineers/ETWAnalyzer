@@ -9,6 +9,7 @@ using Microsoft.Windows.EventTracing;
 using Microsoft.Windows.EventTracing.Events;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
 
@@ -41,6 +42,20 @@ namespace ETWAnalyzer.Extractors.Power
             { new Guid("bae08b81-2d5e-4688-ad6a-13243356654b"), ParseHeteroThreadSchedulingPolicyShort },
             { new Guid("7f2f5cfa-f10c-4823-b5e1-e93ae85f46b5"), ParseHeteroPolicyInEffect },
             { new Guid("31f9f286-5084-42fe-b720-2b0264993763"), ParseActivePowerScheme },
+            { new Guid("bc5038f7-23e0-4960-96da-33abaf5935ed"), ParseMaximumProcessorFrequencyClass1 },
+            { new Guid("f8861c27-95e7-475c-865b-13c0cb3f9d6b"), ParseDecreaseLevelThresholdClass1 },
+            { new Guid("f8861c27-95e7-475c-865b-13c0cb3f9d6c"), ParseDecreaseLevelThresholdClass2 },
+            { new Guid("d92998c2-6a48-49ca-85d4-8cceec294570"), ParseShortVsLongThreadThreshold },
+            { new Guid("1facfc65-a930-4bc5-9f38-504ec097bbc0"), ParseInitialPerformanceWhenUnparkedClass1 },
+            { new Guid("36687f9e-e3a5-4dbf-b1dc-15eb381c6863"), ParseEnergyPreferencePolicy },
+            { new Guid("36687f9e-e3a5-4dbf-b1dc-15eb381c6864"), ParseEnergyPreferencePolicyClass1 },
+            { new Guid("43f278bc-0f8a-46d0-8b31-9a23e615d713"), ParseLongRunningThreadsLowerArchitectureLimit },
+            { new Guid("465e1f50-b610-473a-ab58-00d1077dc419"), ParseIncreasePolicyClass1 },
+            { new Guid("893dee8e-2bef-41e0-89c6-b55d0929964d"), MinThrottlingFrequencyPercentClass1 },
+            { new Guid("97cfac41-2217-47eb-992d-618b1977c907"), ParseSoftParkLatencyUs },
+            { new Guid("984cf492-3bed-4488-a8f9-4286c97bf5ab"), ParseIncreaseStabilizationIntervalClass1 },
+            { new Guid("b000397d-9b0b-483d-98c9-692a6060cfbf"), ParseIncreaseThresholdClass1},
+            { new Guid("b000397d-9b0b-483d-98c9-692a6060cfc0"), ParseIncreaseThresholdClass2 }
         };
 
         /// <summary>
@@ -160,12 +175,143 @@ namespace ETWAnalyzer.Extractors.Power
             }
         }
 
+        private static void ParseIncreaseThresholdClass2(IGenericEvent @event, ETWExtract extract)
+        {
+            PowerConfiguration cfg = Get(extract);
+            if (cfg != null)
+            {
+                cfg.IncreaseThresholdPercentClass2 = (MultiHexValue) ReadUInt32(@event.Fields[2].AsBinary);
+            }
+        }
+
+        private static void ParseIncreaseThresholdClass1(IGenericEvent @event, ETWExtract extract)
+        {
+            PowerConfiguration cfg = Get(extract);
+            if (cfg != null)
+            {
+                cfg.IncreaseThresholdPercentClass1 = (MultiHexValue)ReadUInt32(@event.Fields[2].AsBinary);
+            }
+        }
+
+        private static void ParseIncreaseStabilizationIntervalClass1(IGenericEvent @event, ETWExtract extract)
+        {
+            PowerConfiguration cfg = Get(extract);
+            if (cfg != null)
+            {
+                cfg.IncreaseStabilizationIntervalClass1 = ReadUInt32(@event.Fields[2].AsBinary);
+            }
+        }
+
+        private static void ParseSoftParkLatencyUs(IGenericEvent @event, ETWExtract extract)
+        {
+            PowerConfiguration cfg = Get(extract);
+            if (cfg != null)
+            {
+                cfg.ProcessorParkingConfiguration.SoftParkLatencyUs = ReadUInt32(@event.Fields[2].AsBinary);
+            }
+        }
+
+        private static void MinThrottlingFrequencyPercentClass1(IGenericEvent @event, ETWExtract extract)
+        {
+            PowerConfiguration cfg = Get(extract);
+            if (cfg != null)
+            {
+                cfg.MinThrottlingFrequencyPercentClass1 = (PercentValue) ReadUInt32(@event.Fields[2].AsBinary);
+            }
+        }
+
+        private static void ParseIncreasePolicyClass1(IGenericEvent @event, ETWExtract extract)
+        {
+            PowerConfiguration cfg = Get(extract);
+            if (cfg != null)
+            {
+                cfg.IncreasePolicyClass1 = ReadUInt32(@event.Fields[2].AsBinary);
+            }
+        }
+
+        private static void ParseLongRunningThreadsLowerArchitectureLimit(IGenericEvent @event, ETWExtract extract)
+        {
+            PowerConfiguration cfg = Get(extract);
+            if (cfg != null)
+            {
+                cfg.LongRunningThreadsLowerArchitectureLimit = ReadUInt32(@event.Fields[2].AsBinary);
+            }
+        }
+
+        private static void ParseEnergyPreferencePolicyClass1(IGenericEvent @event, ETWExtract extract)
+        {
+            PowerConfiguration cfg = Get(extract);
+            if (cfg != null)
+            {
+                cfg.EnergyPreferencePercentClass1 = (PercentValue)ReadUInt32(@event.Fields[2].AsBinary);
+            }
+        }
+
+        private static void ParseEnergyPreferencePolicy(IGenericEvent @event, ETWExtract extract)
+        {
+            PowerConfiguration cfg = Get(extract);
+            if (cfg != null)
+            {
+                cfg.EnergyPreferencePercent = (PercentValue)ReadUInt32(@event.Fields[2].AsBinary);
+            }
+        }
+
+        private static void ParseInitialPerformanceWhenUnparkedClass1(IGenericEvent @event, ETWExtract extract)
+        {
+            PowerConfiguration cfg = Get(extract);
+            if (cfg != null)
+            {
+                cfg.ProcessorParkingConfiguration.InitialPerformancePercentClass1 = (PercentValue)ReadUInt32(@event.Fields[2].AsBinary);
+            }
+        }
+
+
+        private static void ParseMaximumProcessorFrequencyClass1(IGenericEvent @event, ETWExtract extract)
+        {
+            PowerConfiguration cfg = Get(extract);
+            if( cfg != null)
+            {
+                cfg.MaxThrottlingFrequencyClass1Percent = (PercentValue)ReadUInt32(@event.Fields[2].AsBinary);
+            }
+        }
+
+        private static void ParseShortVsLongThreadThreshold(IGenericEvent @event, ETWExtract extract)
+        {
+            PowerConfiguration cfg = Get(extract);
+            if (cfg != null)
+            {
+                cfg.ShortVsLongThreadThresholdUs = ReadUInt32(@event.Fields[2].AsBinary);
+            }
+        }
+
+
+        // Processor performance level decrease threshold for Processor Power Efficiency Class 1 processor count decrease
+        private static void ParseDecreaseLevelThresholdClass2(IGenericEvent @event, ETWExtract extract)
+        {
+            PowerConfiguration cfg = Get(extract);
+            if (cfg != null)
+            {
+                cfg.DecreaseLevelThresholdClass2 = (MultiHexValue) ReadUInt32(@event.Fields[2].AsBinary);
+            }
+        }
+
+
+        // 6 Processor performance level decrease threshold for Processor Power Efficiency Class 2 processor count decrease
+        private static void ParseDecreaseLevelThresholdClass1(IGenericEvent @event, ETWExtract extract)
+        {
+            PowerConfiguration cfg = Get(extract);
+            if (cfg != null)
+            {
+                cfg.DecreaseLevelThresholdClass1 = (MultiHexValue) ReadUInt32(@event.Fields[2].AsBinary);
+            }
+        }
+
         private static void ParseHeteroThreadSchedulingPolicyShort(IGenericEvent @event, ETWExtract extract)
         {
             PowerConfiguration cfg = Get(extract);
             if (cfg != null)
             {
-                cfg.HeteroPolicyThreadSchedulingShort = (HeteroThreadSchedulingPolicy)ReadUInt32(@event.Fields[2].AsBinary);
+                cfg.HeteroPolicyThreadSchedulingShort = (HeteroThreadSchedulingPolicy) ReadUInt32(@event.Fields[2].AsBinary);
             }
 
         }
@@ -175,7 +321,7 @@ namespace ETWAnalyzer.Extractors.Power
             PowerConfiguration cfg = Get(extract);
             if (cfg != null)
             {
-                cfg.HeteroPolicyThreadScheduling = (HeteroThreadSchedulingPolicy)ReadUInt32(@event.Fields[2].AsBinary);
+                cfg.HeteroPolicyThreadScheduling = (HeteroThreadSchedulingPolicy) ReadUInt32(@event.Fields[2].AsBinary);
             }
 
         }

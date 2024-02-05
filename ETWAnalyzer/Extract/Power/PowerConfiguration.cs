@@ -13,7 +13,7 @@ namespace ETWAnalyzer.Extract.Power
         /// <summary>
         /// Invalid frequency
         /// </summary>
-        Invalid =-1,
+        Invalid = -1,
     }
 
     /// <summary>
@@ -31,6 +31,12 @@ namespace ETWAnalyzer.Extract.Power
         /// when increasing the processor performance state.
         /// </summary>
         public ProcessorPerformanceChangePolicy IncreasePolicy { get; set; }
+
+        /// <summary>
+        /// Gets a value that indicates how aggressive the performance states should be changed
+        /// when increasing the processor performance state.
+        /// </summary>
+        public Nullable<uint> IncreasePolicyClass1 { get; set;  }
 
         /// <summary>
         /// Gets a value that indicates the busy percentage threshold that must be met before
@@ -117,6 +123,18 @@ namespace ETWAnalyzer.Extract.Power
         public PercentValue MinThrottlingFrequencyPercent { get; set; }
 
         /// <summary>
+        /// Gets a value that indicates the minimum percentage of the processor frequency.
+        /// For example, if this value is set to 50, then the processor frequency will never
+        /// be throttled below 50 percent of its maximum frequency by the system.
+        /// </summary>
+        public PercentValue MinThrottlingFrequencyPercentClass1 { get; set;  }
+
+        /// <summary>
+        /// Maximum throttle frequency Class 1
+        /// </summary>
+        public Nullable<PercentValue> MaxThrottlingFrequencyClass1Percent { get; set; }
+
+        /// <summary>
         /// Gets a value that indicates the maximum processor frequency in efficiency class 0.
         /// Processor Power Efficiency Class describes the relative power efficiency of the
         /// associated processor. Lower efficiency class numbers are more efficient than
@@ -195,6 +213,51 @@ namespace ETWAnalyzer.Extract.Power
         public Guid ActivePowerProfileGuid { get; set; }
 
         /// <summary>
+        /// Processor performance level increase threshold for Processor Power Efficiency Class 2 processor count increase
+        /// </summary>
+        public Nullable<MultiHexValue> DecreaseLevelThresholdClass2 { get; set; }
+
+        /// <summary>
+        /// Processor performance level increase threshold for Processor Power Efficiency Class 1 processor count increase
+        /// </summary>
+        public MultiHexValue DecreaseLevelThresholdClass1 { get; set; }
+
+        /// <summary>
+        /// Short vs. long running thread threshold
+        /// </summary>
+        public Nullable<uint> ShortVsLongThreadThresholdUs { get; set; }
+
+        /// <summary>
+        /// Short running threads' processor architecture lower limit
+        /// </summary>
+        public Nullable<uint> LongRunningThreadsLowerArchitectureLimit { get; set; }
+
+        /// <summary>
+        /// Processor energy performance preference policy
+        /// </summary>
+        public PercentValue EnergyPreferencePercent { get; set; }
+
+        /// <summary>
+        /// Processor energy performance preference policy for Processor Power Efficiency Class 1
+        /// </summary>
+        public PercentValue EnergyPreferencePercentClass1 { get; set; }
+
+        /// <summary>
+        /// Processor performance increase time for Processor Power Efficiency Class 1
+        /// </summary>
+        public uint IncreaseStabilizationIntervalClass1 { get; set; }
+
+        /// <summary>
+        /// Processor performance level increase threshold for Processor Power Efficiency Class 2 processor count increase
+        /// </summary>
+        public Nullable<MultiHexValue> IncreaseThresholdPercentClass2 { get; set; }
+
+        /// <summary>
+        /// Processor performance level increase threshold for Processor Power Efficiency Class 1 processor count increase
+        /// </summary>
+        public MultiHexValue IncreaseThresholdPercentClass1 { get; set; }
+
+        /// <summary>
         /// 
         /// </summary>
         /// <param name="obj"></param>
@@ -223,19 +286,31 @@ namespace ETWAnalyzer.Extract.Power
                 this.BoostMode == other.BoostMode &&
                 this.BoostPolicyPercent == other.BoostPolicyPercent &&
                 this.DecreasePolicy == other.DecreasePolicy &&
+                this.DecreaseLevelThresholdClass1 == other.DecreaseLevelThresholdClass1 &&
+                this.DecreaseLevelThresholdClass2 == other.DecreaseLevelThresholdClass2 &&
                 this.DecreaseStabilizationInterval == other.DecreaseStabilizationInterval &&
                 this.DecreaseThresholdPercent == other.DecreaseThresholdPercent &&
+                this.EnergyPreferencePercent     == other.EnergyPreferencePercent &&
+                this.EnergyPreferencePercentClass1 == other.EnergyPreferencePercentClass1 &&
                 this.HeteroPolicyInEffect == other.HeteroPolicyInEffect &&
                 this.HeteroPolicyThreadScheduling == other.HeteroPolicyThreadScheduling &&
                 this.HeteroPolicyThreadSchedulingShort == other.HeteroPolicyThreadSchedulingShort &&
                 this.IncreasePolicy == other.IncreasePolicy &&
+                this.IncreasePolicyClass1 == other.IncreasePolicyClass1 &&
                 this.IncreaseStabilizationInterval == other.IncreaseStabilizationInterval &&
+                this.IncreaseStabilizationIntervalClass1 == other.IncreaseStabilizationIntervalClass1 &&
                 this.IncreaseThresholdPercent == other.IncreaseThresholdPercent &&
+                this.IncreaseThresholdPercentClass1 == other.IncreaseThresholdPercentClass1 &&
+                this.IncreaseThresholdPercentClass2 == other.IncreaseThresholdPercentClass2 &&
                 this.LatencySensitivityPerformancePercent == other.LatencySensitivityPerformancePercent &&
+                this.LongRunningThreadsLowerArchitectureLimit == other.LongRunningThreadsLowerArchitectureLimit &&
                 this.MaxEfficiencyClass0Frequency == other.MaxEfficiencyClass0Frequency &&
                 this.MaxEfficiencyClass1Frequency == other.MaxEfficiencyClass1Frequency &&
                 this.MaxThrottlingFrequencyPercent == other.MaxThrottlingFrequencyPercent &&
+                this.MaxThrottlingFrequencyClass1Percent == other.MaxThrottlingFrequencyClass1Percent &&
                 this.MinThrottlingFrequencyPercent == other.MinThrottlingFrequencyPercent &&
+                this.MinThrottlingFrequencyPercentClass1 == other.MinThrottlingFrequencyPercentClass1 &&
+                this.ShortVsLongThreadThresholdUs == other.ShortVsLongThreadThresholdUs &&
                 this.StabilizationInterval == other.StabilizationInterval &&
                 this.SystemCoolingPolicy == other.SystemCoolingPolicy &&
                 this.ThrottlePolicy == other.ThrottlePolicy &&

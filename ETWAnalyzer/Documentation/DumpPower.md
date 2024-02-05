@@ -6,37 +6,55 @@ ETWAnalyzer can display the currently active power plan settings with
 Below are all CPU settings for the Balanced Power Plan printed:
 ```
 ETWAnalyzer -dump power -fd c:\temp\Extract\power_Balanced.json 
-File Date                               : 27.12.2023 01:36:38                     
-File Name                               : power_Balanced                          
+File Date                               : 1/30/2024 10:44:46 PM                   
+File Name                               : Balanced_Win11           
 
 CPU Power Configuration
 
+ActiveProfile                           : Balanced                                
+Base Profile                            : Balanced                                
+Autonomous Mode                         : True                                    
+HeteroPolicyInEffect                    : 0                                       
+HeteroPolicyThreadScheduling            : Automatic                               
+HeteroPolicyThreadSchedulingShort       : Automatic                               
+DecreaseLevelThreshold Class 1          : 25,25,25,25                             
+DecreaseLevelThreshold Class 2          : 50,50,50,50                             
+ShortVsLongThreadThreshold us           : 0                                       
+LongRunningThreadsLowerArchitectureLimit: 0                                       
+EnergyPreference %                      : 50                                      
+EnergyPreference % Class 1              : 50                                      
 BoostMode                               : Aggressive                              
 BoostPolicy %                           : 60                                      
 DecreasePolicy                          : Ideal                                   
-DecreaseStabilizationInterval           : 00:00:00.0010000                        
+DecreaseStabilizationInterval           : 1 ms                                    
 DecreaseThreshold %                     : 20                                      
 IncreasePolicy                          : Ideal                                   
-IncreaseStabilizationInterval           : 00:00:00.0010000                        
-IncreaseThreshold%                      : 60                                      
-LatencySensitivityPerformancePercent    : 99                                      
-MaxFrequency Class0 MHz                 : 0                                       
-MaxFrequency Class1 MHz                 : 0                                       
+IncreasePolicy Class 1                  : 3                                       
+IncreaseStabilizationInterval           : 1 ms                                    
+IncreaseThreshold %                     : 60                                      
+IncreaseStabilizationIntervalClass1     : 1                                       
+StabilizationInterval                   : 30 ms                                   
+IncreaseThresholdPercentClass1          : 60,60,60,60                             
+IncreaseThresholdPercentClass2          : 90,90,90,90                             
+LatencySensitivity %                    : 99                                      
+MaxFrequency MHz Class 0                : 0                                       
+MaxFrequency MHz Class1                 : 0                                       
 MaxThrottleFrequency %                  : 100                                     
+MaxThrottleFrequency % Class 1          : 100                                     
 MinThrottleFrequency %                  : 5                                       
-StabilizationInterval                   : 00:00:00.0300000                        
+MinThrottleFrequency Class 1 %          : 5                                       
 SystemCoolingPolicy                     : Active                                  
 ThrottlePolicy                          : Automatic                               
-TimeWindowSize                          : 1                                       
+TimeWindowSize                          : 1           
 
 Idle Configuration
 
 DeepestIdleState                        : 0                                       
 DemoteThreshold                         : 40                                      
 Enabled                                 : True                                    
-MinimumDurationBetweenChecks            : 00:00:00.0500000                        
+MinimumDurationBetweenChecks            : 50 ms                                   
 PromoteThreshold %                      : 60                                      
-ScalingEnabled                          : False                                   
+ScalingEnabled                          : False     
 
 Core Parking
 
@@ -44,12 +62,14 @@ ConcurrencyHeadroomThreshold %          : 50
 ConcurrencyThreshold %                  : 95                                      
 MaxEfficiencyClass1UnparkedProcessor %  : 100                                     
 MaxUnparkedProcessor %                  : 100                                     
-MinParkedDuration                       : 00:00:00.0010000                        
-MinUnparkedDuration                     : 00:00:00.0030000                        
+MinParkedDuration                       : 1 ms                                    
+MinUnparkedDuration                     : 3 ms                                    
 MinUnparkedProcessor %                  : 4                                       
 MinEfficiencyClass1UnparkedProcessor %  : 0                                       
 OverUtilizationThreshold %              : 85                                      
 ParkingPerformanceState                 : NoPreference                            
+InitialPerformanceClass1 %              : 100                                     
+SoftParkLatencyUs                       : 10 us                                   
 ParkingPolicy                           : Ideal                                   
 UnparkingPolicy                         : Ideal                                   
 UtilityDistributionEnabled              : False                                   
@@ -91,30 +111,48 @@ ETWAnlayzer supports the ```-Diff``` flag for ```-Dump Power``` to show only the
 ```
 ETWAnalyzer -dump Power -Diff  -fd c:\temp\Extract\power_Balanced.json -fd c:\temp\Extract\power_HighPerformance.json -fd c:\temp\Extract\power_PowerSaver.json 
 Skipped 0 entries with identical power configurations.
-Remaining 3 entries.
-File Date                               : 27.12.2023 01:36:38                     27.12.2023 01:36:59                     27.12.2023 01:37:20                     
-File Name                               : power_Balanced                          power_HighPerformance                   power_PowerSaver                        
+File Date                               : 1/30/2024 10:44:46 PM                   1/30/2024 10:45:05 PM                   1/30/2024 10:45:46 PM                   
+File Name                               : Balanced_Win11                          HighPerformance_Win11                   PowerSaver_Win11                        
+
 CPU Power Configuration
+
+ActiveProfile                           : Balanced                                HighPerformance                         PowerSaver                              
+Base Profile                            : Balanced                                HighPerformance                         PowerSaver                              
+Autonomous Mode                         : True                                    ...                                     False                                   
+HeteroPolicyInEffect                    : 0                                       ...                                     4                                       
+DecreaseLevelThreshold Class 1          : 25,25,25,25                             ...                                     50,50,50,50                             
+EnergyPreference %                      : 50                                      0                                       60                                      
+EnergyPreference % Class 1              : 50                                      0                                       60                                      
 BoostPolicy %                           : 60                                      100                                     0                                       
 DecreasePolicy                          : Ideal                                   Single                                  Rocket                                  
 DecreaseThreshold %                     : 20                                      10                                      60                                      
 IncreasePolicy                          : Ideal                                   Rocket                                  Single                                  
-IncreaseStabilizationInterval           : 00:00:00.0010000                        ...                                     00:00:00.0030000                        
-IncreaseThreshold%                      : 60                                      30                                      90                                      
-LatencySensitivityPerformancePercent    : 99                                      ...                                     0                                       
+IncreaseStabilizationInterval           : 1 ms                                    ...                                     3 ms                                    
+IncreaseThreshold %                     : 60                                      30                                      90                                      
+IncreaseStabilizationIntervalClass1     : 1                                       ...                                     3                                       
+StabilizationInterval                   : 30 ms                                   15 ms                                   200 ms                                  
+IncreaseThresholdPercentClass1          : 60,60,60,60                             ...                                     90,90,90,90                             
+LatencySensitivity %                    : 99                                      ...                                     0                                       
+MaxThrottleFrequency % Class 1          : 100                                     ...                                     75                                      
 MinThrottleFrequency %                  : 5                                       100                                     5                                       
-StabilizationInterval                   : 00:00:00.0300000                        00:00:00.0150000                        00:00:00.2000000                        
+MinThrottleFrequency Class 1 %          : 5                                       100                                     5                                       
 SystemCoolingPolicy                     : Active                                  ...                                     Passive                                 
+
 Idle Configuration
+
 DemoteThreshold                         : 40                                      ...                                     20                                      
 PromoteThreshold %                      : 60                                      ...                                     40                                      
 ScalingEnabled                          : False                                   ...                                     True                                    
+
 Core Parking
+
 ConcurrencyHeadroomThreshold %          : 50                                      ...                                     20                                      
 ConcurrencyThreshold %                  : 95                                      ...                                     97                                      
-MinUnparkedDuration                     : 00:00:00.0030000                        ...                                     00:00:00.0020000                        
+MinUnparkedDuration                     : 3 ms                                    ...                                     2 ms                                    
 MinUnparkedProcessor %                  : 4                                       ...                                     100                                     
-OverUtilizationThreshold %              : 85                                      60                                      90    
+OverUtilizationThreshold %              : 85                                      60                                      90                                      
+InitialPerformanceClass1 %              : 100                                     ...                                     50                                      
+SoftParkLatencyUs                       : 10 us                                   1000 us                                 0 us            
 ```
 You can add ```-Details``` to get help for each of the settings to give you an idea what the setting is all about. The output becomes then a bit messy
 but very informative. One major aspect in the Power Saver profile is that MS turns off *Processor performance autonomous mode* to manually control the 
@@ -156,37 +194,22 @@ not surface the following CPU Power settings.
 
 - A floor performance for Processor Power Efficiency Class 0 when there are Processor Power Efficiency Class 1 processors unparked
 - Complex unpark policy
-- Initial performance for Processor Power Efficiency Class 1 when unparked
 - Latency sensitivity hint min unparked cores/packages
 - Latency sensitivity hint min unparked cores/packages for Processor Power Efficiency Class 1
 - Latency sensitivity hint processor performance for Processor Power Efficiency Class 1
-- Long running threads' processor architecture lower limit
 - Long running threads' processor architecture upper limit
-- Maximum processor state for Processor Power Efficiency Class 1
-- Minimum processor state for Processor Power Efficiency Class 1
 - Module unpark policy
 - Processor autonomous activity window
 - Processor Duty Cycling
-- Processor energy performance preference policy
-- Processor energy performance preference policy for Processor Power Efficiency Class 1
 - Processor performance core parking parked performance state for Processor Power Efficiency Class 1
-- Processor performance core parking soft park latency
 - Processor performance decrease policy for Processor Power Efficiency Class 1
 - Processor performance decrease threshold for Processor Power Efficiency Class 1
 - Processor performance decrease time for Processor Power Efficiency Class 1
 - Processor performance decrease time for Processor Power Efficiency Class 1
 - Processor performance history count for Processor Power Efficiency Class 1
-- Processor performance increase policy for Processor Power Efficiency Class 1
 - Processor performance increase threshold for Processor Power Efficiency Class 1
-- Processor performance increase time for Processor Power Efficiency Class 1
-- Processor performance increase time for Processor Power Efficiency Class 1
-- Processor performance level decrease threshold for Processor Power Efficiency Class 1 processor count decrease
-- Processor performance level decrease threshold for Processor Power Efficiency Class 2 processor count decrease
-- Processor performance level increase threshold for Processor Power Efficiency Class 1 processor count increase
-- Processor performance level increase threshold for Processor Power Efficiency Class 2 processor count increase
 - Short running threads' processor architecture lower limit
 - Short running threads' processor architecture upper limit
-- Short vs. long running thread threshold
 - Smt threads unpark policy
  
 The following settings are parsed by ETWAnalyzer on its own because they are important and not surfaced by TraceProcessing
@@ -197,6 +220,20 @@ The following settings are parsed by ETWAnalyzer on its own because they are imp
 - Heterogeneous policy in effect
 - Active Profile Guid
 - Base Profile Guid
+- Initial performance for Processor Power Efficiency Class 1 when unparked
+- Long running threads' processor architecture lower limit
+- Minimum processor state for Processor Power Efficiency Class 1
+- Processor energy performance preference policy
+- Processor energy performance preference policy for Processor Power Efficiency Class 1
+- Short vs. long running thread threshold
+- Processor performance level decrease threshold for Processor Power Efficiency Class 1 processor count decrease
+- Processor performance level decrease threshold for Processor Power Efficiency Class 2 processor count decrease
+- Processor performance increase policy for Processor Power Efficiency Class 1
+- Processor performance level increase threshold for Processor Power Efficiency Class 1 processor count increase
+- Processor performance level increase threshold for Processor Power Efficiency Class 2 processor count increase
+- Maximum processor state for Processor Power Efficiency Class 1
+- Processor performance core parking soft park latency
+- Processor performance increase time for Processor Power Efficiency Class 1
 
 This list was extracted from a Windows 11 machine. The vigilant reader may have spotted Efficiency Class 2 settings which indicate that 
 there can exist not only one E-Core type inside one CPU. With the release of Intel Meteor lake CPUs we have P/E and Lower Energy E Cores. 

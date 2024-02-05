@@ -135,5 +135,15 @@ namespace ETWAnalyzer.Extract.Power
         /// available.
         /// </summary>
         PercentValue UtilityDistributionThresholdPercent { get; }
+
+        /// <summary>
+        /// Initial performance for Processor Power Efficiency Class 1 when unparked
+        /// </summary>
+        public PercentValue InitialPerformancePercentClass1 { get; }
+
+        /// <summary>
+        /// Processor performance core parking soft park latency
+        /// </summary>
+        public uint SoftParkLatencyUs { get; }
     }
 }

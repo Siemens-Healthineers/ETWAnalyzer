@@ -23,6 +23,12 @@ namespace ETWAnalyzer.Extract.Power
         ProcessorPerformanceChangePolicy IncreasePolicy { get; }
 
         /// <summary>
+        /// Gets a value that indicates how aggressive the performance states should be changed
+        /// when increasing the processor performance state.
+        /// </summary>
+        Nullable<uint> IncreasePolicyClass1 { get; }
+
+        /// <summary>
         /// Gets a value that indicates the busy percentage threshold that must be met before
         /// increasing the processor performance state.
         /// </summary>
@@ -86,6 +92,58 @@ namespace ETWAnalyzer.Extract.Power
         PercentValue MaxThrottlingFrequencyPercent { get; }
 
         /// <summary>
+        /// Gets a value that indicates the maximum percentage of the processor frequency.
+        /// For example, if this value is set to 80, then the processor frequency will never
+        /// be throttled above 80 percent of its maximum frequency by the system.
+        /// </summary>
+        Nullable<PercentValue> MaxThrottlingFrequencyClass1Percent {get;}
+
+        /// <summary>
+        /// Processor performance level increase threshold for Processor Power Efficiency Class 2 processor count increase
+        /// </summary>
+        public Nullable<MultiHexValue> DecreaseLevelThresholdClass2 { get; }
+
+        /// <summary>
+        /// Processor performance level increase threshold for Processor Power Efficiency Class 1 processor count increase
+        /// </summary>
+        public MultiHexValue DecreaseLevelThresholdClass1 { get; }
+
+        /// <summary>
+        /// Short vs. long running thread threshold
+        /// </summary>
+        public Nullable<uint> ShortVsLongThreadThresholdUs { get; }
+
+        /// <summary>
+        /// Short running threads' processor architecture lower limit
+        /// </summary>
+        public Nullable<uint> LongRunningThreadsLowerArchitectureLimit { get; }
+
+        /// <summary>
+        /// Processor energy performance preference policy
+        /// </summary>
+        public PercentValue EnergyPreferencePercent { get; }
+
+        /// <summary>
+        /// Processor energy performance preference policy for Processor Power Efficiency Class 1
+        /// </summary>
+        public PercentValue EnergyPreferencePercentClass1 { get; }
+
+        /// <summary>
+        /// Processor performance increase time for Processor Power Efficiency Class 1
+        /// </summary>
+        public uint IncreaseStabilizationIntervalClass1 { get; }
+
+        /// <summary>
+        /// Processor performance level increase threshold for Processor Power Efficiency Class 2 processor count increase
+        /// </summary>
+        public Nullable<MultiHexValue> IncreaseThresholdPercentClass2 { get; }
+
+        /// <summary>
+        /// Processor performance level increase threshold for Processor Power Efficiency Class 1 processor count increase
+        /// </summary>
+        public MultiHexValue IncreaseThresholdPercentClass1 { get; }
+
+        /// <summary>
         /// Gets a value that indicates the maximum processor frequency in efficiency class 1.
         /// Processor Power Efficiency Class describes the relative power efficiency of the
         /// associated processor. Lower efficiency class numbers are more efficient than
@@ -101,6 +159,13 @@ namespace ETWAnalyzer.Extract.Power
         /// be throttled below 50 percent of its maximum frequency by the system.
         /// </summary>
         PercentValue MinThrottlingFrequencyPercent { get; }
+
+        /// <summary>
+        /// Gets a value that indicates the minimum percentage of the processor frequency.
+        /// For example, if this value is set to 50, then the processor frequency will never
+        /// be throttled below 50 percent of its maximum frequency by the system.
+        /// </summary>
+        PercentValue MinThrottlingFrequencyPercentClass1 { get; }
 
         /// <summary>
         /// Gets a value that indicates the maximum processor frequency in efficiency class 0.
