@@ -85,7 +85,7 @@ normalized to the nominal (100%) frequency.
 ```
 ETWAnalyzer %f% -dump cpu -topn 2 -topnmethods 1 -details  -normalize -noready 
 ```
-![](Images/DumpCpu_Normalized.png "Dump CPU Normalized")
+![](Images/DumpCPU_Normalized.png "Dump CPU Normalized")
 
 In this case the test application did have the same frequency, it was just running not long enough because the process was interrupted with Ctrl-C which is visible
 in the return code when you dump the processes: 
