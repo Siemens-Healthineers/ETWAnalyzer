@@ -116,7 +116,7 @@ CPU frequency which was 2.9 GHz vs 4.7 GHz.
 
 ## Hybrid CPU Scheduling
 Running workloads on hybrid CPUs is challenging when the workload is running not on the expected core type. ETWAnalyzer is one of the very few tools which makes
-it easy to find out on which cores at which frequencies your workload was running. If you record the data with MultiProfile.wprp you get also the currently active
+it easy to find out on which cores at which frequencies your workload was running. If you record the data with [MultiProfile.wprp](https://github.com/Alois-xx/etwcontroller/blob/master/ETWController/ETW/MultiProfile.wprp) you get also the currently active
 power profile settings dumped to ETW which can be used to compare different Windows power profiles with [-Dump Power](DumpPower.md).
 To compare different power profiles you can run a simple CPU loop which runs for 10s on multiple threads. If you run e.g. 12 threads for 10s you 
 consume by definition regardless of the CPU type 120s of CPU. If due to concurrency and OS madness your threads are piling up on the E or P cores 
