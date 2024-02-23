@@ -118,6 +118,7 @@ namespace ETWAnalyzer.Commands
         "                         The following filters are only applicable to profiling data which has a fixed file naming convention" + Environment.NewLine +
         "                            -TestRunIndex dd           Select only data from a specific test run by index. To get the index value use -dump TestRun -filedir xxxx " + Environment.NewLine +
         "                            -TestRunCount dd           Select from a given TestRunIndex the next dd TestRuns. " + Environment.NewLine +
+        "                            -NoTestRunGrouping         Do not group tests into TestRuns which are tests which have tests with a gap > 1h." + Environment.NewLine +
         "                            -MinMaxMsTestTimes xx-yy ... Select files based on test run time range. Multiple ranges are supported. Useful to e.g. to check fast vs slow testrun for typical test durations excluding outliers." + Environment.NewLine +
         "                            -TestsPerRun dd            Number of test cases to load of each test run. Useful if you want get an overview how a test behaves over time without loading thousands of files." + Environment.NewLine +
         "                            -SkipNTests dd             Skip the first n tests of a testcase in a TestRun. Use this to e.g. skip the first test run which shows normally first time init effects which may be not representative" + Environment.NewLine +
@@ -973,6 +974,9 @@ namespace ETWAnalyzer.Commands
                         break;
                     case DebugArg:    // -debug
                         Program.DebugOutput = true;
+                        break;
+                    case NoTestRunGrouping:
+                        TestRun.MaxTimeBetweenTests = TimeSpan.MaxValue;
                         break;
                     case NoColorArg:   // -nocolor
                         ColorConsole.EnableColor = false;

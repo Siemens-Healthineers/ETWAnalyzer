@@ -54,7 +54,11 @@ namespace ETWAnalyzer.Extract
         /// <summary>
         /// When between two tests a time gap > 1h exists then map it to a new TestRun
         /// </summary>
-        static readonly TimeSpan myMaxTimeBetweenTests = TimeSpan.FromHours(1);
+        internal static TimeSpan MaxTimeBetweenTests
+        {
+            get;
+            set;
+        } = TimeSpan.FromHours(1);
 
         /// <summary>
         /// Key: Name of the Testcase/SingleTest with Type(CR, MR, CT,...)
@@ -275,7 +279,7 @@ namespace ETWAnalyzer.Extract
                     continue;
                 }
 
-                if (sortedByPerformedAt[i].PerformedAt - sortedByPerformedAt[i - 1].PerformedAt > myMaxTimeBetweenTests)
+                if (sortedByPerformedAt[i].PerformedAt - sortedByPerformedAt[i - 1].PerformedAt > MaxTimeBetweenTests)
                 {
                     groups.Add(currentgroup);
                     currentgroup = new List<SingleTest>();

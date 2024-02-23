@@ -35,7 +35,7 @@ namespace ETWAnalyzer.Commands
     {
         internal static readonly string HelpString =
          "ETWAnalyzer [-extract [All, Default or Disk File CPU Memory Exception Stacktag ThreadPool PMC Frequency Power Dns TCP] -filedir/-fd inEtlOrZip [-DryRun] [-symServer NtSymbolPath/MS/Google/syngo] [-keepTemp] [-NoOverwrite] [-pThreads dd] [-nThreads dd]" + Environment.NewLine +
-         "            [-NoReady] [-allCPU] [-Concurrency dd] [-NoIndent] [-LastNDays dd] [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd]  " + Environment.NewLine + 
+         "            [-NoReady] [-allCPU] [-Concurrency dd] [-NoIndent] [-LastNDays dd] [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd] [-NoTestRunGrouping]  " + Environment.NewLine + 
          "Retrieve data from ETL files and store extracted data in a serialized format in Json in the output directory \\Extract folder." + Environment.NewLine +
          "The data can the be analyzed by other tools or ETWAnalyzer itself which can also analyze the data for specific patterns or issues." + Environment.NewLine +
          "Extract Options are separated by space" + Environment.NewLine +
@@ -69,6 +69,7 @@ namespace ETWAnalyzer.Commands
          "         TestCaseName_ddddms_Machine_CLT/SRV/SINGLE_TestStatus-Passed/Failed_yyyymmdd-hhmmss.7z/.etl e.g. LoadPrepUseCase_4897ms_RN6498AA8B-B18F_SRV_TestStatus-Passed_20230112-170100.7z" + Environment.NewLine + 
          "   -TestRunIndex dd           Select only data from a specific test run by index. To get the index value use -dump TestRun -filedir xxxx " + Environment.NewLine +
          "   -TestRunCount dd           Select from a given TestRunIndex the next dd TestRuns. " + Environment.NewLine +
+         "   -NoTestRunGrouping         Do not group tests into TestRuns which are tests which have tests with a gap > 1h." + Environment.NewLine +
          "   -TestsPerRun dd            Number of test cases to load of each test run. Useful if you want get an overview how a test behaves over time without loading thousands of files." + Environment.NewLine +
          "   -SkipNTests dd             Skip the first n tests of a testcase in a TestRun. Use this to e.g. skip the first test run which shows normally first time init effects which may be not representative" + Environment.NewLine +
          " -DryRun              Do not extract. Only print which files would be extracted." + Environment.NewLine + 
@@ -384,6 +385,9 @@ namespace ETWAnalyzer.Commands
                         string outDir = GetNextNonArg(OutDirArg);
                         OutDir.OutputDirectory = ArgParser.CheckIfFileOrDirectoryExistsAndExtension(outDir);
                         OutDir.IsDefault = false;
+                        break;
+                    case NoTestRunGrouping:
+                        TestRun.MaxTimeBetweenTests = TimeSpan.MaxValue;
                         break;
                     case TempDirArg:  // -tempdir
                         string tmpDir = GetNextNonArg(TempDirArg);
