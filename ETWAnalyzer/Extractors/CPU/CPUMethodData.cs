@@ -302,7 +302,7 @@ namespace ETWAnalyzer.Extractors.CPU
         /// <param name="debugData"></param>
         public void AddForExtendedMetrics(CPUStats cpuStats, CPUNumber cpu, float start, float end, int threadId, long cpuAffinityMask, string debugData)
         {
-            if (cpuStats.ExtendedCPUMetrics != null)
+            if (cpuStats?.ExtendedCPUMetrics != null)
             {
                 if( !CPUToFrequencyDuration.TryGetValue(cpu, out List<ProfilingData> frequencyDurations) )
                 {
