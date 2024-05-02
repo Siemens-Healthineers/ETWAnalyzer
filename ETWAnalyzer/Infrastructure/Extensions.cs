@@ -3,8 +3,10 @@
 
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Globalization;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -212,6 +214,17 @@ namespace ETWAnalyzer.Infrastructure
             }
 
             return new KeyValuePair<decimal, decimal>(min, max);
+        }
+
+        public static long ParseLongFromHex(this string hexValue)
+        {
+            if (hexValue.StartsWith("0x", StringComparison.CurrentCultureIgnoreCase) ||
+                hexValue.StartsWith("&H", StringComparison.CurrentCultureIgnoreCase))
+            {
+                hexValue = hexValue.Substring(2);
+            }
+
+            return long.Parse(hexValue, NumberStyles.HexNumber, CultureInfo.InvariantCulture);
         }
 
         public static KeyValuePair<ulong,ulong> GetMinMaxULong(this string minMaxStr, decimal defaultUnit)

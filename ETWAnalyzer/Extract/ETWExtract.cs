@@ -4,6 +4,7 @@
 using ETWAnalyzer.Extract.Disk;
 using ETWAnalyzer.Extract.Exceptions;
 using ETWAnalyzer.Extract.FileIO;
+using ETWAnalyzer.Extract.Handle;
 using ETWAnalyzer.Extract.Modules;
 using ETWAnalyzer.Extract.Network;
 using ETWAnalyzer.Extract.PMC;
@@ -356,6 +357,11 @@ namespace ETWAnalyzer.Extract
 
         INetwork IETWExtract.Network => Network;
 
+        /// <summary>
+        /// Contains ObjectReference and Handle Trace Data
+        /// </summary>
+        public HandleObjectData HandleData { get; set; } = new();
+  
         /// <summary>
         /// When File  IO data is accessed via IETWExtract 
         /// </summary>

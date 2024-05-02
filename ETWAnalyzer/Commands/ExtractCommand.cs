@@ -25,6 +25,7 @@ using ETWAnalyzer.EventDump;
 using ETWAnalyzer.Extractors.TCP;
 using ETWAnalyzer.Extractors.Memory;
 using ETWAnalyzer.Extractors.Power;
+using ETWAnalyzer.Extractors.Handle;
 
 namespace ETWAnalyzer.Commands
 {
@@ -174,6 +175,7 @@ namespace ETWAnalyzer.Commands
             TCP,
             Frequency,
           //  VirtualAlloc,
+            ObjectRef,
             Power,
         }
 
@@ -202,7 +204,8 @@ namespace ETWAnalyzer.Commands
             { ExtractionOptions.Dns,         () => new DnsClientExtractor()    },
             { ExtractionOptions.TCP,         () => new TCPExtractor()          },
             { ExtractionOptions.Frequency,   () => new CpuFrequencyExtractor() },
-       //    { ExtractionOptions.VirtualAlloc,() => new VirtualAllocExtractor() },
+            //    { ExtractionOptions.VirtualAlloc,() => new VirtualAllocExtractor() },
+            { ExtractionOptions.ObjectRef,   () => new ObjectRefExtractor() },
             { ExtractionOptions.Power       ,() => new PowerExtractor() },
         };
 
@@ -554,6 +557,7 @@ namespace ETWAnalyzer.Commands
                         extractors.Add(myExtractorFactory[ExtractionOptions.Dns]());
                         extractors.Add(myExtractorFactory[ExtractionOptions.TCP]());
                         extractors.Add(myExtractorFactory[ExtractionOptions.Power]());
+                        extractors.Add(myExtractorFactory[ExtractionOptions.ObjectRef]());
                  //       extractors.Add(myExtractorFactory[ExtractionOptions.VirtualAlloc]());
                     }
                     else

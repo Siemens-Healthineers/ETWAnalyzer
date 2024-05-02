@@ -5,9 +5,13 @@ using Microsoft.Windows.EventTracing;
 using Microsoft.Windows.EventTracing.Processes;
 using Microsoft.Windows.EventTracing.Symbols;
 using System;
+using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -101,6 +105,48 @@ namespace ETWAnalyzer.TraceProcessorHelpers
             return GetPrettyMethod(methodName, frame.Image);
         }
 
+
+        Dictionary<KeyValuePair<int, List<Address>>, string> myFrameAddressMap = new(new StackComparer());
+
+        class StackComparer : IEqualityComparer<KeyValuePair<int, List<Address>>>
+        {
+            public StackComparer() { }
+            public bool Equals(KeyValuePair<int, List<Address>> x, KeyValuePair<int, List<Address>> y)
+            {
+                if (x.Key != y.Key)
+                {
+                    return false;
+                }
+
+                if( x.Value.Count != y.Value.Count)
+                {
+                    return false;
+                }
+
+                for(int i=0;i<x.Value.Count;i++)
+                {
+                    if (x.Value[i]!= y.Value[i]) 
+                    { 
+                        return false; 
+                    }
+                }
+
+                return true;
+            }
+
+            public int GetHashCode(KeyValuePair<int, List<Address>> obj)
+            {
+                int hash = 17*31 + obj.Key;
+                for(int i=0;i<obj.Value.Count;i++)
+                {
+                    hash = hash * 31 + (obj.Value[i]).GetHashCode();
+                }
+                return hash;
+            }
+        }
+
+        List<Address> myStackList = new List<Address>();
+
         /// <summary>
         /// Get a pretty printed stack string out of of an <see cref="IStackSnapshot"/> instance
         /// </summary>
@@ -115,22 +161,68 @@ namespace ETWAnalyzer.TraceProcessorHelpers
             }
 
             StringBuilder lret = new();
-
-            for (int i=0;i<stack.Frames.Count;i++)
+            lock(myStackList) 
             {
-                StackFrame frame = stack.Frames[i];
-                if( !frame.HasValue )
+                myStackList.Clear();
+                for (int i = 0; i < stack.Frames.Count; i++)
                 {
-                    lret.AppendLine(UnknownMethod);
+                    myStackList.Add(stack.Frames[i].Address);
+                }
+                var key = new KeyValuePair<int, List<Address>>(stack.ProcessId, myStackList);
+                if (myFrameAddressMap.TryGetValue(key, out string stackTrace) )
+                {
+                    return stackTrace;
                 }
 
-                if( frame.Symbol != null)
+                for (int i=0;i<stack.Frames.Count;i++)
                 {
-                    lret.AppendLine(GetPrettyMethod(frame.Symbol.FunctionName, frame));
+                    StackFrame frame = stack.Frames[i];
+                    if( !frame.HasValue )
+                    {
+                        lret.AppendLine(UnknownMethod);
+                    }
+
+                    var frameKey = new KeyValuePair<int, Address>(stack.ProcessId, frame.RelativeVirtualAddress);
+               
+
+                    if( frame.Symbol != null)
+                    {
+                        lret.AppendLine(GetPrettyMethod(frame.Symbol.FunctionName, frame));
+                    }
+                    else
+                    {
+                        string method = frame.Image?.FileName ?? UnknownMethod;
+                        method = AddRva(method, frame.RelativeVirtualAddress);
+                        lret.AppendLine(method);
+                    }
                 }
+
+                string retStr = lret.ToString();
+                myFrameAddressMap[new KeyValuePair<int, List<Address>>(key.Key, new List<Address>(myStackList))] = retStr;
+
+                return lret.ToString();
+            }
+        }
+
+        /// <summary>
+        /// Add to method name if it was not resolved the RVA address. This is needed to later resolve the method
+        /// name when matching symbols could be loaded.
+        /// </summary>
+        /// <param name="method">Method of the form xxxx.dll!method where method is xxx.dll if the symbol lookup did fail.</param>
+        /// <param name="rva">Image Relative Virtual Address</param>
+        /// <returns>For unresolved methods the image + Image Relative Virtual Address.</returns>
+        internal static string AddRva(string method, Address rva)
+        {
+            string lret = method;
+
+            // do not try to resolve invalid RVAs (like 0)
+            if (rva.Value > 0 && (method.EndsWith(".exe", StringComparison.Ordinal) || method.EndsWith(".dll", StringComparison.Ordinal) || method.EndsWith(".sys", StringComparison.Ordinal)))
+            {
+                // Method could not be resolved. Use RVA
+                lret = method + "+0x" + rva.Value.ToString("X", CultureInfo.InvariantCulture);
             }
 
-            return lret.ToString();
+            return lret;
         }
     }
 }

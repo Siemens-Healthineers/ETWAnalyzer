@@ -4,6 +4,7 @@
 using ETWAnalyzer.Extract.Disk;
 using ETWAnalyzer.Extract.Exceptions;
 using ETWAnalyzer.Extract.FileIO;
+using ETWAnalyzer.Extract.Handle;
 using ETWAnalyzer.Extract.Modules;
 using ETWAnalyzer.Extract.Network;
 using ETWAnalyzer.Extract.PMC;
@@ -211,6 +212,10 @@ namespace ETWAnalyzer.Extract
         /// </summary>
         IReadOnlyList<IPowerConfiguration> PowerConfiguration { get; }
 
+        /// <summary>
+        /// Contains ObjectReference and Handle Trace Data
+        /// </summary>
+        public HandleObjectData HandleData { get; }
 
         /// <summary>
         /// Convert a trace relative time which is seconds since trace start to an absolue time
