@@ -244,6 +244,21 @@ namespace ETWAnalyzer.Infrastructure
             return new KeyValuePair<ulong, ulong>(min, max);
         }
 
+        public static Tuple<long, long> GetMinMaxLong(this string minStr, string maxStr, decimal defaultUnit)
+        {
+            string minNumber = GetUnit(minStr, out decimal? multiplierMin);
+            long min = (long)((decimal)long.Parse(minNumber) * (multiplierMin ?? defaultUnit));
+
+            long max = long.MaxValue;
+            if (!String.IsNullOrEmpty(maxStr))
+            {
+                string maxNumberStr = GetUnit(maxStr, out decimal? multiplierMax);
+                max = (long)((decimal)long.Parse(maxNumberStr) * (multiplierMax ?? defaultUnit));
+            }
+
+            return Tuple.Create(min, max);
+        }
+
         public static Tuple<double,double> GetMinMaxDouble(this string minStr, string maxStr, decimal defaultUnit)
         {
             string minNumber = GetUnit(minStr, out decimal? multiplierMin);

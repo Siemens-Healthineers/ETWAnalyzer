@@ -380,19 +380,21 @@ namespace ETWAnalyzer.Commands
         "       [-TimeFmt s,Local,LocalTime,UTC,UTCTime,Here,HereTime] [-csv xxx.csv] [-NoCSVSeparator] [-NoCmdLine] [-Clip] [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd] [-MinMaxMsTestTimes xx-yy ...] [-ProcessName/pn xxx.exe(pid)] " + Environment.NewLine +
         "       [-MinMaxDuration minS [maxS]] [-StackFilter filter] " + Environment.NewLine + 
         "       [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-CmdLine substring]" + Environment.NewLine +
-        "                        -ProcessName/pn xxx.exe(pid) Filter for processes which did create the object first." + Environment.NewLine +
-        "                        -RelatedProcess xxx.exe(pid) Filter for processes which did access the object." + Environment.NewLine +    
+        "                        -ProcessName/pn xxx.exe(pid) Filter for processes which did access/modify the object." + Environment.NewLine +
+        "                        -RelatedProcess xxx.exe(pid) Filter for processes which did access the object, but did not create it." + Environment.NewLine +    
         "                        -MinMaxDuration minS [maxS]  Filter for handle lifetime. Never closed handles get a lifetime of 3600 s which serves as magic marker value." + Environment.NewLine +
         "                        -StackFilter filter          Filter for stack substring of first creation event when object is created. " + Environment.NewLine +
         "                        -DestroyStackFilter filter   Filter for events which the object deletion events do match. " + Environment.NewLine +    
         "                        -Object filter               Filter for kernel object pointer value." + Environment.NewLine +
-        "                        -HandleName filter           Filter for handle name." + Environment.NewLine +
+        "                        -ObjectName filter           Filter for object name." + Environment.NewLine +
+        "                        -Handle filter               Text filter for handle value/s." + Environment.NewLine +
         "                        -ShowRef                     Show Object Reference increment/decrement operations." + Environment.NewLine +
         "                        -ShowStack                   Show event stacks." + Environment.NewLine +    
         "                        -Leak                        Show only create/close objects which are not properly closed." + Environment.NewLine +  
         "                        -MultiProcess                Show only handles which are accessed from more than one process." + Environment.NewLine +
         "                        -Map [0,1]                   When 1 only memory map events are shown. When 0 memory map events are excluded." + Environment.NewLine +  
         "                        -PtrInMap 0x...              Filter mapping objects which have this pointer inside their map range." + Environment.NewLine +
+        "                        -MinMaxMapSize min [max]     Filter file mapping requests by their mapping size in bytes." + Environment.NewLine + 
         "                        -Overlapped                  Show handles which open/duplicate already existing handles (e.g. where CreateEvent return ALREADY_EXISTS)." + Environment.NewLine +
         Environment.NewLine
         ;
@@ -819,13 +821,15 @@ namespace ETWAnalyzer.Commands
         // Dump ObjectRef specific flags
         public KeyValuePair<string, Func<string, bool>> DestroyStackFilter { get; private set; } = new(null, _ => true);
 
-        public KeyValuePair<string, Func<string, bool>> HandleNameFilter { get; private set; } = new(null, _ => true);
+        public KeyValuePair<string, Func<string, bool>> ObjectNameFilter { get; private set; } = new(null, _ => true);
         public KeyValuePair<string, Func<string, bool>> ObjectFilter { get; private set; } = new(null, _ => true);
         public KeyValuePair<string, Func<string, bool>> ViewBaseFilter { get; private set; } = new(null, _ => true);
         
         public KeyValuePair<string, Func<string, bool>> HandleFilter { get; private set; } = new(null, _ => true);
 
         public KeyValuePair<string, Func<string, bool>> RelatedProcessFilter { get; private set; } = new(null, _ => true);
+
+        public MinMaxRange<long> MinMaxMapSize { get; private set; } = new();
 
         public long? PtrInMap { get; private set; }
         public int? Map { get; private set; }
@@ -1248,9 +1252,9 @@ namespace ETWAnalyzer.Commands
                         string destroyStackfilter = GetNextNonArg("-destroystackfilter");
                         DestroyStackFilter =    new KeyValuePair<string, Func<string, bool>>(destroyStackfilter, Matcher.CreateMatcher(destroyStackfilter));
                         break;
-                    case "-handlename":
-                        string handleNameFilter = GetNextNonArg("-handlename");
-                        HandleNameFilter =      new KeyValuePair<string, Func<string, bool>>(handleNameFilter, Matcher.CreateMatcher(handleNameFilter));
+                    case "-objectname":
+                        string handleNameFilter = GetNextNonArg("-objectname");
+                        ObjectNameFilter =      new KeyValuePair<string, Func<string, bool>>(handleNameFilter, Matcher.CreateMatcher(handleNameFilter));
                         break;
                     case "-methods":
                         string methodFilter = GetNextNonArg("-methods");
@@ -1287,7 +1291,7 @@ namespace ETWAnalyzer.Commands
                         break;
                     case "-handle":
                         string handleFilter = GetNextNonArg("-handle");
-                        HandleFilter =      new KeyValuePair<string, Func<string, bool>>(handleFilter, Matcher.CreateMatcher(handleFilter));
+                        HandleFilter =         new KeyValuePair<string, Func<string, bool>>(handleFilter, Matcher.CreateMatcher(handleFilter));
                         break;
                     case "-zerotime":
                     case "-zt":
@@ -1460,6 +1464,12 @@ namespace ETWAnalyzer.Commands
                         string maxDuration = GetNextNonArg("-minmaxduration", false); // optional
                         Tuple<double, double> minMaxDuration = minDuration.GetMinMaxDouble(maxDuration, SecondUnit);
                         MinMaxDurationS = new MinMaxRange<double>(minMaxDuration.Item1, minMaxDuration.Item2);
+                        break;
+                    case "-minmaxmapsize":
+                        string minMaxMapSizeMin = GetNextNonArg("-minmaxmapsize");
+                        string minMaxMapSizeMax = GetNextNonArg("-minmaxmapsize", false); // optional
+                        Tuple<long, long> minmaxMapSize = minMaxMapSizeMin.GetMinMaxLong(minMaxMapSizeMax, ByteUnit);
+                        MinMaxMapSize = new MinMaxRange<long>(minmaxMapSize.Item1, minmaxMapSize.Item2);
                         break;
                     case "-minmaxextime":
                         string minExTime = GetNextNonArg("-minmaxextime");
@@ -2359,7 +2369,7 @@ namespace ETWAnalyzer.Commands
                             UsePrettyProcessName = UsePrettyProcessName,
                             TimeFormatOption = TimeFormat,
 
-                            HandleNameFilter = HandleNameFilter,
+                            ObjectNameFilter = ObjectNameFilter,
                             StackFilter = StackFilter,
                             DestroyStackFilter = DestroyStackFilter,
                             ObjectFilter = ObjectFilter,
@@ -2374,6 +2384,7 @@ namespace ETWAnalyzer.Commands
                             RelatedProcessFilter = RelatedProcessFilter,
                             Map = Map,
                             PtrInMap = PtrInMap,
+                            MinMaxMapSize = MinMaxMapSize,
 
                         };
                         break;

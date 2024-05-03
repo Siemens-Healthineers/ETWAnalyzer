@@ -179,77 +179,90 @@ namespace ETWAnalyzer.Extract.Handle
         /// <summary>
         /// Handle is opened but not closed. First the 
         /// </summary>
-        [JsonIgnore]
-        public bool IsLeaked
+        /// <returns>True when leak was detected. False otherwise.</returns>
+        internal bool CheckLeakAndRemoveNonLeakingEvents()
         {
-            get
+
+            bool lret = false;
+
+            if (HandleCreateEvents.Count+HandleDuplicateEvents.Count > 0)
             {
-                if (HandleCreateEvents.Count > 0)
+                // combine create/duplicate/close events into a time series 
+                var events = HandleCreateEvents.Cast<StackEventBase>()
+                                                .Concat(HandleCloseEvents.Cast<StackEventBase>())
+                                                .Concat(HandleDuplicateEvents.Cast<StackEventBase>())
+                                                .Concat(HandleCloseEvents).Cast<StackEventBase>()
+                                                .OrderBy(x => x.Time)
+                                                .ToList();
+                List<HandleCreateEvent> leakedCreate = new();
+                HashSet<HandleCloseEvent> closed = new();
+                List<HandleDuplicateEvent> leakedDuplicates = new();
+                for(int i=0;i<events.Count; i++)
                 {
-                    // combine create/duplicate/close events into a time series 
-                    var events = HandleCreateEvents.Cast<StackEventBase>()
-                                                  .Concat(HandleCloseEvents.Cast<StackEventBase>())
-                                                  .Concat(HandleDuplicateEvents.Cast<StackEventBase>())
-                                                  .OrderBy(x => x.Time)
-                                                  .ToList();
-
-                    for(int i=0;i<events.Count; i++)
+                    var ev = events[i];
+                    if (ev is HandleCreateEvent create)
                     {
-                        var ev = events[i];
-                        if (ev is HandleCreateEvent create)
+                        bool bClosed = false;
+                        for (int k = i + 1; k < events.Count; k++)
                         {
-                            bool bClosed = false;
-                            for (int k = i + 1; k < events.Count; k++)
+                            if (events[k] is HandleCloseEvent close && close.HandleValue == create.HandleValue &&
+                                                                       close.ProcessIndex == create.ProcessIndex && 
+                                                                       !closed.Contains(close) )
                             {
-                                if (events[k] is HandleCloseEvent close && close.HandleValue == create.HandleValue &&
-                                                                    close.ProcessIndex == create.ProcessIndex)
-                                {
-                                    bClosed = true;
-                                    break;
-                                }
-                            }
-
-                            if (!bClosed)
-                            {
-                                return true;
+                                closed.Add(close);
+                                bClosed = true;
+                                break;
                             }
                         }
-                        else if( ev is HandleDuplicateEvent duplicate )
-                        {
-                            bool bClosed = false;
-                            for(int k=i+1;k<events.Count;k++)
-                            {
-                                if (events[k] is HandleCloseEvent close && close.HandleValue == duplicate.HandleValue &&
-                                                                           close.ProcessIndex == duplicate.ProcessIndex)
-                                {
-                                    bClosed = true;
-                                    break;
-                                } 
-                            }
 
-                            if( !bClosed )
+                        if (!bClosed)
+                        {
+                            leakedCreate.Add(create);
+                            lret = true;
+                        }
+                    }
+                    else if( ev is HandleDuplicateEvent duplicate )
+                    {
+                        bool bClosed = false;
+                        for(int k=i+1;k<events.Count;k++)
+                        {
+                            if (events[k] is HandleCloseEvent close && close.HandleValue == duplicate.HandleValue &&
+                                                                       close.ProcessIndex == duplicate.ProcessIndex &&
+                                                                       !closed.Contains(close))
                             {
-                                return true;
-                            }
+                                closed.Add(close);
+                                bClosed = true;
+                                break;
+                            } 
+                        }
+
+                        if( !bClosed )
+                        {
+                            leakedDuplicates.Add(duplicate);
+                            lret = true;
                         }
                     }
                 }
-                else if( RefChanges?.Count > 0 )
-                {
-                    int finalRefCount = 0;
-                    foreach(var  change in RefChanges) 
-                    {
-                        finalRefCount += change.RefCountChange;
-                    }
 
-                    if( finalRefCount > 0)
-                    {
-                        return true;
-                    }
-                }
-
-                return false;
+                HandleCreateEvents = leakedCreate;
+                HandleCloseEvents = new(); // by definition we are missing closed
+                HandleDuplicateEvents = leakedDuplicates;
             }
+            else if( RefChanges?.Count > 0 )
+            {
+                int finalRefCount = 0;
+                foreach(var  change in RefChanges) 
+                {
+                    finalRefCount += change.RefCountChange;
+                }
+
+                if( finalRefCount > 0)
+                {
+                    lret = true;
+                }
+            }
+
+            return lret;
         }
 
         public void AddRefChange(DateTimeOffset time, int refCountChange, ETWProcessIndex process, int threadId, StackIdx idx)
