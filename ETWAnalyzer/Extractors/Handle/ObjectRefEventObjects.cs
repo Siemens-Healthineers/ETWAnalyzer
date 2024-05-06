@@ -261,39 +261,39 @@ namespace ETWAnalyzer.Extractors.Handle
     /* 
      Handle Provider Events
 
-    <Event MSec="1476985.7542" PID="20648" PName="syngo.Viewing.Shell.Host" TID="7692" EventName="Object/CreateHandle"
+    <Event MSec="1476985.7542" PID="20648" PName="Host" TID="7692" EventName="Object/CreateHandle"
   TimeStamp="04/20/24 01:32:31.110248" ID="Illegal" Version="2" Keywords="0x00000000" TimeStampQPC="859,679,084,002" QPCTime="0.100us"
   Level="Always" ProviderName="Windows Kernel" ProviderGuid="9e814aad-3204-11d2-9a82-006008a86939" ClassicProvider="True" ProcessorNumber="0"
   Opcode="32" TaskGuid="89497f50-effe-4440-8cf2-ce6b1cdcaca7" Channel="0" PointerSize="8"
   CPU="0" EventIndex="27230" TemplateType="ObjectHandleTraceData">
   <PrettyPrint>
-    <Event MSec="1476985.7542" PID="20648" PName="syngo.Viewing.Shell.Host" TID="7692" EventName="Object/CreateHandle" Object="0xFFFFC283AEE8CD60" Handle="0x00003A78" ObjectType="16" ObjectName="" ObjectTypeName="Event"/>
+    <Event MSec="1476985.7542" PID="20648" PName="Host" TID="7692" EventName="Object/CreateHandle" Object="0xFFFFC283AEE8CD60" Handle="0x00003A78" ObjectType="16" ObjectName="" ObjectTypeName="Event"/>
   </PrettyPrint>
   <Payload Length="16">
        0:  60 cd e8 ae 83 c2 ff ff | 78 3a  0  0 10  0  0  0   `....... x:......
   </Payload>
 </Event>
 
-        <Event MSec="1477337.9157" PID="20648" PName="syngo.Viewing.Shell.Host" TID="28360" EventName="Object/CloseHandle"
+        <Event MSec="1477337.9157" PID="20648" PName="Host" TID="28360" EventName="Object/CloseHandle"
   TimeStamp="04/20/24 01:32:31.462410" ID="Illegal" Version="2" Keywords="0x00000000" TimeStampQPC="859,682,605,617" QPCTime="0.100us"
   Level="Always" ProviderName="Windows Kernel" ProviderGuid="9e814aad-3204-11d2-9a82-006008a86939" ClassicProvider="True" ProcessorNumber="0"
   Opcode="33" TaskGuid="89497f50-effe-4440-8cf2-ce6b1cdcaca7" Channel="0" PointerSize="8"
   CPU="0" EventIndex="30333" TemplateType="ObjectHandleTraceData">
   <PrettyPrint>
-    <Event MSec="1477337.9157" PID="20648" PName="syngo.Viewing.Shell.Host" TID="28360" EventName="Object/CloseHandle" Object="0xFFFFC283AEF90260" Handle="0x00004944" ObjectType="16" ObjectName="" ObjectTypeName="Event"/>
+    <Event MSec="1477337.9157" PID="20648" PName="Host" TID="28360" EventName="Object/CloseHandle" Object="0xFFFFC283AEF90260" Handle="0x00004944" ObjectType="16" ObjectName="" ObjectTypeName="Event"/>
   </PrettyPrint>
   <Payload Length="16">
        0:  60  2 f9 ae 83 c2 ff ff | 44 49  0  0 10  0  0  0   `....... DI......
   </Payload>
 </Event>
 
-<Event MSec="1476909.4275" PID="20648" PName="syngo.Viewing.Shell.Host" TID="7692" EventName="Object/DuplicateHandle"
+<Event MSec="1476909.4275" PID="20648" PName="Host" TID="7692" EventName="Object/DuplicateHandle"
   TimeStamp="04/20/24 01:32:31.033921" ID="Illegal" Version="3" Keywords="0x00000000" TimeStampQPC="859,678,320,735" QPCTime="0.100us"
   Level="Always" ProviderName="Windows Kernel" ProviderGuid="9e814aad-3204-11d2-9a82-006008a86939" ClassicProvider="True" ProcessorNumber="0"
   Opcode="34" TaskGuid="89497f50-effe-4440-8cf2-ce6b1cdcaca7" Channel="0" PointerSize="8"
   CPU="0" EventIndex="26439" TemplateType="ObjectDuplicateHandleTraceData">
   <PrettyPrint>
-    <Event MSec="1476909.4275" PID="20648" PName="syngo.Viewing.Shell.Host" TID="7692" EventName="Object/DuplicateHandle" Object="0xFFFFC283AEEA3E60" SourceHandle="0x00005648" TargetHandle="-2,147,476,004" SourceProcessID="20,648" TargetHandleID="4" ObjectType="16" ObjectName="" ObjectTypeName="Event"/>
+    <Event MSec="1476909.4275" PID="20648" PName="Host" TID="7692" EventName="Object/DuplicateHandle" Object="0xFFFFC283AEEA3E60" SourceHandle="0x00005648" TargetHandle="-2,147,476,004" SourceProcessID="20,648" TargetHandleID="4" ObjectType="16" ObjectName="" ObjectTypeName="Event"/>
   </PrettyPrint>
   <Payload Length="26">
        0:  60 3e ea ae 83 c2 ff ff | 48 56  0  0 dc 1d  0 80   `&gt;...... HV......

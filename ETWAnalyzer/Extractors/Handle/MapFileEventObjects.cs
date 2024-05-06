@@ -8,15 +8,6 @@ using System.Threading.Tasks;
 
 namespace ETWAnalyzer.Extractors.Handle
 {
-    //    [dynamic: ToInstance, EventType{37, 38, 39, 40}]
-    //class FileIo_V2_MapFile : FileIo_V2
-    //{
-    //    [WmiDataId(1), pointer, read] uint32 ViewBase;
-    //    [WmiDataId(2), pointer, read] uint32 FileObject;
-    //    [WmiDataId(3), format("x"), read] uint64 MiscInfo;
-    //    [WmiDataId(4), extension("SizeT"), read] object ViewSize;
-    //    [WmiDataId(5), read] uint32 ProcessId;
-    //};
     /*
     <Event MSec = "283.4576" PID="6528" PName=     "dwm" TID="31380" EventName="FileIO/MapFile"
   TimeStamp="04/29/24 15:59:43.731700" ID="Illegal" Version="3" Keywords="0x00000000" TimeStampQPC="413,396,564,514" QPCTime="0.100us"
