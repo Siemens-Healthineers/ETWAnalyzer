@@ -1,11 +1,8 @@
 ﻿using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace ETWAnalyzer.Extract.Handle
+namespace ETWAnalyzer.Extract.Common
 {
     /// <summary>
     /// Stack Index to StackCollection
@@ -18,11 +15,24 @@ namespace ETWAnalyzer.Extract.Handle
         None = -1,
     }
 
+    /// <summary>
+    /// Collection of stacks which are stored in an Index based list where <see cref="StackIdx"/> is used as lookup index.
+    /// </summary>
+    public interface IStackCollection
+    {
+        /// <summary>
+        /// Get Stack trace for given index
+        /// </summary>
+        /// <param name="idx"></param>
+        /// <returns>Stringified stack trace. When idx was StackIdx.None an empty string is returned.</returns>
+        string GetStack(StackIdx idx);
+    }
+
 
     /// <summary>
     /// Collection of stacks which are stored in an Index based list where <see cref="StackIdx"/> is used as lookup index.
     /// </summary>
-    public class StackCollection
+    public class StackCollection : IStackCollection
     {
         /// <summary>
         /// Used during create time to Map the Index to a gien stack
@@ -53,7 +63,7 @@ namespace ETWAnalyzer.Extract.Handle
             if (!Stack2Idx.ContainsKey(stack))
             {
                 StackList.Add(stack);
-                idx = (StackIdx)StackList.Count-1;
+                idx = (StackIdx)StackList.Count - 1;
 
                 Stack2Idx.Add(stack, idx);
                 StackMap[idx] = stack;
@@ -73,7 +83,7 @@ namespace ETWAnalyzer.Extract.Handle
         /// <returns>Stringified stack trace</returns>
         public string GetStack(StackIdx idx)
         {
-            return StackList[(int)idx];
+            return idx == StackIdx.None ? "" : StackList[(int)idx];
         }
 
         /// <summary>
@@ -90,48 +100,5 @@ namespace ETWAnalyzer.Extract.Handle
         /// </summary>
         public StackCollection()
         { }
-    }
-
-
-    /// <summary>
-    /// Base class for stack based events which contain a timestamp, process, thread and stack
-    /// </summary>
-    public class StackEventBase
-    {
-        /// <summary>
-        /// Time
-        /// </summary>
-        public DateTimeOffset Time { get; set; }
-
-        /// <summary>
-        /// Stack Index
-        /// </summary>
-        public StackIdx StackIdx { get; set; }
-
-        /// <summary>
-        /// Process Index
-        /// </summary>
-        public ETWProcessIndex ProcessIndex { get; set; }
-
-        /// <summary>
-        /// Thread Id
-        /// </summary>
-        public int ThreadId { get; set; }
-
-        /// <summary>
-        /// Used by serializer to construct a valid instance
-        /// </summary>
-        /// <param name="time"></param>
-        /// <param name="processIdx"></param>
-        /// <param name="threadId"></param>
-        /// <param name="stackIdx"></param>
-        public StackEventBase(DateTimeOffset time, ETWProcessIndex processIdx, int threadId, StackIdx stackIdx)
-        {
-            Time = time;
-            StackIdx = stackIdx;
-            ProcessIndex = processIdx;
-            ThreadId = threadId;
-            StackIdx = stackIdx;
-        }
     }
 }

@@ -1,23 +1,22 @@
-﻿using ETWAnalyzer.Extractors.Handle;
+﻿using ETWAnalyzer.Extract.Common;
+using Microsoft.Windows.EventTracing;
 using Newtonsoft.Json;
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
-using System.Security.AccessControl;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ETWAnalyzer.Extract.Handle
 {
-
-    public class ObjectRefTrace
+    /// <summary>
+    /// Contains all events from Object Provider and VAMAP to correlate 
+    /// Handle and file mapping events.
+    /// </summary>
+    public class ObjectRefTrace : IObjectRefTrace
     {
         /// <summary>
         /// Process Index
         /// </summary>
-        public ETWProcessIndex ProcessIndex { get; set; }
+        public ETWProcessIndex ProcessIdx { get; set; }
 
         /// <summary>
         /// Kernel object pointer. Value can be reused once object is closed.
@@ -47,55 +46,102 @@ namespace ETWAnalyzer.Extract.Handle
         {
             get
             {
-                return CreateEvent == null ? (DestroyEvent == null ? TimeSpan.MaxValue : TimeSpan.FromSeconds(3600)) : ((DestroyEvent == null) ? TimeSpan.FromSeconds(3600) : (DestroyEvent.Time - CreateEvent.Time));
+                return CreateEvent == null ? (DestroyEvent == null ? TimeSpan.MaxValue : TimeSpan.FromSeconds(3600)) : ((DestroyEvent == null) ? TimeSpan.FromSeconds(3600) : 
+                    TimeSpan.FromTicks( (DestroyEvent.TimeNs - CreateEvent.TimeNs)/100 ) );
             }
         }
 
-        public ETWProcess GetProcess(IETWExtract extract) => extract.GetProcess(ProcessIndex);
+        /// <summary>
+        /// Contains all handle create events if Handle tracing was enabled.
+        /// </summary>
+        public List<HandleCreateEvent> HandleCreateEvents { get; set; } = new();
 
-        public List<HandleCreateEvent> HandleCreateEvents       { get; set; } = new();
-        public List<HandleDuplicateEvent> HandleDuplicateEvents { get;set; } = new();
-        public List<HandleCloseEvent> HandleCloseEvents         { get; set; } = new();
+        /// <summary>
+        /// Contains all handle duplicate events if Handle tracing was enabled.
+        /// </summary>
+        public List<HandleDuplicateEvent> HandleDuplicateEvents { get; set; } = new();
 
-        public List<RefCountChangeEvent> RefChanges             { get; set; } = new();
+        /// <summary>
+        /// Contains all handle close events if Handle tracing was enabled.
+        /// </summary>
+        public List<HandleCloseEvent> HandleCloseEvents { get; set; } = new();
 
-        public List<FileMapEvent> FileMapEvents                 { get; set; } = new ();
-        public List<FileUnmapEvent> FileUnmapEvents             { get; set; } = new();
+        /// <summary>
+        /// Contains all object reference change events if ObjectRef tracing was enabled.
+        /// </summary>
+        public List<RefCountChangeEvent> RefChanges { get; set; } = new();
 
+        /// <summary>
+        /// Contains all file mapping events if VAMAP provider was enabled.
+        /// </summary>
+        public List<FileMapEvent> FileMapEvents { get; set; } = new();
+
+        /// <summary>
+        /// Contains all file unmapping events if VAMAP provider was enabled.
+        /// </summary>
+        public List<FileUnmapEvent> FileUnmapEvents { get; set; } = new();
+
+
+        /// <summary>
+        /// returns true when no object events are stored in object. False otherwise. 
+        /// </summary>
+        internal bool IsEmpty
+        {
+            get
+            {
+                return (CreateEvent == null && DestroyEvent == null &&
+                         HandleCreateEvents.Count == 0 &&
+                         HandleDuplicateEvents.Count == 0 &&
+                         HandleCloseEvents.Count == 0 &&
+                         RefChanges.Count == 0 &&
+                         FileMapEvents.Count == 0 &&
+                         FileUnmapEvents.Count == 0) ? true : false;
+            }
+        }
+
+        /// <summary>
+        /// To save space we set all empty collections to null before serialize. But after deserialize we 
+        /// set them again here. 
+        /// </summary>
         internal void RefreshCollectionsAfterDeserialize()
         {
-            if( HandleCreateEvents == null )
+            if (HandleCreateEvents == null)
             {
                 HandleCreateEvents = new();
             }
-            if( HandleDuplicateEvents == null)
+            if (HandleDuplicateEvents == null)
             {
                 HandleDuplicateEvents = new();
             }
-            if( HandleCloseEvents == null)
+            if (HandleCloseEvents == null)
             {
                 HandleCloseEvents = new();
             }
-            if( RefChanges == null)
+            if (RefChanges == null)
             {
-                RefChanges = new(); 
+                RefChanges = new();
             }
-            if( FileMapEvents == null)
+            if (FileMapEvents == null)
             {
                 FileMapEvents = new();
             }
-            if(FileUnmapEvents == null)
+            if (FileUnmapEvents == null)
             {
-                FileUnmapEvents = new();    
+                FileUnmapEvents = new();
             }
         }
 
-
+        /// <summary>
+        /// True if object contains file map/unmap events. If it is false it can only contain object provider events.
+        /// </summary>
         internal bool IsFileMap
         {
-            get => FileMapEvents.Count > 0 ||  FileMapEvents.Count > 0;
+            get => FileMapEvents.Count > 0 || FileMapEvents.Count > 0;
         }
 
+        /// <summary>
+        /// True if object events for same object are issues from different processes. 
+        /// </summary>
         [JsonIgnore]
         public bool IsMultiProcess
         {
@@ -106,32 +152,60 @@ namespace ETWAnalyzer.Extract.Handle
                 {
                     if (idx == null)
                     {
-                        idx = ch.ProcessIndex;
+                        idx = ch.ProcessIdx;
                         continue;
-                    } 
-                    if (idx != ch.ProcessIndex)
+                    }
+                    if (idx != ch.ProcessIdx)
                     {
                         return true;
                     }
                 }
 
-                foreach(var create in HandleCreateEvents)
+                foreach (var create in HandleCreateEvents)
                 {
-                    if(idx ==null)
+                    if (idx == null)
                     {
-                        idx = create.ProcessIndex;
+                        idx = create.ProcessIdx;
                         continue;
                     }
 
-                    if( idx != create.ProcessIndex)
+                    if (idx != create.ProcessIdx)
                     {
                         return true;
                     }
                 }
 
-                foreach(var duplicate in  HandleDuplicateEvents)
+                foreach (var duplicate in HandleDuplicateEvents)
                 {
-                    if( duplicate.ProcessIndex != duplicate.SourceProcessIdx)
+                    if (duplicate.ProcessIdx != duplicate.SourceProcessIdx)
+                    {
+                        return true;
+                    }
+                }
+
+                foreach(var map in FileMapEvents)
+                {
+                    if (( idx == null))
+                    {
+                        idx = map.ProcessIdx;
+                        continue;
+                    }
+
+                    if ( map.ProcessIdx != idx)
+                    {
+                        return true;
+                    }
+                }
+
+                foreach(var unmap in FileUnmapEvents)
+                {
+                    if( ( idx == null))
+                    {
+                        idx = unmap.ProcessIdx; ;
+                        continue;
+                    }
+
+                    if( unmap.ProcessIdx != idx)
                     {
                         return true;
                     }
@@ -141,22 +215,45 @@ namespace ETWAnalyzer.Extract.Handle
             }
         }
 
+        IReadOnlyList<IHandleCloseEvent> IObjectRefTrace.HandleCloseEvents => HandleCloseEvents;
 
+        IReadOnlyList<IHandleCreateEvent> IObjectRefTrace.HandleCreateEvents => HandleCreateEvents;
+
+        IReadOnlyList<IHandleDuplicateEvent> IObjectRefTrace.HandleDuplicateEvents => HandleDuplicateEvents;
+
+        IReadOnlyList<IRefCountChangeEvent> IObjectRefTrace.RefChanges => RefChanges;
+
+        IReadOnlyList<IFileMapEvent> IObjectRefTrace.FileMapEvents => FileMapEvents;
+
+        IReadOnlyList<IFileMapEvent> IObjectRefTrace.FileUnmapEvents => FileUnmapEvents;
+
+        IRefCountChangeEvent IObjectRefTrace.CreateEvent => CreateEvent;
+
+        IRefCountChangeEvent IObjectRefTrace.DestroyEvent => DestroyEvent;
+
+        /// <summary>
+        /// When the same object is referenced multiple times by e.g. subsequent Create or DuplicateHandle events we know that
+        /// two different handles can have an effect to the same object. 
+        /// </summary>
+        /// <returns></returns>
+        /// <exception cref="InvalidOperationException"></exception>
         internal bool GetIsOverlapped()
         {
             int refCount = 0;
-            foreach(var cr in HandleCreateEvents.Cast<StackEventBase>()
+            foreach (var cr in HandleCreateEvents.Cast<StackEventBase>()
                              .Concat(HandleCloseEvents.Cast<StackEventBase>())
                              .Concat(HandleDuplicateEvents.Cast<StackEventBase>())
-                             .OrderBy(x=>x.Time))
+                             .OrderBy(x => x.TimeNs))
             {
-                if( cr is HandleCreateEvent)
+                if (cr is HandleCreateEvent)
                 {
                     refCount++;
-                }else if( cr is HandleCloseEvent)
+                }
+                else if (cr is HandleCloseEvent)
                 {
                     refCount--;
-                } else if ( cr is HandleDuplicateEvent)
+                }
+                else if (cr is HandleDuplicateEvent)
                 {
                     refCount++;
                 }
@@ -165,7 +262,7 @@ namespace ETWAnalyzer.Extract.Handle
                     throw new InvalidOperationException("Invalid event found.");
                 }
 
-                if( refCount > 1)
+                if (refCount > 1)
                 {
                     return true;
                 }
@@ -180,24 +277,23 @@ namespace ETWAnalyzer.Extract.Handle
         /// Handle is opened but not closed. First the 
         /// </summary>
         /// <returns>True when leak was detected. False otherwise.</returns>
-        internal bool CheckLeakAndRemoveNonLeakingEvents()
+        internal void CheckLeakAndRemoveNonLeakingEvents()
         {
-
-            bool lret = false;
-
-            if (HandleCreateEvents.Count+HandleDuplicateEvents.Count > 0)
+            if (HandleCreateEvents.Count + HandleDuplicateEvents.Count > 0)
             {
                 // combine create/duplicate/close events into a time series 
                 var events = HandleCreateEvents.Cast<StackEventBase>()
                                                 .Concat(HandleCloseEvents.Cast<StackEventBase>())
                                                 .Concat(HandleDuplicateEvents.Cast<StackEventBase>())
                                                 .Concat(HandleCloseEvents).Cast<StackEventBase>()
-                                                .OrderBy(x => x.Time)
+                                                .OrderBy(x => x.TimeNs)
                                                 .ToList();
+
                 List<HandleCreateEvent> leakedCreate = new();
                 HashSet<HandleCloseEvent> closed = new();
                 List<HandleDuplicateEvent> leakedDuplicates = new();
-                for(int i=0;i<events.Count; i++)
+
+                for (int i = 0; i < events.Count; i++)
                 {
                     var ev = events[i];
                     if (ev is HandleCreateEvent create)
@@ -206,8 +302,8 @@ namespace ETWAnalyzer.Extract.Handle
                         for (int k = i + 1; k < events.Count; k++)
                         {
                             if (events[k] is HandleCloseEvent close && close.HandleValue == create.HandleValue &&
-                                                                       close.ProcessIndex == create.ProcessIndex && 
-                                                                       !closed.Contains(close) )
+                                                                       close.ProcessIdx == create.ProcessIdx &&
+                                                                       !closed.Contains(close))
                             {
                                 closed.Add(close);
                                 bClosed = true;
@@ -218,28 +314,26 @@ namespace ETWAnalyzer.Extract.Handle
                         if (!bClosed)
                         {
                             leakedCreate.Add(create);
-                            lret = true;
                         }
                     }
-                    else if( ev is HandleDuplicateEvent duplicate )
+                    else if (ev is HandleDuplicateEvent duplicate)
                     {
                         bool bClosed = false;
-                        for(int k=i+1;k<events.Count;k++)
+                        for (int k = i + 1; k < events.Count; k++)
                         {
                             if (events[k] is HandleCloseEvent close && close.HandleValue == duplicate.HandleValue &&
-                                                                       close.ProcessIndex == duplicate.ProcessIndex &&
+                                                                       close.ProcessIdx == duplicate.ProcessIdx &&
                                                                        !closed.Contains(close))
                             {
                                 closed.Add(close);
                                 bClosed = true;
                                 break;
-                            } 
+                            }
                         }
 
-                        if( !bClosed )
+                        if (!bClosed)
                         {
                             leakedDuplicates.Add(duplicate);
-                            lret = true;
                         }
                     }
                 }
@@ -248,46 +342,39 @@ namespace ETWAnalyzer.Extract.Handle
                 HandleCloseEvents = new(); // by definition we are missing closed
                 HandleDuplicateEvents = leakedDuplicates;
             }
-            else if( RefChanges?.Count > 0 )
+            else if (RefChanges?.Count > 0)
             {
                 int finalRefCount = 0;
-                foreach(var  change in RefChanges) 
+                foreach (var change in RefChanges)
                 {
                     finalRefCount += change.RefCountChange;
                 }
-
-                if( finalRefCount > 0)
-                {
-                    lret = true;
-                }
             }
-
-            return lret;
         }
 
-        public void AddRefChange(DateTimeOffset time, int refCountChange, ETWProcessIndex process, int threadId, StackIdx idx)
+        internal void AddRefChange(TraceTimestamp time, int refCountChange, ETWProcessIndex process, int threadId, StackIdx idx)
         {
             RefChanges.Add(new RefCountChangeEvent(time, refCountChange, process, threadId, idx));
         }
 
-        internal void AddHandlCreate(DateTimeOffset time, ulong handleValue, ETWProcessIndex processIdx, int threadId, StackIdx stackIdx)
+        internal void AddHandlCreate(TraceTimestamp time, ulong handleValue, ETWProcessIndex processIdx, int threadId, StackIdx stackIdx)
         {
             var created = new HandleCreateEvent(time, handleValue, processIdx, threadId, stackIdx);
             HandleCreateEvents.Add(created);
 
-            if( CreateEvent == null)
+            if (CreateEvent == null)
             {
                 CreateEvent = new RefCountChangeEvent(time, 1, processIdx, threadId, stackIdx);
             }
         }
 
-        internal void AddHandleDuplicate(DateTimeOffset time, uint sourceHandle, uint targetHandle, ETWProcessIndex processIdx, ETWProcessIndex sourceProcessIndex, int threadId, StackIdx stackIndex)
+        internal void AddHandleDuplicate(TraceTimestamp time, uint sourceHandle, uint targetHandle, ETWProcessIndex processIdx, ETWProcessIndex sourceProcessIndex, int threadId, StackIdx stackIndex)
         {
             var duplicate = new HandleDuplicateEvent(time, targetHandle, sourceHandle, processIdx, sourceProcessIndex, threadId, stackIndex);
-            HandleDuplicateEvents.Add(duplicate);   
+            HandleDuplicateEvents.Add(duplicate);
         }
 
-        internal bool AddHandleClose(DateTimeOffset time, ulong handleValue, string handleName, ETWProcessIndex processIdx, int threadId, StackIdx stackIdx)
+        internal bool AddHandleClose(TraceTimestamp time, ulong handleValue, string handleName, ETWProcessIndex processIdx, int threadId, StackIdx stackIdx)
         {
             if (Name != null && Name != handleName)
             {
@@ -301,7 +388,7 @@ namespace ETWAnalyzer.Extract.Handle
 
             HandleCloseEvents.Add(closed);
 
-            if(HandleCreateEvents.Count+HandleDuplicateEvents.Count == HandleCloseEvents.Count)
+            if (HandleCreateEvents.Count + HandleDuplicateEvents.Count == HandleCloseEvents.Count)
             {
                 if (DestroyEvent == null)
                 {
@@ -314,121 +401,51 @@ namespace ETWAnalyzer.Extract.Handle
             return false;
         }
 
-        internal void AddFileMap(DateTimeOffset time, long viewBase, long viewSize, long fileObject, long byteOffset, ETWProcessIndex processIdx, int threadId, StackIdx stackIdx)
+        internal void AddFileMap(TraceTimestamp time, long viewBase, long viewSize, long fileObject, long byteOffset, ETWProcessIndex processIdx, int threadId, StackIdx stackIdx)
         {
             FileMapEvents.Add(new FileMapEvent
             {
-                Time = time,
+                TimeNs = time.Nanoseconds,
                 ViewBase = viewBase,
                 ViewSize = viewSize,
                 FileObject = fileObject,
                 ByteOffset = byteOffset,
-                ProcessIndex = processIdx,
+                ProcessIdx = processIdx,
                 ThreadId = threadId,
                 StackIdx = stackIdx,
             });
+
             CreateEvent = new RefCountChangeEvent()
             {
-                Time = time,
-                ProcessIndex = processIdx,
+                TimeNs = time.Nanoseconds,
+                ProcessIdx = processIdx,
                 ThreadId = threadId,
                 StackIdx = stackIdx,
             };
         }
 
-        internal void AddFileUnMap(DateTimeOffset time, long viewBase, long viewSize, long fileObject, long byteOffset, ETWProcessIndex processIdx, int threadId, StackIdx stackIdx)
+        internal void AddFileUnMap(TraceTimestamp time, long viewBase, long viewSize, long fileObject, long byteOffset, ETWProcessIndex processIdx, int threadId, StackIdx stackIdx)
         {
             FileUnmapEvents.Add(new FileUnmapEvent
             {
-                Time = time,
+                TimeNs = time.Nanoseconds,
                 ViewBase = viewBase,
                 ViewSize = viewSize,
                 FileObject = fileObject,
                 ByteOffset = byteOffset,
-                ProcessIndex = processIdx,
+                ProcessIdx = processIdx,
                 ThreadId = threadId,
                 StackIdx = stackIdx,
             });
 
             DestroyEvent = new RefCountChangeEvent()
             {
-                Time = time,
-                ProcessIndex = processIdx,
+                TimeNs = time.Nanoseconds,
+                ProcessIdx = processIdx,
                 ThreadId = threadId,
                 StackIdx = stackIdx,
             };
         }
 
     }
-
-    public class RefCountChangeEvent : StackEventBase
-    {
-        public int RefCountChange { get; set; }
-
-        public RefCountChangeEvent(DateTimeOffset time, int refCountChange, ETWProcessIndex processIdx, int threadId, StackIdx stackIdx)
-            : base(time, processIdx, threadId, stackIdx)
-        {
-            RefCountChange = refCountChange;
-        }
-
-        public RefCountChangeEvent(DateTimeOffset time, int refCountChange, ETWProcessIndex process, int threadId)
-            : this(time, refCountChange, process, threadId, StackIdx.None)
-        { }
-
-        public RefCountChangeEvent():this(default(DateTimeOffset), 0, ETWProcessIndex.Invalid, 0)
-        { }
-    }
-
-    public class HandleCreateEvent : StackEventBase
-    {
-        public ulong HandleValue { get; set; }
-
-        public HandleCreateEvent(DateTimeOffset time, ulong handleValue, ETWProcessIndex processIdx, int threadId, StackIdx stackIdx)
-            : base(time, processIdx, threadId, stackIdx)
-        {
-            HandleValue = handleValue;
-        }
-
-        public HandleCreateEvent() : this(default(DateTimeOffset), 0, ETWProcessIndex.Invalid, 0, StackIdx.None)
-        { }
-
-    }
-
-    public class HandleDuplicateEvent : StackEventBase
-    {
-        public ulong HandleValue { get; set; }
-        public ulong SourceHandleValue { get; set; }
-        public ETWProcessIndex SourceProcessIdx { get; set; }
-
-        public HandleDuplicateEvent(DateTimeOffset time, ulong handleValue, ulong sourceHandleValue, ETWProcessIndex processIdx, ETWProcessIndex sourceProcessIdx, int threadId, StackIdx stackIdx)
-            : base(time, processIdx, threadId, stackIdx)
-        {
-            HandleValue = handleValue;
-            SourceHandleValue = sourceHandleValue;
-            SourceProcessIdx = sourceProcessIdx;
-        }
-
-        public HandleDuplicateEvent() : this(default(DateTimeOffset), 0,0, ETWProcessIndex.Invalid, ETWProcessIndex.Invalid, 0, StackIdx.None)
-        { }
-    }
-
-    public class HandleCloseEvent : StackEventBase
-    {
-        public ulong HandleValue { get; set; }
-
-
-        /// <summary>
-        /// Needed for de/serialization 
-        /// </summary>
-        public HandleCloseEvent() : this(default(DateTimeOffset), 0, ETWProcessIndex.Invalid, 0, StackIdx.None)
-        { }
-
-        public HandleCloseEvent(DateTimeOffset time, ulong handleValue, ETWProcessIndex processIdx, int threadId, StackIdx stackIdx)
-            : base(time, processIdx, threadId, stackIdx)
-        {
-            HandleValue = handleValue;
-        }
-    }
-
-
 }

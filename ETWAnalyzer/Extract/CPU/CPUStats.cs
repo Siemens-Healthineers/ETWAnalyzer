@@ -153,7 +153,7 @@ namespace ETWAnalyzer.Extract
                     string file = ser.GetFileNameFor(DeserializedFileName, ExtractSerializer.ExtendedCPUPostFix);
                     if (File.Exists(file))
                     {
-                        using var fileStream = ETWExtract.OpenFileReadOnly(file);
+                        using var fileStream = ExtractSerializer.OpenFileReadOnly(file);
                         lret = ExtractSerializer.Deserialize<CPUExtended>(fileStream);
                     }
                 }

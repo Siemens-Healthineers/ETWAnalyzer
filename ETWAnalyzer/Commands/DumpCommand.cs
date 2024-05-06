@@ -383,8 +383,9 @@ namespace ETWAnalyzer.Commands
         "                        -ProcessName/pn xxx.exe(pid) Filter for processes which did access/modify the object." + Environment.NewLine +
         "                        -RelatedProcess xxx.exe(pid) Filter for processes which did access the object, but did not create it." + Environment.NewLine +    
         "                        -MinMaxDuration minS [maxS]  Filter for handle lifetime. Never closed handles get a lifetime of 3600 s which serves as magic marker value." + Environment.NewLine +
-        "                        -StackFilter filter          Filter for stack substring of first creation event when object is created. " + Environment.NewLine +
-        "                        -DestroyStackFilter filter   Filter for events which the object deletion events do match. " + Environment.NewLine +    
+        "                        -CreateStack filter          Keep all object events (create/objRef/duplicate...) where the create stack matches." + Environment.NewLine +
+        "                        -DestroyStack filter         Keep all object events (create/objRef/duplicate...) where the destroy stack matches." + Environment.NewLine +
+        "                        -StackFilter filter          Keep only the events where the stack matches and throw away all other events." + Environment.NewLine +
         "                        -Object filter               Filter for kernel object pointer value." + Environment.NewLine +
         "                        -ObjectName filter           Filter for object name." + Environment.NewLine +
         "                        -Handle filter               Text filter for handle value/s." + Environment.NewLine +
@@ -819,8 +820,9 @@ namespace ETWAnalyzer.Commands
         public KeyValuePair<string, Func<string, bool>> VersionFilter { get; set; } = new(null, _ => true);
 
         // Dump ObjectRef specific flags
+        public KeyValuePair<string, Func<string, bool>> CreateStackFilter { get; private set; } = new(null, _ => true);
         public KeyValuePair<string, Func<string, bool>> DestroyStackFilter { get; private set; } = new(null, _ => true);
-
+        
         public KeyValuePair<string, Func<string, bool>> ObjectNameFilter { get; private set; } = new(null, _ => true);
         public KeyValuePair<string, Func<string, bool>> ObjectFilter { get; private set; } = new(null, _ => true);
         public KeyValuePair<string, Func<string, bool>> ViewBaseFilter { get; private set; } = new(null, _ => true);
@@ -1248,9 +1250,13 @@ namespace ETWAnalyzer.Commands
                         string stackfilter = GetNextNonArg("-stackfilter");
                         StackFilter =           new KeyValuePair<string, Func<string, bool>>(stackfilter, Matcher.CreateMatcher(stackfilter));
                         break;
-                    case "-destroystackfilter":
-                        string destroyStackfilter = GetNextNonArg("-destroystackfilter");
+                    case "-destroystack":
+                        string destroyStackfilter = GetNextNonArg("-destroystack");
                         DestroyStackFilter =    new KeyValuePair<string, Func<string, bool>>(destroyStackfilter, Matcher.CreateMatcher(destroyStackfilter));
+                        break;
+                    case "-createstack":
+                        string createStack = GetNextNonArg("-createstack");
+                        CreateStackFilter =     new KeyValuePair<string, Func<string, bool>>(createStack, Matcher.CreateMatcher(createStack));
                         break;
                     case "-objectname":
                         string handleNameFilter = GetNextNonArg("-objectname");
@@ -2372,6 +2378,7 @@ namespace ETWAnalyzer.Commands
                             ObjectNameFilter = ObjectNameFilter,
                             StackFilter = StackFilter,
                             DestroyStackFilter = DestroyStackFilter,
+                            CreateStackFilter = CreateStackFilter,
                             ObjectFilter = ObjectFilter,
                             ViewBaseFilter = ViewBaseFilter,
                             HandleFilter = HandleFilter,

@@ -215,7 +215,7 @@ namespace ETWAnalyzer.Extract
         /// <summary>
         /// Contains ObjectReference and Handle Trace Data
         /// </summary>
-        public HandleObjectData HandleData { get; }
+        public IHandleObjectData HandleData { get; }
 
         /// <summary>
         /// Convert a trace relative time which is seconds since trace start to an absolue time
