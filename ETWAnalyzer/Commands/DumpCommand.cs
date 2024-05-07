@@ -378,23 +378,26 @@ namespace ETWAnalyzer.Commands
         static readonly string ObjectRefHelpString =
         " ObjectRef  -filedir/fd Extract\\ or xxx.json" + Environment.NewLine +
         "       [-TimeFmt s,Local,LocalTime,UTC,UTCTime,Here,HereTime] [-csv xxx.csv] [-NoCSVSeparator] [-NoCmdLine] [-Clip] [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd] [-MinMaxMsTestTimes xx-yy ...] [-ProcessName/pn xxx.exe(pid)] " + Environment.NewLine +
-        "       [-MinMaxDuration minS [maxS]] [-StackFilter filter] " + Environment.NewLine + 
+        "       [-RelatedProcess xxx.exe(pid)] [-MinMaxDuration minS [maxS]] [-MinMaxId min [max]] [-CreateStack filter] [-DestroyStack filter] [-StackFilter filter] [-Object filter] [-ObjectName filter] [-Handle filter] [-ShowRef]" + Environment.NewLine +
+        "       [-ShowStack] [-Leak] [-MultiProcess] [-Map [0,1]] [-PtrInMap 0x...] [-MinMaxMapSize min [max]] [-Overlapped] [-Showtotal Total]" + Environment.NewLine +   
         "       [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-CmdLine substring]" + Environment.NewLine +
         "                        -ProcessName/pn xxx.exe(pid) Filter for processes which did access/modify the object." + Environment.NewLine +
-        "                        -RelatedProcess xxx.exe(pid) Filter for processes which did access the object, but did not create it." + Environment.NewLine +    
-        "                        -MinMaxDuration minS [maxS]  Filter for handle lifetime. Never closed handles get a lifetime of 3600 s which serves as magic marker value." + Environment.NewLine +
+        "                        -RelatedProcess xxx.exe(pid) Filter in all events for this process. You can also use a negative filter to exclude specific processes like -pn *creator.exe -realatedprocess !other.exe" + Environment.NewLine +    
+        "                        -MinMaxDuration minS [maxS]  Filter for handle lifetime. Never closed handles get a lifetime of 9999 s which serves as magic marker value." + Environment.NewLine +
+        "                        -MinMaxId min [max]          Filter for one or a range of objects. E.g. -MinMaxId 500 600 to filter for all object events with id 500-600. The ids are sorted by object creation time." + Environment.NewLine +
         "                        -CreateStack filter          Keep all object events (create/objRef/duplicate...) where the create stack matches." + Environment.NewLine +
         "                        -DestroyStack filter         Keep all object events (create/objRef/duplicate...) where the destroy stack matches." + Environment.NewLine +
-        "                        -StackFilter filter          Keep only the events where the stack matches and throw away all other events." + Environment.NewLine +
-        "                        -Object filter               Filter for kernel object pointer value." + Environment.NewLine +
-        "                        -ObjectName filter           Filter for object name." + Environment.NewLine +
-        "                        -Handle filter               Text filter for handle value/s." + Environment.NewLine +
+        "                        -StackFilter filter          Keep only the events where the stack matches and throw away all other events. To keep all events which have e.g. CreateWebRequest in their stack use -StackFilter *CreateWebRequest*" + Environment.NewLine +
+        "                        -ShowTotal Total             Do not print individual events, just the counts." + Environment .NewLine + 
+        "                        -Object filter               Filter for kernel object pointer value. E.g. -Object 0x8300004." + Environment.NewLine +
+        "                        -ObjectName filter           Filter for object name. E.g. -ObjectName *IO to filter for all object which end with :IO." + Environment.NewLine +
+        "                        -Handle filter               Text filter for handle value/s. E.g. -Handle 0xABC." + Environment.NewLine +
         "                        -ShowRef                     Show Object Reference increment/decrement operations." + Environment.NewLine +
-        "                        -ShowStack                   Show event stacks." + Environment.NewLine +    
-        "                        -Leak                        Show only create/close objects which are not properly closed." + Environment.NewLine +  
-        "                        -MultiProcess                Show only handles which are accessed from more than one process." + Environment.NewLine +
+        "                        -ShowStack                   Show stacks for events if recorded. If -csv is used only the the stack traces are added to CSV file." + Environment.NewLine +    
+        "                        -Leak                        Show all events for objects which are not closed during the trace." + Environment.NewLine +  
+        "                        -MultiProcess                Show handles which are accessed from more than one process." + Environment.NewLine +
         "                        -Map [0,1]                   When 1 only memory map events are shown. When 0 memory map events are excluded." + Environment.NewLine +  
-        "                        -PtrInMap 0x...              Filter mapping objects which have this pointer inside their map range." + Environment.NewLine +
+        "                        -PtrInMap 0x...              Filter file mapping objects which have this pointer inside their map range." + Environment.NewLine +
         "                        -MinMaxMapSize min [max]     Filter file mapping requests by their mapping size in bytes." + Environment.NewLine + 
         "                        -Overlapped                  Show handles which open/duplicate already existing handles (e.g. where CreateEvent return ALREADY_EXISTS)." + Environment.NewLine +
         Environment.NewLine
@@ -608,7 +611,17 @@ namespace ETWAnalyzer.Commands
         "[green]Dump all all client retransmission events sorted by delay and omit connections which have no retransmissions in output.[/green]" + Environment.NewLine +
         " ETWAnalyzer -fd xx.json -dump Tcp -OnlyClientRetransmit -MinMaxRetransCount 1 -ShowRetransmit -SortRetransmitBy Delay" + Environment.NewLine ;
 
-        static readonly string ObjectRefExamples = ExamplesHelpString;
+        static readonly string ObjectRefExamples = ExamplesHelpString +
+        "[green]Dump all Handle Create/Duplicate/Close/AddRef/ReleaseRef/FileMap/FileUnmap events.[/green]" + Environment.NewLine +
+        " ETWAnalyzer -fd xx.json -dump ObjectRef" + Environment.NewLine +
+        "[green]Dump all leaked objects with stacks and write to a CSV file.[/green]" + Environment.NewLine +
+        " ETWAnalyzer -fd xx.json -dump ObjectRef -Leak -ShowStack -csv Leaks.csv" + Environment.NewLine +
+        "[green]Dump only handles with object names ending with :IO.[/green]" + Environment.NewLine +
+        " ETWAnalyzer -fd xx.json -dump ObjectRef -ObjectName *:IO" + Environment.NewLine +
+        "[green]Dump only file mapping events in the id range 500-600[/green]" + Environment.NewLine +
+        " ETWAnalyzer -fd xx.json -dump ObjectRef -Map 1 -MinMaxId 500 600" + Environment.NewLine;
+
+
 
         /// <summary>
         /// Default Helpstring which prints all dump commands
@@ -832,6 +845,7 @@ namespace ETWAnalyzer.Commands
         public KeyValuePair<string, Func<string, bool>> RelatedProcessFilter { get; private set; } = new(null, _ => true);
 
         public MinMaxRange<long> MinMaxMapSize { get; private set; } = new();
+        public MinMaxRange<long> MinMaxId { get; private set; } = new();
 
         public long? PtrInMap { get; private set; }
         public int? Map { get; private set; }
@@ -1452,6 +1466,12 @@ namespace ETWAnalyzer.Commands
                         string minmaxworkingsetprivateMiBStr = GetNextNonArg("-minmaxworkingsetprivatemib");
                         KeyValuePair<decimal, decimal> minmaxworkingsetprivate = minmaxworkingsetprivateMiBStr.GetMinMaxDecimal(MiBUnit);
                         MinMaxWorkingsetPrivateMiB = new MinMaxRange<decimal>(minmaxworkingsetprivate.Key / MiBUnit, minmaxworkingsetprivate.Value / MiBUnit);
+                        break;
+                    case "-minmaxid":
+                        string minId = GetNextNonArg("-minmaxid");
+                        string maxId = GetNextNonArg("-minmaxid", false); // optional
+                        Tuple<long, long> minMaxId = minId.GetMinMaxLong(maxId, 1.0m);
+                        MinMaxId = new MinMaxRange<long>(minMaxId.Item1, minMaxId.Item2);
                         break;
                     case "-minmaxfirst":
                         string minFirst = GetNextNonArg("-minmaxfirst");
@@ -2392,7 +2412,9 @@ namespace ETWAnalyzer.Commands
                             Map = Map,
                             PtrInMap = PtrInMap,
                             MinMaxMapSize = MinMaxMapSize,
-
+                            MinMaxId = MinMaxId,
+                            NoCmdLine = NoCmdLine,
+                            ShowTotal = ShowTotal,
                         };
                         break;
                     case DumpCommands.None:

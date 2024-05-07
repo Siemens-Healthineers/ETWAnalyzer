@@ -14,11 +14,6 @@ namespace ETWAnalyzer.Extract.Handle
     public class ObjectRefTrace : IObjectRefTrace
     {
         /// <summary>
-        /// Process Index
-        /// </summary>
-        public ETWProcessIndex ProcessIdx { get; set; }
-
-        /// <summary>
         /// Kernel object pointer. Value can be reused once object is closed.
         /// </summary>
         public long ObjectPtr { get; set; }
@@ -39,15 +34,19 @@ namespace ETWAnalyzer.Extract.Handle
         public string Name { get; set; }
 
         /// <summary>
-        /// Handle lifetime or, if handle is created but not closed 3600s, or TimeSpan.MaxValue if handle was not created/closed during trace.
+        /// Magic value for events where are not closed or we do not have the create time at hand.
+        /// </summary>
+        public static TimeSpan LeakTime { get; } = TimeSpan.FromSeconds(9999);
+
+        /// <summary>
+        /// Handle lifetime or <see cref="LeakTime"/> duration to indicate a potential leak.
         /// </summary>
         [JsonIgnore]
         public TimeSpan Duration
         {
             get
             {
-                return CreateEvent == null ? (DestroyEvent == null ? TimeSpan.MaxValue : TimeSpan.FromSeconds(3600)) : ((DestroyEvent == null) ? TimeSpan.FromSeconds(3600) : 
-                    TimeSpan.FromTicks( (DestroyEvent.TimeNs - CreateEvent.TimeNs)/100 ) );
+                return CreateEvent == null ? LeakTime : ((DestroyEvent == null) ? LeakTime : TimeSpan.FromTicks( (DestroyEvent.TimeNs - CreateEvent.TimeNs)/100 ) );
             }
         }
 

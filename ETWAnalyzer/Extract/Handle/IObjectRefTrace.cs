@@ -20,11 +20,6 @@ namespace ETWAnalyzer.Extract.Handle
         long ObjectPtr { get; }
 
         /// <summary>
-        /// Index to <see cref="IETWExtract.Processes"/> array. Use <see cref="IProcessExtract.GetProcess(ETWProcessIndex)"/> to resolve.
-        /// </summary>
-        ETWProcessIndex ProcessIdx { get; }
-
-        /// <summary>
         /// First create event 
         /// </summary>
         IRefCountChangeEvent CreateEvent { get; }

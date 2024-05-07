@@ -64,6 +64,7 @@ namespace ETWAnalyzer.Commands
          "  Power     : Extract Power profile data when present from Microsoft-Windows-Kernel-Power provider (capture state is needed to get power profile data)." + Environment.NewLine +
          "  DNS       : Extract DNS Queries. You need to enable ETW provider Microsoft-Windows-DNS-Client." + Environment.NewLine +
          "  TCP       : Extract TCP statistic per connection. You need to enable the provider Microsoft-Windows-TCPIP." + Environment.NewLine +
+         "  ObjectRef : Extract all Handle (Create/Duplicate/Close) with kernel provider OB_HANDLE, Object (AddRef/ReleaseRef) with kernel provider OB_OBJECT and File map/unmap events with provider VAMAP." + Environment.NewLine +
          "The following filters work only if the adhere to a specific file naming convention." + Environment.NewLine + 
          "Select files from a testrun (all tests which have a time gap < 1h) to e.g. select only the first, or skip the warmump run or to extract just a sample of test cases." + Environment.NewLine +
          "         TestCaseName_ddddmsMachineName.yyyymmdd-hhmmss.7z/.zip/.etl  e.g. Build_166375msfv-az192-659.20230127-093520"  + Environment.NewLine + 

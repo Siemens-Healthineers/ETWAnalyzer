@@ -399,7 +399,6 @@ namespace ETWAnalyzer.Extractors.Handle
                         {
                             ObjectPtr = create.ObjectPtr,
                             CreateEvent = new RefCountChangeEvent(create.TimeStamp, 1, processIdx, create.ThreadId, stackIndex),
-                            ProcessIdx = processIdx,
                         };
 
                         if (OpenHandles.ContainsKey(trace.ObjectPtr))  // should not happen but the same object pointer can have a create without a delete event. Perhaps some events have gone missing
@@ -422,7 +421,6 @@ namespace ETWAnalyzer.Extractors.Handle
                             {
                                 ObjectPtr = createHandle.ObjectPtr,
                                 CreateEvent = new RefCountChangeEvent(createHandle.TimeStamp, 1, processIdx, createHandle.ThreadId, stackIndex),
-                                ProcessIdx = processIdx,
                             };
                             trace.AddHandlCreate(createHandle.TimeStamp, createHandle.HandleValue, processIdx, createHandle.ThreadId, stackIndex);
                             OpenHandles.Add(trace.ObjectPtr, trace);
@@ -441,7 +439,6 @@ namespace ETWAnalyzer.Extractors.Handle
                             {
                                 ObjectPtr = duplicateObjectEvent.ObjectPtr,
                                 CreateEvent = new RefCountChangeEvent(duplicateObjectEvent.TimeStamp, 1, processIdx, duplicateObjectEvent.ThreadId, stackIndex),
-                                ProcessIdx = processIdx,
                             };
                             OpenHandles.Add(hTrace.ObjectPtr, hTrace);
                         }
@@ -505,7 +502,6 @@ namespace ETWAnalyzer.Extractors.Handle
                         {
                             trace = new()
                             {
-                                ProcessIdx = processIdx,
                                 ObjectPtr = mapFile.ObjectPtr,
                             };
                             OpenHandles.Add(mapFile.ObjectPtr, trace);

@@ -1,10 +1,12 @@
-﻿using ETWAnalyzer.Extract;
+﻿using ETWAnalyzer.Commands;
+using ETWAnalyzer.Extract;
 using ETWAnalyzer.Extract.Common;
 using ETWAnalyzer.Extract.Handle;
 using ETWAnalyzer.Infrastructure;
 using ETWAnalyzer.ProcessTools;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 
 namespace ETWAnalyzer.EventDump
@@ -19,6 +21,8 @@ namespace ETWAnalyzer.EventDump
             public IETWExtract Extract { get; set; }
             public int MaxRefCount { get; internal set; }
             public TestDataFile File { get; set; }
+            public int Id { get; internal set; }
+            public string BaseLine { get; internal set; }
         }
 
         /// <summary>
@@ -51,9 +55,17 @@ namespace ETWAnalyzer.EventDump
         public long? PtrInMap { get; internal set; }
         public MinMaxRange<long> MinMaxMapSize { get; internal set; }
         public KeyValuePair<string, Func<string, bool>> CreateStackFilter { get; internal set; }
+        public MinMaxRange<long> MinMaxId { get; internal set; }
+        public bool NoCmdLine { get; internal set; }
+        public DumpCommand.TotalModes? ShowTotal { get; internal set; }
 
         Dictionary<StackIdx, bool> myStackFilterResult = new();
+        
 
+        /// <summary>
+        /// Print stacks only once in CSV mode per stack source
+        /// </summary>
+        Dictionary<object,HashSet<StackIdx>> myPrinted = new();
 
         public override List<MatchData> ExecuteInternal()
         {
@@ -62,18 +74,101 @@ namespace ETWAnalyzer.EventDump
             List<MatchData> lret = ReadFileData();
             if (IsCSVEnabled)
             {
-                OpenCSVWithHeader(Col_CSVOptions, Col_FileName, Col_Date, Col_TestCase, Col_TestTimeinms, Col_Baseline, Col_Process, Col_ProcessName,
+                OpenCSVWithHeader(Col_CSVOptions, Col_FileName, Col_Date, Col_TestCase, Col_TestTimeinms, Col_Baseline, 
+                                  "Id", "Stack", "EventName", "Time", "Thread Id", "Handle Value", "Object Name", "Object Ptr",
+                                  "SourceProces", "SourceHandleValue",
+                                  "ViewBase", "ViewSize", "File Object", "File Offset",
+                                  "RefChange",
+                                  "Lifetime in s (9999 is not closed)", "MultiProcess", "MaxRefCount",
+                                  Col_Process, Col_ProcessName,
                                   Col_StartTime, Col_CommandLine);
 
 
 
                 foreach (var objectEvent in lret)
                 {
-                    //WriteCSVLine(CSVOptions, Path.GetFileNameWithoutExtension(objectEvent.File.FileName), objectEvent.File.PerformedAt, objectEvent.File.TestName, objectEvent.File.DurationInMs, 
-                    //    objectEvent.Process.ProcessWithID, objectEvent.Process.ProcessNamePretty,
-                    //    objectEvent.Dns.Query, objectEvent.Dns.QueryStatus, objectEvent.Dns.TimedOut, GetDateTimeString(objectEvent.Dns.Start, objectEvent.SessionStart, TimeFormatOption, false), objectEvent.Dns.Duration.TotalSeconds,
-                    //    objectEvent.Dns.Adapters, objectEvent.Dns.ServerList, objectEvent.Dns.Result,
-                    //    NoCmdLine ? "" : objectEvent.Process.CommandLineNoExe);
+                    foreach (var create in objectEvent.ObjTrace.HandleCreateEvents)
+                    {
+                        ETWProcess createProcess = objectEvent.Extract.GetProcess(create.ProcessIdx);
+
+                        WriteCSVLine(CSVOptions, Path.GetFileNameWithoutExtension(objectEvent.File.FileName), objectEvent.File.PerformedAt, objectEvent.File.TestName, objectEvent.File.DurationInMs, objectEvent.BaseLine,
+                            objectEvent.Id, GetStack(objectEvent.Stacks, create.StackIdx), create.GetType().Name, create.TimeNs, create.ThreadId, GetHandleValue(create.HandleValue), objectEvent.ObjTrace.Name, GetHandleValue((ulong)objectEvent.ObjTrace.ObjectPtr),
+                            "", "",
+                            "", "", "", "",
+                            "",
+                            objectEvent.ObjTrace.Duration.TotalSeconds,  objectEvent.ObjTrace.IsMultiProcess, objectEvent.MaxRefCount,
+                            createProcess.GetProcessName(UsePrettyProcessName), createProcess.GetProcessWithId(UsePrettyProcessName),
+                            createProcess.StartTime, NoCmdLine ? "" : createProcess.CommandLineNoExe);
+                    }
+                    foreach (var close in objectEvent.ObjTrace.HandleCloseEvents)
+                    {
+                        ETWProcess closeProcess = objectEvent.Extract.GetProcess(close.ProcessIdx);
+
+                        WriteCSVLine(CSVOptions, Path.GetFileNameWithoutExtension(objectEvent.File.FileName), objectEvent.File.PerformedAt, objectEvent.File.TestName, objectEvent.File.DurationInMs, objectEvent.BaseLine,
+                            objectEvent.Id, GetStack(objectEvent.Stacks, close.StackIdx), close.GetType().Name, close.TimeNs, close.ThreadId, GetHandleValue(close.HandleValue), objectEvent.ObjTrace.Name, GetHandleValue((ulong)objectEvent.ObjTrace.ObjectPtr),
+                            "", "",
+                            "", "", "", "",
+                            "",
+                            objectEvent.ObjTrace.Duration.TotalSeconds, objectEvent.ObjTrace.IsMultiProcess, objectEvent.MaxRefCount,
+                            closeProcess.GetProcessName(UsePrettyProcessName), closeProcess.GetProcessWithId(UsePrettyProcessName),
+                            closeProcess.StartTime, NoCmdLine ? "" : closeProcess.CommandLineNoExe);
+                    }
+                    foreach (var duplicate in objectEvent.ObjTrace.HandleDuplicateEvents)
+                    {
+                        ETWProcess closeProcess = objectEvent.Extract.GetProcess(duplicate.ProcessIdx);
+
+                        WriteCSVLine(CSVOptions, Path.GetFileNameWithoutExtension(objectEvent.File.FileName), objectEvent.File.PerformedAt, objectEvent.File.TestName, objectEvent.File.DurationInMs, objectEvent.BaseLine,
+                        objectEvent.Id, GetStack(objectEvent.Stacks, duplicate.StackIdx), duplicate.GetType().Name, duplicate.TimeNs, duplicate.ThreadId, GetHandleValue(duplicate.HandleValue), objectEvent.ObjTrace.Name, GetHandleValue((ulong)objectEvent.ObjTrace.ObjectPtr),
+                        GetProcessWithId(duplicate.SourceProcessIdx, objectEvent.Extract), GetHandleValue(duplicate.SourceHandleValue),
+                        "","","","",
+                        "",
+                        objectEvent.ObjTrace.Duration.TotalSeconds, objectEvent.ObjTrace.IsMultiProcess, objectEvent.MaxRefCount,
+                        closeProcess.GetProcessName(UsePrettyProcessName), closeProcess.GetProcessWithId(UsePrettyProcessName),
+                            closeProcess.StartTime, NoCmdLine ? "" : closeProcess.CommandLineNoExe);
+                    }
+
+                    foreach(var map in objectEvent.ObjTrace.FileMapEvents)
+                    {
+                        ETWProcess mapProcess = objectEvent.Extract.GetProcess(map.ProcessIdx);
+                        
+                        WriteCSVLine(CSVOptions, Path.GetFileNameWithoutExtension(objectEvent.File.FileName), objectEvent.File.PerformedAt, objectEvent.File.TestName, objectEvent.File.DurationInMs, objectEvent.BaseLine,
+                        objectEvent.Id, GetStack(objectEvent.Stacks, map.StackIdx), map.GetType().Name, map.TimeNs, map.ThreadId, "", "", GetHandleValue((ulong)objectEvent.ObjTrace.ObjectPtr),
+                        "", "",
+                        GetHandleValue((ulong)map.ViewBase), map.ViewSize, GetHandleValue((ulong)map.FileObject), map.ByteOffset,
+                        "",
+                        objectEvent.ObjTrace.Duration.TotalSeconds, objectEvent.ObjTrace.IsMultiProcess, objectEvent.MaxRefCount,
+                        mapProcess.GetProcessName(UsePrettyProcessName), mapProcess.GetProcessWithId(UsePrettyProcessName),
+                            mapProcess.StartTime, NoCmdLine ? "" : mapProcess.CommandLineNoExe);
+                    }
+
+                    foreach (var unMap in objectEvent.ObjTrace.FileUnmapEvents)
+                    {
+                        ETWProcess mapProcess = objectEvent.Extract.GetProcess(unMap.ProcessIdx);
+
+                        WriteCSVLine(CSVOptions, Path.GetFileNameWithoutExtension(objectEvent.File.FileName), objectEvent.File.PerformedAt, objectEvent.File.TestName, objectEvent.File.DurationInMs, objectEvent.BaseLine,
+                        objectEvent.Id, GetStack(objectEvent.Stacks, unMap.StackIdx), unMap.GetType().Name, unMap.TimeNs, unMap.ThreadId, "", "", GetHandleValue((ulong)objectEvent.ObjTrace.ObjectPtr),
+                        "", "",
+                        GetHandleValue((ulong)unMap.ViewBase), unMap.ViewSize, GetHandleValue((ulong)unMap.FileObject), unMap.ByteOffset,
+                        "",
+                        objectEvent.ObjTrace.Duration.TotalSeconds, objectEvent.ObjTrace.IsMultiProcess, objectEvent.MaxRefCount,
+                        mapProcess.GetProcessName(UsePrettyProcessName), mapProcess.GetProcessWithId(UsePrettyProcessName),
+                            mapProcess.StartTime, NoCmdLine ? "" : mapProcess.CommandLineNoExe);
+                    }
+
+                    foreach(var refChange in objectEvent.ObjTrace.RefChanges)
+                    {
+                        ETWProcess refChangeProc = objectEvent.Extract.GetProcess(refChange.ProcessIdx);
+
+                        WriteCSVLine(CSVOptions, Path.GetFileNameWithoutExtension(objectEvent.File.FileName), objectEvent.File.PerformedAt, objectEvent.File.TestName, objectEvent.File.DurationInMs, objectEvent.BaseLine,
+                        objectEvent.Id, GetStack(objectEvent.Stacks, refChange.StackIdx), refChange.GetType().Name, refChange.TimeNs, refChange.ThreadId, "", "", GetHandleValue((ulong)objectEvent.ObjTrace.ObjectPtr),
+                        "", "",
+                        "", "", "", "",
+                        refChange.RefCountChange,
+                        objectEvent.ObjTrace.Duration.TotalSeconds, objectEvent.ObjTrace.IsMultiProcess, objectEvent.MaxRefCount,
+                        refChangeProc.GetProcessName(UsePrettyProcessName), refChangeProc.GetProcessWithId(UsePrettyProcessName),
+                            refChangeProc.StartTime, NoCmdLine ? "" : refChangeProc.CommandLineNoExe);
+
+                    }
                 }
             }
             else
@@ -96,6 +191,8 @@ namespace ETWAnalyzer.EventDump
             Lazy<SingleTest>[] runData = GetTestRuns(true, SingleTestCaseFilter, TestFileFilter);
             WarnIfNoTestRunsFound(runData);
 
+            int id = 0; // object id;
+
             foreach (var test in runData)
             {
                 foreach (TestDataFile file in test.Value.Files)
@@ -106,11 +203,24 @@ namespace ETWAnalyzer.EventDump
                         continue;
                     }
 
-                    IStackCollection stacks = file.Extract.HandleData.Stacks;
+                    // read stacks from extra file only if we need it
+                    IStackCollection stacks = (
+                                               ShowStack ||
+                                               StackFilter.Key != null ||
+                                               CreateStackFilter.Key != null ||
+                                               DestroyStackFilter.Key != null
+                                               ) ? file.Extract.HandleData.Stacks : null;
 
                     foreach (ObjectRefTrace handle in file.Extract.HandleData.ObjectReferences)
                     {
                         handle.RefreshCollectionsAfterDeserialize();
+
+                        id++;
+
+                        if(!MinMaxId.IsWithin(id))  // filter by object id
+                        {
+                            continue;
+                        }
 
                         // print either object or file mapping events. Default is to print both
                         if ( (Map == 0 && handle.IsFileMap) ||
@@ -144,7 +254,7 @@ namespace ETWAnalyzer.EventDump
                             ThrowAwayAllEventsWithNotMatchingStacks(stacks, handle);
                         }
 
-                        if( !MatchCreatingOrUsingProcess(handle, file.Extract) )
+                        if( !MatchCreatingProcess(handle, file.Extract) )
                         {
                             continue;
                         }
@@ -172,7 +282,7 @@ namespace ETWAnalyzer.EventDump
                             }
                         }
 
-                        if(!MatchRelatedProcess(handle, file.Extract))
+                        if(!MatchAnyProcess(handle, file.Extract))
                         {
                             continue;
                         }
@@ -233,9 +343,11 @@ namespace ETWAnalyzer.EventDump
                         {
                             ObjTrace = handle,
                             Extract = file.Extract,
-                            Stacks = file.Extract.HandleData.Stacks,
+                            Stacks =  stacks,
                             MaxRefCount = maxRefCount,
                             File = file,
+                            BaseLine = file.Extract.MainModuleVersion?.ToString(),
+                            Id = id,
                         });
                     }
                 }
@@ -259,7 +371,7 @@ namespace ETWAnalyzer.EventDump
             }
         }
 
-        bool MatchCreatingOrUsingProcess(ObjectRefTrace trace, IProcessExtract resolver)
+        bool MatchCreatingProcess(ObjectRefTrace trace, IProcessExtract resolver)
         {
             bool lret = false;
             ETWProcessIndex creator = ETWProcessIndex.Invalid;
@@ -268,88 +380,72 @@ namespace ETWAnalyzer.EventDump
                 creator = trace.CreateEvent.ProcessIdx;
                 lret = ProcessNameFilter(GetProcessWithId(creator, resolver));
             }
-
-            if (!lret && trace.DestroyEvent != null)
-            {
-                string destroyName = GetProcessWithId(trace.DestroyEvent.ProcessIdx, resolver);
-                lret = ProcessNameFilter(destroyName);
-            }
-
-            if (!lret)
-            {
-                lret = trace.HandleCreateEvents.Any(x => ProcessNameFilter(GetProcessWithId(x.ProcessIdx, resolver)));
-            }
-
-            if (!lret)
-            {
-                lret = trace.HandleCloseEvents.Any(x => ProcessNameFilter(GetProcessWithId(x.ProcessIdx, resolver)));
-            }
-
-            if (!lret)
-            {
-                lret = trace.HandleDuplicateEvents.Any(x => ProcessNameFilter(GetProcessWithId(x.ProcessIdx, resolver)));
-            }
-
             return lret;
         }
 
-        bool MatchRelatedProcess(ObjectRefTrace trace, IProcessExtract resolver)
+
+        /// <summary>
+        /// Filter for object trace which have this process occurring in any event.
+        /// </summary>
+        /// <param name="trace"></param>
+        /// <param name="resolver"></param>
+        /// <returns>true if process was calling create/close/duplicate for given object.</returns>
+        bool MatchAnyProcess(IObjectRefTrace trace, IProcessExtract resolver)
         {
-            ETWProcessIndex creator = ETWProcessIndex.Invalid;
+            bool lret = false;
             if (trace.CreateEvent != null)
             {
-                creator = trace.CreateEvent.ProcessIdx;
-            }
-
-            foreach (var ev in trace?.HandleCreateEvents)
-            {
-                if (ev.ProcessIdx != creator)
+                if( RelatedProcessFilter.Value(GetProcessWithId(trace.CreateEvent.ProcessIdx, resolver)))
                 {
-                    // filter by process name with pid like cmd.exe(100)
-                    if (!RelatedProcessFilter.Value(GetProcessWithId(ev.ProcessIdx, resolver)))
-                    {
-                        return false;
-                    }
+                    lret = true;
                 }
             }
 
-            foreach (var ev in trace?.HandleCloseEvents)
+            if (trace.DestroyEvent != null) // reference tracing
             {
-                if (ev.ProcessIdx != creator)
+                if (RelatedProcessFilter.Value(GetProcessWithId(trace.DestroyEvent.ProcessIdx, resolver)))
                 {
-                    // filter by process name with pid like cmd.exe(100)
-                    if (!RelatedProcessFilter.Value(GetProcessWithId(ev.ProcessIdx, resolver)))
-                    {
-                        return false;
-                    }
+                    lret = true;
                 }
             }
 
-            foreach (var ev in trace?.HandleDuplicateEvents)
+
+            if (!lret)
             {
-                if (ev.ProcessIdx != creator)
-                {
-                    // filter by process name with pid like cmd.exe(100)
-                    if (!RelatedProcessFilter.Value(GetProcessWithId(ev.ProcessIdx, resolver)))
-                    {
-                        return false;
-                    }
-                }
+                lret = trace.HandleCreateEvents.Any(x => RelatedProcessFilter.Value(GetProcessWithId(x.ProcessIdx, resolver)));
             }
 
-            foreach (var ev in trace.RefChanges)
+            if (!lret)
             {
-                if (ev.ProcessIdx != creator)
-                {
-                    // filter by process name with pid like cmd.exe(100)
-                    if (!RelatedProcessFilter.Value(GetProcessWithId(ev.ProcessIdx, resolver)))
-                    {
-                        return false;
-                    }
-                }
+                lret = trace.HandleCloseEvents.Any(x => RelatedProcessFilter.Value(GetProcessWithId(x.ProcessIdx, resolver)));
             }
 
-            return true;
+            if( !lret)
+            {
+                lret = trace.HandleDuplicateEvents.Any(x => RelatedProcessFilter.Value(GetProcessWithId(x.ProcessIdx, resolver)));
+            }
+
+            if (!lret)
+            {
+                lret = trace.HandleDuplicateEvents.Any(x => RelatedProcessFilter.Value(GetProcessWithId(x.SourceProcessIdx, resolver)));
+            }
+
+            if (!lret)
+            {
+                lret = trace.RefChanges.Any(x => RelatedProcessFilter.Value(GetProcessWithId(x.ProcessIdx, resolver)));
+            }
+
+            if( !lret )
+            {
+                lret = trace.FileMapEvents.Any(x => RelatedProcessFilter.Value(GetProcessWithId(x.ProcessIdx, resolver)));
+            }
+
+            if( !lret )
+            {
+                lret = trace.FileUnmapEvents.Any(x => RelatedProcessFilter.Value(GetProcessWithId(x.ProcessIdx, resolver)));
+            }
+
+            return lret;
         }
 
         private void ThrowAwayAllEventsWithNotMatchingStacks(IStackCollection stacks, ObjectRefTrace handle)
@@ -358,10 +454,12 @@ namespace ETWAnalyzer.EventDump
             {
                 handle.CreateEvent = null;
             }
+
             if(handle.DestroyEvent != null && !CachingStackFilter(stacks, handle.DestroyEvent.StackIdx) )
             {
                 handle.DestroyEvent = null;
             }
+
             handle.HandleCreateEvents =  handle.HandleCreateEvents.Where(x => CachingStackFilter(stacks, x.StackIdx)).ToList();
             handle.HandleCloseEvents  =  handle.HandleCloseEvents.Where(x => CachingStackFilter(stacks, x.StackIdx)).ToList();
             handle.HandleDuplicateEvents = handle.HandleDuplicateEvents.Where(x => CachingStackFilter(stacks, x.StackIdx)).ToList();
@@ -372,46 +470,80 @@ namespace ETWAnalyzer.EventDump
 
         private void PrintMatches(List<MatchData> matches)
         {
+            int createCount=0;
+            int closeCount = 0;
+            int duplicateCount = 0;
+            int mapCount = 0;
+            int unmapCount = 0;
+            int refChangeCount = 0;
+            HashSet<ETWProcessIndex> processes = new();
+
             string fileName = null;
             foreach (var ev in matches)
             {
-                if (ev.File.FileName != fileName)
-                {
-                    PrintFileName(ev.File.FileName, null, ev.File.PerformedAt, ev.File.Extract.MainModuleVersion?.ToString());
-                    fileName = ev.File.FileName;    
-                }
+                createCount += ev.ObjTrace.HandleCreateEvents.Count;
+                ev.ObjTrace.HandleCreateEvents.ForEach( x=> processes.Add(x.ProcessIdx));
 
-                if( ev.ObjTrace.IsFileMap)
+                closeCount += ev.ObjTrace.HandleCloseEvents.Count;
+                ev.ObjTrace.HandleCloseEvents.ForEach(x => processes.Add(x.ProcessIdx));
+
+                duplicateCount += ev.ObjTrace.HandleDuplicateEvents.Count;
+                ev.ObjTrace.HandleDuplicateEvents.ForEach(x => processes.Add(x.ProcessIdx));
+                ev.ObjTrace.HandleDuplicateEvents.ForEach(x => processes.Add(x.SourceProcessIdx));
+
+                mapCount += ev.ObjTrace.FileMapEvents.Count;
+                ev.ObjTrace.FileMapEvents.ForEach(x => processes.Add(x.ProcessIdx));
+
+                unmapCount += ev.ObjTrace.FileUnmapEvents.Count;
+                ev.ObjTrace.FileUnmapEvents.ForEach(x => processes.Add(x.ProcessIdx));
+
+                refChangeCount += ev.ObjTrace.RefChanges.Count;
+                ev.ObjTrace.RefChanges.ForEach(x => processes.Add(x.ProcessIdx));
+
+                if (ShowTotal != DumpCommand.TotalModes.Total)
                 {
-                    if (Map == null || Map == 1)
+                    if (ev.File.FileName != fileName)
                     {
-                        PrintMapEvent(ev);
+                        PrintFileName(ev.File.FileName, null, ev.File.PerformedAt, ev.File.Extract.MainModuleVersion?.ToString());
+                        fileName = ev.File.FileName;
                     }
-                }
-                else
-                {
-                    if (Map == null || Map == 0)
+
+                    if (ev.ObjTrace.IsFileMap)
                     {
-                        PrintObjectEvent(ev);
+                        if (Map == null || Map == 1)
+                        {
+                            PrintMapEvent(ev);
+                        }
+                    }
+                    else
+                    {
+                        if (Map == null || Map == 0)
+                        {
+                            PrintObjectEvent(ev);
+                        }
                     }
                 }
             }
+
+            ColorConsole.WriteEmbeddedColorLine($"[red]Totals: Processes: {processes.Count} Handles Created: {createCount}, Closed: {closeCount}, Duplicate: {duplicateCount}, RefChanges: {refChangeCount}, FileMap: {mapCount} Unmap: {unmapCount}[/red]");
         }
+
+
 
         private void PrintObjectEvent(MatchData ev)
         {
-            Console.WriteLine($"Object: 0x{ev.ObjTrace.ObjectPtr:X} {ev.ObjTrace.Name} Lifetime: {ev.ObjTrace.Duration.TotalSeconds:F6} s  " +
+            Console.WriteLine($"Id: {ev.Id} Object: 0x{ev.ObjTrace.ObjectPtr:X} {ev.ObjTrace.Name} Lifetime: {ev.ObjTrace.Duration.TotalSeconds:F6} s  " +
                               $"Create+Duplicate-Close: {ev.ObjTrace.HandleCreateEvents.Count}+{ev.ObjTrace.HandleDuplicateEvents.Count}-{ev.ObjTrace.HandleCloseEvents.Count} = {ev.ObjTrace.HandleCreateEvents.Count + ev.ObjTrace.HandleDuplicateEvents.Count - ev.ObjTrace.HandleCloseEvents.Count}");
 
             foreach (IHandleCreateEvent handleCreate in ev.ObjTrace.HandleCreateEvents)
             {
-                PrintEventHeader(handleCreate, ev.Extract,    "[green]HandleCreate   [/green]", GetHandleStr(handleCreate.HandleValue, ConsoleColor.Green));
+                PrintEventHeader(handleCreate, ev.Extract,    "[green]HandleCreate   [/green]", GetHandleStrAligned(handleCreate.HandleValue, ConsoleColor.Green));
                 Console.WriteLine($"Stack: {GetStack(ev.Stacks, handleCreate.StackIdx)}");
             }
 
             foreach (IHandleDuplicateEvent handleduplicate in ev.ObjTrace.HandleDuplicateEvents)
             {
-                PrintEventHeader(handleduplicate, ev.Extract, "[yellow]HandleDuplicate[/yellow]", GetHandleStr(handleduplicate.HandleValue, ConsoleColor.Green));
+                PrintEventHeader(handleduplicate, ev.Extract, "[yellow]HandleDuplicate[/yellow]", GetHandleStrAligned(handleduplicate.HandleValue, ConsoleColor.Green));
                 Console.WriteLine($"SourceProcess: {GetProcessWithId(handleduplicate.SourceProcessIdx, ev.Extract)} SourceHandle: 0x{handleduplicate.SourceHandleValue:X} Stack: {GetStack(ev.Stacks, handleduplicate.StackIdx)}");
             }
 
@@ -420,7 +552,7 @@ namespace ETWAnalyzer.EventDump
             {
                 foreach (IHandleCloseEvent handleClose in ev.ObjTrace.HandleCloseEvents)
                 {
-                    PrintEventHeader(handleClose, ev.Extract, "[red]HandleClose    [/red]", GetHandleStr(handleClose.HandleValue, ConsoleColor.Green));
+                    PrintEventHeader(handleClose, ev.Extract, "[red]HandleClose    [/red]", GetHandleStrAligned(handleClose.HandleValue, ConsoleColor.Green));
                     Console.WriteLine($"Stack: {GetStack(ev.Stacks, handleClose.StackIdx)}");
                 }
             }  
@@ -431,12 +563,19 @@ namespace ETWAnalyzer.EventDump
                 foreach (IRefCountChangeEvent change in ev.ObjTrace.RefChanges)
                 {
                     currentRefCount += change.RefCountChange;
-                    PrintEventHeader(change, ev.Extract,      "RefChange      ");
+                    if (change.RefCountChange > 0)
+                    {
+                        PrintEventHeader(change, ev.Extract, "[green]RefChange      [/green]");
+                    }
+                    else
+                    {
+                        PrintEventHeader(change, ev.Extract, "[red]RefChange      [/red]");
+                    }
                     Console.WriteLine($"{change.RefCountChange} Stack: {GetStack(ev.Stacks, change.StackIdx)}");
                 }
             }
 
-            if (ev.ObjTrace.DestroyEvent != null)
+            if (ev.ObjTrace.DestroyEvent != null && ev.ObjTrace.RefChanges.Count > 0)  // destroyevent is set only for ref traces uniquely otherwise we have the handle close event as final event
             {
                 PrintEventHeader(ev.ObjTrace.DestroyEvent, ev.Extract, 
                                                                      "[red]Object Delete  [/red]");
@@ -446,7 +585,7 @@ namespace ETWAnalyzer.EventDump
 
         private void PrintMapEvent(MatchData ev)
         {
-            Console.WriteLine($"MappingObject: 0x{ev.ObjTrace.ObjectPtr:X} Lifetime: {ev.ObjTrace.Duration.TotalSeconds:F6} s");
+            Console.WriteLine($"Id: {ev.Id} MappingObject: 0x{ev.ObjTrace.ObjectPtr:X} Lifetime: {ev.ObjTrace.Duration.TotalSeconds:F6} s");
             foreach (IFileMapEvent fileMapEvent in ev.ObjTrace.FileMapEvents)
             {
                 PrintEventHeader(fileMapEvent, ev.Extract, "Map");
@@ -466,16 +605,33 @@ namespace ETWAnalyzer.EventDump
             ColorConsole.WriteEmbeddedColorLine($"\t{timeStr} {GetProcessId(ev.ProcessIdx, resolver),5}/{ev.ThreadId,-5} {name} {beforeProc}{GetProcessName(ev.ProcessIdx, resolver)} ", null, true);
         }
 
+
+
         string GetStack(IStackCollection stacks, StackIdx stackIdx)
         {
+            string lret = stackIdx.ToString();            
             if (ShowStack)
             {
-                return stacks.GetStack(stackIdx);
+                if (IsCSVEnabled) // add stack only once to CSV to save space per stack index
+                {
+                    if( !myPrinted.TryGetValue(stacks, out HashSet<StackIdx> set) )
+                    {
+                        set = new();
+                        myPrinted.Add(stacks, set);
+                    }
+
+                    if (set.Add(stackIdx) == true)
+                    {
+                        lret = $"StackId: {lret} " + stacks.GetStack(stackIdx);
+                    }
+                }
+                else
+                {
+                    lret = stacks.GetStack(stackIdx);
+                }
             }
-            else
-            {
-                return stackIdx.ToString();
-            }
+
+            return lret;
         }
 
         string GetProcessWithId(ETWProcessIndex procIdx, IProcessExtract resolver)
@@ -493,9 +649,14 @@ namespace ETWAnalyzer.EventDump
             return resolver.GetProcess(procIdx).ProcessID;
         }
 
-        string GetHandleStr(ulong value, ConsoleColor color)
+        string GetHandleValue(ulong value)
         {
             string str = "0x" + value.ToString("X");
+            return str;
+        }
+        string GetHandleStrAligned(ulong value, ConsoleColor color)
+        {
+            string str = GetHandleValue(value);
             str = $"{str,-8}";
             return $"[{color}]{str}[/{color}]";
         }
