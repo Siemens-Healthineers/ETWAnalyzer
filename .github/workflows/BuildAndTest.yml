@@ -31,7 +31,7 @@ jobs:
         steps:
        
         - name: Checkout
-          uses: actions/checkout@v3
+          uses: actions/checkout@v4
           with:
             fetch-depth: 0
 
@@ -63,7 +63,7 @@ jobs:
                 
         # Add  MSBuild to the PATH: https://github.com/microsoft/setup-msbuild
         - name: Setup MSBuild.exe
-          uses: microsoft/setup-msbuild@v1.1
+          uses: microsoft/setup-msbuild@v2
 
         # Print .NET information
         - name: Get .NET Information
@@ -120,14 +120,14 @@ jobs:
           shell: powershell -Command "& '{0}'"
         - name: Upload Profiling Data
           if: always()
-          uses: actions/upload-artifact@v3
+          uses: actions/upload-artifact@v4
           with:
             name: ProfilingData_${{ env.TestRunTimeMs }}
             path: ProfilingData
             retention-days: 90
         - name: Upload Profiling Extract Data
           if: always()
-          uses: actions/upload-artifact@v3
+          uses: actions/upload-artifact@v4
           with:
             name: Extract_${{ env.TestRunTimeMs }}
             path: Extract
