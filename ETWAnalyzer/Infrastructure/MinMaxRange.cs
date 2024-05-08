@@ -51,5 +51,13 @@ namespace ETWAnalyzer.Infrastructure
 
             return true;
         }
+
+        /// <summary>
+        /// True when filter ranges are not set.
+        /// </summary>
+        public bool IsDefault
+        {
+            get => Min == null && Max == null;
+        }
     }
 }

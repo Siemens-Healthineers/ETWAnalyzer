@@ -103,5 +103,10 @@ namespace ETWAnalyzer.EventDump
         /// Dump TCP data
         /// </summary>
         TCP,
+
+        /// <summary>
+        /// Dump Handle Object Reference Data
+        /// </summary>
+        ObjectRef,
     }
 }

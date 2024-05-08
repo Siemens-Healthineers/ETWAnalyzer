@@ -19,6 +19,7 @@ using System.Reflection.Emit;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading;
+using Microsoft.Diagnostics.Tracing;
 
 namespace ETWAnalyzer.Commands
 {
@@ -28,7 +29,7 @@ namespace ETWAnalyzer.Commands
     class DumpCommand : ArgParser
     {
         private static readonly string DumpHelpStringPrefix =
-        "ETWAnalyzer -Dump [Stats,Process,CPU,Memory,Disk,File,Power,ThreadPool,Exception,Mark,TestRun,Version,PMC,LBR,Dns] [-nocolor]" + Environment.NewLine;
+        "ETWAnalyzer -Dump [CPU,Disk,Dns,Exception,File,LBR,Mark,Memory,ObjectRef,PMC,Power,Process,,Stats,TestRun,ThreadPool,Version] [-nocolor]" + Environment.NewLine;
 
         static readonly string StatsHelpString =
         "   Stats    -filedir/fd x.etl/.json   [-Properties xxxx] [-recursive] [-csv xxx.csv] [-NoCSVSeparator] [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd] [-MinMaxMsTestTimes xx-yy ...] [-Clip]" + Environment.NewLine + "" +
@@ -38,8 +39,8 @@ namespace ETWAnalyzer.Commands
         "                         Json Only:                 When Json files are dumped some or all extracted data is printed or exported to a CSV file. You can also filter by testcase, machine, ... to extract data of specific files" + Environment.NewLine +
         "                         -Properties xxxx           Dump only specific properties of extracted Json to console. Valid property names are " + Environment.NewLine +
        $"                                                    {DumpStats.AllProperties}" + Environment.NewLine +
-        "                         -OneLine                   Print properties on console on a single line per file" + Environment.NewLine +
-            Environment.NewLine;
+        "                         -OneLine                   Print properties on console on a single line per file" + Environment.NewLine
+        ;
 
         static readonly string VersionHelpString =
         "   Version  -filedir/fd x.etl/.json [-dll xxxx.dll] [-VersionFilter xxx] [-MissingPdb [xxx.pdb]] [-ModuleFilter xxx] [-ProcessName/pn xxx.exe(pid)] [-NoCmdLine] [-csv xx.csv]" + Environment.NewLine +
@@ -370,10 +371,35 @@ namespace ETWAnalyzer.Commands
         "                         -MinMaxReceivedBytes xx-yy Filter connections which have received at least xx bytes." + Environment.NewLine +
         "                         -MinMaxConnectionDurationS xx-yy Filter connections which have duration of at least xx-yy seconds." + Environment.NewLine +
         "                         -Details                   Show retransmit Max/Median/Min, connect/disconnect time, used TCP template setting, TCB pointer." + Environment.NewLine +
-        "                         -Tcb 0xdddddd              Filter by \"connection\" which is actually the Transfer Control Block pointer. Its value can be reused for new connections."+ Environment.NewLine + 
-            Environment.NewLine
+        "                         -Tcb 0xdddddd              Filter by \"connection\" which is actually the Transfer Control Block pointer. Its value can be reused for new connections."+ Environment.NewLine 
         ;
 
+        static readonly string ObjectRefHelpString =
+        " ObjectRef  -filedir/fd Extract\\ or xxx.json" + Environment.NewLine +
+        "       [-TimeFmt s,Local,LocalTime,UTC,UTCTime,Here,HereTime] [-csv xxx.csv] [-NoCSVSeparator] [-NoCmdLine] [-Clip] [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd] [-MinMaxMsTestTimes xx-yy ...] [-ProcessName/pn xxx.exe(pid)] " + Environment.NewLine +
+        "       [-RelatedProcess xxx.exe(pid)] [-MinMaxDuration minS [maxS]] [-MinMaxId min [max]] [-CreateStack filter] [-DestroyStack filter] [-StackFilter filter] [-Object filter] [-ObjectName filter] [-Handle filter] [-ShowRef]" + Environment.NewLine +
+        "       [-ShowStack] [-Leak] [-MultiProcess] [-Map [0,1]] [-PtrInMap 0x...] [-MinMaxMapSize min [max]] [-Overlapped] [-Showtotal Total,File,None]" + Environment.NewLine +   
+        "       [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-CmdLine substring]" + Environment.NewLine +
+        "                        -ProcessName/pn xxx.exe(pid) Filter for processes which did access/modify the object." + Environment.NewLine +
+        "                        -RelatedProcess xxx.exe(pid) Filter in all events for this process. You can also use a negative filter to exclude specific processes like -pn *creator.exe -realatedprocess !other.exe" + Environment.NewLine +    
+        "                        -MinMaxDuration minS [maxS]  Filter for handle lifetime. Never closed handles get a lifetime of 9999 s which serves as magic marker value." + Environment.NewLine +
+        "                        -MinMaxId min [max]          Filter for one or a range of objects. E.g. -MinMaxId 500 600 to filter for all object events with id 500-600. The ids are sorted by object creation time." + Environment.NewLine +
+        "                        -CreateStack filter          Keep all object events (create/objRef/duplicate...) where the create stack matches." + Environment.NewLine +
+        "                        -DestroyStack filter         Keep all object events (create/objRef/duplicate...) where the destroy stack matches." + Environment.NewLine +
+        "                        -StackFilter filter          Keep only the events where the stack matches and throw away all other events. To keep all events which have e.g. CreateWebRequest in their stack use -StackFilter *CreateWebRequest*" + Environment.NewLine +
+        "                        -ShowTotal [Total,File,None] Do not print individual events, just the counts. Total will print totals across multiple files, while File will print the per File totals." + Environment .NewLine + 
+        "                        -Object filter               Filter for kernel object pointer value. E.g. -Object 0x8300004." + Environment.NewLine +
+        "                        -ObjectName filter           Filter for object name. E.g. -ObjectName *IO to filter for all object which end with :IO." + Environment.NewLine +
+        "                        -Handle filter               Text filter for handle value/s. E.g. -Handle 0xABC." + Environment.NewLine +
+        "                        -ShowRef                     Show Object Reference increment/decrement operations." + Environment.NewLine +
+        "                        -ShowStack                   Show stacks for events if recorded. If -csv is used only the the stack traces are added to CSV file." + Environment.NewLine +    
+        "                        -Leak                        Show all events for objects which are not closed during the trace." + Environment.NewLine +  
+        "                        -MultiProcess                Show handles which are accessed from more than one process." + Environment.NewLine +
+        "                        -Map [0,1]                   When 1 only memory map events are shown. When 0 memory map events are excluded." + Environment.NewLine +  
+        "                        -PtrInMap 0x...              Filter file mapping objects which have this pointer inside their map range." + Environment.NewLine +
+        "                        -MinMaxMapSize min [max]     Filter file mapping requests by their mapping size in bytes." + Environment.NewLine +
+        "                        -Overlapped                  Show objects which are referenced by different handles. E.g. open an already existing named event (CreateEvent last error code returns ALREADY_EXISTS)." + Environment.NewLine 
+        ;
 
         static readonly string ExamplesHelpString =
         "[yellow]Examples[/yellow]" + Environment.NewLine;
@@ -583,6 +609,18 @@ namespace ETWAnalyzer.Commands
         "[green]Dump all all client retransmission events sorted by delay and omit connections which have no retransmissions in output.[/green]" + Environment.NewLine +
         " ETWAnalyzer -fd xx.json -dump Tcp -OnlyClientRetransmit -MinMaxRetransCount 1 -ShowRetransmit -SortRetransmitBy Delay" + Environment.NewLine ;
 
+        static readonly string ObjectRefExamples = ExamplesHelpString +
+        "[green]Dump all Handle Create/Duplicate/Close/AddRef/ReleaseRef/FileMap/FileUnmap events.[/green]" + Environment.NewLine +
+        " ETWAnalyzer -fd xx.json -dump ObjectRef" + Environment.NewLine +
+        "[green]Dump all leaked objects with stacks and write to a CSV file.[/green]" + Environment.NewLine +
+        " ETWAnalyzer -fd xx.json -dump ObjectRef -Leak -ShowStack -csv Leaks.csv" + Environment.NewLine +
+        "[green]Dump only handles with object names ending with :IO.[/green]" + Environment.NewLine +
+        " ETWAnalyzer -fd xx.json -dump ObjectRef -ObjectName *:IO" + Environment.NewLine +
+        "[green]Dump only file mapping events in the id range 500-600[/green]" + Environment.NewLine +
+        " ETWAnalyzer -fd xx.json -dump ObjectRef -Map 1 -MinMaxId 500 600" + Environment.NewLine;
+
+
+
         /// <summary>
         /// Default Helpstring which prints all dump commands
         /// </summary>
@@ -603,7 +641,8 @@ namespace ETWAnalyzer.Commands
             PMCHelpString +
             LBRHelpString +
             DnsHelpString +
-            TcpHelpString;
+            TcpHelpString + 
+            ObjectRefHelpString;
 
 
         internal DumpCommands myCommand = DumpCommands.None;
@@ -791,11 +830,37 @@ namespace ETWAnalyzer.Commands
 
         public KeyValuePair<string, Func<string, bool>> VersionFilter { get; set; } = new(null, _ => true);
 
+        // Dump ObjectRef specific flags
+        public KeyValuePair<string, Func<string, bool>> CreateStackFilter { get; private set; } = new(null, _ => true);
+        public KeyValuePair<string, Func<string, bool>> DestroyStackFilter { get; private set; } = new(null, _ => true);
+        
+        public KeyValuePair<string, Func<string, bool>> ObjectNameFilter { get; private set; } = new(null, _ => true);
+        public KeyValuePair<string, Func<string, bool>> ObjectFilter { get; private set; } = new(null, _ => true);
+        public KeyValuePair<string, Func<string, bool>> ViewBaseFilter { get; private set; } = new(null, _ => true);
+        
+        public KeyValuePair<string, Func<string, bool>> HandleFilter { get; private set; } = new(null, _ => true);
+
+        public KeyValuePair<string, Func<string, bool>> RelatedProcessFilter { get; private set; } = new(null, _ => true);
+
+        public MinMaxRange<long> MinMaxMapSize { get; private set; } = new();
+        public MinMaxRange<long> MinMaxId { get; private set; } = new();
+
+        public long? PtrInMap { get; private set; }
+        public int? Map { get; private set; }
+        public bool ShowRef { get; private set; }
+        public bool Leak { get; private set; }
+        public bool Overlapped { get; private set; }
+        public bool MultiProcess { get; private set; }  
+
+
+        // Dump ObjRef/Exception specifc Flags
+        public KeyValuePair<string, Func<string, bool>> StackFilter { get; private set; } = new(null, _ => true);
+
         // Dump Exception specific Flags
         public bool FilterExceptions { get; private set; }
         public KeyValuePair<string, Func<string, bool>> TypeFilter { get; private set; } = new(null, _ => true);
         public KeyValuePair<string, Func<string, bool>> MessageFilter { get; private set; } = new(null, _ => true);
-        public KeyValuePair<string, Func<string, bool>> StackFilter { get; private set; } = new(null, _ => true);
+        
         public int CutStackMin { get; private set; }
         public int CutStackMax { get; private set; }
 
@@ -1012,6 +1077,10 @@ namespace ETWAnalyzer.Commands
                     case "-etl":
                         myEtlFileOrZip = GetNextNonArg("-etl");
                         break;
+                    case "-map":
+                        string mapArg = GetNextNonArg("-map");
+                        Map = int.Parse(mapArg);
+                        break;
                     case "-newprocess":
                         string newProcessArg = GetNextNonArg("-newprocess");
 #pragma warning disable CS8509 // The switch expression does not handle all possible values of its input type (it is not exhaustive).
@@ -1142,6 +1211,10 @@ namespace ETWAnalyzer.Commands
                     case "-pn":
                         ProcessNameFilter = Matcher.CreateMatcher(GetNextNonArg("-processname"), MatchingMode.CaseInsensitive, pidFilterFormat:true);
                         break;
+                    case "-relatedprocess":
+                        string realatedProcssFilterStr = GetNextNonArg("-relatedprocess");
+                        RelatedProcessFilter = new KeyValuePair<string, Func<string, bool>>(realatedProcssFilterStr, Matcher.CreateMatcher(realatedProcssFilterStr, MatchingMode.CaseInsensitive, pidFilterFormat:true));
+                        break;
                     case "-parent":
                         Parent =            Matcher.CreateMatcher(GetNextNonArg("-parent"), MatchingMode.CaseInsensitive, pidFilterFormat:true);
                         break;
@@ -1189,6 +1262,18 @@ namespace ETWAnalyzer.Commands
                         string stackfilter = GetNextNonArg("-stackfilter");
                         StackFilter =           new KeyValuePair<string, Func<string, bool>>(stackfilter, Matcher.CreateMatcher(stackfilter));
                         break;
+                    case "-destroystack":
+                        string destroyStackfilter = GetNextNonArg("-destroystack");
+                        DestroyStackFilter =    new KeyValuePair<string, Func<string, bool>>(destroyStackfilter, Matcher.CreateMatcher(destroyStackfilter));
+                        break;
+                    case "-createstack":
+                        string createStack = GetNextNonArg("-createstack");
+                        CreateStackFilter =     new KeyValuePair<string, Func<string, bool>>(createStack, Matcher.CreateMatcher(createStack));
+                        break;
+                    case "-objectname":
+                        string handleNameFilter = GetNextNonArg("-objectname");
+                        ObjectNameFilter =      new KeyValuePair<string, Func<string, bool>>(handleNameFilter, Matcher.CreateMatcher(handleNameFilter));
+                        break;
                     case "-methods":
                         string methodFilter = GetNextNonArg("-methods");
                         methodFilter = ReplaceMethodFilterAliases(methodFilter);
@@ -1208,7 +1293,23 @@ namespace ETWAnalyzer.Commands
                         break;
                     case "-tcb":
                         string tcpFilter = GetNextNonArg("-tcb");
-                        TcbFilter = new KeyValuePair<string, Func<string, bool>>(tcpFilter, Matcher.CreateMatcher(tcpFilter));
+                        TcbFilter =             new KeyValuePair<string, Func<string, bool>>(tcpFilter, Matcher.CreateMatcher(tcpFilter));
+                        break;
+                    case "-object":
+                        string objectFilter = GetNextNonArg("-object");
+                        ObjectFilter =          new KeyValuePair<string, Func<string, bool>>(objectFilter, Matcher.CreateMatcher(objectFilter));
+                        break;
+                    case "-viewbase":
+                        string viewBaseFilter = GetNextNonArg("-viewbase");
+                        ViewBaseFilter =        new KeyValuePair<string, Func<string, bool>>(viewBaseFilter, Matcher.CreateMatcher(viewBaseFilter));
+                        break;
+                    case "-ptrinmap":
+                        string ptrInMap = GetNextNonArg("-ptrinmap");
+                        PtrInMap = ptrInMap.ParseLongFromHex();
+                        break;
+                    case "-handle":
+                        string handleFilter = GetNextNonArg("-handle");
+                        HandleFilter =         new KeyValuePair<string, Func<string, bool>>(handleFilter, Matcher.CreateMatcher(handleFilter));
                         break;
                     case "-zerotime":
                     case "-zt":
@@ -1229,6 +1330,18 @@ namespace ETWAnalyzer.Commands
                         break;
                     case "-showprocess":
                         ShowProcess = true;
+                        break;
+                    case "-showref":
+                        ShowRef = true;
+                        break;
+                    case "-multiprocess":
+                        MultiProcess = true;
+                         break;
+                    case "-leak":
+                        Leak = true;
+                        break;
+                    case "-overlapped":
+                        Overlapped = true;
                         break;
                     case "-cutmethod":
                         string cutmethod = GetNextNonArg("-cutmethod");
@@ -1352,6 +1465,12 @@ namespace ETWAnalyzer.Commands
                         KeyValuePair<decimal, decimal> minmaxworkingsetprivate = minmaxworkingsetprivateMiBStr.GetMinMaxDecimal(MiBUnit);
                         MinMaxWorkingsetPrivateMiB = new MinMaxRange<decimal>(minmaxworkingsetprivate.Key / MiBUnit, minmaxworkingsetprivate.Value / MiBUnit);
                         break;
+                    case "-minmaxid":
+                        string minId = GetNextNonArg("-minmaxid");
+                        string maxId = GetNextNonArg("-minmaxid", false); // optional
+                        Tuple<long, long> minMaxId = minId.GetMinMaxLong(maxId, 1.0m);
+                        MinMaxId = new MinMaxRange<long>(minMaxId.Item1, minMaxId.Item2);
+                        break;
                     case "-minmaxfirst":
                         string minFirst = GetNextNonArg("-minmaxfirst");
                         string maxFirst = GetNextNonArg("-minmaxfirst", false); // optional
@@ -1369,6 +1488,12 @@ namespace ETWAnalyzer.Commands
                         string maxDuration = GetNextNonArg("-minmaxduration", false); // optional
                         Tuple<double, double> minMaxDuration = minDuration.GetMinMaxDouble(maxDuration, SecondUnit);
                         MinMaxDurationS = new MinMaxRange<double>(minMaxDuration.Item1, minMaxDuration.Item2);
+                        break;
+                    case "-minmaxmapsize":
+                        string minMaxMapSizeMin = GetNextNonArg("-minmaxmapsize");
+                        string minMaxMapSizeMax = GetNextNonArg("-minmaxmapsize", false); // optional
+                        Tuple<long, long> minmaxMapSize = minMaxMapSizeMin.GetMinMaxLong(minMaxMapSizeMax, ByteUnit);
+                        MinMaxMapSize = new MinMaxRange<long>(minmaxMapSize.Item1, minmaxMapSize.Item2);
                         break;
                     case "-minmaxextime":
                         string minExTime = GetNextNonArg("-minmaxextime");
@@ -1581,6 +1706,9 @@ namespace ETWAnalyzer.Commands
                     case "tcp":
                         myCommand = DumpCommands.TCP;
                         break;
+                    case "objectref":
+                        myCommand = DumpCommands.ObjectRef;
+                        break;
                     case "-help":
                         delayedThrower = () =>
                         {
@@ -1660,6 +1788,9 @@ namespace ETWAnalyzer.Commands
                         break;
                     case DumpCommands.TCP:
                         lret = TcpExamples + Environment.NewLine + TcpHelpString;
+                        break;
+                    case DumpCommands.ObjectRef:
+                        lret = ObjectRefExamples + Environment.NewLine + ObjectRefHelpString;
                         break;
                 }
                 return lret.TrimEnd(Environment.NewLine.ToCharArray());
@@ -2239,6 +2370,49 @@ namespace ETWAnalyzer.Commands
                             ZeroTimeMode = ZeroTimeMode,
                             ZeroTimeFilter = ZeroTimeFilter,
                             ZeroTimeProcessNameFilter = ZeroTimeProcessNameFilter,
+                        };
+                        break;
+                    case DumpCommands.ObjectRef:
+                        myCurrentDumper = new DumpObjectRef
+                        {
+                            FileOrDirectoryQueries = FileOrDirectoryQueries,
+                            ShowFullFileName = ShowFullFileName,
+                            Recursive = mySearchOption,
+                            TestsPerRun = TestsPerRun,
+                            SkipNTests = SkipNTests,
+                            TestRunIndex = TestRunIndex,
+                            TestRunCount = TestRunCount,
+                            LastNDays = LastNDays,
+                            MinMaxMsTestTimes = MinMaxMsTestTimes,
+                            CSVFile = CSVFile,
+                            NoCSVSeparator = NoCSVSeparator,
+                            ProcessNameFilter = ProcessNameFilter,
+                            ProcessFormatOption = ProcessFormat,
+                            CommandLineFilter = CmdLineFilter,
+                            NewProcessFilter = NewProcess,
+                            UsePrettyProcessName = UsePrettyProcessName,
+                            TimeFormatOption = TimeFormat,
+
+                            ObjectNameFilter = ObjectNameFilter,
+                            StackFilter = StackFilter,
+                            DestroyStackFilter = DestroyStackFilter,
+                            CreateStackFilter = CreateStackFilter,
+                            ObjectFilter = ObjectFilter,
+                            ViewBaseFilter = ViewBaseFilter,
+                            HandleFilter = HandleFilter,
+                            MinMaxDurationS = MinMaxDurationS,
+                            ShowStack = ShowStack,
+                            ShowRef = ShowRef,
+                            Leak = Leak,
+                            MultiProcess = MultiProcess,
+                            Overlapped = Overlapped,
+                            RelatedProcessFilter = RelatedProcessFilter,
+                            Map = Map,
+                            PtrInMap = PtrInMap,
+                            MinMaxMapSize = MinMaxMapSize,
+                            MinMaxId = MinMaxId,
+                            NoCmdLine = NoCmdLine,
+                            ShowTotal = ShowTotal,
                         };
                         break;
                     case DumpCommands.None:

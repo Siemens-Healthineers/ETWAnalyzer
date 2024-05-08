@@ -172,8 +172,9 @@ namespace ETWAnalyzer.EventDump
         /// <param name="time">Local time</param>
         /// <param name="sessionStart">Trace sessions start time</param>
         /// <param name="fmt">Controls how time is formatted.</param>
+        /// <param name="precision">decimal numbers after second. Default is 3.</param>
         /// <returns>Formatted time locale independent.</returns>
-        protected string GetTimeString(DateTimeOffset ?time, DateTimeOffset sessionStart, TimeFormats fmt)
+        protected string GetTimeString(DateTimeOffset ?time, DateTimeOffset sessionStart, TimeFormats fmt, int precision=3)
         {
             string lret = "";
 
@@ -182,20 +183,25 @@ namespace ETWAnalyzer.EventDump
                 Tuple<double?,DateTime?>  newTime = ConvertTime(time.Value, sessionStart, fmt);
                 if (newTime.Item1.HasValue) // interpret as timespan 
                 {
-                    lret = FormatAsSeconds(newTime.Item1.Value);
+                    lret = FormatAsSeconds(newTime.Item1.Value, precision);
                 }
                 else
                 {
-                    lret = newTime.Item2.Value.ToString(TimeFormat, CultureInfo.InvariantCulture);
+                    string preciseFormat = TimeFormat;
+                    if( precision > 3)
+                    {
+                        preciseFormat += new string('f', precision - 3);
+                    }
+                    lret = newTime.Item2.Value.ToString(preciseFormat, CultureInfo.InvariantCulture);
                 }
             }
 
             return lret;
         }
 
-        private static string FormatAsSeconds(double timeInS)
+        private static string FormatAsSeconds(double timeInS, int precision)
         {
-            string seconds = timeInS.ToString("F3", CultureInfo.InvariantCulture);
+            string seconds = timeInS.ToString($"F{precision}", CultureInfo.InvariantCulture);
             return seconds;
         }
 
@@ -317,7 +323,7 @@ namespace ETWAnalyzer.EventDump
             string lret = "";
             if( time.Item1.HasValue) // interpret as timespan
             {
-                lret = FormatAsSeconds(time.Item1.Value);
+                lret = FormatAsSeconds(time.Item1.Value,3);
             }
             else
             {
