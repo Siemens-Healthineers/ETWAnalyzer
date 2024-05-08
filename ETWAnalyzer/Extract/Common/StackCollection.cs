@@ -1,4 +1,7 @@
-﻿using Newtonsoft.Json;
+﻿//// SPDX-FileCopyrightText:  © 2024 Siemens Healthcare GmbH
+//// SPDX-License-Identifier:   MIT
+
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 

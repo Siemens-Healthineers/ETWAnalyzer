@@ -1,4 +1,7 @@
-﻿using System;
+﻿//// SPDX-FileCopyrightText:  © 2024 Siemens Healthcare GmbH
+//// SPDX-License-Identifier:   MIT
+
+using System;
 using ETWAnalyzer.Extract.Common;
 using Microsoft.Windows.EventTracing;
 

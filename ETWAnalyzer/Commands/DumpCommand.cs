@@ -379,7 +379,7 @@ namespace ETWAnalyzer.Commands
         " ObjectRef  -filedir/fd Extract\\ or xxx.json" + Environment.NewLine +
         "       [-TimeFmt s,Local,LocalTime,UTC,UTCTime,Here,HereTime] [-csv xxx.csv] [-NoCSVSeparator] [-NoCmdLine] [-Clip] [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd] [-MinMaxMsTestTimes xx-yy ...] [-ProcessName/pn xxx.exe(pid)] " + Environment.NewLine +
         "       [-RelatedProcess xxx.exe(pid)] [-MinMaxDuration minS [maxS]] [-MinMaxId min [max]] [-CreateStack filter] [-DestroyStack filter] [-StackFilter filter] [-Object filter] [-ObjectName filter] [-Handle filter] [-ShowRef]" + Environment.NewLine +
-        "       [-ShowStack] [-Leak] [-MultiProcess] [-Map [0,1]] [-PtrInMap 0x...] [-MinMaxMapSize min [max]] [-Overlapped] [-Showtotal Total]" + Environment.NewLine +   
+        "       [-ShowStack] [-Leak] [-MultiProcess] [-Map [0,1]] [-PtrInMap 0x...] [-MinMaxMapSize min [max]] [-Overlapped] [-Showtotal Total,File,None]" + Environment.NewLine +   
         "       [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-CmdLine substring]" + Environment.NewLine +
         "                        -ProcessName/pn xxx.exe(pid) Filter for processes which did access/modify the object." + Environment.NewLine +
         "                        -RelatedProcess xxx.exe(pid) Filter in all events for this process. You can also use a negative filter to exclude specific processes like -pn *creator.exe -realatedprocess !other.exe" + Environment.NewLine +    
@@ -388,7 +388,7 @@ namespace ETWAnalyzer.Commands
         "                        -CreateStack filter          Keep all object events (create/objRef/duplicate...) where the create stack matches." + Environment.NewLine +
         "                        -DestroyStack filter         Keep all object events (create/objRef/duplicate...) where the destroy stack matches." + Environment.NewLine +
         "                        -StackFilter filter          Keep only the events where the stack matches and throw away all other events. To keep all events which have e.g. CreateWebRequest in their stack use -StackFilter *CreateWebRequest*" + Environment.NewLine +
-        "                        -ShowTotal Total             Do not print individual events, just the counts." + Environment .NewLine + 
+        "                        -ShowTotal [Total,File,None] Do not print individual events, just the counts. Total will print totals across multiple files, while File will print the per File totals." + Environment .NewLine + 
         "                        -Object filter               Filter for kernel object pointer value. E.g. -Object 0x8300004." + Environment.NewLine +
         "                        -ObjectName filter           Filter for object name. E.g. -ObjectName *IO to filter for all object which end with :IO." + Environment.NewLine +
         "                        -Handle filter               Text filter for handle value/s. E.g. -Handle 0xABC." + Environment.NewLine +

@@ -1,11 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿//// SPDX-FileCopyrightText:  © 2024 Siemens Healthcare GmbH
+//// SPDX-License-Identifier:   MIT
+
 using ETWAnalyzer.Extract.Common;
 using ETWAnalyzer.Extractors;
+using System;
+using System.Collections.Generic;
+using System.IO;
 
 namespace ETWAnalyzer.Extract.Handle
 {

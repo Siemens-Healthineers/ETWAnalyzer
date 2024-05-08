@@ -1,4 +1,7 @@
-﻿using ETWAnalyzer.Commands;
+﻿//// SPDX-FileCopyrightText:  © 2024 Siemens Healthcare GmbH
+//// SPDX-License-Identifier:   MIT
+
+using ETWAnalyzer.Commands;
 using ETWAnalyzer.Extract;
 using ETWAnalyzer.Extract.Common;
 using ETWAnalyzer.Extract.Handle;
@@ -11,11 +14,14 @@ using System.Linq;
 
 namespace ETWAnalyzer.EventDump
 {
+    /// <summary>
+    /// Dump Object/VAMap/Handle tracing data.
+    /// </summary>
     class DumpObjectRef : DumpFileDirBase<DumpObjectRef.MatchData>
     {
         internal class MatchData
         {
-            public ObjectRefTrace ObjTrace { get; set; }
+            public IObjectRefTrace ObjTrace { get; set; }
 
             public IStackCollection Stacks { get; set; } 
             public IETWExtract Extract { get; set; }
@@ -468,46 +474,88 @@ namespace ETWAnalyzer.EventDump
             handle.FileUnmapEvents = handle.FileUnmapEvents.Where(x => CachingStackFilter(stacks, x.StackIdx)).ToList();
         }
 
+        class Totals
+        {
+            public int CreateCount { get; internal set; }
+            public int CloseCount { get; internal set; }
+            public int DuplicateCount { get; internal set; }
+            public int MapCount { get; internal set; }
+            public int UnmapCount { get; internal set; }
+            public int RefChangeCount { get; internal set; }
+            public HashSet<ETWProcess> Processes { get; internal set; } = new();
+
+            void AddProcess(IReadOnlyList<IStackEventBase> items, IETWExtract extract)
+            {
+                foreach(IStackEventBase item in items)
+                {
+                    Processes.Add(extract.GetProcess(item.ProcessIdx));
+                }
+            }
+
+            void AddProcess(IReadOnlyList<IHandleDuplicateEvent> duplicates, IETWExtract extract)
+            {
+                foreach (IHandleDuplicateEvent duplicate in duplicates)
+                {
+                    Processes.Add(extract.GetProcess(duplicate.ProcessIdx));
+                    Processes.Add(extract.GetProcess(duplicate.SourceProcessIdx));
+                }
+            }
+
+            public void Add(IObjectRefTrace trace, IETWExtract extract)
+            {
+                CreateCount += trace.HandleCreateEvents.Count;
+                AddProcess(trace.HandleCreateEvents, extract);
+
+                CloseCount += trace.HandleCloseEvents.Count;
+                AddProcess(trace.HandleCloseEvents, extract);
+
+                DuplicateCount += trace.HandleDuplicateEvents.Count;
+                AddProcess(trace.HandleDuplicateEvents, extract);   
+
+                MapCount += trace.FileMapEvents.Count;
+                AddProcess(trace.FileMapEvents, extract);   
+
+                UnmapCount += trace.FileUnmapEvents.Count;
+                AddProcess(trace.FileUnmapEvents, extract);
+
+                RefChangeCount += trace.RefChanges.Count;
+                AddProcess(trace.RefChanges, extract);
+            }
+
+            public void PrintTotals(ConsoleColor color)
+            {
+                ColorConsole.WriteEmbeddedColorLine($"Totals: Processes: {Processes.Count} Handles Created: {CreateCount}, Closed: {CloseCount}, Duplicate: {DuplicateCount}, RefChanges: {RefChangeCount}, FileMap: {MapCount} Unmap: {UnmapCount}", color);
+            }
+        }
+
         private void PrintMatches(List<MatchData> matches)
         {
-            int createCount=0;
-            int closeCount = 0;
-            int duplicateCount = 0;
-            int mapCount = 0;
-            int unmapCount = 0;
-            int refChangeCount = 0;
-            HashSet<ETWProcessIndex> processes = new();
+            Totals fileTotal = new();
+            Totals allfileTotal = new();
 
             string fileName = null;
+            int fileCount = 0;
+
             foreach (var ev in matches)
             {
-                createCount += ev.ObjTrace.HandleCreateEvents.Count;
-                ev.ObjTrace.HandleCreateEvents.ForEach( x=> processes.Add(x.ProcessIdx));
+                fileTotal.Add(ev.ObjTrace, ev.Extract);
+                allfileTotal.Add(ev.ObjTrace, ev.Extract);
 
-                closeCount += ev.ObjTrace.HandleCloseEvents.Count;
-                ev.ObjTrace.HandleCloseEvents.ForEach(x => processes.Add(x.ProcessIdx));
-
-                duplicateCount += ev.ObjTrace.HandleDuplicateEvents.Count;
-                ev.ObjTrace.HandleDuplicateEvents.ForEach(x => processes.Add(x.ProcessIdx));
-                ev.ObjTrace.HandleDuplicateEvents.ForEach(x => processes.Add(x.SourceProcessIdx));
-
-                mapCount += ev.ObjTrace.FileMapEvents.Count;
-                ev.ObjTrace.FileMapEvents.ForEach(x => processes.Add(x.ProcessIdx));
-
-                unmapCount += ev.ObjTrace.FileUnmapEvents.Count;
-                ev.ObjTrace.FileUnmapEvents.ForEach(x => processes.Add(x.ProcessIdx));
-
-                refChangeCount += ev.ObjTrace.RefChanges.Count;
-                ev.ObjTrace.RefChanges.ForEach(x => processes.Add(x.ProcessIdx));
-
-                if (ShowTotal != DumpCommand.TotalModes.Total)
+                if (ev.File.FileName != fileName)
                 {
-                    if (ev.File.FileName != fileName)
+                    if( ShowTotal != DumpCommand.TotalModes.None && fileName != null)
                     {
-                        PrintFileName(ev.File.FileName, null, ev.File.PerformedAt, ev.File.Extract.MainModuleVersion?.ToString());
-                        fileName = ev.File.FileName;
+                        fileTotal.PrintTotals(ConsoleColor.Yellow);
                     }
 
+                    PrintFileName(ev.File.FileName, null, ev.File.PerformedAt, ev.File.Extract.MainModuleVersion?.ToString());
+                    fileCount++;
+                    fileName = ev.File.FileName;
+                    fileTotal = new();
+                }
+
+                if( ShowTotal == null || ShowTotal == DumpCommand.TotalModes.None )
+                {
                     if (ev.ObjTrace.IsFileMap)
                     {
                         if (Map == null || Map == 1)
@@ -525,7 +573,15 @@ namespace ETWAnalyzer.EventDump
                 }
             }
 
-            ColorConsole.WriteEmbeddedColorLine($"[red]Totals: Processes: {processes.Count} Handles Created: {createCount}, Closed: {closeCount}, Duplicate: {duplicateCount}, RefChanges: {refChangeCount}, FileMap: {mapCount} Unmap: {unmapCount}[/red]");
+            if( matches.Count > 0 && ShowTotal != DumpCommand.TotalModes.None)
+            {
+                fileTotal.PrintTotals(ConsoleColor.Yellow);
+            }
+
+            if (fileCount > 1 && (ShowTotal == DumpCommand.TotalModes.Total || ShowTotal == null))
+            {
+                allfileTotal.PrintTotals(ConsoleColor.Red);
+            }
         }
 
 

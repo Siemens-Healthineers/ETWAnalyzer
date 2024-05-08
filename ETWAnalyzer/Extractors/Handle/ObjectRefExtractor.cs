@@ -1,21 +1,19 @@
-﻿using ETWAnalyzer.Extract;
+﻿//// SPDX-FileCopyrightText:  © 2024 Siemens Healthcare GmbH
+//// SPDX-License-Identifier:   MIT
+
+using ETWAnalyzer.Extract;
 using ETWAnalyzer.Extract.Common;
 using ETWAnalyzer.Extract.Handle;
 using ETWAnalyzer.Infrastructure;
 using ETWAnalyzer.TraceProcessorHelpers;
-using Microsoft.Diagnostics.Tracing.AutomatedAnalysis;
 using Microsoft.Windows.EventTracing;
-using Microsoft.Windows.EventTracing.Events;
 using Microsoft.Windows.EventTracing.Processes;
 using Microsoft.Windows.EventTracing.Symbols;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
-using System.Threading;
 
 namespace ETWAnalyzer.Extractors.Handle
 {

@@ -1,4 +1,7 @@
-﻿using System;
+﻿//// SPDX-FileCopyrightText:  © 2024 Siemens Healthcare GmbH
+//// SPDX-License-Identifier:   MIT
+
+using System;
 using System.Collections.Generic;
 
 namespace ETWAnalyzer.Extract.Handle
@@ -39,6 +42,10 @@ namespace ETWAnalyzer.Extract.Handle
         /// </summary>
         bool IsMultiProcess { get; }
 
+        /// <summary>
+        /// If true the object contains only file mapping events
+        /// </summary>
+        bool IsFileMap { get; } 
 
         /// <summary>
         /// Contains all handle close events if Handle tracing was enabled.

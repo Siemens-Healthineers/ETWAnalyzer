@@ -1,4 +1,7 @@
-﻿using Microsoft.Windows.EventTracing;
+﻿//// SPDX-FileCopyrightText:  © 2024 Siemens Healthcare GmbH
+//// SPDX-License-Identifier:   MIT
+
+using Microsoft.Windows.EventTracing;
 using Microsoft.Windows.EventTracing.Processes;
 using Microsoft.Windows.EventTracing.Symbols;
 using System;

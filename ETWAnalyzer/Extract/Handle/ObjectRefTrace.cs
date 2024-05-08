@@ -1,4 +1,7 @@
-﻿using ETWAnalyzer.Extract.Common;
+﻿//// SPDX-FileCopyrightText:  © 2024 Siemens Healthcare GmbH
+//// SPDX-License-Identifier:   MIT
+
+using ETWAnalyzer.Extract.Common;
 using Microsoft.Windows.EventTracing;
 using Newtonsoft.Json;
 using System;
@@ -133,7 +136,7 @@ namespace ETWAnalyzer.Extract.Handle
         /// <summary>
         /// True if object contains file map/unmap events. If it is false it can only contain object provider events.
         /// </summary>
-        internal bool IsFileMap
+        public bool IsFileMap
         {
             get => FileMapEvents.Count > 0 || FileMapEvents.Count > 0;
         }
