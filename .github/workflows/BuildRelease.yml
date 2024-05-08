@@ -23,13 +23,13 @@ jobs:
         steps:
        
         - name: Checkout
-          uses: actions/checkout@v3
+          uses: actions/checkout@v4
           with:
             fetch-depth: 0
 
         # Add  MSBuild to the PATH: https://github.com/microsoft/setup-msbuild
         - name: Setup MSBuild.exe
-          uses: microsoft/setup-msbuild@v1.1
+          uses: microsoft/setup-msbuild@2
 
         # Print .NET information
         - name: Get .NET Information
@@ -39,21 +39,21 @@ jobs:
           run: ${{ github.workspace }}\ETWAnalyzer\MakeRelease.cmd
             
         - name: Upload .NET 8 Binaries
-          uses: actions/upload-artifact@v3
+          uses: actions/upload-artifact@v4
           with:
             name: Net8Binaries
             path: ${{ github.workspace }}/bin/Release/ETWAnalyzer_Net8.zip
             retention-days: 90
 
         - name: Upload .NET 4.8 Binaries
-          uses: actions/upload-artifact@v3
+          uses: actions/upload-artifact@v4
           with:
             name: Net48Binaries
             path: ${{ github.workspace }}/bin/Release/ETWAnalyzer_Net48.zip
             retention-days: 90
 
         - name: Upload Nuget Package
-          uses: actions/upload-artifact@v3
+          uses: actions/upload-artifact@v4
           with:
             name: ETWAnalyzer.nupkg
             path: ${{ github.workspace }}/bin/Release/ETWAnalyzer*.nupkg
