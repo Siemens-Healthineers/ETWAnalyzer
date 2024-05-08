@@ -12,7 +12,7 @@ jobs:
         steps:
        
         - name: Checkout
-          uses: actions/checkout@v3
+          uses: actions/checkout@v4
           with:
             fetch-depth: 0
             
@@ -74,14 +74,14 @@ jobs:
             .\ETWAnalyzer -extract all -fd $fileName -outdir Extract
             
         - name: Upload Profiling Extract Data
-          uses: actions/upload-artifact@v3
+          uses: actions/upload-artifact@v4
           with:
             name: ExtractedETL_${{ env.TestRunTimeMs }}
             path: Extract
             retention-days: 90
 
         - name: Upload Full Profiling Data
-          uses: actions/upload-artifact@v3
+          uses: actions/upload-artifact@v4
           with:
             name: ProfilingETL_${{ env.TestRunTimeMs }}
             path: ProfilingData
