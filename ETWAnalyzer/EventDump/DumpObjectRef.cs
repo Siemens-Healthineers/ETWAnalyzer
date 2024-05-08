@@ -85,7 +85,7 @@ namespace ETWAnalyzer.EventDump
                                   "SourceProces", "SourceHandleValue",
                                   "ViewBase", "ViewSize", "File Object", "File Offset",
                                   "RefChange",
-                                  "Lifetime in s (9999 is not closed)", "MultiProcess", "MaxRefCount",
+                                  "Lifetime in s (9999 is not closed)", "MultiProcess", "MaxRefCount", "Overlapped (Opened multiple times)", 
                                   Col_Process, Col_ProcessName,
                                   Col_StartTime, Col_CommandLine);
 
@@ -102,7 +102,7 @@ namespace ETWAnalyzer.EventDump
                             "", "",
                             "", "", "", "",
                             "",
-                            objectEvent.ObjTrace.Duration.TotalSeconds,  objectEvent.ObjTrace.IsMultiProcess, objectEvent.MaxRefCount,
+                            objectEvent.ObjTrace.Duration.TotalSeconds,  objectEvent.ObjTrace.IsMultiProcess, objectEvent.MaxRefCount, objectEvent.ObjTrace.IsOverlapped,
                             createProcess.GetProcessName(UsePrettyProcessName), createProcess.GetProcessWithId(UsePrettyProcessName),
                             createProcess.StartTime, NoCmdLine ? "" : createProcess.CommandLineNoExe);
                     }
@@ -115,7 +115,7 @@ namespace ETWAnalyzer.EventDump
                             "", "",
                             "", "", "", "",
                             "",
-                            objectEvent.ObjTrace.Duration.TotalSeconds, objectEvent.ObjTrace.IsMultiProcess, objectEvent.MaxRefCount,
+                            objectEvent.ObjTrace.Duration.TotalSeconds, objectEvent.ObjTrace.IsMultiProcess, objectEvent.MaxRefCount, objectEvent.ObjTrace.IsOverlapped,
                             closeProcess.GetProcessName(UsePrettyProcessName), closeProcess.GetProcessWithId(UsePrettyProcessName),
                             closeProcess.StartTime, NoCmdLine ? "" : closeProcess.CommandLineNoExe);
                     }
@@ -128,7 +128,7 @@ namespace ETWAnalyzer.EventDump
                         GetProcessWithId(duplicate.SourceProcessIdx, objectEvent.Extract), GetHandleValue(duplicate.SourceHandleValue),
                         "","","","",
                         "",
-                        objectEvent.ObjTrace.Duration.TotalSeconds, objectEvent.ObjTrace.IsMultiProcess, objectEvent.MaxRefCount,
+                        objectEvent.ObjTrace.Duration.TotalSeconds, objectEvent.ObjTrace.IsMultiProcess, objectEvent.MaxRefCount, objectEvent.ObjTrace.IsOverlapped,
                         closeProcess.GetProcessName(UsePrettyProcessName), closeProcess.GetProcessWithId(UsePrettyProcessName),
                             closeProcess.StartTime, NoCmdLine ? "" : closeProcess.CommandLineNoExe);
                     }
@@ -142,7 +142,7 @@ namespace ETWAnalyzer.EventDump
                         "", "",
                         GetHandleValue((ulong)map.ViewBase), map.ViewSize, GetHandleValue((ulong)map.FileObject), map.ByteOffset,
                         "",
-                        objectEvent.ObjTrace.Duration.TotalSeconds, objectEvent.ObjTrace.IsMultiProcess, objectEvent.MaxRefCount,
+                        objectEvent.ObjTrace.Duration.TotalSeconds, objectEvent.ObjTrace.IsMultiProcess, objectEvent.MaxRefCount, objectEvent.ObjTrace.IsOverlapped,
                         mapProcess.GetProcessName(UsePrettyProcessName), mapProcess.GetProcessWithId(UsePrettyProcessName),
                             mapProcess.StartTime, NoCmdLine ? "" : mapProcess.CommandLineNoExe);
                     }
@@ -156,7 +156,7 @@ namespace ETWAnalyzer.EventDump
                         "", "",
                         GetHandleValue((ulong)unMap.ViewBase), unMap.ViewSize, GetHandleValue((ulong)unMap.FileObject), unMap.ByteOffset,
                         "",
-                        objectEvent.ObjTrace.Duration.TotalSeconds, objectEvent.ObjTrace.IsMultiProcess, objectEvent.MaxRefCount,
+                        objectEvent.ObjTrace.Duration.TotalSeconds, objectEvent.ObjTrace.IsMultiProcess, objectEvent.MaxRefCount, objectEvent.ObjTrace.IsOverlapped,
                         mapProcess.GetProcessName(UsePrettyProcessName), mapProcess.GetProcessWithId(UsePrettyProcessName),
                             mapProcess.StartTime, NoCmdLine ? "" : mapProcess.CommandLineNoExe);
                     }
@@ -170,7 +170,7 @@ namespace ETWAnalyzer.EventDump
                         "", "",
                         "", "", "", "",
                         refChange.RefCountChange,
-                        objectEvent.ObjTrace.Duration.TotalSeconds, objectEvent.ObjTrace.IsMultiProcess, objectEvent.MaxRefCount,
+                        objectEvent.ObjTrace.Duration.TotalSeconds, objectEvent.ObjTrace.IsMultiProcess, objectEvent.MaxRefCount, objectEvent.ObjTrace.IsOverlapped,
                         refChangeProc.GetProcessName(UsePrettyProcessName), refChangeProc.GetProcessWithId(UsePrettyProcessName),
                             refChangeProc.StartTime, NoCmdLine ? "" : refChangeProc.CommandLineNoExe);
 
@@ -327,7 +327,7 @@ namespace ETWAnalyzer.EventDump
                             continue;
                         }
 
-                        if(Overlapped && !handle.GetIsOverlapped())
+                        if(Overlapped && !handle.IsOverlapped)
                         {
                             continue;
                         }

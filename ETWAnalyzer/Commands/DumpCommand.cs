@@ -29,7 +29,7 @@ namespace ETWAnalyzer.Commands
     class DumpCommand : ArgParser
     {
         private static readonly string DumpHelpStringPrefix =
-        "ETWAnalyzer -Dump [Stats,Process,CPU,Memory,Disk,File,Power,ThreadPool,Exception,Mark,TestRun,Version,PMC,LBR,Dns] [-nocolor]" + Environment.NewLine;
+        "ETWAnalyzer -Dump [CPU,Disk,Dns,Exception,File,LBR,Mark,Memory,ObjectRef,PMC,Power,Process,,Stats,TestRun,ThreadPool,Version] [-nocolor]" + Environment.NewLine;
 
         static readonly string StatsHelpString =
         "   Stats    -filedir/fd x.etl/.json   [-Properties xxxx] [-recursive] [-csv xxx.csv] [-NoCSVSeparator] [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd] [-MinMaxMsTestTimes xx-yy ...] [-Clip]" + Environment.NewLine + "" +
@@ -39,8 +39,8 @@ namespace ETWAnalyzer.Commands
         "                         Json Only:                 When Json files are dumped some or all extracted data is printed or exported to a CSV file. You can also filter by testcase, machine, ... to extract data of specific files" + Environment.NewLine +
         "                         -Properties xxxx           Dump only specific properties of extracted Json to console. Valid property names are " + Environment.NewLine +
        $"                                                    {DumpStats.AllProperties}" + Environment.NewLine +
-        "                         -OneLine                   Print properties on console on a single line per file" + Environment.NewLine +
-            Environment.NewLine;
+        "                         -OneLine                   Print properties on console on a single line per file" + Environment.NewLine
+        ;
 
         static readonly string VersionHelpString =
         "   Version  -filedir/fd x.etl/.json [-dll xxxx.dll] [-VersionFilter xxx] [-MissingPdb [xxx.pdb]] [-ModuleFilter xxx] [-ProcessName/pn xxx.exe(pid)] [-NoCmdLine] [-csv xx.csv]" + Environment.NewLine +
@@ -371,8 +371,7 @@ namespace ETWAnalyzer.Commands
         "                         -MinMaxReceivedBytes xx-yy Filter connections which have received at least xx bytes." + Environment.NewLine +
         "                         -MinMaxConnectionDurationS xx-yy Filter connections which have duration of at least xx-yy seconds." + Environment.NewLine +
         "                         -Details                   Show retransmit Max/Median/Min, connect/disconnect time, used TCP template setting, TCB pointer." + Environment.NewLine +
-        "                         -Tcb 0xdddddd              Filter by \"connection\" which is actually the Transfer Control Block pointer. Its value can be reused for new connections."+ Environment.NewLine + 
-            Environment.NewLine
+        "                         -Tcb 0xdddddd              Filter by \"connection\" which is actually the Transfer Control Block pointer. Its value can be reused for new connections."+ Environment.NewLine 
         ;
 
         static readonly string ObjectRefHelpString =
@@ -398,9 +397,8 @@ namespace ETWAnalyzer.Commands
         "                        -MultiProcess                Show handles which are accessed from more than one process." + Environment.NewLine +
         "                        -Map [0,1]                   When 1 only memory map events are shown. When 0 memory map events are excluded." + Environment.NewLine +  
         "                        -PtrInMap 0x...              Filter file mapping objects which have this pointer inside their map range." + Environment.NewLine +
-        "                        -MinMaxMapSize min [max]     Filter file mapping requests by their mapping size in bytes." + Environment.NewLine + 
-        "                        -Overlapped                  Show handles which open/duplicate already existing handles (e.g. where CreateEvent return ALREADY_EXISTS)." + Environment.NewLine +
-        Environment.NewLine
+        "                        -MinMaxMapSize min [max]     Filter file mapping requests by their mapping size in bytes." + Environment.NewLine +
+        "                        -Overlapped                  Show objects which are referenced by different handles. E.g. open an already existing named event (CreateEvent last error code returns ALREADY_EXISTS)." + Environment.NewLine 
         ;
 
         static readonly string ExamplesHelpString =

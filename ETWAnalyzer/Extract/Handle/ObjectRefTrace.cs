@@ -49,7 +49,7 @@ namespace ETWAnalyzer.Extract.Handle
         {
             get
             {
-                return CreateEvent == null ? LeakTime : ((DestroyEvent == null) ? LeakTime : TimeSpan.FromTicks( (DestroyEvent.TimeNs - CreateEvent.TimeNs)/100 ) );
+                return CreateEvent == null ? LeakTime : ((DestroyEvent == null) ? LeakTime : TimeSpan.FromTicks((DestroyEvent.TimeNs - CreateEvent.TimeNs) / 100));
             }
         }
 
@@ -185,29 +185,29 @@ namespace ETWAnalyzer.Extract.Handle
                     }
                 }
 
-                foreach(var map in FileMapEvents)
+                foreach (var map in FileMapEvents)
                 {
-                    if (( idx == null))
+                    if ((idx == null))
                     {
                         idx = map.ProcessIdx;
                         continue;
                     }
 
-                    if ( map.ProcessIdx != idx)
+                    if (map.ProcessIdx != idx)
                     {
                         return true;
                     }
                 }
 
-                foreach(var unmap in FileUnmapEvents)
+                foreach (var unmap in FileUnmapEvents)
                 {
-                    if( ( idx == null))
+                    if ((idx == null))
                     {
                         idx = unmap.ProcessIdx; ;
                         continue;
                     }
 
-                    if( unmap.ProcessIdx != idx)
+                    if (unmap.ProcessIdx != idx)
                     {
                         return true;
                     }
@@ -233,6 +233,24 @@ namespace ETWAnalyzer.Extract.Handle
 
         IRefCountChangeEvent IObjectRefTrace.DestroyEvent => DestroyEvent;
 
+        bool? myIsOverlapped;
+
+        /// <summary>
+        /// When the same object is referenced multiple times by e.g. subsequent Create or DuplicateHandle events we know that
+        /// two different handles can have an effect to the same object. 
+        /// </summary>
+        public bool IsOverlapped
+        {
+            get
+            {
+                if( myIsOverlapped == null)
+                {
+                    myIsOverlapped = GetIsOverlapped();
+                }
+                return myIsOverlapped.Value;
+            }
+        }
+
         /// <summary>
         /// When the same object is referenced multiple times by e.g. subsequent Create or DuplicateHandle events we know that
         /// two different handles can have an effect to the same object. 
@@ -242,10 +260,12 @@ namespace ETWAnalyzer.Extract.Handle
         internal bool GetIsOverlapped()
         {
             int refCount = 0;
-            foreach (var cr in HandleCreateEvents.Cast<StackEventBase>()
-                             .Concat(HandleCloseEvents.Cast<StackEventBase>())
-                             .Concat(HandleDuplicateEvents.Cast<StackEventBase>())
-                             .OrderBy(x => x.TimeNs))
+            List<StackEventBase> allEvents = new List<StackEventBase> (HandleCreateEvents);
+            allEvents.AddRange (HandleDuplicateEvents);
+            allEvents.AddRange (HandleCloseEvents);
+            allEvents.Sort( (x,y) => x.TimeNs.CompareTo(y.TimeNs));
+
+            foreach (var cr in allEvents)
             {
                 if (cr is HandleCreateEvent)
                 {

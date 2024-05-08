@@ -48,6 +48,11 @@ namespace ETWAnalyzer.Extract.Handle
         bool IsFileMap { get; } 
 
         /// <summary>
+        /// If true object was accessible at one point in time via two different handles. E.g. via DuplicateHandle or creating a named object twice.
+        /// </summary>
+        bool IsOverlapped { get; }
+
+        /// <summary>
         /// Contains all handle close events if Handle tracing was enabled.
         /// </summary>
         IReadOnlyList<IHandleCloseEvent> HandleCloseEvents { get; }
