@@ -136,6 +136,7 @@ namespace ETWAnalyzer.Extract.Handle
         /// <summary>
         /// True if object contains file map/unmap events. If it is false it can only contain object provider events.
         /// </summary>
+        [JsonIgnore]
         public bool IsFileMap
         {
             get => FileMapEvents.Count > 0 || FileMapEvents.Count > 0;
@@ -239,6 +240,7 @@ namespace ETWAnalyzer.Extract.Handle
         /// When the same object is referenced multiple times by e.g. subsequent Create or DuplicateHandle events we know that
         /// two different handles can have an effect to the same object. 
         /// </summary>
+        [JsonIgnore]
         public bool IsOverlapped
         {
             get
