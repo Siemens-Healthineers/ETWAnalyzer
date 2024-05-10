@@ -13,7 +13,7 @@ or you can use ```All``` instead of ```ObjectRef``` which will include it.
 ## Data Analysis
 To dump all objects which were created by process EventLeak which are named objects which have the string signalevent_ in their name you can use:
 
->ETWAnalyzer -dump ObjectRef  %f% -pn EventLeak -objectname \*signalevent_\* 
+>ETWAnalyzer -dump ObjectRef  %f% -pn EventLeak -ObjectName \*signalevent_\* 
 ![](Images/DumpObjectRef_Filter.png "Dump Handles")
 
 This prints that 100 kernel objects were created and destroyed. That is expected since the loop did run from 0-99 to create the event handles. But for some
@@ -23,7 +23,7 @@ Before diving deeper lets explain what data is shown:
 
 The Id is a unique number which can be used with ```-MinMaxId``` filter to select a specific object instance or a range of them. The kernel object pointer is printed, but 
 this value can be reused so it is not always unique (can be filtered with ```-Object``` filter). After the kernel pointer the object name is printed, if present. Then the object
-lifetime is printed or 9999s are used to mark objects which were never closed (can be filtered with ```-MinMaxDuration```).
+lifetime is printed or 9999s is used to mark objects which were never closed (can be filtered with ```-MinMaxDuration```).
 Then the individual events grouped by type sorted by time are printed. Each line contains
     - Timestamp (can be switched to WPA time with ```-timefmt s```)
     - Process Id 
@@ -39,7 +39,7 @@ contribute to the leak.
 
 This simple solution does not work because the leaking process has already exited and Windows will close all associated handles during process exit. That is the reason we find for all Handle create
 calls also a matching close handle event. To find the leaks of short running processes we need to find all objects which were closed, when the process was terminating.
-The final close call of all leaked handles is a call to NtTerminateProcess:
+The final close call of all leaked handles is a call to *NtTerminateProcess*:
 ```
 ExSweepHandleTable
 ObKillProcess
@@ -49,12 +49,12 @@ NtTerminateProcess
 KiSystemServiceCopyEnd
 ```
 
-We can filter for all leaked handles with the ```-DestroyStack``` option and select any e.g. NtTerminateProcess or ExSweepHandleTable as destructing stacks.
->ETWAnalyzer -dump objectref  -fd HandleLeak.json -pn eventleak -objectname \*signalevent_\* -destroystack \*NtTerminateProcess\*
+We can filter the leaked handles with the ```-DestroyStack``` option and select *NtTerminateProcess* or *ExSweepHandleTable* as destructing stacks.
+>ETWAnalyzer -dump ObjectRef  -fd HandleLeak.json -pn EventLeak -ObjectName \*signalevent_\* -DestroyStack \*NtTerminateProcess\*
 ![](Images/DumpObjectRef_Leak.png "Dump Leaked Handles")
 
 Now we want to know where the leak is coming from 
->ETWAnalyzer -dump objectref  -fd HandleLeak.json -pn eventleak -objectname \*signalevent_\* -destroystack *NtTerminateProcess*  -ShowStack
+>ETWAnalyzer -dump ObjectRef  -fd HandleLeak.json -pn EventLeak -ObjectName \*signalevent_\* -DestroyStack *NtTerminateProcess*  -ShowStack
 ![](Images/DumpObjectRef_LeakStack.png "Dump Leaked Handle Stacks")
 
 This shows we should check EventManger::CreateEvent it its calling stack. We also know that leaked handles are created from multiple thread within ca. 10us which indicates
@@ -76,7 +76,7 @@ The mapping object is combining the base address and the process id to get uniqu
 
 ### Object Traces
 To show object reference traces you need to add ```-ShowRef``` to get additionally to handle traces every Reference change 
->ETWAnalyzer -dump objectref -Map 0 -ShowRef 
+>ETWAnalyzer -dump ObjectRef -Map 0 -ShowRef 
 ```
 ..
 Id: 305 Object: 0xFFFF81002A8033C0 \Device\HarddiskVolume5 Lifetime: 0.000024 s  Create+Duplicate-Close: 1+0-1 = 0
