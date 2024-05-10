@@ -13,7 +13,7 @@ or you can use ```All``` instead of ```ObjectRef``` which will include it.
 ## Data Analysis
 To dump all objects which were created by process EventLeak which are named objects which have the string signalevent_ in their name you can use:
 
->ETWAnalyzer -dump ObjectRef  %f% -pn EventLeak -objectname *signalevent_* 
+>ETWAnalyzer -dump ObjectRef  %f% -pn EventLeak -objectname \*signalevent_\* 
 ![](Images/DumpObjectRef_Filter.png "Dump Handles")
 
 This prints that 100 kernel objects were created and destroyed. That is expected since the loop did run from 0-99 to create the event handles. But for some
@@ -62,6 +62,7 @@ that we have a data race. That should make the analysis of handle leaks very str
 analysis can be easier done with ETWAnalyzer.
 When you are searching for all occurrences of event allocations done by a specific method you can use ```-CreateStack``` and to remove all events which are not matching a specific 
 stack with ```-StackFilter```. These things are more complex to perform in WPA. 
+![](Images/WPA_HandleLeak.png "WPA Handle Leak")
 
 ### File Mapping Events
 
@@ -92,8 +93,6 @@ Id: 305 Object: 0xFFFF81002A8033C0 \Device\HarddiskVolume5 Lifetime: 0.000024 s 
         16:07:56.918294 60060/66436 Object Delete   explorer.exe ------------------------------- 2076
 ...
 ```
-
-![](Images/WPA_HandleLeak.png "WPA Handle Leak")
 
 ## Leak Example
 Lets create a handle leaking application. This contains a data race in ```GetOrCreateEvent()``` which, when called from multiple threads, 
