@@ -380,7 +380,7 @@ namespace ETWAnalyzer.Commands
         "       [-RelatedProcess xxx.exe(pid)] [-MinMaxDuration minS [maxS]] [-MinMaxId min [max]] [-CreateStack filter] [-DestroyStack filter] [-StackFilter filter] [-Object filter] [-ObjectName filter] [-Handle filter] [-ShowRef]" + Environment.NewLine +
         "       [-ShowStack] [-Leak] [-MultiProcess] [-Map [0,1]] [-PtrInMap 0x...] [-MinMaxMapSize min [max]] [-Overlapped] [-Showtotal Total,File,None]" + Environment.NewLine +   
         "       [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-CmdLine substring]" + Environment.NewLine +
-        "                        -ProcessName/pn xxx.exe(pid) Filter for processes which did access/modify the object." + Environment.NewLine +
+        "                        -ProcessName/pn xxx.exe(pid) Filter for processes which did create the object." + Environment.NewLine +
         "                        -RelatedProcess xxx.exe(pid) Filter in all events for this process. You can also use a negative filter to exclude specific processes like -pn *creator.exe -realatedprocess !other.exe" + Environment.NewLine +    
         "                        -MinMaxDuration minS [maxS]  Filter for handle lifetime. Never closed handles get a lifetime of 9999 s which serves as magic marker value." + Environment.NewLine +
         "                        -MinMaxId min [max]          Filter for one or a range of objects. E.g. -MinMaxId 500 600 to filter for all object events with id 500-600. The ids are sorted by object creation time." + Environment.NewLine +

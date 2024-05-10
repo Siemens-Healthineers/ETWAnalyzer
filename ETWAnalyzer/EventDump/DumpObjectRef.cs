@@ -9,6 +9,7 @@ using ETWAnalyzer.Infrastructure;
 using ETWAnalyzer.ProcessTools;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 
@@ -80,102 +81,7 @@ namespace ETWAnalyzer.EventDump
             List<MatchData> lret = ReadFileData();
             if (IsCSVEnabled)
             {
-                OpenCSVWithHeader(Col_CSVOptions, Col_FileName, Col_Date, Col_TestCase, Col_TestTimeinms, Col_Baseline, 
-                                  "Id", "Stack", "EventName", "Time", "Thread Id", "Handle Value", "Object Name", "Object Ptr",
-                                  "SourceProces", "SourceHandleValue",
-                                  "ViewBase", "ViewSize", "File Object", "File Offset",
-                                  "RefChange",
-                                  "Lifetime in s (9999 is not closed)", "MultiProcess", "MaxRefCount", "Overlapped (Opened multiple times)", 
-                                  Col_Process, Col_ProcessName,
-                                  Col_StartTime, Col_CommandLine);
-
-
-
-                foreach (var objectEvent in lret)
-                {
-                    foreach (var create in objectEvent.ObjTrace.HandleCreateEvents)
-                    {
-                        ETWProcess createProcess = objectEvent.Extract.GetProcess(create.ProcessIdx);
-
-                        WriteCSVLine(CSVOptions, Path.GetFileNameWithoutExtension(objectEvent.File.FileName), objectEvent.File.PerformedAt, objectEvent.File.TestName, objectEvent.File.DurationInMs, objectEvent.BaseLine,
-                            objectEvent.Id, GetStack(objectEvent.Stacks, create.StackIdx), create.GetType().Name, create.TimeNs, create.ThreadId, GetHandleValue(create.HandleValue), objectEvent.ObjTrace.Name, GetHandleValue((ulong)objectEvent.ObjTrace.ObjectPtr),
-                            "", "",
-                            "", "", "", "",
-                            "",
-                            objectEvent.ObjTrace.Duration.TotalSeconds,  objectEvent.ObjTrace.IsMultiProcess, objectEvent.MaxRefCount, objectEvent.ObjTrace.IsOverlapped,
-                            createProcess.GetProcessName(UsePrettyProcessName), createProcess.GetProcessWithId(UsePrettyProcessName),
-                            createProcess.StartTime, NoCmdLine ? "" : createProcess.CommandLineNoExe);
-                    }
-                    foreach (var close in objectEvent.ObjTrace.HandleCloseEvents)
-                    {
-                        ETWProcess closeProcess = objectEvent.Extract.GetProcess(close.ProcessIdx);
-
-                        WriteCSVLine(CSVOptions, Path.GetFileNameWithoutExtension(objectEvent.File.FileName), objectEvent.File.PerformedAt, objectEvent.File.TestName, objectEvent.File.DurationInMs, objectEvent.BaseLine,
-                            objectEvent.Id, GetStack(objectEvent.Stacks, close.StackIdx), close.GetType().Name, close.TimeNs, close.ThreadId, GetHandleValue(close.HandleValue), objectEvent.ObjTrace.Name, GetHandleValue((ulong)objectEvent.ObjTrace.ObjectPtr),
-                            "", "",
-                            "", "", "", "",
-                            "",
-                            objectEvent.ObjTrace.Duration.TotalSeconds, objectEvent.ObjTrace.IsMultiProcess, objectEvent.MaxRefCount, objectEvent.ObjTrace.IsOverlapped,
-                            closeProcess.GetProcessName(UsePrettyProcessName), closeProcess.GetProcessWithId(UsePrettyProcessName),
-                            closeProcess.StartTime, NoCmdLine ? "" : closeProcess.CommandLineNoExe);
-                    }
-                    foreach (var duplicate in objectEvent.ObjTrace.HandleDuplicateEvents)
-                    {
-                        ETWProcess closeProcess = objectEvent.Extract.GetProcess(duplicate.ProcessIdx);
-
-                        WriteCSVLine(CSVOptions, Path.GetFileNameWithoutExtension(objectEvent.File.FileName), objectEvent.File.PerformedAt, objectEvent.File.TestName, objectEvent.File.DurationInMs, objectEvent.BaseLine,
-                        objectEvent.Id, GetStack(objectEvent.Stacks, duplicate.StackIdx), duplicate.GetType().Name, duplicate.TimeNs, duplicate.ThreadId, GetHandleValue(duplicate.HandleValue), objectEvent.ObjTrace.Name, GetHandleValue((ulong)objectEvent.ObjTrace.ObjectPtr),
-                        GetProcessWithId(duplicate.SourceProcessIdx, objectEvent.Extract), GetHandleValue(duplicate.SourceHandleValue),
-                        "","","","",
-                        "",
-                        objectEvent.ObjTrace.Duration.TotalSeconds, objectEvent.ObjTrace.IsMultiProcess, objectEvent.MaxRefCount, objectEvent.ObjTrace.IsOverlapped,
-                        closeProcess.GetProcessName(UsePrettyProcessName), closeProcess.GetProcessWithId(UsePrettyProcessName),
-                            closeProcess.StartTime, NoCmdLine ? "" : closeProcess.CommandLineNoExe);
-                    }
-
-                    foreach(var map in objectEvent.ObjTrace.FileMapEvents)
-                    {
-                        ETWProcess mapProcess = objectEvent.Extract.GetProcess(map.ProcessIdx);
-                        
-                        WriteCSVLine(CSVOptions, Path.GetFileNameWithoutExtension(objectEvent.File.FileName), objectEvent.File.PerformedAt, objectEvent.File.TestName, objectEvent.File.DurationInMs, objectEvent.BaseLine,
-                        objectEvent.Id, GetStack(objectEvent.Stacks, map.StackIdx), map.GetType().Name, map.TimeNs, map.ThreadId, "", "", GetHandleValue((ulong)objectEvent.ObjTrace.ObjectPtr),
-                        "", "",
-                        GetHandleValue((ulong)map.ViewBase), map.ViewSize, GetHandleValue((ulong)map.FileObject), map.ByteOffset,
-                        "",
-                        objectEvent.ObjTrace.Duration.TotalSeconds, objectEvent.ObjTrace.IsMultiProcess, objectEvent.MaxRefCount, objectEvent.ObjTrace.IsOverlapped,
-                        mapProcess.GetProcessName(UsePrettyProcessName), mapProcess.GetProcessWithId(UsePrettyProcessName),
-                            mapProcess.StartTime, NoCmdLine ? "" : mapProcess.CommandLineNoExe);
-                    }
-
-                    foreach (var unMap in objectEvent.ObjTrace.FileUnmapEvents)
-                    {
-                        ETWProcess mapProcess = objectEvent.Extract.GetProcess(unMap.ProcessIdx);
-
-                        WriteCSVLine(CSVOptions, Path.GetFileNameWithoutExtension(objectEvent.File.FileName), objectEvent.File.PerformedAt, objectEvent.File.TestName, objectEvent.File.DurationInMs, objectEvent.BaseLine,
-                        objectEvent.Id, GetStack(objectEvent.Stacks, unMap.StackIdx), unMap.GetType().Name, unMap.TimeNs, unMap.ThreadId, "", "", GetHandleValue((ulong)objectEvent.ObjTrace.ObjectPtr),
-                        "", "",
-                        GetHandleValue((ulong)unMap.ViewBase), unMap.ViewSize, GetHandleValue((ulong)unMap.FileObject), unMap.ByteOffset,
-                        "",
-                        objectEvent.ObjTrace.Duration.TotalSeconds, objectEvent.ObjTrace.IsMultiProcess, objectEvent.MaxRefCount, objectEvent.ObjTrace.IsOverlapped,
-                        mapProcess.GetProcessName(UsePrettyProcessName), mapProcess.GetProcessWithId(UsePrettyProcessName),
-                            mapProcess.StartTime, NoCmdLine ? "" : mapProcess.CommandLineNoExe);
-                    }
-
-                    foreach(var refChange in objectEvent.ObjTrace.RefChanges)
-                    {
-                        ETWProcess refChangeProc = objectEvent.Extract.GetProcess(refChange.ProcessIdx);
-
-                        WriteCSVLine(CSVOptions, Path.GetFileNameWithoutExtension(objectEvent.File.FileName), objectEvent.File.PerformedAt, objectEvent.File.TestName, objectEvent.File.DurationInMs, objectEvent.BaseLine,
-                        objectEvent.Id, GetStack(objectEvent.Stacks, refChange.StackIdx), refChange.GetType().Name, refChange.TimeNs, refChange.ThreadId, "", "", GetHandleValue((ulong)objectEvent.ObjTrace.ObjectPtr),
-                        "", "",
-                        "", "", "", "",
-                        refChange.RefCountChange,
-                        objectEvent.ObjTrace.Duration.TotalSeconds, objectEvent.ObjTrace.IsMultiProcess, objectEvent.MaxRefCount, objectEvent.ObjTrace.IsOverlapped,
-                        refChangeProc.GetProcessName(UsePrettyProcessName), refChangeProc.GetProcessWithId(UsePrettyProcessName),
-                            refChangeProc.StartTime, NoCmdLine ? "" : refChangeProc.CommandLineNoExe);
-
-                    }
-                }
+                WriteCSVData(lret);
             }
             else
             {
@@ -183,6 +89,106 @@ namespace ETWAnalyzer.EventDump
             }
 
             return lret;
+        }
+
+        private void WriteCSVData(List<MatchData> lret)
+        {
+            OpenCSVWithHeader(Col_CSVOptions, Col_FileName, Col_Date, Col_TestCase, Col_TestTimeinms, Col_Baseline,
+                              "Id", "Stack", "EventName", "Time", "Thread Id", "Handle Value", "Object Name", "Object Ptr",
+                              "SourceProces", "SourceHandleValue",
+                              "ViewBase", "ViewSize", "File Object", "File Offset",
+                              "RefChange",
+                              "Lifetime in s (9999 is not closed)", "MultiProcess", "MaxRefCount", "Overlapped (Opened multiple times)",
+                              Col_Process, Col_ProcessName,
+                              Col_StartTime, Col_CommandLine);
+
+
+
+            foreach (var objectEvent in lret)
+            {
+                foreach (var create in objectEvent.ObjTrace.HandleCreateEvents)
+                {
+                    ETWProcess createProcess = objectEvent.Extract.GetProcess(create.ProcessIdx);
+
+                    WriteCSVLine(CSVOptions, Path.GetFileNameWithoutExtension(objectEvent.File.FileName), objectEvent.File.PerformedAt, objectEvent.File.TestName, objectEvent.File.DurationInMs, objectEvent.BaseLine,
+                        objectEvent.Id, GetStack(objectEvent.Stacks, create.StackIdx), create.GetType().Name, create.TimeNs, create.ThreadId, GetHandleValue(create.HandleValue), objectEvent.ObjTrace.Name, GetHandleValue((ulong)objectEvent.ObjTrace.ObjectPtr),
+                        "", "",
+                        "", "", "", "",
+                        "",
+                        objectEvent.ObjTrace.Duration.TotalSeconds, objectEvent.ObjTrace.IsMultiProcess, objectEvent.MaxRefCount, objectEvent.ObjTrace.IsOverlapped,
+                        createProcess.GetProcessName(UsePrettyProcessName), createProcess.GetProcessWithId(UsePrettyProcessName),
+                        createProcess.StartTime, NoCmdLine ? "" : createProcess.CommandLineNoExe);
+                }
+                foreach (var close in objectEvent.ObjTrace.HandleCloseEvents)
+                {
+                    ETWProcess closeProcess = objectEvent.Extract.GetProcess(close.ProcessIdx);
+
+                    WriteCSVLine(CSVOptions, Path.GetFileNameWithoutExtension(objectEvent.File.FileName), objectEvent.File.PerformedAt, objectEvent.File.TestName, objectEvent.File.DurationInMs, objectEvent.BaseLine,
+                        objectEvent.Id, GetStack(objectEvent.Stacks, close.StackIdx), close.GetType().Name, close.TimeNs, close.ThreadId, GetHandleValue(close.HandleValue), objectEvent.ObjTrace.Name, GetHandleValue((ulong)objectEvent.ObjTrace.ObjectPtr),
+                        "", "",
+                        "", "", "", "",
+                        "",
+                        objectEvent.ObjTrace.Duration.TotalSeconds, objectEvent.ObjTrace.IsMultiProcess, objectEvent.MaxRefCount, objectEvent.ObjTrace.IsOverlapped,
+                        closeProcess.GetProcessName(UsePrettyProcessName), closeProcess.GetProcessWithId(UsePrettyProcessName),
+                        closeProcess.StartTime, NoCmdLine ? "" : closeProcess.CommandLineNoExe);
+                }
+                foreach (var duplicate in objectEvent.ObjTrace.HandleDuplicateEvents)
+                {
+                    ETWProcess closeProcess = objectEvent.Extract.GetProcess(duplicate.ProcessIdx);
+
+                    WriteCSVLine(CSVOptions, Path.GetFileNameWithoutExtension(objectEvent.File.FileName), objectEvent.File.PerformedAt, objectEvent.File.TestName, objectEvent.File.DurationInMs, objectEvent.BaseLine,
+                    objectEvent.Id, GetStack(objectEvent.Stacks, duplicate.StackIdx), duplicate.GetType().Name, duplicate.TimeNs, duplicate.ThreadId, GetHandleValue(duplicate.HandleValue), objectEvent.ObjTrace.Name, GetHandleValue((ulong)objectEvent.ObjTrace.ObjectPtr),
+                    GetProcessWithId(duplicate.SourceProcessIdx, objectEvent.Extract), GetHandleValue(duplicate.SourceHandleValue),
+                    "", "", "", "",
+                    "",
+                    objectEvent.ObjTrace.Duration.TotalSeconds, objectEvent.ObjTrace.IsMultiProcess, objectEvent.MaxRefCount, objectEvent.ObjTrace.IsOverlapped,
+                    closeProcess.GetProcessName(UsePrettyProcessName), closeProcess.GetProcessWithId(UsePrettyProcessName),
+                        closeProcess.StartTime, NoCmdLine ? "" : closeProcess.CommandLineNoExe);
+                }
+
+                foreach (var map in objectEvent.ObjTrace.FileMapEvents)
+                {
+                    ETWProcess mapProcess = objectEvent.Extract.GetProcess(map.ProcessIdx);
+
+                    WriteCSVLine(CSVOptions, Path.GetFileNameWithoutExtension(objectEvent.File.FileName), objectEvent.File.PerformedAt, objectEvent.File.TestName, objectEvent.File.DurationInMs, objectEvent.BaseLine,
+                    objectEvent.Id, GetStack(objectEvent.Stacks, map.StackIdx), map.GetType().Name, map.TimeNs, map.ThreadId, "", "", GetHandleValue((ulong)objectEvent.ObjTrace.ObjectPtr),
+                    "", "",
+                    GetHandleValue((ulong)map.ViewBase), map.ViewSize, GetHandleValue((ulong)map.FileObject), map.ByteOffset,
+                    "",
+                    objectEvent.ObjTrace.Duration.TotalSeconds, objectEvent.ObjTrace.IsMultiProcess, objectEvent.MaxRefCount, objectEvent.ObjTrace.IsOverlapped,
+                    mapProcess.GetProcessName(UsePrettyProcessName), mapProcess.GetProcessWithId(UsePrettyProcessName),
+                        mapProcess.StartTime, NoCmdLine ? "" : mapProcess.CommandLineNoExe);
+                }
+
+                foreach (var unMap in objectEvent.ObjTrace.FileUnmapEvents)
+                {
+                    ETWProcess mapProcess = objectEvent.Extract.GetProcess(unMap.ProcessIdx);
+
+                    WriteCSVLine(CSVOptions, Path.GetFileNameWithoutExtension(objectEvent.File.FileName), objectEvent.File.PerformedAt, objectEvent.File.TestName, objectEvent.File.DurationInMs, objectEvent.BaseLine,
+                    objectEvent.Id, GetStack(objectEvent.Stacks, unMap.StackIdx), unMap.GetType().Name, unMap.TimeNs, unMap.ThreadId, "", "", GetHandleValue((ulong)objectEvent.ObjTrace.ObjectPtr),
+                    "", "",
+                    GetHandleValue((ulong)unMap.ViewBase), unMap.ViewSize, GetHandleValue((ulong)unMap.FileObject), unMap.ByteOffset,
+                    "",
+                    objectEvent.ObjTrace.Duration.TotalSeconds, objectEvent.ObjTrace.IsMultiProcess, objectEvent.MaxRefCount, objectEvent.ObjTrace.IsOverlapped,
+                    mapProcess.GetProcessName(UsePrettyProcessName), mapProcess.GetProcessWithId(UsePrettyProcessName),
+                        mapProcess.StartTime, NoCmdLine ? "" : mapProcess.CommandLineNoExe);
+                }
+
+                foreach (var refChange in objectEvent.ObjTrace.RefChanges)
+                {
+                    ETWProcess refChangeProc = objectEvent.Extract.GetProcess(refChange.ProcessIdx);
+
+                    WriteCSVLine(CSVOptions, Path.GetFileNameWithoutExtension(objectEvent.File.FileName), objectEvent.File.PerformedAt, objectEvent.File.TestName, objectEvent.File.DurationInMs, objectEvent.BaseLine,
+                    objectEvent.Id, GetStack(objectEvent.Stacks, refChange.StackIdx), refChange.GetType().Name, refChange.TimeNs, refChange.ThreadId, "", "", GetHandleValue((ulong)objectEvent.ObjTrace.ObjectPtr),
+                    "", "",
+                    "", "", "", "",
+                    refChange.RefCountChange,
+                    objectEvent.ObjTrace.Duration.TotalSeconds, objectEvent.ObjTrace.IsMultiProcess, objectEvent.MaxRefCount, objectEvent.ObjTrace.IsOverlapped,
+                    refChangeProc.GetProcessName(UsePrettyProcessName), refChangeProc.GetProcessWithId(UsePrettyProcessName),
+                        refChangeProc.StartTime, NoCmdLine ? "" : refChangeProc.CommandLineNoExe);
+
+                }
+            }
         }
 
         private List<MatchData> ReadFileData()
@@ -476,6 +482,8 @@ namespace ETWAnalyzer.EventDump
 
         class Totals
         {
+            public int ObjectCreateCount { get; internal set; }
+            public int ObjectDestroyCount { get; internal set; }    
             public int CreateCount { get; internal set; }
             public int CloseCount { get; internal set; }
             public int DuplicateCount { get; internal set; }
@@ -503,6 +511,16 @@ namespace ETWAnalyzer.EventDump
 
             public void Add(IObjectRefTrace trace, IETWExtract extract)
             {
+                if (trace.CreateEvent != null)
+                {
+                    ObjectCreateCount++;
+                }
+
+                if(trace.DestroyEvent != null)
+                {
+                    ObjectDestroyCount++;   
+                }
+
                 CreateCount += trace.HandleCreateEvents.Count;
                 AddProcess(trace.HandleCreateEvents, extract);
 
@@ -524,7 +542,7 @@ namespace ETWAnalyzer.EventDump
 
             public void PrintTotals(ConsoleColor color)
             {
-                ColorConsole.WriteEmbeddedColorLine($"Totals: Processes: {Processes.Count} Handles Created: {CreateCount}, Closed: {CloseCount}, Duplicate: {DuplicateCount}, RefChanges: {RefChangeCount}, FileMap: {MapCount} Unmap: {UnmapCount}", color);
+                ColorConsole.WriteEmbeddedColorLine($"Totals: Processes: {Processes.Count} Objects Created/Destroyed: {ObjectCreateCount}/{ObjectDestroyCount} Diff: {ObjectCreateCount-ObjectDestroyCount}  Handles Created/Closed/Duplicated: {CreateCount}/{CloseCount}/{DuplicateCount} Diff: {CreateCount+DuplicateCount-CloseCount}, RefChanges: {RefChangeCount}, FileMap/Unmap: {MapCount}/{UnmapCount}", color);
             }
         }
 
@@ -536,7 +554,7 @@ namespace ETWAnalyzer.EventDump
             string fileName = null;
             int fileCount = 0;
 
-            foreach (var ev in matches)
+            foreach (var ev in matches.OrderBy(x=>x.File.PerformedAt).ThenBy(x=> (x.ObjTrace?.CreateEvent.TimeNs ?? 0)) )
             {
                 fileTotal.Add(ev.ObjTrace, ev.Extract);
                 allfileTotal.Add(ev.ObjTrace, ev.Extract);
@@ -550,11 +568,16 @@ namespace ETWAnalyzer.EventDump
 
                     PrintFileName(ev.File.FileName, null, ev.File.PerformedAt, ev.File.Extract.MainModuleVersion?.ToString());
                     fileCount++;
+                    if (fileName != null) // do not loose first event when newing up totals in loop here.
+                    {
+                        fileTotal = new();
+                    }
+
                     fileName = ev.File.FileName;
-                    fileTotal = new();
                 }
 
-                if( ShowTotal == null || ShowTotal == DumpCommand.TotalModes.None )
+
+                if ( ShowTotal == null || ShowTotal == DumpCommand.TotalModes.None )
                 {
                     if (ev.ObjTrace.IsFileMap)
                     {
