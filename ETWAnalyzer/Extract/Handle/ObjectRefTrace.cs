@@ -143,7 +143,8 @@ namespace ETWAnalyzer.Extract.Handle
         }
 
         /// <summary>
-        /// True if object events for same object are issues from different processes. 
+        /// True if object was created/duplicated from multiple processes. If it is false it can still be inherited by 
+        /// child processes.
         /// </summary>
         [JsonIgnore]
         public bool IsMultiProcess

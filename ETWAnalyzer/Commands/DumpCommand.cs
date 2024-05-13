@@ -394,7 +394,8 @@ namespace ETWAnalyzer.Commands
         "                        -ShowRef                     Show Object Reference increment/decrement operations." + Environment.NewLine +
         "                        -ShowStack                   Show stacks for events if recorded. If -csv is used only the the stack traces are added to CSV file." + Environment.NewLine +    
         "                        -Leak                        Show all events for objects which are not closed during the trace." + Environment.NewLine +  
-        "                        -MultiProcess                Show handles which are accessed from more than one process." + Environment.NewLine +
+        "                        -MultiProcess                Show handles which are created/duplicated from more than one process. A process can still inherit a handle which does not show up here." + Environment.NewLine +
+        "                        -Inherit                     Show handles which are inherited by a child process." + Environment.NewLine + 
         "                        -Map [0,1]                   When 1 only memory map events are shown. When 0 memory map events are excluded." + Environment.NewLine +  
         "                        -PtrInMap 0x...              Filter file mapping objects which have this pointer inside their map range." + Environment.NewLine +
         "                        -MinMaxMapSize min [max]     Filter file mapping requests by their mapping size in bytes." + Environment.NewLine +
@@ -851,9 +852,10 @@ namespace ETWAnalyzer.Commands
         public bool Leak { get; private set; }
         public bool Overlapped { get; private set; }
         public bool MultiProcess { get; private set; }  
+        public bool Inherit {  get ; private set; } 
 
 
-        // Dump ObjRef/Exception specifc Flags
+        // Dump ObjRef/Exception specific Flags
         public KeyValuePair<string, Func<string, bool>> StackFilter { get; private set; } = new(null, _ => true);
 
         // Dump Exception specific Flags
@@ -1621,6 +1623,9 @@ namespace ETWAnalyzer.Commands
                     case "-showstack":
                     case "-ss":
                         ShowStack = true;
+                        break;
+                    case "-inherit":
+                        Inherit = true;
                         break;
                     case "-showtime":
                         ShowTime = true;
@@ -2405,6 +2410,7 @@ namespace ETWAnalyzer.Commands
                             ShowRef = ShowRef,
                             Leak = Leak,
                             MultiProcess = MultiProcess,
+                            Inherit = Inherit,
                             Overlapped = Overlapped,
                             RelatedProcessFilter = RelatedProcessFilter,
                             Map = Map,

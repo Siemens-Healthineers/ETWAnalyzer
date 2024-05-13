@@ -62,6 +62,11 @@ namespace ETWAnalyzer.EventDump
             /// Seconds since trace start
             /// </summary>
             second,
+
+            /// <summary>
+            /// No format skip time formatting
+            /// </summary>
+            None,
         }
 
         /// <summary>
@@ -351,20 +356,23 @@ namespace ETWAnalyzer.EventDump
             }
             else
             {
+                
                 string lret = "";
-                if( process.IsNew )
+                if (ProcessFormatOption != TimeFormats.None)
                 {
-                    lret += " +" + GetDateTimeString(process.StartTime, sessionStart, ProcessFormatOption.Value);
+                    if (process.IsNew)
+                    {
+                        lret += " +" + GetDateTimeString(process.StartTime, sessionStart, ProcessFormatOption.Value);
+                    }
+                    if (process.HasEnded)
+                    {
+                        lret += " - " + GetDateTimeString(process.EndTime, sessionStart, ProcessFormatOption.Value);
+                    }
+                    if (process.IsNew && process.HasEnded) // print process duration as timespan
+                    {
+                        lret += $" {process.EndTime - process.StartTime}";
+                    }
                 }
-                if( process.HasEnded)
-                {
-                    lret += " - " + GetDateTimeString(process.EndTime, sessionStart, ProcessFormatOption.Value);
-                }
-                if( process.IsNew && process.HasEnded) // print process duration as timespan
-                {
-                    lret += $" {process.EndTime - process.StartTime}";
-                }
-
                 return lret;
             }
 

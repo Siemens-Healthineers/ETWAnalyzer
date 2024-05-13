@@ -38,7 +38,8 @@ namespace ETWAnalyzer.Extract.Handle
         TimeSpan Duration { get; }
 
         /// <summary>
-        /// True if object was accessed from multiple processes.
+        /// True if object was created/duplicated from multiple processes. If it is false it can still be inherited by 
+        /// child processes.
         /// </summary>
         bool IsMultiProcess { get; }
 
