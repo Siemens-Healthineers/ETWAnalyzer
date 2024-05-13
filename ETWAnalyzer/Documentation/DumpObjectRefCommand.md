@@ -1,7 +1,7 @@
 # -Dump ObjectRef
 Dump handle information from ETW Handle tracing data. It can be used to track down handle leaks easily.
-It can also display data from the Object manager where kernel objects are created,references are added and removed and objects are deleted. 
-Additionally it can display File map/unmap operations. 
+Additionally it can display data from the Object manager which traces kernel object creation, reference count changes and and object deletion.
+Further it can display File map/unmap operations. 
 
 
 ## Data Extraction
@@ -16,22 +16,22 @@ To dump all objects which were created by process EventLeak which are named obje
 >ETWAnalyzer -dump ObjectRef  %f% -pn EventLeak -ObjectName \*signalevent_\* 
 ![](Images/DumpObjectRef_Filter.png "Dump Handles")
 
-This prints that 100 kernel objects were created and destroyed. That is expected since the loop did run from 0-99 to create the event handles. But for some
-reason we have 108 Create handle calls which is disturbing because this means that some events were created more than one time which looks like some race condition. 
+The summary shows that 100 kernel objects were created and destroyed. That is expected since the loop did run from 0-99 to create the event handles. But for some
+reason we have 108 Create handle calls which is disturbing because this means that some events were created more than once which looks like a race condition. 
 
 Before diving deeper lets explain what data is shown:
 
 The Id is a unique number which can be used with ```-MinMaxId``` filter to select a specific object instance or a range of them. The kernel object pointer is printed, but 
-this value can be reused so it is not always unique (can be filtered with ```-Object``` filter). After the kernel pointer the object name is printed, if present. Then the object
+this value can be reused so it is not always unique (can be filtered with ```-Object``` filter). After the kernel pointer the object name (can be filtered with ```-ObjectName``` filter) is printed, if present. Then the object
 lifetime is printed or 9999s is used to mark objects which were never closed (can be filtered with ```-MinMaxDuration```).
 Then the individual events grouped by type sorted by time are printed. Each line contains
-    - Timestamp (can be switched to WPA time with ```-timefmt s```)
-    - Process Id 
-    - Thread Id
-    - Event Name
-    - Handle Value (can be filtered with ```-Handle``` filter)
-    - Process Name (can be filtered for creating process with ```-processname or -pn``` for. To filter inside any event use ```-RelatedProcess```)
-    - Stack id (```-ShowStack``` will print the stack to console, or write it to CSV file if output is exported via ```-csv``` option)
+ - Timestamp (can be switched to WPA time with ```-timefmt s```)
+ - Process Id 
+ - Thread Id
+ - Event Name
+ - Handle Value (can be filtered with ```-Handle``` filter)
+ - Process Name (can be filtered for creating process with ```-processname or -pn``` for. To filter inside any event use ```-RelatedProcess```)
+ - Stack id (```-ShowStack``` will print the stack to console, or write it to CSV file if output is exported via ```-csv``` option)
 
 
 ETWAnalyzer has the option ```-Leak``` to dump all objects wich were created but have not been released when the trace was stopped. This will filter away all other object events which did not 
@@ -39,7 +39,7 @@ contribute to the leak.
 
 This simple solution does not work because the leaking process has already exited and Windows will close all associated handles during process exit. That is the reason we find for all Handle create
 calls also a matching close handle event. To find the leaks of short running processes we need to find all objects which were closed, when the process was terminating.
-The final close call of all leaked handles is a call to *NtTerminateProcess*:
+The leaked handles are cleaned up on process termination during a call to *NtTerminateProcess*:
 ```
 ExSweepHandleTable
 ObKillProcess
@@ -57,7 +57,7 @@ Now we want to know where the leak is coming from
 >ETWAnalyzer -dump ObjectRef  -fd HandleLeak.json -pn EventLeak -ObjectName \*signalevent_\* -DestroyStack *NtTerminateProcess*  -ShowStack
 ![](Images/DumpObjectRef_LeakStack.png "Dump Leaked Handle Stacks")
 
-This shows we should check EventManger::CreateEvent it its calling stack. We also know that leaked handles are created from multiple thread within ca. 10us which indicates
+This shows we should check EventManger::CreateEvent it its calling stack. We also know that leaked handles are created from multiple threads within ca. 10us which indicates
 that we have a data race. That should make the analysis of handle leaks very straightforward. WPA is of course also a very good tool to track handle leaks, but some more advanced
 analysis can be easier done with ETWAnalyzer.
 When you are searching for all occurrences of event allocations done by a specific method you can use ```-CreateStack``` and to remove all events which are not matching a specific 
@@ -255,7 +255,9 @@ To enable handle tracing you need to add to your wpr recording profile the ```Ha
 ```
 If you prefer xperf
 >xperf -on PROC_THREAD+LOADER+OB_HANDLE -stackwalk HandleCreate+HandleClose+HandleDuplicate -f c:\temp\HandleLeak.etl
->xperf -stop 
+>
+>xperf -stop
+>
 >xperf -merge c:\temp\HandleLeak.etl c:\temp\HandleLeak_Merged.etl
 
 This will enable handle tracing to track down potential handle leaks easily. But since handles are often created at a high frequency you might not 
@@ -287,7 +289,9 @@ WPA cannot decode Object Reference Tracing data, while PerfView and ETWAnalyzer 
 </SystemProvider>
 ```
 >xperf -on PROC_THREAD+LOADER+OB_OBJECT -stackwalk ObjectCreate+ObjectDelete+ObjectReference+ObjectDeReference -f c:\temp\ObjectTrace.etl
->xperf -stop 
+>
+>xperf -stop
+>
 >xperf -merge c:\temp\ObjectTrace.etl c:\temp\ObjectTrace_Merged.etl
 
 
@@ -307,5 +311,7 @@ WPA cannot decode VAMap data, while PerfView and ETWAnalyzer can.
 ```
 
 >xperf -on PROC_THREAD+LOADER+VAMAP -stackwalk MapFile+UnMapFile -f c:\temp\FileMappingTrace.etl
->xperf -stop 
+>
+>xperf -stop
+>
 >xperf -merge c:\temp\FileMappingTrace.etl c:\temp\FileMappingTrace_Merged.etl
