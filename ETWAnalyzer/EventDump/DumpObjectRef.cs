@@ -667,7 +667,7 @@ namespace ETWAnalyzer.EventDump
                                                                               x.StartTime < parent.EndTime &&
                                                                               x.StartTime > handleduplicate.GetTime(extract.SessionStart)
                                                                               ).FirstOrDefault();
-                if( child.StartTime > handleduplicate.GetTime(extract.SessionStart))
+                if( child?.StartTime > handleduplicate.GetTime(extract.SessionStart))
                 {
                     lret = child;
                 }
