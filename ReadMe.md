@@ -39,6 +39,7 @@ See [Documentation Folder in Repo](https://github.com/Siemens-Healthineers/ETWAn
 - [LBR](ETWAnalyzer/Documentation/DumpLBRCommand.md)
 - [Mark](ETWAnalyzer/Documentation/DumpMarkCommand.md)
 - [Memory](ETWAnalyzer/Documentation/DumpMemoryCommand.md) 
+- [ObjectRef](ETWAnalyzer/Documentation/DumpObjectRefCommand.md) 
 - [PMC](ETWAnalyzer/Documentation/DumpPMCCommand.md)
 - [Power](ETWAnalyzer/Documentation/DumpPower.md)
 - [Process](ETWAnalyzer/Documentation/DumpProcessCommand.md)  
