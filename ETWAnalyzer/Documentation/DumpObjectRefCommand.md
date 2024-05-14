@@ -13,7 +13,7 @@ or you can use ```All``` instead of ```ObjectRef``` which will include it.
 ## Data Analysis
 To dump all objects which were created by process EventLeak which are named objects which have the string signalevent_ in their name you can use:
 
->ETWAnalyzer -dump ObjectRef  %f% -pn EventLeak -ObjectName \*signalevent_\* 
+>ETWAnalyzer -dump ObjectRef -fd HandleLeak.json -pn EventLeak -ObjectName \*signalevent_\* 
 ![](Images/DumpObjectRef_Filter.png "Dump Handles")
 
 The summary shows that 100 kernel objects were created and destroyed. That is expected since the loop did run from 0-99 to create the event handles. But for some
@@ -30,7 +30,9 @@ Then the individual events grouped by type sorted by time are printed. Each line
  - Thread Id
  - Event Name
  - Handle Value (can be filtered with ```-Handle``` filter)
- - Process Name (can be filtered for creating process with ```-processname or -pn``` for. To filter inside any event use ```-RelatedProcess```)
+ - Process Name (can be filtered for creating process with ```-processname or -pn```. To filter inside any event use ```-RelatedProcess```)
+   If present, the +- signs indicate that the process did start/exit during the trace recording. You can print with ```-ProcessFmt s``` the start/stop/duration in WPA time or  ```None``` to omit even the +- markers.
+   See [Dump Process section -TimeFmt](DumpProcessCommand.md) for more information.
  - Stack id (```-ShowStack``` will print the stack to console, or write it to CSV file if output is exported via ```-csv``` option)
 
 
@@ -64,6 +66,50 @@ When you are searching for all occurrences of event allocations done by a specif
 stack with ```-StackFilter```. These things are more complex to perform in WPA. 
 ![](Images/WPA_HandleLeak.png "WPA Handle Leak")
 
+### Inherited Handles
+When a new child process is started all inheritable handles are cloned into the new process. That happens inside the parent process in the method **ExDuplicateSingleHandle** while CreateProcess
+is running inside the kernel. 
+```
+ExpDuplicateSingleHandle
+ExDupHandleTable
+ObInitProcess
+PspAllocateProcess
+NtCreateUserProcess
+KiSystemServiceCopyEnd
+ZwCreateUserProcess
+CreateProcessInternalW
+CreateProcessW
+```
+The inherited handles result in DuplicateHandle ETW events which have as source and target process the same process id and the same handle value as in the
+parent process. This information can be used as unique marker to detect child process starts which ETWAnalyzer uses to correlate the started child processes which 
+did inherit handles from the parent process. You can filter for inherited handles with the ```-Inherit``` option.
+>ETWAnalyzer -dump ObjectRef  -fd HandleLeak.json -Inherit -RelatedProcess Eventleak
+>![](Images/DumpObjectRef_Inherit.png "Dump Inherited Handles")
+
+
+In the output we find two inherited file handles \Device\ConDrv used to communicate with the conhost which does the actual printing when you print to console. 
+Are by default all handles inherited by a child process? No. Only the handles which are created with a SECURITY_ATTRIBUTES structure which has bInheritHandle set to TRUE.
+```
+    SECURITY_ATTRIBUTES sa;
+    ...
+    sa.bInheritHandle = TRUE;
+    CreateEvent(&sa, ...)
+```
+
+If you need to create child processes which do not inherit inheritable handles you can set during CreateProcess the flag ```BOOL bInheritHandles``` to FALSE which is 
+the 5th parameter to CreateProcess.
+```
+	STARTUPINFO si;
+	PROCESS_INFORMATION pi;
+
+	ZeroMemory(&si, sizeof(si));
+	si.cb = sizeof(si);
+	ZeroMemory(&pi, sizeof(pi));
+
+	CreateProcess(NULL, (LPWSTR) argString.c_str(), NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi);
+```
+There are more options, like to pass a specific handle list to the child process 
+[Programmatically controlling which handles are inherited by new processes in Win32](https://devblogs.microsoft.com/oldnewthing/20111216-00/?p=8873) which is a bit more complex.
 ### File Mapping Events
 
 When you dump object data you can also exclusively dump file mapping events with ```-Map 1``` to only show file mapping events. 

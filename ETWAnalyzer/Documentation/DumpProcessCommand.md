@@ -43,6 +43,7 @@ Supported values for *-TimeFmt* are:
 | UTCTime| Same as UTC but without date string. |
 | Here|  Print time as local time in the current system time zone.|
 | HereTime|  Same as Here but without date string. |
+| None    | Skip printing of time. Used by ```-ProcessFmt``` option. |
 
 **Examples**
 
