@@ -52,41 +52,23 @@ namespace ETWAnalyzer.Commands
 
             while (true)
             {
-                try
-                {
-                    Console.Write(">");
-                    string command = Console.ReadLine();
+                Console.Write(">");
+                string command = Console.ReadLine();
 
-                    if( command == null)
-                    {
-                        continue;
-                    }
-
-                    string[] parts = SplitQuotedString(command);  // split into command name and optional argument for command
-
-                    if( parts.Length == 0 ) 
-                    {
-                        continue;
-                    }
-
-                    RunCommand(parts);
-                }
-                catch (OutputCanceledException)
+                if( command == null)
                 {
-                    ColorConsole.WriteLine("Command was canceled.");
-                }
-                catch(NotImplementedException) // used by Quit command
-                {
-                    break;
-                }
-                catch(Exception ex)
-                {
-                    Logger.Error($"Got Exception during command execution: {ex}");
-                    ColorConsole.WriteLine($"Got exception during command: {ex.Message}", ConsoleColor.Red);
+                    continue;
                 }
 
+                string[] parts = SplitQuotedString(command);  // split into command name and optional argument for command
+
+                if( parts.Length == 0 ) 
+                {
+                    continue;
+                }
+
+                RunCommand(parts);
             }
-
         }
 
         /// <summary>
@@ -120,6 +102,10 @@ namespace ETWAnalyzer.Commands
                 {
                     command.Parse();
                     command.Run();
+                }
+                catch(OutputCanceledException)
+                {
+                    ColorConsole.WriteLine("Command was canceled.");
                 }
                 catch(Exception ex)
                 {
