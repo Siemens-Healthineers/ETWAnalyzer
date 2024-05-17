@@ -110,7 +110,14 @@ namespace ETWAnalyzer.Extractors.CPU
                     lastS = Math.Max(lastS, x.StartTimeS+x.DurationS);
                 }
 
-                int averageFrequencyMHz = (int) (weightedFrequency / totalTimeS);
+
+                int averageFrequencyMHz = (int) weightedFrequency;
+
+                // Prevent Divide by zero exception if we have no or not enough profiling data
+                if (totalTimeS > 0m)
+                {
+                    averageFrequencyMHz = (int)(weightedFrequency / totalTimeS);
+                }
 
                 lret.Add(new CPUUsage()
                     {
