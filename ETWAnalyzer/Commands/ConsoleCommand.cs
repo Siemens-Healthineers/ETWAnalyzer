@@ -171,7 +171,8 @@ namespace ETWAnalyzer.Commands
         ICommand Load(string[] args)
         {
             ICommand cmd = null;
-            
+
+            List<Lazy <SingleTest>> tests  = new();
             foreach (var arg in args)
             {
                 if( String.IsNullOrEmpty(arg) )
@@ -180,12 +181,15 @@ namespace ETWAnalyzer.Commands
                 }
                 Console.WriteLine($"Loading {arg}");
                 var runs = TestRun.CreateFromDirectory(arg, System.IO.SearchOption.TopDirectoryOnly, null);
-                myInputFiles = runs.SelectMany(x => x.Tests).SelectMany(x => x.Value).Select(x =>
+                IEnumerable<Lazy<SingleTest>> filesToAdd = runs.SelectMany(x => x.Tests).SelectMany(x => x.Value).Select(x =>
                 {
                     x.KeepExtract = true; // do not unload serialized Extract when test is disposed.
                     return new Lazy<SingleTest>(() => x);
-                }).ToArray();
+                });
+                tests.AddRange(filesToAdd);
             }
+
+            myInputFiles = tests.ToArray();
 
             if( myInputFiles != null )
             {
