@@ -20,6 +20,19 @@ namespace ETWAnalyzer.ProcessTools
 
 
     /// <summary>
+    /// Thrown when <see cref="ColorConsole.CancelRequested"/> was set to true to enable canceling of a command while a long list is printed in 
+    /// interactive session.
+    /// </summary>
+    public class OutputCanceledException : Exception
+    { 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="message"></param>
+        public OutputCanceledException(string message) : base(message) { }
+    }
+
+    /// <summary>
     /// https://weblog.west-wind.com/posts/2020/Jul/10/A-NET-Console-Color-Helper
     /// Console Color Helper class that provides coloring to individual commands
     /// </summary>
@@ -41,6 +54,14 @@ namespace ETWAnalyzer.ProcessTools
             get;
             set;
         } = false;
+
+        /// <summary>
+        /// If set to true the next Write will throw a <see cref="OutputCanceledException"/>
+        /// </summary>
+        public static bool CancelRequested
+        {
+            get;set; 
+        }
 
         /// <summary>
         /// Assume constant console width during output printing
@@ -77,6 +98,15 @@ namespace ETWAnalyzer.ProcessTools
             Console.ForegroundColor = InitialForeColor;
         }
 
+        static void ThrowCancelIfRequested()
+        {
+            if( CancelRequested )
+            {
+                CancelRequested = false;
+                throw new OutputCanceledException("Command was cancelled.");
+            }
+        }
+
         /// <summary>
         /// WriteLine with color
         /// </summary>
@@ -84,6 +114,7 @@ namespace ETWAnalyzer.ProcessTools
         /// <param name="color"></param>
         public static void WriteLine(string text, ConsoleColor? color = null)
         {
+            ThrowCancelIfRequested();
             if (color.HasValue && EnableColor)
             {
                 var oldColor = System.Console.ForegroundColor;
@@ -109,6 +140,7 @@ namespace ETWAnalyzer.ProcessTools
         /// <param name="color">A console color. Must match ConsoleColors collection names (case insensitive)</param>
         public static void WriteLine(string text, string color)
         {
+            ThrowCancelIfRequested();
             if (string.IsNullOrEmpty(color) || !EnableColor)
             {
                 WriteLine(text);
@@ -132,6 +164,7 @@ namespace ETWAnalyzer.ProcessTools
         /// <param name="color"></param>
         public static void Write(string text, ConsoleColor? color = null)
         {
+            ThrowCancelIfRequested();
             if (color.HasValue && EnableColor)
             {
                 var oldColor = System.Console.ForegroundColor;
@@ -159,6 +192,7 @@ namespace ETWAnalyzer.ProcessTools
         /// <param name="color">A console color. Must match ConsoleColors collection names (case insensitive)</param>
         public static void Write(string text, string color)
         {
+            ThrowCancelIfRequested();
             if (string.IsNullOrEmpty(color) && !EnableColor)
             {
                 Write(text);
@@ -194,6 +228,7 @@ namespace ETWAnalyzer.ProcessTools
                                                 ConsoleColor headerColor = ConsoleColor.Yellow,
                                                 ConsoleColor dashColor = ConsoleColor.DarkGray)
         {
+            ThrowCancelIfRequested();
             if (string.IsNullOrEmpty(headerText))
                 return;
 
@@ -304,6 +339,8 @@ namespace ETWAnalyzer.ProcessTools
         /// <param name="skipLineFeed">If true the line feed after the write is skipped.</param>
         public static void WriteEmbeddedColorLine(string text, ConsoleColor? baseTextColor = null, bool skipLineFeed=false)
         {
+            ThrowCancelIfRequested();
+
             if (baseTextColor == null)
                 baseTextColor = Console.ForegroundColor;
 
