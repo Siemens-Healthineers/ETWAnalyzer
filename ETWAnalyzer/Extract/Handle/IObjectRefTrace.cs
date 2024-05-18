@@ -23,6 +23,18 @@ namespace ETWAnalyzer.Extract.Handle
         long ObjectPtr { get; }
 
         /// <summary>
+        /// Type id which is mapped to event type name of <see cref="IHandleObjectData.ObjectTypeMap"/>
+        /// </summary>
+        public UInt16 ObjectType { get; }
+
+        /// <summary>
+        /// Get Object Type string
+        /// </summary>
+        /// <param name="extract">Extracted data</param>
+        /// <returns>Stringified type string.</returns>
+        public string GetObjectType(IETWExtract extract);
+
+        /// <summary>
         /// First create event 
         /// </summary>
         IRefCountChangeEvent CreateEvent { get; }

@@ -15,6 +15,11 @@ namespace ETWAnalyzer.Extract.Handle
     public class HandleObjectData : IHandleObjectData
     {
         /// <summary>
+        /// Object Type id to type name map
+        /// </summary>
+        public Dictionary<UInt16, string> ObjectTypeMap { get; set; } = new();
+
+        /// <summary>
         /// Contains Object and Handle ETW tracing data
         /// </summary>
         public List<ObjectRefTrace> ObjectReferences { get; set; } = new();
@@ -34,6 +39,25 @@ namespace ETWAnalyzer.Extract.Handle
         readonly Lazy<StackCollection> myStackReader;
 
         IReadOnlyList<IObjectRefTrace> IHandleObjectData.ObjectReferences => ObjectReferences;
+
+        IReadOnlyDictionary<ushort, string> IHandleObjectData.ObjectTypeMap
+        {
+            get
+            {
+                if (ObjectTypeMap == null)  // legacy data might not have it set.
+                {
+                    ObjectTypeMap = new();
+                }
+
+                return ObjectTypeMap;
+            }
+        }
+                
+
+        /// <summary>
+        /// Synthetic Type Id for file mapping events
+        /// </summary>
+        public const int FileMapTypeId = 1000;
 
         /// <summary>
         /// 

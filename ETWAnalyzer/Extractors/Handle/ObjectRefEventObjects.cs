@@ -24,7 +24,8 @@ namespace ETWAnalyzer.Extractors.Handle
     struct CreateObjectETW
     {
         public long ObjectPtr;
-        public ulong ObjectType;
+        public UInt16 ObjectType;
+        public UInt16 Reserved;
     }
 
     // Object="0xFFFF810C862E09A0" Handle="0xFFFFFFFF80000044" ObjectType="19" ObjectName="\KernelObjects\HighMemoryCondition"/>
@@ -33,16 +34,26 @@ namespace ETWAnalyzer.Extractors.Handle
     {
         public long ObjectPtr;
         public UInt32 Handle;
-        public ulong ObjectType;
-
+        public UInt16 ObjectType;
+        public UInt16 Reserved;
     }
+
+    //  EventName="Object/TypeDCEnd" ObjectType="6" ObjectTypeName="Job"/>
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    struct TypeDCEndETW
+    {
+        public UInt16 ObjectType;
+        public UInt16 Reserved;
+    }
+
 
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     struct CreateHandleETW
     {
         public long ObjectPtr;
         public UInt32 Handle;
-        public UInt32 ObjectType;
+        public UInt16 ObjectType;
+        public UInt16 Reserved;
     }
 
     // Object="0xFFFFC283AEEA3E60" SourceHandle="0x00005648" TargetHandle="-2,147,476,004" SourceProcessID="20,648" TargetHandleID="4" ObjectType="16"
@@ -64,7 +75,8 @@ namespace ETWAnalyzer.Extractors.Handle
     {
         public long ObjectPtr;
         public UInt32 Handle;
-        public UInt32 ObjectType;
+        public UInt16 ObjectType;
+        public UInt16 Reserved;
     }
 
 
@@ -105,7 +117,7 @@ namespace ETWAnalyzer.Extractors.Handle
 
     class CreateObjectEvent : ObjectTraceBase
     {
-        public ulong ObjectType { get; set; }
+        public UInt16 ObjectType { get; set; }
     }
 
     class DuplicateObjectEvent : ObjectTraceBase
@@ -114,19 +126,25 @@ namespace ETWAnalyzer.Extractors.Handle
         public UInt32 TargetHandle { get; set; }
         public int SourceProcessId { get; set; }
         public UInt32 TargetHandleId { get; set; }
-        public UInt32 ObjectType { get; set; }
+        public UInt16 ObjectType { get; set; }
+    }
+
+    class HandleTypeEvent : ObjectTraceBase
+    {
+        public UInt16 ObjectType { get; set; }
+        public string Name { get; set; }
     }
 
     class CreateHandleEvent : ObjectTraceBase
     {
-        public ulong ObjectType { get; set; }
+        public UInt16 ObjectType { get; set; }
         public ulong HandleType { get; set; }
         public ulong HandleValue { get; set; }
     }
 
     class CloseHandleEvent : ObjectTraceBase
     {
-        public ulong ObjectType { get; set; }
+        public UInt16 ObjectType { get; set; }
         public ulong HandleType { get; set; }
         public ulong HandleValue { get; set; }
         public string Name { get; set; }

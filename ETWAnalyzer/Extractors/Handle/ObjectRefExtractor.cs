@@ -220,11 +220,11 @@ namespace ETWAnalyzer.Extractors.Handle
                     if (classicEvent.Data.Length > 16)
                     {
                         var strBytes = classicEvent.Data.Slice(14);
-                        if (strBytes.Length > 2) // includes \0 
+                        ReadOnlySpan<byte> rest = ReadNullTerminatedString(strBytes, out eventName);
+                        if( rest.Length > 0 )
                         {
-                            strBytes = strBytes.Slice(0, strBytes.Length - 2);
+                            throw new InvalidTraceDataException($"CloseHandleETW did contain additional {rest.Length} bytes.");
                         }
-                        eventName = Encoding.Unicode.GetString(strBytes.ToArray());
                     }
 
                     CloseHandleETW closeHandle;
@@ -261,13 +261,32 @@ namespace ETWAnalyzer.Extractors.Handle
                     });
                     break;
                 case HandleDCEnd:
-                    // this event is not delivered although it is present according to TraceEvent
                     HandleDCEndETW handleDCEnd;
                     handleDCEnd = MemoryMarshal.Read<HandleDCEndETW>(classicEvent.Data);
 
                     break;
                 case TypeDCEnd:
-                    // this event is not delivered although it is present according to TraceEvent
+                    TypeDCEndETW typeDCEnd;
+                    typeDCEnd = MemoryMarshal.Read<TypeDCEndETW>(classicEvent.Data);
+                    var remaining = classicEvent.Data.Slice(Marshal.SizeOf<TypeDCEndETW>());
+                    string typeName = null;
+                    if (remaining.Length > 0)
+                    {
+                        remaining = ReadNullTerminatedString(remaining, out typeName);
+                        if( remaining.Length > 0 )
+                        {
+                            throw new InvalidTraceDataException($"Invalid TypeDCEndETW event. Found additional {remaining.Length} bytes in event.");
+                        }
+                    }
+                    myObjectTraceEvents.Add(new HandleTypeEvent
+                    {
+                        TimeStamp = timestamp,  
+                        ProcessId = processId,  
+                        ThreadId = threadId,
+
+                        ObjectType = typeDCEnd.ObjectType,
+                        Name = typeName,
+                    });
                     break;
                 case CreateObject:
                     CreateObjectETW creatObject;
@@ -341,6 +360,32 @@ namespace ETWAnalyzer.Extractors.Handle
             }
         }
 
+        static byte[] Null = new byte[] { 0, 0 };
+
+        /// <summary>
+        /// Read a null terminated UTF-16 string from buffer.
+        /// </summary>
+        /// <param name="buffer">Input byte buffer</param>
+        /// <param name="str">Output string or null if non was read.</param>
+        /// <returns>Remaining slice of input buffer.</returns>
+        ReadOnlySpan<byte> ReadNullTerminatedString(ReadOnlySpan<byte> buffer, out string str)
+        {
+            str = null;
+            int idx = buffer.IndexOf(Null);
+            if( idx != -1 && idx % 2  != 0 && idx+1 < buffer.Length)
+            {
+                idx++; // index did match zero from UTF-16 char like 65 00 00 00 
+            }
+            string lret = null;
+            if( idx != -1)
+            {
+                lret = Encoding.Unicode.GetString(buffer.Slice(0, idx).ToArray());
+                
+            }
+            str =  lret;
+            return buffer.Slice(idx + 2);
+        }
+
         /// <summary>
         /// Key is ObjectPtr which is the kernel object pointer 
         /// </summary>
@@ -396,6 +441,7 @@ namespace ETWAnalyzer.Extractors.Handle
                         var trace = new ObjectRefTrace()
                         {
                             ObjectPtr = create.ObjectPtr,
+                            ObjectType = create.ObjectType,
                             CreateEvent = new RefCountChangeEvent(create.TimeStamp, 1, processIdx, create.ThreadId, stackIndex),
                         };
 
@@ -418,6 +464,7 @@ namespace ETWAnalyzer.Extractors.Handle
                             trace = new ObjectRefTrace()
                             {
                                 ObjectPtr = createHandle.ObjectPtr,
+                                ObjectType = createHandle.ObjectType,
                                 CreateEvent = new RefCountChangeEvent(createHandle.TimeStamp, 1, processIdx, createHandle.ThreadId, stackIndex),
                             };
                             trace.AddHandlCreate(createHandle.TimeStamp, createHandle.HandleValue, processIdx, createHandle.ThreadId, stackIndex);
@@ -436,6 +483,7 @@ namespace ETWAnalyzer.Extractors.Handle
                             hTrace = new ObjectRefTrace()
                             {
                                 ObjectPtr = duplicateObjectEvent.ObjectPtr,
+                                ObjectType = duplicateObjectEvent.ObjectType,
                                 CreateEvent = new RefCountChangeEvent(duplicateObjectEvent.TimeStamp, 1, processIdx, duplicateObjectEvent.ThreadId, stackIndex),
                             };
                             OpenHandles.Add(hTrace.ObjectPtr, hTrace);
@@ -501,17 +549,20 @@ namespace ETWAnalyzer.Extractors.Handle
                             trace = new()
                             {
                                 ObjectPtr = mapFile.ObjectPtr,
+                                ObjectType = HandleObjectData.FileMapTypeId,
                             };
                             OpenHandles.Add(mapFile.ObjectPtr, trace);
                         }
                         trace.AddFileMap(mapFile.TimeStamp, mapFile.ViewBase, mapFile.ViewSize, mapFile.FileObject, mapFile.ByteOffset, processIdx, mapFile.ThreadId, stackIndex);
                         break;
-
+                    case HandleTypeEvent typeEvent:
+                        results.HandleData.ObjectTypeMap.Add(typeEvent.ObjectType, typeEvent.Name);
+                        break;
                     default:
                     break;
                 };
             }
-
+          
             // still open handles are added at the end
             results.HandleData.ObjectReferences.AddRange(OpenHandles.Values);
 

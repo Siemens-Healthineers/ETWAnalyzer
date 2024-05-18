@@ -37,6 +37,34 @@ namespace ETWAnalyzer.Extract.Handle
         public string Name { get; set; }
 
         /// <summary>
+        /// Type id which is mapped to event type name of <see cref="IHandleObjectData.ObjectTypeMap"/>
+        /// </summary>
+        public UInt16 ObjectType { get; set; }
+
+        /// <summary>
+        /// Get Object Type string
+        /// </summary>
+        /// <param name="extract">Extracted data</param>
+        /// <returns>Stringified type string.</returns>
+        public string GetObjectType(IETWExtract extract)
+        {
+            string lret = "";
+            if (ObjectType == HandleObjectData.FileMapTypeId)
+            {
+                lret = "FileMapping";
+            }
+            else
+            {
+                if (!extract.HandleData.ObjectTypeMap.TryGetValue(ObjectType, out lret))
+                {
+                    lret = "UnknownType";
+                }
+            }
+
+            return lret;
+        }
+
+        /// <summary>
         /// Magic value for events where are not closed or we do not have the create time at hand.
         /// </summary>
         public static TimeSpan LeakTime { get; } = TimeSpan.FromSeconds(9999);

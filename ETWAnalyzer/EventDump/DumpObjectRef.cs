@@ -23,13 +23,18 @@ namespace ETWAnalyzer.EventDump
         {
             public IObjectRefTrace ObjTrace { get; set; }
 
-            public IStackCollection Stacks { get; set; } 
+            public IStackCollection Stacks { get; set; }
             public IETWExtract Extract { get; set; }
             public int MaxRefCount { get; internal set; }
             public TestDataFile File { get; set; }
             public int Id { get; internal set; }
             public string BaseLine { get; internal set; }
             public Dictionary<IHandleDuplicateEvent, ETWProcess> ClonedChildProcessMap { get; internal set; }
+
+            public string HandleType
+            {
+                get => ObjTrace.GetObjectType(Extract);
+            }
         }
 
         /// <summary>
@@ -66,6 +71,7 @@ namespace ETWAnalyzer.EventDump
         public bool NoCmdLine { get; internal set; }
         public DumpCommand.TotalModes? ShowTotal { get; internal set; }
         public bool Inherit { get; internal set; }
+        public KeyValuePair<string, Func<string, bool>> TypeFilter { get; internal set; }
 
         Dictionary<StackIdx, bool> myStackFilterResult = new();
         
@@ -92,10 +98,12 @@ namespace ETWAnalyzer.EventDump
             return lret;
         }
 
+
+
         private void WriteCSVData(List<MatchData> lret)
         {
             OpenCSVWithHeader(Col_CSVOptions, Col_FileName, Col_Date, Col_TestCase, Col_TestTimeinms, Col_Baseline,
-                              "Id", "Stack", "EventName", "Time", "Thread Id", "Handle Value", "Object Name", "Object Ptr",
+                              "Id", "Stack", "EventName", "Time", "Thread Id", "Handle Value", "Type", "Object Name", "Object Ptr",
                               "SourceProces", "SourceHandleValue",
                               "ViewBase", "ViewSize", "File Object", "File Offset",
                               "RefChange",
@@ -113,7 +121,7 @@ namespace ETWAnalyzer.EventDump
                     ETWProcess createProcess = objectEvent.Extract.GetProcess(create.ProcessIdx);
 
                     WriteCSVLine(CSVOptions, Path.GetFileNameWithoutExtension(objectEvent.File.FileName), objectEvent.File.PerformedAt, objectEvent.File.TestName, objectEvent.File.DurationInMs, objectEvent.BaseLine,
-                        objectEvent.Id, GetStack(objectEvent.Stacks, create.StackIdx), create.GetType().Name, create.TimeNs, create.ThreadId, GetHandleValue(create.HandleValue), objectEvent.ObjTrace.Name, GetHandleValue((ulong)objectEvent.ObjTrace.ObjectPtr),
+                        objectEvent.Id, GetStack(objectEvent.Stacks, create.StackIdx), create.GetType().Name, create.TimeNs, create.ThreadId, GetHandleValue(create.HandleValue), objectEvent.HandleType, objectEvent.ObjTrace.Name, GetHandleValue((ulong)objectEvent.ObjTrace.ObjectPtr),
                         "", "",
                         "", "", "", "",
                         "",
@@ -134,7 +142,7 @@ namespace ETWAnalyzer.EventDump
                     ETWProcess closeProcess = objectEvent.Extract.GetProcess(close.ProcessIdx);
 
                     WriteCSVLine(CSVOptions, Path.GetFileNameWithoutExtension(objectEvent.File.FileName), objectEvent.File.PerformedAt, objectEvent.File.TestName, objectEvent.File.DurationInMs, objectEvent.BaseLine,
-                        objectEvent.Id, GetStack(objectEvent.Stacks, close.StackIdx), close.GetType().Name, close.TimeNs, close.ThreadId, GetHandleValue(close.HandleValue), objectEvent.ObjTrace.Name, GetHandleValue((ulong)objectEvent.ObjTrace.ObjectPtr),
+                        objectEvent.Id, GetStack(objectEvent.Stacks, close.StackIdx), close.GetType().Name, close.TimeNs, close.ThreadId, GetHandleValue(close.HandleValue), objectEvent.HandleType, objectEvent.ObjTrace.Name, GetHandleValue((ulong)objectEvent.ObjTrace.ObjectPtr),
                         "", "",
                         "", "", "", "",
                         "",
@@ -149,7 +157,7 @@ namespace ETWAnalyzer.EventDump
                     ETWProcess closeProcess = objectEvent.Extract.GetProcess(duplicate.ProcessIdx);
 
                     WriteCSVLine(CSVOptions, Path.GetFileNameWithoutExtension(objectEvent.File.FileName), objectEvent.File.PerformedAt, objectEvent.File.TestName, objectEvent.File.DurationInMs, objectEvent.BaseLine,
-                    objectEvent.Id, GetStack(objectEvent.Stacks, duplicate.StackIdx), duplicate.GetType().Name, duplicate.TimeNs, duplicate.ThreadId, GetHandleValue(duplicate.HandleValue), objectEvent.ObjTrace.Name, GetHandleValue((ulong)objectEvent.ObjTrace.ObjectPtr),
+                    objectEvent.Id, GetStack(objectEvent.Stacks, duplicate.StackIdx), duplicate.GetType().Name, duplicate.TimeNs, duplicate.ThreadId, GetHandleValue(duplicate.HandleValue), objectEvent.HandleType, objectEvent.ObjTrace.Name, GetHandleValue((ulong)objectEvent.ObjTrace.ObjectPtr),
                     GetProcessAndStartStopTags(duplicate.SourceProcessIdx, objectEvent.Extract), GetHandleValue(duplicate.SourceHandleValue),
                     "", "", "", "",
                     "",
@@ -164,7 +172,7 @@ namespace ETWAnalyzer.EventDump
                     ETWProcess mapProcess = objectEvent.Extract.GetProcess(map.ProcessIdx);
 
                     WriteCSVLine(CSVOptions, Path.GetFileNameWithoutExtension(objectEvent.File.FileName), objectEvent.File.PerformedAt, objectEvent.File.TestName, objectEvent.File.DurationInMs, objectEvent.BaseLine,
-                    objectEvent.Id, GetStack(objectEvent.Stacks, map.StackIdx), map.GetType().Name, map.TimeNs, map.ThreadId, "", "", GetHandleValue((ulong)objectEvent.ObjTrace.ObjectPtr),
+                    objectEvent.Id, GetStack(objectEvent.Stacks, map.StackIdx), map.GetType().Name, map.TimeNs, map.ThreadId, "", "", GetHandleValue((ulong)objectEvent.ObjTrace.ObjectPtr), "FileMap",
                     "", "",
                     GetHandleValue((ulong)map.ViewBase), map.ViewSize, GetHandleValue((ulong)map.FileObject), map.ByteOffset,
                     "",
@@ -179,7 +187,7 @@ namespace ETWAnalyzer.EventDump
                     ETWProcess mapProcess = objectEvent.Extract.GetProcess(unMap.ProcessIdx);
 
                     WriteCSVLine(CSVOptions, Path.GetFileNameWithoutExtension(objectEvent.File.FileName), objectEvent.File.PerformedAt, objectEvent.File.TestName, objectEvent.File.DurationInMs, objectEvent.BaseLine,
-                    objectEvent.Id, GetStack(objectEvent.Stacks, unMap.StackIdx), unMap.GetType().Name, unMap.TimeNs, unMap.ThreadId, "", "", GetHandleValue((ulong)objectEvent.ObjTrace.ObjectPtr),
+                    objectEvent.Id, GetStack(objectEvent.Stacks, unMap.StackIdx), unMap.GetType().Name, unMap.TimeNs, unMap.ThreadId, "", "", GetHandleValue((ulong)objectEvent.ObjTrace.ObjectPtr), "FileMap",
                     "", "",
                     GetHandleValue((ulong)unMap.ViewBase), unMap.ViewSize, GetHandleValue((ulong)unMap.FileObject), unMap.ByteOffset,
                     "",
@@ -194,7 +202,7 @@ namespace ETWAnalyzer.EventDump
                     ETWProcess refChangeProc = objectEvent.Extract.GetProcess(refChange.ProcessIdx);
 
                     WriteCSVLine(CSVOptions, Path.GetFileNameWithoutExtension(objectEvent.File.FileName), objectEvent.File.PerformedAt, objectEvent.File.TestName, objectEvent.File.DurationInMs, objectEvent.BaseLine,
-                    objectEvent.Id, GetStack(objectEvent.Stacks, refChange.StackIdx), refChange.GetType().Name, refChange.TimeNs, refChange.ThreadId, "", "", GetHandleValue((ulong)objectEvent.ObjTrace.ObjectPtr),
+                    objectEvent.Id, GetStack(objectEvent.Stacks, refChange.StackIdx), refChange.GetType().Name, refChange.TimeNs, refChange.ThreadId, "", "", GetHandleValue((ulong)objectEvent.ObjTrace.ObjectPtr), objectEvent.HandleType,
                     "", "",
                     "", "", "", "",
                     refChange.RefCountChange,
@@ -245,13 +253,13 @@ namespace ETWAnalyzer.EventDump
 
                         id++;
 
-                        if(!MinMaxId.IsWithin(id))  // filter by object id
+                        if (!MinMaxId.IsWithin(id))  // filter by object id
                         {
                             continue;
                         }
 
                         // print either object or file mapping events. Default is to print both
-                        if ( (Map == 0 && handle.IsFileMap) ||
+                        if ((Map == 0 && handle.IsFileMap) ||
                              (Map == 1 && !handle.IsFileMap))
                         {
                             continue;
@@ -263,6 +271,12 @@ namespace ETWAnalyzer.EventDump
                         }
 
                         if (!ObjectNameFilter.Value(handle.Name))
+                        {
+                            continue;
+                        }
+
+
+                        if( !TypeFilter.Value(handle.GetObjectType(file.Extract)) )
                         {
                             continue;
                         }
@@ -582,7 +596,7 @@ namespace ETWAnalyzer.EventDump
 
             public void PrintTotals(ConsoleColor color)
             {
-                ColorConsole.WriteEmbeddedColorLine($"Totals: Processes: {Processes.Count} Objects Created/Destroyed: {ObjectCreateCount}/{ObjectDestroyCount} Diff: {ObjectCreateCount-ObjectDestroyCount}  Handles Created/Closed/Duplicated: {CreateCount}/{CloseCount}/{DuplicateCount} Diff: {CreateCount+DuplicateCount-CloseCount}, RefChanges: {RefChangeCount}, FileMap/Unmap: {MapCount}/{UnmapCount}", color);
+                ColorConsole.WriteEmbeddedColorLine($"Totals: Processes: {Processes.Count},  Objects Created/Destroyed: {ObjectCreateCount}/{ObjectDestroyCount} Diff: {ObjectCreateCount-ObjectDestroyCount},  Handles Created/Closed/Duplicated: {CreateCount}/{CloseCount}/{DuplicateCount} Diff: {CreateCount+DuplicateCount-CloseCount},  RefChanges: {RefChangeCount}, FileMap/Unmap: {MapCount}/{UnmapCount}", color);
             }
         }
 
@@ -680,7 +694,7 @@ namespace ETWAnalyzer.EventDump
 
         private void PrintObjectEvent(MatchData ev)
         {
-            Console.WriteLine($"Id: {ev.Id} Object: 0x{ev.ObjTrace.ObjectPtr:X} {ev.ObjTrace.Name} Lifetime: {ev.ObjTrace.Duration.TotalSeconds:F6} s  " +
+            ColorConsole.WriteEmbeddedColorLine($"Id: {ev.Id} Object: 0x{ev.ObjTrace.ObjectPtr:X} {ev.ObjTrace.Name} Lifetime: {ev.ObjTrace.Duration.TotalSeconds:F6} s  Type: [green]{ev.HandleType}[/green] " +
                               $"Create+Duplicate-Close: {ev.ObjTrace.HandleCreateEvents.Count}+{ev.ObjTrace.HandleDuplicateEvents.Count}-{ev.ObjTrace.HandleCloseEvents.Count} = {ev.ObjTrace.HandleCreateEvents.Count + ev.ObjTrace.HandleDuplicateEvents.Count - ev.ObjTrace.HandleCloseEvents.Count}");
 
             foreach (IHandleCreateEvent handleCreate in ev.ObjTrace.HandleCreateEvents)
