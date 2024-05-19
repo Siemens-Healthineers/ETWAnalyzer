@@ -110,7 +110,14 @@ namespace ETWAnalyzer.Extractors.CPU
                     lastS = Math.Max(lastS, x.StartTimeS+x.DurationS);
                 }
 
-                int averageFrequencyMHz = (int) (weightedFrequency / totalTimeS);
+
+                int averageFrequencyMHz = (int) weightedFrequency;
+
+                // Prevent Divide by zero exception if we have no or not enough profiling data
+                if (totalTimeS > 0m)
+                {
+                    averageFrequencyMHz = (int)(weightedFrequency / totalTimeS);
+                }
 
                 lret.Add(new CPUUsage()
                     {
@@ -302,7 +309,7 @@ namespace ETWAnalyzer.Extractors.CPU
         /// <param name="debugData"></param>
         public void AddForExtendedMetrics(CPUStats cpuStats, CPUNumber cpu, float start, float end, int threadId, long cpuAffinityMask, string debugData)
         {
-            if (cpuStats.ExtendedCPUMetrics != null)
+            if (cpuStats?.ExtendedCPUMetrics != null)
             {
                 if( !CPUToFrequencyDuration.TryGetValue(cpu, out List<ProfilingData> frequencyDurations) )
                 {
@@ -385,8 +392,8 @@ namespace ETWAnalyzer.Extractors.CPU
                     ThreadId = slice.Thread.Id,
                     // We are interested in the performance impact of deep sleep states which is the processor power up time.
                     // All other delays are the ready times from shallow sleep states (should be fast) and thread interference from other threads of the same or other processes.
-                    // Windows abstracts shallow sleep states (C1/C1E) as CState = 0 and all deeper sleep states as CState = 1
-                    DeepSleepReady = slice.PreviousActivityOnProcessor?.Process?.Id == WindowsConstants.IdleProcessId && slice?.SwitchIn?.ContextSwitch?.PreviousCState == 1,
+                    // Windows abstracts shallow sleep states (C1/C1E) as CState = 0 and all deeper sleep states as CState > 0. Usual values are 0, 1, 2
+                    DeepSleepReady = slice.PreviousActivityOnProcessor?.Process?.Id == WindowsConstants.IdleProcessId && slice?.SwitchIn?.ContextSwitch?.PreviousCState > 0,
                 });
             }
         }

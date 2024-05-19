@@ -25,6 +25,7 @@ using ETWAnalyzer.EventDump;
 using ETWAnalyzer.Extractors.TCP;
 using ETWAnalyzer.Extractors.Memory;
 using ETWAnalyzer.Extractors.Power;
+using ETWAnalyzer.Extractors.Handle;
 
 namespace ETWAnalyzer.Commands
 {
@@ -35,7 +36,7 @@ namespace ETWAnalyzer.Commands
     {
         internal static readonly string HelpString =
          "ETWAnalyzer [-extract [All, Default or Disk File CPU Memory Exception Stacktag ThreadPool PMC Frequency Power Dns TCP] -filedir/-fd inEtlOrZip [-DryRun] [-symServer NtSymbolPath/MS/Google/syngo] [-keepTemp] [-NoOverwrite] [-pThreads dd] [-nThreads dd]" + Environment.NewLine +
-         "            [-NoReady] [-allCPU] [-Concurrency dd] [-NoIndent] [-LastNDays dd] [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd]  " + Environment.NewLine + 
+         "            [-NoReady] [-allCPU] [-Concurrency dd] [-NoIndent] [-LastNDays dd] [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd] [-NoTestRunGrouping]  " + Environment.NewLine + 
          "Retrieve data from ETL files and store extracted data in a serialized format in Json in the output directory \\Extract folder." + Environment.NewLine +
          "The data can the be analyzed by other tools or ETWAnalyzer itself which can also analyze the data for specific patterns or issues." + Environment.NewLine +
          "Extract Options are separated by space" + Environment.NewLine +
@@ -63,12 +64,14 @@ namespace ETWAnalyzer.Commands
          "  Power     : Extract Power profile data when present from Microsoft-Windows-Kernel-Power provider (capture state is needed to get power profile data)." + Environment.NewLine +
          "  DNS       : Extract DNS Queries. You need to enable ETW provider Microsoft-Windows-DNS-Client." + Environment.NewLine +
          "  TCP       : Extract TCP statistic per connection. You need to enable the provider Microsoft-Windows-TCPIP." + Environment.NewLine +
+         "  ObjectRef : Extract all Handle (Create/Duplicate/Close) with kernel provider OB_HANDLE, Object (AddRef/ReleaseRef) with kernel provider OB_OBJECT and File map/unmap events with provider VAMAP." + Environment.NewLine +
          "The following filters work only if the adhere to a specific file naming convention." + Environment.NewLine + 
          "Select files from a testrun (all tests which have a time gap < 1h) to e.g. select only the first, or skip the warmump run or to extract just a sample of test cases." + Environment.NewLine +
          "         TestCaseName_ddddmsMachineName.yyyymmdd-hhmmss.7z/.zip/.etl  e.g. Build_166375msfv-az192-659.20230127-093520"  + Environment.NewLine + 
          "         TestCaseName_ddddms_Machine_CLT/SRV/SINGLE_TestStatus-Passed/Failed_yyyymmdd-hhmmss.7z/.etl e.g. LoadPrepUseCase_4897ms_RN6498AA8B-B18F_SRV_TestStatus-Passed_20230112-170100.7z" + Environment.NewLine + 
          "   -TestRunIndex dd           Select only data from a specific test run by index. To get the index value use -dump TestRun -filedir xxxx " + Environment.NewLine +
          "   -TestRunCount dd           Select from a given TestRunIndex the next dd TestRuns. " + Environment.NewLine +
+         "   -NoTestRunGrouping         Do not group tests into TestRuns which are tests which have tests with a gap > 1h." + Environment.NewLine +
          "   -TestsPerRun dd            Number of test cases to load of each test run. Useful if you want get an overview how a test behaves over time without loading thousands of files." + Environment.NewLine +
          "   -SkipNTests dd             Skip the first n tests of a testcase in a TestRun. Use this to e.g. skip the first test run which shows normally first time init effects which may be not representative" + Environment.NewLine +
          " -DryRun              Do not extract. Only print which files would be extracted." + Environment.NewLine + 
@@ -173,6 +176,7 @@ namespace ETWAnalyzer.Commands
             TCP,
             Frequency,
           //  VirtualAlloc,
+            ObjectRef,
             Power,
         }
 
@@ -201,7 +205,8 @@ namespace ETWAnalyzer.Commands
             { ExtractionOptions.Dns,         () => new DnsClientExtractor()    },
             { ExtractionOptions.TCP,         () => new TCPExtractor()          },
             { ExtractionOptions.Frequency,   () => new CpuFrequencyExtractor() },
-       //    { ExtractionOptions.VirtualAlloc,() => new VirtualAllocExtractor() },
+            //    { ExtractionOptions.VirtualAlloc,() => new VirtualAllocExtractor() },
+            { ExtractionOptions.ObjectRef,   () => new ObjectRefExtractor() },
             { ExtractionOptions.Power       ,() => new PowerExtractor() },
         };
 
@@ -385,6 +390,9 @@ namespace ETWAnalyzer.Commands
                         OutDir.OutputDirectory = ArgParser.CheckIfFileOrDirectoryExistsAndExtension(outDir);
                         OutDir.IsDefault = false;
                         break;
+                    case NoTestRunGrouping:
+                        TestRun.MaxTimeBetweenTests = TimeSpan.MaxValue;
+                        break;
                     case TempDirArg:  // -tempdir
                         string tmpDir = GetNextNonArg(TempDirArg);
                         if (!Directory.Exists(tmpDir))
@@ -550,6 +558,7 @@ namespace ETWAnalyzer.Commands
                         extractors.Add(myExtractorFactory[ExtractionOptions.Dns]());
                         extractors.Add(myExtractorFactory[ExtractionOptions.TCP]());
                         extractors.Add(myExtractorFactory[ExtractionOptions.Power]());
+                        extractors.Add(myExtractorFactory[ExtractionOptions.ObjectRef]());
                  //       extractors.Add(myExtractorFactory[ExtractionOptions.VirtualAlloc]());
                     }
                     else

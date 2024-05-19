@@ -4,6 +4,7 @@
 using ETWAnalyzer.Extract.Disk;
 using ETWAnalyzer.Extract.Exceptions;
 using ETWAnalyzer.Extract.FileIO;
+using ETWAnalyzer.Extract.Handle;
 using ETWAnalyzer.Extract.Modules;
 using ETWAnalyzer.Extract.Network;
 using ETWAnalyzer.Extract.PMC;
@@ -137,7 +138,7 @@ namespace ETWAnalyzer.Extract
         /// <summary>
         /// Connected displays to computer
         /// </summary>
-        public List<Display> Displays { get; set; } = new List<Display>();  // Full Type Info is needed for serializer!
+        public List<Display> Displays { get; set; } = new();  // Full Type Info is needed for serializer!
 
         /// <summary>
         /// Connected displays to computer
@@ -163,7 +164,7 @@ namespace ETWAnalyzer.Extract
         /// <summary>
         /// Processes with their command line and start time
         /// </summary>
-        public List<ETWProcess> Processes { get; set; } = new List<ETWProcess>();
+        public List<ETWProcess> Processes { get; set; } = new();
 
         /// <summary>
         /// Processes with their command line and start time
@@ -253,21 +254,8 @@ namespace ETWAnalyzer.Extract
             }
         }
 
-
-        ThreadPoolStats myThreadPoolStats;
-
         /// <inheritdoc />
-        public ThreadPoolStats ThreadPool
-        {
-            get
-            {
-                return myThreadPoolStats;
-            }
-            set
-            {
-                myThreadPoolStats = value;
-            }
-        }
+        public ThreadPoolStats ThreadPool { get; set; }
         
         IThreadPoolStats IETWExtract.ThreadPool => ThreadPool;
 
@@ -339,37 +327,30 @@ namespace ETWAnalyzer.Extract
         /// <summary>
         /// PMC (Performance Monitoring Counter) CPU Data
         /// </summary>
-        public PMCData PMC
-        {
-            get; set;
-        } = new PMCData();
+        public PMCData PMC { get; set; } = new();
 
         IPMCData IETWExtract.PMC => PMC;
 
         /// <summary>
         /// Network data
         /// </summary>
-        public Extract.Network.Network Network
-        {
-            get; set;
-        } = new Extract.Network.Network();
+        public Extract.Network.Network Network { get; set; } = new();
 
         INetwork IETWExtract.Network => Network;
+
+        /// <summary>
+        /// Contains ObjectReference and Handle Trace Data
+        /// </summary>
+        public HandleObjectData HandleData { get; set; } = new();
+
+        IHandleObjectData IETWExtract.HandleData => myHandleDeserializer.Value;
 
         /// <summary>
         /// When File  IO data is accessed via IETWExtract 
         /// </summary>
         readonly Lazy<FileIOData> myFileIODeserializer;
 
-        /// <summary>
-        /// Open file read only.
-        /// </summary>
-        /// <param name="filename"></param>
-        /// <returns></returns>
-        static internal FileStream OpenFileReadOnly(string filename)
-        {
-            return new FileStream(filename, FileMode.Open, FileAccess.Read, FileShare.Read);   
-        }
+
 
         FileIOData ReadFileIOFromExternalFile()
         {
@@ -380,19 +361,37 @@ namespace ETWAnalyzer.Extract
                 string file = ser.GetFileNameFor(DeserializedFileName, ExtractSerializer.FileIOPostFix);
                 if (File.Exists(file))
                 {
-                    using var fileStream = OpenFileReadOnly(file);
+                    using var fileStream = ExtractSerializer.OpenFileReadOnly(file);
                     lret = ExtractSerializer.Deserialize<FileIOData>(fileStream);
                 }
             }
             return lret;
         }
 
+        readonly Lazy<HandleObjectData> myHandleDeserializer;
+
+        HandleObjectData ReadHandleDataFromExternalFile()
+        {
+            HandleObjectData lret = HandleData;
+            if( DeserializedFileName != null)
+            {
+                ExtractSerializer ser = new();
+                string file = ser.GetFileNameFor(DeserializedFileName, ExtractSerializer.HandlePostFix);
+                if( File.Exists(file))
+                {
+                    using var fileStream = ExtractSerializer.OpenFileReadOnly(file);
+                    lret = ExtractSerializer.Deserialize<HandleObjectData>(fileStream);
+                    lret.DeserializedFileName = DeserializedFileName;
+                }
+            }
+
+            return lret;
+        }
 
         /// <summary>
         /// When Module data is accessed via IEtwExtract interface deserialize optional data from external file.
         /// </summary>
         readonly Lazy<ModuleContainer> myModuleDeserializer;
-
 
         ModuleContainer ReadModuleInformationFromExternalFile()
         {
@@ -403,7 +402,7 @@ namespace ETWAnalyzer.Extract
                 string file = ser.GetFileNameFor(DeserializedFileName, ExtractSerializer.ModulesPostFix);
                 if (File.Exists(file))
                 {
-                    using var fileStream = OpenFileReadOnly(file);
+                    using var fileStream = ExtractSerializer.OpenFileReadOnly(file);
                     lret = ExtractSerializer.Deserialize<ModuleContainer>(fileStream);
                     // Set parent nodes for shared strings and process list of ETWExtract after deserialization
                     lret.Extract = this;
@@ -430,6 +429,7 @@ namespace ETWAnalyzer.Extract
         {
             myFileIODeserializer = new Lazy<FileIOData>(ReadFileIOFromExternalFile);
             myModuleDeserializer = new Lazy<ModuleContainer>(ReadModuleInformationFromExternalFile);
+            myHandleDeserializer = new Lazy<HandleObjectData>(ReadHandleDataFromExternalFile);
         }
 
         /// <summary>

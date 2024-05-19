@@ -154,36 +154,50 @@ OverUtilizationThreshold %              : 85                                    
 InitialPerformanceClass1 %              : 100                                     ...                                     50                                      
 SoftParkLatencyUs                       : 10 us                                   1000 us                                 0 us            
 ```
-You can add ```-Details``` to get help for each of the settings to give you an idea what the setting is all about. The output becomes then a bit messy
-but very informative. One major aspect in the Power Saver profile is that MS turns off *Processor performance autonomous mode* to manually control the 
-processor P-States which is one of the missing flags in TraceProcessing.  
-
+You can add ```-Details``` to get help for each of the settings to give you an idea what the setting is all about and how you can 
+relate that with powercfg commands for further experimentation. 
+To e.g. set the HeteroPolicyInEffect property value for the current power profile and to make it active you can use powercfg:
 ```
-ETWAnalyzer -dump Power -Diff -Details -fd c:\temp\Extract\power_Balanced.json -fd c:\temp\Extract\power_HighPerformance.json -fd c:\temp\Extract\power_PowerSaver.json  
-File Date                               : 27.12.2023 01:36:38                     27.12.2023 01:36:59                     27.12.2023 01:37:20                     
-File Name                               : power_Balanced                          power_HighPerformance                   power_PowerSaver                        
-CPU Power Configuration
-        Processor performance boost policy
-        Specify how much processors may opportunistically increase frequency above maximum when allowed by current operating conditions.
-        Range, Units:
-          0 .. 100 %
-        Subgroup / Setting GUIDs:
-          54533251-82be-4824-96c1-47b60b740d00 / 45bcc044-d885-43e2-8605-ee0ec6e96b59
-BoostPolicy %                           : 60                                      100                                     0                                       
-        Processor performance decrease policy
-        Specify the algorithm used to select a new performance state when the ideal performance state is lower than the current performance state.
+  powercfg /SETACVALUEINDEX SCHEME_CURRENT SUB_PROCESSOR HETEROPOLICY 3
+  powercfg /SETACTIVE SCHEME_CURRENT
+```
+
+The detailed output includes the setting GUID and the locale independent shortcut name of powercfg. Most settings 
+are hidden in the UI. To make a hidden setting visible you can use powercfg with the setting GUID/Name and
+unhide it:
+```
+powercfg /attributes SUB_PROCESSOR HETEROPOLICY -ATTRIB_HIDE
+```
+
+Below is some example output when you have enabled detailed output. 
+```
+ETWAnalyzer -dump Power -Details -fd c:\temp\Extract\power_Balanced.json
+...
+    HETEROPOLICY 7f2f5cfa-f10c-4823-b5e1-e93ae85f46b5
+        Heterogeneous policy in effect
+        Specify what policy to be used on systems with at least two different Processor Power Efficiency Classes.
+        Subgroup:
+          Processor power management
         Possible values (index - hexadecimal or string value - friendly name - descr):
-          0 - 00000000 - Ideal - Select the ideal processor performance state.
-          1 - 00000001 - Single - Select the processor performance state one closer to ideal than the current processor performance state.
-          2 - 00000002 - Rocket - Select the lowest speed/power processor performance state.
-        Subgroup / Setting GUIDs:
-          54533251-82be-4824-96c1-47b60b740d00 / 40fbefc7-2e9d-4d25-a185-0cfd8574bac6
-DecreasePolicy                          : Ideal                                   Single                                  Rocket                                  
-        Processor performance decrease threshold
-        Specify the lower busy threshold that must be met before decreasing the processor's performance state (in percentage).
-        Range, Units:
-          0 .. 100 %
-DecreaseThreshold %                     : 20                                      10                                      60         
+          0 - 00000000 - Use heterogeneous policy 0 - Heterogeneous policy 0.
+          1 - 00000001 - Use heterogeneous policy 1 - Heterogeneous policy 1.
+          2 - 00000002 - Use heterogeneous policy 2 - Heterogeneous policy 2.
+          3 - 00000003 - Use heterogeneous policy 3 - Heterogeneous policy 3.
+          4 - 00000004 - Use heterogeneous policy 4 - Heterogeneous policy 4.
+HeteroPolicyInEffect                    : 4                                       
+    SCHEDPOLICY 93b8b6dc-0698-4d1c-9ee4-0644e900c85d
+        Heterogeneous thread scheduling policy
+        Specify what thread scheduling policy to use on heterogeneous systems.
+        Subgroup:
+          Processor power management
+        Possible values (index - hexadecimal or string value - friendly name - descr):
+          0 - 00000000 - All processors - Schedule to any available processor.
+          1 - 00000001 - Performant processors - Schedule exclusively to more performant processors.
+          2 - 00000002 - Prefer performant processors - Schedule to more performant processors when possible.
+          3 - 00000003 - Efficient processors - Schedule exclusively to more efficient processors.
+          4 - 00000004 - Prefer efficient processors - Schedule to more efficient processors when possible.
+          5 - 00000005 - Automatic - Let the system choose an appropriate policy.
+HeteroPolicyThreadScheduling            : Automatic                               
 ...
 ```
 

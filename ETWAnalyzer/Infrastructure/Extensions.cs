@@ -3,8 +3,10 @@
 
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Globalization;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -214,6 +216,17 @@ namespace ETWAnalyzer.Infrastructure
             return new KeyValuePair<decimal, decimal>(min, max);
         }
 
+        public static long ParseLongFromHex(this string hexValue)
+        {
+            if (hexValue.StartsWith("0x", StringComparison.CurrentCultureIgnoreCase) ||
+                hexValue.StartsWith("&H", StringComparison.CurrentCultureIgnoreCase))
+            {
+                hexValue = hexValue.Substring(2);
+            }
+
+            return long.Parse(hexValue, NumberStyles.HexNumber, CultureInfo.InvariantCulture);
+        }
+
         public static KeyValuePair<ulong,ulong> GetMinMaxULong(this string minMaxStr, decimal defaultUnit)
         {
             string[] minmax = minMaxStr.Split(new char[] { '-' }, StringSplitOptions.RemoveEmptyEntries);
@@ -229,6 +242,21 @@ namespace ETWAnalyzer.Infrastructure
             }
 
             return new KeyValuePair<ulong, ulong>(min, max);
+        }
+
+        public static Tuple<long, long> GetMinMaxLong(this string minStr, string maxStr, decimal defaultUnit)
+        {
+            string minNumber = GetUnit(minStr, out decimal? multiplierMin);
+            long min = (long)((decimal)long.Parse(minNumber) * (multiplierMin ?? defaultUnit));
+
+            long max = long.MaxValue;
+            if (!String.IsNullOrEmpty(maxStr))
+            {
+                string maxNumberStr = GetUnit(maxStr, out decimal? multiplierMax);
+                max = (long)((decimal)long.Parse(maxNumberStr) * (multiplierMax ?? defaultUnit));
+            }
+
+            return Tuple.Create(min, max);
         }
 
         public static Tuple<double,double> GetMinMaxDouble(this string minStr, string maxStr, decimal defaultUnit)

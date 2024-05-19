@@ -11,7 +11,7 @@ namespace ETWAnalyzer.Extractors.Memory
 {
     internal class VirtualAllocExtractor : ExtractorBase
     {
-        Guid kernelMemoryProviderId = new Guid("3d6fa8d3-fe05-11d0-9dda-00c04fd7ba7c");
+        Guid PageFaultV2Guid = new Guid("3d6fa8d3-fe05-11d0-9dda-00c04fd7ba7c");
         IPendingResult<IStackDataSource> myStackSource;
         IPendingResult<IProcessDataSource> myProcessesSource;
         IPendingResult<ISymbolDataSource> mySymbolDataSource;
@@ -85,7 +85,7 @@ namespace ETWAnalyzer.Extractors.Memory
                     threadId, myProcessesSource, myStackSource));
             };
 
-            processor.Use(new Guid[] { kernelMemoryProviderId }, handleKernelMemoryEvent);
+            processor.Use(new Guid[] { PageFaultV2Guid }, handleKernelMemoryEvent);
             
         }
 

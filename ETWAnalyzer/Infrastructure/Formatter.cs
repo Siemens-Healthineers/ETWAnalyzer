@@ -14,6 +14,11 @@ namespace ETWAnalyzer.Infrastructure
         public string Header { get; set; }
 
         /// <summary>
+        /// Contains powercfg shortcut name and setting Guid
+        /// </summary>
+        public string Identifier { get; set; } 
+
+        /// <summary>
         /// Description of property
         /// </summary>
         public string Description { get; set; }

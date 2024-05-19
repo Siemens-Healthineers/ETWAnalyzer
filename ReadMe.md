@@ -27,7 +27,7 @@ An ETW Json file is typically a few MB while the input .etl file including PDBs 
 You want to contribute, miss specific data, or want to add your specific dump command? Check out [Contributing](ETWAnalyzer/Documentation/Contributing.md) to get started.
 
 ## Documentation
-See [Documentation Folder in Repo](https://github.com/Siemens-Healthineers/ETWAnalyzer/tree/2.5.10.0/ETWAnalyzer/Documentation)
+See [Documentation Folder in Repo](https://github.com/Siemens-Healthineers/ETWAnalyzer/tree/main/ETWAnalyzer/Documentation)
 
 ## Dump Commands
 - [CPU](ETWAnalyzer/Documentation/DumpCPUCommand.md) 
@@ -39,6 +39,7 @@ See [Documentation Folder in Repo](https://github.com/Siemens-Healthineers/ETWAn
 - [LBR](ETWAnalyzer/Documentation/DumpLBRCommand.md)
 - [Mark](ETWAnalyzer/Documentation/DumpMarkCommand.md)
 - [Memory](ETWAnalyzer/Documentation/DumpMemoryCommand.md) 
+- [ObjectRef](ETWAnalyzer/Documentation/DumpObjectRefCommand.md) 
 - [PMC](ETWAnalyzer/Documentation/DumpPMCCommand.md)
 - [Power](ETWAnalyzer/Documentation/DumpPower.md)
 - [Process](ETWAnalyzer/Documentation/DumpProcessCommand.md)  

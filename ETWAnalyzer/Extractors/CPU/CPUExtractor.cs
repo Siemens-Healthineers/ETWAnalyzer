@@ -412,7 +412,7 @@ namespace ETWAnalyzer.Extractors.CPU
                 }
 
                 string method = printer.GetPrettyMethod(frame.Symbol?.FunctionName, frame);
-                string methodWithRva = AddRva(method, frame.RelativeVirtualAddress);
+                string methodWithRva = StackPrinter.AddRva(method, frame.RelativeVirtualAddress);
 
                 if (recursionCountGuard.Add(methodWithRva) == false)
                 {
@@ -502,7 +502,7 @@ namespace ETWAnalyzer.Extractors.CPU
                 }
                 
                 string method = printer.GetPrettyMethod(frame.Symbol?.FunctionName, frame);
-                string rvaMethod = AddRva(method, frame.RelativeVirtualAddress);
+                string rvaMethod = StackPrinter.AddRva(method, frame.RelativeVirtualAddress);
 
                 if (recursionCountGuard.Add(rvaMethod) == false)
                 {
@@ -537,29 +537,6 @@ namespace ETWAnalyzer.Extractors.CPU
                     UpdateMethodTimingAndThreadId(stats, time, sample.Thread.Id);
                 }
             }
-        }
-
-
-
-        /// <summary>
-        /// Add to method name if it was not resolved the RVA address. This is needed to later resolve the method
-        /// name when matching symbols could be loaded.
-        /// </summary>
-        /// <param name="method">Method of the form xxxx.dll!method where method is xxx.dll if the symbol lookup did fail.</param>
-        /// <param name="rva">Image Relative Virtual Address</param>
-        /// <returns>For unresolved methods the image + Image Relative Virtual Address.</returns>
-        string AddRva(string method, Address rva)
-        {
-            string lret = method;
-
-            // do not try to resolve invalid RVAs (like 0)
-            if(rva.Value > 0 && ( method.EndsWith(".exe", StringComparison.Ordinal) || method.EndsWith(".dll", StringComparison.Ordinal) || method.EndsWith(".sys", StringComparison.Ordinal) ) ) 
-            {
-                // Method could not be resolved. Use RVA
-                lret = method + "+0x" + rva.Value.ToString("X", CultureInfo.InvariantCulture);
-            }
-
-            return lret;
         }
 
         private static void UpdateMethodTimingAndThreadId(CPUMethodData stats, decimal time, int threadId)

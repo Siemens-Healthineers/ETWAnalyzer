@@ -3,9 +3,11 @@
 
 
 using ETWAnalyzer.Extract;
+using ETWAnalyzer.Extract.Common;
 using ETWAnalyzer.Extract.CPU;
 using ETWAnalyzer.Extract.CPU.Extended;
 using ETWAnalyzer.Extract.FileIO;
+using ETWAnalyzer.Extract.Handle;
 using ETWAnalyzer.Extract.Modules;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
@@ -37,6 +39,17 @@ namespace ETWAnalyzer.Extractors
         public const string ExtendedCPUPostFix = "CPUExtended";
 
         /// <summary>
+        /// ObjectRef tracing data is stored in external file with this postfix.
+        /// </summary>
+        public const string HandlePostFix = "Handle";
+
+
+        /// <summary>
+        /// Stacks for ObjectRef tracing are stored in external file with this postfix.
+        /// </summary>
+        public const string HandleStackPostFix = "HandleStacks";
+
+        /// <summary>
         /// Shared Json Serializer
         /// </summary>
         static volatile JsonSerializer mySerializer;
@@ -66,6 +79,16 @@ namespace ETWAnalyzer.Extractors
         }
 
 
+        /// <summary>
+        /// Open file read only.
+        /// </summary>
+        /// <param name="filename"></param>
+        /// <returns></returns>
+        static internal FileStream OpenFileReadOnly(string filename)
+        {
+            return new FileStream(filename, FileMode.Open, FileAccess.Read, FileShare.Read);
+        }
+
         internal Stream GetOutputStreamFor(string outputFile, string type, List<string> files)
         {
             string newFileName = GetFileNameFor(outputFile, type);
@@ -76,7 +99,7 @@ namespace ETWAnalyzer.Extractors
 
         static internal string[] GetDerivedFileNameParts()
         {
-            string[] all = new string[] { FileIOPostFix, ModulesPostFix, ExtendedCPUPostFix };
+            string[] all = new string[] { FileIOPostFix, ModulesPostFix, ExtendedCPUPostFix, HandlePostFix, HandleStackPostFix };
             return all.Select(x => "_Derived_" + x).ToArray();
         }
 
@@ -121,6 +144,19 @@ namespace ETWAnalyzer.Extractors
                 {
                     // remove remanents from json which will never be read anyway because the explicit interface will read another file
                     extract.CPU.ExtendedCPUMetrics = null; 
+                }
+
+                if( extract?.HandleData != null && extract.HandleData.ObjectReferences.Count > 0 )
+                {
+                    StackCollection stacks = extract.HandleData.Stacks;
+                    extract.HandleData.Stacks = null;
+
+                    using var handleStream = GetOutputStreamFor(outputFile, HandlePostFix, outputFiles);
+                    Serialize<HandleObjectData>(handleStream, extract.HandleData);
+                    extract.HandleData = null;
+
+                    using var handleStackStream = GetOutputStreamFor(outputFile, HandleStackPostFix, outputFiles);
+                    Serialize<StackCollection>(handleStackStream, stacks);
                 }
 
                 // After all externalized data was removed serialize data to main extract file.
@@ -190,7 +226,7 @@ namespace ETWAnalyzer.Extractors
         {
             try
             {
-                using var fileStream = ETWExtract.OpenFileReadOnly(inFile);
+                using var fileStream = ExtractSerializer.OpenFileReadOnly(inFile);
                 ETWExtract extract =  Deserialize<ETWExtract>(fileStream);
                 extract.DeserializedFileName = inFile;
                 return extract;

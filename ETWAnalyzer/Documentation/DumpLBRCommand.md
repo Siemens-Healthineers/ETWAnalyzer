@@ -21,7 +21,9 @@ The following branch filter options are present in the WPR schema:
 | FarBranches            | jmp rip+64BitAddress    |
 | Kernel                 |  Ring 0 code            |
 | User                   |   > Ring 0              |
-| StackMode              | Not documented          |
+| StackMode              | Log every [call/return](https://lwn.net/Articles/680996/) into LBR ring buffer. This is a fast stack walk with 32 stack frames since Sylake CPUs.|
+
+> Note: VMWare does not support LBR tracing. [HyperV](https://learn.microsoft.com/en-us/windows-server/virtualization/hyper-v/manage/performance-monitoring-hardware) can enable it.
 
 ETWAnalyzer assumes that you filter away all branching types except NearReturns which are the return instructions.
 We use this data to estimate how often a method has returned to another method which is the data ETWAnalyzer keeps track of
