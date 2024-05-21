@@ -362,7 +362,7 @@ namespace ETWAnalyzer.EventDump
 
                         if (CreateStackFilter.Key != null)
                         {
-                            if (handle.CreateEvent == null || !CreateStackFilter.Value(stacks?.GetStack(handle.CreateEvent.StackIdx)))
+                            if (handle.FirstCreateEvent == null || !CreateStackFilter.Value(stacks?.GetStack(handle.FirstCreateEvent.StackIdx)))
                             {
                                 continue;
                             }
@@ -370,7 +370,7 @@ namespace ETWAnalyzer.EventDump
 
                         if (DestroyStackFilter.Key != null)
                         {
-                            if(handle.DestroyEvent == null || !DestroyStackFilter.Value(stacks?.GetStack(handle.DestroyEvent.StackIdx)))
+                            if(handle.LastDestroyEvent == null || !DestroyStackFilter.Value(stacks?.GetStack(handle.LastDestroyEvent.StackIdx)))
                             {
                                 continue;
                             }
@@ -436,9 +436,9 @@ namespace ETWAnalyzer.EventDump
         {
             bool lret = false;
             ETWProcessIndex creator = ETWProcessIndex.Invalid;
-            if (trace.CreateEvent != null)
+            if (trace.FirstCreateEvent != null)
             {
-                creator = trace.CreateEvent.ProcessIdx;
+                creator = trace.FirstCreateEvent.ProcessIdx;
                 lret = ProcessNameFilter(GetProcessWithId(creator, resolver));
             }
             return lret;

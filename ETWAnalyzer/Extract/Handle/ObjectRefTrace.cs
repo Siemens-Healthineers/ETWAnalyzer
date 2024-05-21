@@ -2,6 +2,7 @@
 //// SPDX-License-Identifier:   MIT
 
 using ETWAnalyzer.Extract.Common;
+using Microsoft.Diagnostics.Tracing.Parsers;
 using Microsoft.Windows.EventTracing;
 using Newtonsoft.Json;
 using System;
@@ -26,10 +27,87 @@ namespace ETWAnalyzer.Extract.Handle
         /// </summary>
         public RefCountChangeEvent CreateEvent { get; set; }
 
+        IRefCountChangeEvent IObjectRefTrace.FirstCreateEvent => FirstCreateEvent;
+
+
+        /// <summary>
+        /// Returns CreateEvent or, if no Create Event is existing, the first Handle Create or file map event
+        /// </summary>
+
+        [JsonIgnore]
+        public RefCountChangeEvent FirstCreateEvent
+        {
+            get
+            {
+                RefCountChangeEvent first = CreateEvent;
+                if (first == null)
+                {
+                    if (IsFileMap && FileMapEvents.Count > 0)
+                    {
+                        var firstMap = FileMapEvents.OrderBy(x => x.TimeNs).First();
+                        first = new RefCountChangeEvent(default(TraceTimestamp), 1, firstMap.ProcessIdx, firstMap.ThreadId, firstMap.StackIdx)
+                        {
+                            TimeNs = firstMap.TimeNs 
+                        };
+                    }
+                    else if (HandleCreateEvents.Count > 0)
+                    {
+                        var firstHandleCreate = HandleCreateEvents.OrderBy(x => x.TimeNs).First();
+                        first = new RefCountChangeEvent(default(TraceTimestamp), 1, firstHandleCreate.ProcessIdx, firstHandleCreate.ThreadId, firstHandleCreate.StackIdx)
+                        { 
+                            TimeNs = firstHandleCreate.TimeNs 
+                        };
+                    }
+
+                    CreateEvent = first;    // cache it for later use
+                }
+
+                return first;
+            }
+        }
+
         /// <summary>
         /// Object deletion event which originates from object ref DestroyObject or Handle close events
         /// </summary>
         public RefCountChangeEvent DestroyEvent { get; set; }
+
+        IRefCountChangeEvent IObjectRefTrace.LastDestroyEvent => LastDestroyEvent;
+
+        /// <summary>
+        /// Object destroy event from Object Reference Tracing, otherwise the last handle close or file unmap event is returned.
+        /// </summary>
+
+        [JsonIgnore]
+
+        public RefCountChangeEvent LastDestroyEvent
+        {
+            get
+            {
+                RefCountChangeEvent last = DestroyEvent;
+                if (last == null)
+                {
+                    if (IsFileMap && FileUnmapEvents.Count > 0)
+                    {
+                        var lastUnmap = FileUnmapEvents.OrderBy(x => x.TimeNs).Last();
+                        last = new RefCountChangeEvent(default(TraceTimestamp), -1, lastUnmap.ProcessIdx, lastUnmap.ThreadId, lastUnmap.StackIdx)
+                        { 
+                            TimeNs = lastUnmap.TimeNs 
+                        };   
+                    } else if( HandleCloseEvents.Count > 0 && ( HandleCreateEvents.Count - (HandleCloseEvents.Count+HandleDuplicateEvents.Count) == 0  ))
+                    {
+                        var lastClose = HandleCloseEvents.Last();
+                        last = new RefCountChangeEvent(default(TraceTimestamp), -1, lastClose.ProcessIdx, lastClose.ThreadId, lastClose.StackIdx)
+                        {
+                            TimeNs = lastClose.TimeNs,
+                        };
+                    }
+
+                    DestroyEvent = last;    
+                }
+
+                return last;
+            }
+        }
 
         /// <summary>
         /// Handle Name
@@ -77,7 +155,7 @@ namespace ETWAnalyzer.Extract.Handle
         {
             get
             {
-                return CreateEvent == null ? LeakTime : ((DestroyEvent == null) ? LeakTime : TimeSpan.FromTicks((DestroyEvent.TimeNs - CreateEvent.TimeNs) / 100));
+                return FirstCreateEvent == null ? LeakTime : ((LastDestroyEvent == null) ? LeakTime : TimeSpan.FromTicks((LastDestroyEvent.TimeNs - FirstCreateEvent.TimeNs) / 100));
             }
         }
 
@@ -282,6 +360,7 @@ namespace ETWAnalyzer.Extract.Handle
             }
         }
 
+
         /// <summary>
         /// When the same object is referenced multiple times by e.g. subsequent Create or DuplicateHandle events we know that
         /// two different handles can have an effect to the same object. 
@@ -414,11 +493,6 @@ namespace ETWAnalyzer.Extract.Handle
         {
             var created = new HandleCreateEvent(time, handleValue, processIdx, threadId, stackIdx);
             HandleCreateEvents.Add(created);
-
-            if (CreateEvent == null)
-            {
-                CreateEvent = new RefCountChangeEvent(time, 1, processIdx, threadId, stackIdx);
-            }
         }
 
         internal void AddHandleDuplicate(TraceTimestamp time, uint sourceHandle, uint targetHandle, ETWProcessIndex processIdx, ETWProcessIndex sourceProcessIndex, int threadId, StackIdx stackIndex)
@@ -443,10 +517,6 @@ namespace ETWAnalyzer.Extract.Handle
 
             if (HandleCreateEvents.Count + HandleDuplicateEvents.Count == HandleCloseEvents.Count)
             {
-                if (DestroyEvent == null)
-                {
-                    DestroyEvent = new RefCountChangeEvent(time, -1, processIdx, threadId, stackIdx);
-                }
                 // final release
                 return true;
             }
@@ -467,14 +537,6 @@ namespace ETWAnalyzer.Extract.Handle
                 ThreadId = threadId,
                 StackIdx = stackIdx,
             });
-
-            CreateEvent = new RefCountChangeEvent()
-            {
-                TimeNs = time.Nanoseconds,
-                ProcessIdx = processIdx,
-                ThreadId = threadId,
-                StackIdx = stackIdx,
-            };
         }
 
         internal void AddFileUnMap(TraceTimestamp time, long viewBase, long viewSize, long fileObject, long byteOffset, ETWProcessIndex processIdx, int threadId, StackIdx stackIdx)
@@ -490,14 +552,6 @@ namespace ETWAnalyzer.Extract.Handle
                 ThreadId = threadId,
                 StackIdx = stackIdx,
             });
-
-            DestroyEvent = new RefCountChangeEvent()
-            {
-                TimeNs = time.Nanoseconds,
-                ProcessIdx = processIdx,
-                ThreadId = threadId,
-                StackIdx = stackIdx,
-            };
         }
 
     }

@@ -28,8 +28,10 @@ namespace ETWAnalyzer.Commands
     /// </summary>
     class DumpCommand : ArgParser
     {
-        private static readonly string DumpHelpStringPrefix =
-        "ETWAnalyzer -Dump [CPU,Disk,Dns,Exception,File,LBR,Mark,Memory,ObjectRef,PMC,Power,Process,,Stats,TestRun,ThreadPool,Version] [-nocolor]" + Environment.NewLine;
+        internal const string AllDumpCommands = "[CPU,Disk,Dns,Exception,File,LBR,Mark,Memory,ObjectRef,PMC,Power,Process,Stats,TestRun,ThreadPool,Version]";
+
+        static readonly string DumpHelpStringPrefix =
+        "ETWAnalyzer -Dump "+ AllDumpCommands + " [-nocolor]" + Environment.NewLine;
 
         static readonly string StatsHelpString =
         "   Stats    -filedir/fd x.etl/.json   [-Properties xxxx] [-recursive] [-csv xxx.csv] [-NoCSVSeparator] [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd] [-MinMaxMsTestTimes xx-yy ...] [-Clip]" + Environment.NewLine + "" +
@@ -804,7 +806,7 @@ namespace ETWAnalyzer.Commands
         /// <summary>
         /// Show full input file name. By default file name is printed without path and extension
         /// </summary>
-        public bool ShowFullFileName { get; private set; }
+        public bool ShowFullFileName { get; internal set; }
 
 
         /// <summary>
@@ -1015,6 +1017,11 @@ namespace ETWAnalyzer.Commands
 
         public bool OnlyClientRetransmit { get; private set; }
 
+        /// <summary>
+        /// Do not load data again if in console mode
+        /// </summary>
+        public Lazy<SingleTest>[] PreloadedData { get; private set; }
+
 
         /// <summary>
         /// Ctor
@@ -1022,6 +1029,17 @@ namespace ETWAnalyzer.Commands
         /// <param name="args"></param>
         public DumpCommand(string[] args) : base(args)
         {
+        }
+
+
+        /// <summary>
+        /// /
+        /// </summary>
+        /// <param name="args"></param>
+        /// <param name="preloadedData"></param>
+        public DumpCommand(string[] args, Lazy<SingleTest>[] preloadedData):this(args)
+        {
+            PreloadedData = preloadedData;
         }
 
         /// <summary>
@@ -2430,6 +2448,11 @@ namespace ETWAnalyzer.Commands
                         break;
                     default:
                         throw new NotSupportedException($"The dump command {myCommand} is not implemented.");
+                }
+
+                if( PreloadedData != null)
+                {
+                    myCurrentDumper.myPreloadedTests = PreloadedData; 
                 }
 
                 myCurrentDumper.Execute();

@@ -35,14 +35,25 @@ namespace ETWAnalyzer.Extract.Handle
         public string GetObjectType(IETWExtract extract);
 
         /// <summary>
-        /// First create event 
+        /// Object create event from Object Reference Tracing, otherwise the first Handle Create/File Map event can be used <see cref="FirstCreateEvent"/>
         /// </summary>
         IRefCountChangeEvent CreateEvent { get; }
+
+        /// <summary>
+        /// Returns CreateEvent or, if no Create Event is existing, the first Handle Create or file map event
+        /// </summary>
+        IRefCountChangeEvent FirstCreateEvent { get; }
 
         /// <summary>
         /// Last close event when the object is actually deleted.
         /// </summary>
         IRefCountChangeEvent DestroyEvent { get; }
+
+        /// <summary>
+        /// Object destroy event from Object Reference Tracing, otherwise the last handle close or file unmap event is returned.
+        /// </summary>
+        IRefCountChangeEvent LastDestroyEvent { get; }
+        
 
         /// <summary>
         /// Object lifetime

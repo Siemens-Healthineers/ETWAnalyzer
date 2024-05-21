@@ -474,7 +474,6 @@ namespace ETWAnalyzer.Extractors.Handle
                             {
                                 ObjectPtr = createHandle.ObjectPtr,
                                 ObjectType = createHandle.ObjectType,
-                                CreateEvent = new RefCountChangeEvent(createHandle.TimeStamp, 1, processIdx, createHandle.ThreadId, stackIndex),
                             };
                             trace.AddHandlCreate(createHandle.TimeStamp, createHandle.HandleValue, processIdx, createHandle.ThreadId, stackIndex);
                             OpenHandles.Add(trace.ObjectPtr, trace);
@@ -493,7 +492,6 @@ namespace ETWAnalyzer.Extractors.Handle
                             {
                                 ObjectPtr = duplicateObjectEvent.ObjectPtr,
                                 ObjectType = duplicateObjectEvent.ObjectType,
-                                CreateEvent = new RefCountChangeEvent(duplicateObjectEvent.TimeStamp, 1, processIdx, duplicateObjectEvent.ThreadId, stackIndex),
                             };
                             OpenHandles.Add(hTrace.ObjectPtr, hTrace);
                         }

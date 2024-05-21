@@ -155,14 +155,23 @@ namespace ETWAnalyzer.Extract
             return $"{Name} {PerformedAt} {DurationInMs}ms Files: {Files?.Count}";
         }
 
+
+        /// <summary>
+        /// Do not throw away deserialized data
+        /// </summary>
+        internal bool KeepExtract { get; set; }
+
         /// <summary>
         /// Release Extracted data from memory to
         /// </summary>
         public void Dispose()
         {
-            foreach(var file in Files)
+            if( !KeepExtract)
             {
-                file.Extract = null;
+                foreach (var file in Files)
+                {
+                    file.Extract = null;
+                }
             }
         }
     }
