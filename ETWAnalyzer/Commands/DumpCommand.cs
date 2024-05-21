@@ -806,7 +806,7 @@ namespace ETWAnalyzer.Commands
         /// <summary>
         /// Show full input file name. By default file name is printed without path and extension
         /// </summary>
-        public bool ShowFullFileName { get; private set; }
+        public bool ShowFullFileName { get; internal set; }
 
 
         /// <summary>

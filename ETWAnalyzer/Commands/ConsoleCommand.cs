@@ -3,8 +3,10 @@
 
 using ETWAnalyzer.Extract;
 using ETWAnalyzer.ProcessTools;
+using Microsoft.Diagnostics.Tracing.Parsers.Kernel;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 
@@ -24,7 +26,8 @@ namespace ETWAnalyzer.Commands
                 ".load file1.json file2.json ...    Load one or more data files. Use . to load all files in current directory." + Environment.NewLine +
                 ".list                              List loaded files" + Environment.NewLine +
                 ".quit or .q                        Quit ETWAnalyzer" + Environment.NewLine +
-                ".unload                            Unload all files." + Environment.NewLine +
+                ".unload                            Unload all files if no parameter is passed. Otherwise only the passed files are unloaded from the file list." + Environment.NewLine +
+                ".sffn                              Enable/disable -ShowFullFileName to display full path of output files." + Environment.NewLine +
                 "Pressing Ctrl-C will cancel current command, Ctrl-Break will terminate";
 
             public override void Parse()
@@ -67,16 +70,22 @@ namespace ETWAnalyzer.Commands
                     continue;
                 }
 
-                RunCommand(parts);
+                if( RunCommand(parts) == true)
+                {
+                    break;
+                }
             }
         }
+
+        bool ShowFullFileNameFlag { get; set; }
 
         /// <summary>
         /// Command syntax is first string is command name and all following arguments are arguments for that command like in the command line
         /// </summary>
         /// <param name="parts"></param>
-        void RunCommand(string[] parts)
+        bool RunCommand(string[] parts)
         {
+            bool bCancel = false;
             string cmd = parts[0].ToLowerInvariant();
             string[] args = parts.Skip(1).ToArray();
             ICommand command = cmd switch
@@ -84,7 +93,11 @@ namespace ETWAnalyzer.Commands
                 ".load" => Load(args),
                 ".unload" => Unload(args),
                 ".list" => ListFiles(args),
-                ".dump" => new DumpCommand(args, myInputFiles),
+                ".dump" => new DumpCommand(args, myInputFiles)
+                {
+                    ShowFullFileName = ShowFullFileNameFlag,
+                },
+                ".sffn" => ShowFullFileName(args),
                 ".quit" => new QuitCommand(args),
                 ".q" => new QuitCommand(args),
                 "q" => new QuitCommand(args),
@@ -103,6 +116,10 @@ namespace ETWAnalyzer.Commands
                     command.Parse();
                     command.Run();
                 }
+                catch(OperationCanceledException)
+                {
+                    bCancel = true; 
+                }
                 catch(OutputCanceledException)
                 {
                     ColorConsole.WriteLine("Command was canceled.");
@@ -117,9 +134,17 @@ namespace ETWAnalyzer.Commands
                     ColorConsole.WriteLine(eMsg);
                 }
             }
+
+            return bCancel;
         }
 
 
+        ICommand ShowFullFileName(string[] args)
+        {
+            ICommand lret = null;
+            ShowFullFileNameFlag = !ShowFullFileNameFlag;
+            return lret;
+        }
 
         /// <summary>
         /// 
@@ -196,12 +221,47 @@ namespace ETWAnalyzer.Commands
         /// <summary>
         /// Unload all loaded files
         /// </summary>
-        /// <param name="args">Command arguments which are currently ignored.</param>
+        /// <param name="filesToUnload">files to unload or if empty all files are unloaded.</param>
         /// <returns>null because it is not a real command</returns>
-        ICommand Unload(string[] args)
+        ICommand Unload(string[] filesToUnload)
         {
             ICommand cmd = null;
-            myInputFiles = [];
+            if (filesToUnload.Length == 0)
+            {
+                myInputFiles = [];
+            }
+            else
+            {
+                List<string> toUnload = new();
+                foreach (var arg in filesToUnload)
+                {
+                    if( !String.IsNullOrEmpty(arg) )
+                    {
+                        toUnload.Add(arg);
+                    }
+                }
+
+                if( myInputFiles != null )
+                {
+                    myInputFiles = myInputFiles.Select(x =>
+                    {
+                        // remove files to be unloaded and switch over to Json files 
+                        var inputFiles = x.Value.Files.Where(f => !toUnload.Contains(f.FileName) && f.JsonExtractFileWhenPresent != null).ToArray();
+                        // only consider existing json files
+                        var filteredJsonFiles = inputFiles.Select(x => new TestDataFile(x.JsonExtractFileWhenPresent)).ToArray();
+                        return filteredJsonFiles.Length > 0 ? new Lazy<SingleTest>( () =>
+                        {
+                            var test = new SingleTest(filteredJsonFiles)
+                            {
+                                KeepExtract = true // do not unload
+                            };
+                            return test;
+                        }) : null;
+                    }).Where(x => x != null).ToArray();
+                }
+
+            }
+            
             return cmd;
         }
 
@@ -341,12 +401,12 @@ namespace ETWAnalyzer.Commands
 
             public override void Parse()
             {
-                throw new NotImplementedException();
+                throw new OperationCanceledException();
             }
 
             public override void Run()
             {
-                throw new NotImplementedException();
+                throw new OperationCanceledException();
             }
 
             public QuitCommand(string[] args) : base(args) { }

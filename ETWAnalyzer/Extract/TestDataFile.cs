@@ -275,7 +275,7 @@ namespace ETWAnalyzer.Extract
                 }
                 string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(FileName);
                 OutDir directory = ParentTest?.Parent?.Parent?.OutputDirectory;
-                string dir = directory?.TempDirectory ?? directory.OutputDirectory;
+                string dir = directory?.TempDirectory ?? directory?.OutputDirectory;
                 if( dir == null)
                 {
                     return null;
