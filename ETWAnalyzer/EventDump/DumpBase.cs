@@ -107,6 +107,10 @@ namespace ETWAnalyzer.EventDump
         /// </summary>
         protected const int DateTimeColWidth = 23;
 
+        /// <summary>
+        /// Used by interactive mode to preload data and unit tests
+        /// </summary>
+        internal Lazy<SingleTest>[] myPreloadedTests = null;
 
         public abstract void Execute();
 

@@ -93,10 +93,7 @@ namespace ETWAnalyzer.EventDump
         /// </summary>
         Tuple<ZeroTimeModes, WeakReference, Func<string, bool>, string, double> myLastZeroTime;
 
-        /// <summary>
-        /// Used for unit testing
-        /// </summary>
-        internal Lazy<SingleTest>[] myPreloadedTests = null;
+
 
 
         /// <summary>
