@@ -29,13 +29,26 @@ namespace ETWAnalyzer.Extractors.Handle
     }
 
     // Object="0xFFFF810C862E09A0" Handle="0xFFFFFFFF80000044" ObjectType="19" ObjectName="\KernelObjects\HighMemoryCondition"/>
+    //  EventName="Object/TypeDCEnd" ObjectType="6" ObjectTypeName="Job"/>
+    /* https://learn.microsoft.com/en-us/windows/win32/etw/obhandlerundownevent
+        [Dynamic, EventType{38,39}, EventTypeName{HandleDCStart,HandleDCEnd}]
+        class ObHandleRundownEvent : ObTrace
+        {
+          uint32 Handle;
+          uint32 Object;
+          string ObjectName;
+          uint16 ObjectType;
+          uint32 ProcessId;
+        };
+     */
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     struct HandleDCEndETW
     {
         public long ObjectPtr;
+        public UInt32 ProcessId;
         public UInt32 Handle;
         public UInt16 ObjectType;
-        public UInt16 Reserved;
+        //  string ObjectName;
     }
 
     //  EventName="Object/TypeDCEnd" ObjectType="6" ObjectTypeName="Job"/>

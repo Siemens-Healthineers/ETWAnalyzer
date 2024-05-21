@@ -261,8 +261,17 @@ namespace ETWAnalyzer.Extractors.Handle
                     });
                     break;
                 case HandleDCEnd:
-                    HandleDCEndETW handleDCEnd;
-                    handleDCEnd = MemoryMarshal.Read<HandleDCEndETW>(classicEvent.Data);
+                    HandleDCEndETW handleDCEnd = MemoryMarshal.Read<HandleDCEndETW>(classicEvent.Data);
+                    var remainingDCEnd = classicEvent.Data.Slice(Marshal.SizeOf<HandleDCEndETW>());
+                    string handleName = null;
+                    if(remainingDCEnd.Length > 0)
+                    {
+                        remainingDCEnd = ReadNullTerminatedString(remainingDCEnd, out handleName);
+                        if(remainingDCEnd.Length > 0)
+                        {
+                            throw new InvalidTraceDataException($"Invalid HandleDCEndETW event. Found additional {remainingDCEnd.Length} bytes in event.");
+                        }
+                    }
 
                     break;
                 case TypeDCEnd:
@@ -372,7 +381,7 @@ namespace ETWAnalyzer.Extractors.Handle
         {
             str = null;
             int idx = buffer.IndexOf(Null);
-            if( idx != -1 && idx % 2  != 0 && idx+1 < buffer.Length)
+            if ( idx != -1 && idx % 2  != 0 && idx+1 < buffer.Length)
             {
                 idx++; // index did match zero from UTF-16 char like 65 00 00 00 
             }
