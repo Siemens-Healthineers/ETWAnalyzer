@@ -55,7 +55,6 @@ namespace ETWAnalyzer.EventDump
             List<MatchData> lret = new();
             myCurrentFile = file.FileName;
             lret = GetAndPrintVersions(file.Extract, file);
-            file.Extract = null;
             if( IsCSVEnabled)
             {
                 if( myNeedToWriteHeader )
