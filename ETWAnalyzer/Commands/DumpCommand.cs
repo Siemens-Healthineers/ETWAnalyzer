@@ -1022,6 +1022,11 @@ namespace ETWAnalyzer.Commands
         /// </summary>
         public Lazy<SingleTest>[] PreloadedData { get; private set; }
 
+        /// <summary>
+        /// Current command arguments passed by console or command start 
+        /// </summary>
+        string myConsoleCommandArgs = Environment.CommandLine;
+
 
         /// <summary>
         /// Ctor
@@ -1031,15 +1036,16 @@ namespace ETWAnalyzer.Commands
         {
         }
 
-
         /// <summary>
-        /// /
+        /// 
         /// </summary>
         /// <param name="args"></param>
         /// <param name="preloadedData"></param>
-        public DumpCommand(string[] args, Lazy<SingleTest>[] preloadedData):this(args)
+        public DumpCommand(string[] args, Lazy<SingleTest>[] preloadedData) : this(args)
         {
             PreloadedData = preloadedData;
+            myConsoleCommandArgs = String.Join(" ", args);
+            myConsoleCommandArgs = ".dump " + myConsoleCommandArgs;
         }
 
         /// <summary>
@@ -1857,6 +1863,7 @@ namespace ETWAnalyzer.Commands
                     case DumpCommands.Stats:
                         myCurrentDumper = new DumpStats()
                         {
+                            CommandArguments = myConsoleCommandArgs,
                             ETLFile = decompressedETL,
                             FileOrDirectoryQueries = FileOrDirectoryQueries,
                             ShowFullFileName = ShowFullFileName,
@@ -1879,6 +1886,7 @@ namespace ETWAnalyzer.Commands
                         ThrowIfFileOrDirectoryIsInvalid(FileOrDirectoryQueries);
                         myCurrentDumper = new DumpModuleVersions()
                         {
+                            CommandArguments = myConsoleCommandArgs,
                             FileOrDirectoryQueries = FileOrDirectoryQueries,
                             ShowFullFileName = ShowFullFileName,
                             Recursive = mySearchOption,
@@ -1908,6 +1916,7 @@ namespace ETWAnalyzer.Commands
 
                         myCurrentDumper = new DumpProcesses
                         {
+                            CommandArguments = myConsoleCommandArgs,
                             FileOrDirectoryQueries = FileOrDirectoryQueries,
                             ShowFullFileName = ShowFullFileName,
                             Recursive = mySearchOption,
@@ -1949,6 +1958,7 @@ namespace ETWAnalyzer.Commands
                         ThrowIfFileOrDirectoryIsInvalid(FileOrDirectoryQueries);
                         myCurrentDumper = new DumpCPUMethod
                         {
+                            CommandArguments = myConsoleCommandArgs,
                             FileOrDirectoryQueries = FileOrDirectoryQueries,
                             ShowFullFileName = ShowFullFileName,
                             Recursive = mySearchOption,
@@ -2007,6 +2017,7 @@ namespace ETWAnalyzer.Commands
                         ThrowIfFileOrDirectoryIsInvalid(FileOrDirectoryQueries);
                         myCurrentDumper = new DumpDisk
                         {
+                            CommandArguments = myConsoleCommandArgs,
                             FileOrDirectoryQueries = FileOrDirectoryQueries,
                             ShowFullFileName = ShowFullFileName,
                             Recursive = mySearchOption,
@@ -2045,6 +2056,7 @@ namespace ETWAnalyzer.Commands
                         ThrowIfFileOrDirectoryIsInvalid(FileOrDirectoryQueries);
                         myCurrentDumper = new DumpFile
                         {
+                            CommandArguments = myConsoleCommandArgs,
                             FileOrDirectoryQueries = FileOrDirectoryQueries,
                             ShowFullFileName = ShowFullFileName,
                             Recursive = mySearchOption,
@@ -2092,6 +2104,7 @@ namespace ETWAnalyzer.Commands
                         ThrowIfFileOrDirectoryIsInvalid(FileOrDirectoryQueries);
                         myCurrentDumper = new DumpPower
                         {
+                            CommandArguments = myConsoleCommandArgs,
                             FileOrDirectoryQueries = FileOrDirectoryQueries,
                             ShowFullFileName = ShowFullFileName,
                             Recursive = mySearchOption,
@@ -2113,6 +2126,7 @@ namespace ETWAnalyzer.Commands
                         ThrowIfFileOrDirectoryIsInvalid(FileOrDirectoryQueries);
                         myCurrentDumper = new DumpExceptions
                         {
+                            CommandArguments = myConsoleCommandArgs,
                             FileOrDirectoryQueries = FileOrDirectoryQueries,
                             ShowFullFileName = ShowFullFileName,
                             Recursive = mySearchOption,
@@ -2155,6 +2169,7 @@ namespace ETWAnalyzer.Commands
                         ThrowIfFileOrDirectoryIsInvalid(FileOrDirectoryQueries);
                         myCurrentDumper = new DumpMemory
                         {
+                            CommandArguments = myConsoleCommandArgs,
                             FileOrDirectoryQueries = FileOrDirectoryQueries,
                             ShowFullFileName = ShowFullFileName,
                             Recursive = mySearchOption,
@@ -2195,6 +2210,7 @@ namespace ETWAnalyzer.Commands
                         ThrowIfFileOrDirectoryIsInvalid(FileOrDirectoryQueries);
                         myCurrentDumper = new DumpThreadPool
                         {
+                            CommandArguments = myConsoleCommandArgs,
                             FileOrDirectoryQueries = FileOrDirectoryQueries,
                             ShowFullFileName = ShowFullFileName,
                             Recursive = mySearchOption,
@@ -2220,6 +2236,7 @@ namespace ETWAnalyzer.Commands
                         ThrowIfFileOrDirectoryIsInvalid(FileOrDirectoryQueries);
                         myCurrentDumper = new DumpMarks
                         {
+                            CommandArguments = myConsoleCommandArgs,
                             FileOrDirectoryQueries = FileOrDirectoryQueries,
                             ShowFullFileName = ShowFullFileName,
                             Recursive = mySearchOption,
@@ -2270,6 +2287,7 @@ namespace ETWAnalyzer.Commands
                         ThrowIfFileOrDirectoryIsInvalid(FileOrDirectoryQueries);
                         myCurrentDumper = new DumpPMC
                         {
+                            CommandArguments = myConsoleCommandArgs,
                             FileOrDirectoryQueries = FileOrDirectoryQueries,
                             ShowFullFileName = ShowFullFileName,
                             Recursive = mySearchOption,
@@ -2294,6 +2312,7 @@ namespace ETWAnalyzer.Commands
                         ThrowIfFileOrDirectoryIsInvalid(FileOrDirectoryQueries);
                         myCurrentDumper = new DumpLBR
                         {
+                            CommandArguments = myConsoleCommandArgs,
                             FileOrDirectoryQueries = FileOrDirectoryQueries,
                             ShowFullFileName = ShowFullFileName,
                             Recursive = mySearchOption,
@@ -2324,6 +2343,7 @@ namespace ETWAnalyzer.Commands
                         ThrowIfFileOrDirectoryIsInvalid(FileOrDirectoryQueries);
                         myCurrentDumper = new DumpDns
                         {
+                            CommandArguments = myConsoleCommandArgs,
                             FileOrDirectoryQueries = FileOrDirectoryQueries,
                             ShowFullFileName = ShowFullFileName,
                             Recursive = mySearchOption,
@@ -2357,6 +2377,7 @@ namespace ETWAnalyzer.Commands
                     case DumpCommands.TCP:
                         myCurrentDumper = new DumpTcp
                         {
+                            CommandArguments = myConsoleCommandArgs,
                             FileOrDirectoryQueries = FileOrDirectoryQueries,
                             ShowFullFileName = ShowFullFileName,
                             Recursive = mySearchOption,
@@ -2400,6 +2421,7 @@ namespace ETWAnalyzer.Commands
                     case DumpCommands.ObjectRef:
                         myCurrentDumper = new DumpObjectRef
                         {
+                            CommandArguments = myConsoleCommandArgs,
                             FileOrDirectoryQueries = FileOrDirectoryQueries,
                             ShowFullFileName = ShowFullFileName,
                             Recursive = mySearchOption,

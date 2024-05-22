@@ -75,7 +75,10 @@ namespace ETWAnalyzer.EventDump
         
         public ProcessStates? NewProcessFilter { get; internal set; }
 
-        string myCSVOptions = Environment.CommandLine;
+        /// <summary>
+        /// Passed arguments to DumpCommand
+        /// </summary>
+        public string CommandArguments { get; internal set; }
 
         /// <summary>
         /// Used by GetZeroFromMethod to get the full qualified method name excluding dll name
@@ -93,9 +96,6 @@ namespace ETWAnalyzer.EventDump
         /// </summary>
         Tuple<ZeroTimeModes, WeakReference, Func<string, bool>, string, double> myLastZeroTime;
 
-
-
-
         /// <summary>
         /// Return on first read the current extract command line options so it can easily be added to CSV output once
         /// </summary>
@@ -103,8 +103,8 @@ namespace ETWAnalyzer.EventDump
         {
             get
             {
-                string tmp = myCSVOptions;
-                myCSVOptions = null;
+                string tmp = CommandArguments;
+                CommandArguments = null;
                 return tmp;
             }
                 
