@@ -286,10 +286,12 @@ namespace ETWAnalyzer.EventDump
                                        .ToLookup(x => x.Value, x => x.Key);                                                         // group by process
                                                  
 
-            IGrouping<ETWProcess, ModuleDefinition>[] filteredModulesByProcess = data.Modules.Modules
+            IGrouping<ETWProcess, ModuleDefinition>[] filteredModulesByProcess = 
+                                         data.Modules.Modules
                                          .Where(x => DllFilter.Value(x.ModuleName) &&                                             // filter by dll name
                                                      (VersionFilter.Key == null ? true : VersionFilter.Value($"{x.ModulePath} {GetModuleString(x)}")))  // filter for path and module version string
-                                         .SelectMany(m => m.Processes.Where(x => IsMatchingProcessAndCmdLine(x)).Select(p => new KeyValuePair<ModuleDefinition, ETWProcess>(m, p)))   // flatten list of processes where this module was loaded and filter processes
+                                         .SelectMany(m => m.Processes.Where(x => IsMatchingProcessAndCmdLine(x))
+                                                                     .Select(p => new KeyValuePair<ModuleDefinition, ETWProcess>(m, p)))   // flatten list of processes where this module was loaded and filter processes
                                          .ToLookup(x => x.Value, x => x.Key)                                                                   // group by process 
                                          .SortAscendingGetTopNLast(x => x.Key.ProcessName, null, TopN);                                        // sort results to allow -topn  filtering
 
@@ -297,7 +299,7 @@ namespace ETWAnalyzer.EventDump
             {
                 bool bHeaderPrinted = false;
                 int printed = 0;
-                foreach (ModuleDefinition module in processGroup.OrderBy(x => x.ModuleName))
+                foreach (ModuleDefinition module in processGroup.ToHashSet().OrderBy(x => x.ModuleName))
                 {
                     printed++;
                     if (!IsCSVEnabled)
@@ -336,7 +338,7 @@ namespace ETWAnalyzer.EventDump
 
                 if (!IsCSVEnabled && ShowTotal != TotalModes.None)
                 {
-                    ColorConsole.WriteEmbeddedColorLine($"[yellow]   Visible {printed}/{allModulesByProcess[processGroup.Key].Count()} of all loaded modules[/yellow]");
+                    ColorConsole.WriteEmbeddedColorLine($"[yellow]   Visible {printed}/{allModulesByProcess[processGroup.Key].ToHashSet().Count} of all loaded modules[/yellow]");
                 }
             
             }
