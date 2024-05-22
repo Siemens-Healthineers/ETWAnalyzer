@@ -726,7 +726,7 @@ namespace ETWAnalyzer.EventDump
                     if( ev.ClonedChildProcessMap.Count > 0)
                     {
                         var sourceProcessIdx = ev.ClonedChildProcessMap.Where(x => x.Key.HandleValue == handleClose.HandleValue).OrderBy(x => x.Key.TimeNs).FirstOrDefault().Key?.SourceProcessIdx;
-                        if (sourceProcessIdx != null)
+                        if (sourceProcessIdx != null && sourceProcessIdx != handleClose.ProcessIdx)
                         {
                             inheritInfo = $" Inherited from [yellow]{ev.Extract.GetProcess(sourceProcessIdx.Value).GetProcessWithId(UsePrettyProcessName)}[/yellow] ";
                         }
