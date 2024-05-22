@@ -633,22 +633,27 @@ namespace ETWAnalyzer.EventDump
                 return false;
             }
 
+            return IsMatchingProcessAndCmdLine(proc);
+        }
+
+        protected bool IsMatchingProcessAndCmdLine(ETWProcess process)
+        {
             // filter by process name with pid like cmd.exe(100)
-            if (!ProcessNameFilter(proc.GetProcessWithId(UsePrettyProcessName)) )
+            if (!ProcessNameFilter(process.GetProcessWithId(UsePrettyProcessName)))
             {
                 return false;
             }
 
             // filter by SessionIds for process
-            if (!Session(proc.SessionId.ToString()))
+            if (!Session(process.SessionId.ToString()))
             {
                 return false;
             }
 
-            bool lret = proc.IsMatch(NewProcessFilter);
-            if( lret )
+            bool lret = process.IsMatch(NewProcessFilter);
+            if (lret)
             {
-                lret = CommandLineFilter(proc.CmdLine);
+                lret = CommandLineFilter(process.CmdLine);
             }
 
             return lret;

@@ -49,6 +49,7 @@ namespace ETWAnalyzer.EventDump
         /// 
         /// </summary>
         public KeyValuePair<string, Func<string, bool>> MissingPdbFilter { get; internal set; }
+        public TotalModes? ShowTotal { get; internal set; }
 
         protected override List<MatchData> DumpJson(TestDataFile file)
         {
@@ -277,53 +278,67 @@ namespace ETWAnalyzer.EventDump
 
         private void ExtractDllData(IETWExtract data, TestDataFile sourceFile, List<MatchData> lret)
         {
-            foreach (var processGroup in data.Modules.Modules.Where(x => DllFilter.Value(x.ModuleName))
-                     .SelectMany(m => m.Processes.Select(p => new KeyValuePair<ModuleDefinition, ETWProcess>(m, p))).ToLookup(x => x.Value, x => x.Key)
-                     .Where(x => ProcessNameFilter(x.Key.GetProcessWithId(UsePrettyProcessName))).SortAscendingGetTopNLast(x => x.Key.ProcessName, null, TopN))
+            ILookup<ETWProcess, ModuleDefinition> allModulesByProcess = 
+                                        data.Modules.Modules
+                                       .SelectMany(m => 
+                                                         m.Processes.Where(x => IsMatchingProcessAndCmdLine(x))                             // filter by process
+                                                                    .Select(p => new KeyValuePair<ModuleDefinition, ETWProcess>(m, p)))    // flatten list of processes where this module was loaded
+                                       .ToLookup(x => x.Value, x => x.Key);                                                         // group by process
+                                                 
+
+            IGrouping<ETWProcess, ModuleDefinition>[] filteredModulesByProcess = data.Modules.Modules
+                                         .Where(x => DllFilter.Value(x.ModuleName) &&                                             // filter by dll name
+                                                     (VersionFilter.Key == null ? true : VersionFilter.Value($"{x.ModulePath} {GetModuleString(x)}")))  // filter for path and module version string
+                                         .SelectMany(m => m.Processes.Where(x => IsMatchingProcessAndCmdLine(x)).Select(p => new KeyValuePair<ModuleDefinition, ETWProcess>(m, p)))   // flatten list of processes where this module was loaded and filter processes
+                                         .ToLookup(x => x.Value, x => x.Key)                                                                   // group by process 
+                                         .SortAscendingGetTopNLast(x => x.Key.ProcessName, null, TopN);                                        // sort results to allow -topn  filtering
+
+            foreach (IGrouping<ETWProcess, ModuleDefinition> processGroup in filteredModulesByProcess)
             {
-                
                 bool bHeaderPrinted = false;
-                foreach (var module in processGroup.OrderBy(x => x.ModuleName))
+                int printed = 0;
+                foreach (ModuleDefinition module in processGroup.OrderBy(x => x.ModuleName))
                 {
-                    string moduleString = $"{module.ModulePath} {GetModuleString(module)}";
-                    if (VersionFilter.Key == null || VersionFilter.Value(moduleString))
+                    printed++;
+                    if (!IsCSVEnabled)
                     {
-                        if (!IsCSVEnabled)
+                        if (!bHeaderPrinted)
                         {
-                            if (!bHeaderPrinted)
+                            if (NoCmdLine)
                             {
-                                if (NoCmdLine)
-                                {
-                                    ColorConsole.WriteEmbeddedColorLine($"[yellow]  {processGroup.Key.GetProcessWithId(UsePrettyProcessName),-20}{GetProcessTags(processGroup.Key, data.SessionStart)}[/yellow]");
-                                }
-                                else
-                                {
-                                    ColorConsole.WriteEmbeddedColorLine($"[yellow]  {processGroup.Key.GetProcessWithId(UsePrettyProcessName),-20}{GetProcessTags(processGroup.Key, data.SessionStart)}[/yellow] {processGroup.Key.CommandLineNoExe}", ConsoleColor.DarkCyan);
-                                }
-                                bHeaderPrinted = true;
+                                ColorConsole.WriteEmbeddedColorLine($"[yellow]  {processGroup.Key.GetProcessWithId(UsePrettyProcessName),-20}{GetProcessTags(processGroup.Key, data.SessionStart)}[/yellow]");
                             }
-
-                            ColorConsole.WriteLine($"    {module.ModuleName} {moduleString}");
+                            else
+                            {
+                                ColorConsole.WriteEmbeddedColorLine($"[yellow]  {processGroup.Key.GetProcessWithId(UsePrettyProcessName),-20}{GetProcessTags(processGroup.Key, data.SessionStart)}[/yellow] {processGroup.Key.CommandLineNoExe}", ConsoleColor.DarkCyan);
+                            }
+                            bHeaderPrinted = true;
                         }
-                        lret.Add(
-                                new MatchData
-                                {
-                                    DllName = module.ModuleName,
-                                    DllPath = module.ModulePath,
-                                    DllVersion = GetModuleString(module),
-                                    Process = processGroup.Key.GetProcessWithId(UsePrettyProcessName),
-                                    SourceFile = sourceFile?.FileName,
-                                    MainModuleVersion = data.MainModuleVersion,
-                                    ModuleVersion = null,
-                                    TestDate = new DateTimeOffset((sourceFile?.ParentTest?.PerformedAt).GetValueOrDefault()),
-                                    TestName = sourceFile?.TestName,
-                                    Duration = (sourceFile?.DurationInMs).GetValueOrDefault(),
-                                    Machine = sourceFile?.MachineName,
-                                    SessionStart = data.SessionStart,
-                                });
-
+                        ColorConsole.WriteLine($"    {module.ModuleName} {module.ModulePath} {GetModuleString(module)}");
                     }
+                    lret.Add(
+                            new MatchData
+                            {
+                                DllName = module.ModuleName,
+                                DllPath = module.ModulePath,
+                                DllVersion = GetModuleString(module),
+                                Process = processGroup.Key.GetProcessWithId(UsePrettyProcessName),
+                                SourceFile = sourceFile?.FileName,
+                                MainModuleVersion = data.MainModuleVersion,
+                                ModuleVersion = null,
+                                TestDate = new DateTimeOffset((sourceFile?.ParentTest?.PerformedAt).GetValueOrDefault()),
+                                TestName = sourceFile?.TestName,
+                                Duration = (sourceFile?.DurationInMs).GetValueOrDefault(),
+                                Machine = sourceFile?.MachineName,
+                                SessionStart = data.SessionStart,
+                            });
                 }
+
+                if (!IsCSVEnabled && ShowTotal != TotalModes.None)
+                {
+                    ColorConsole.WriteEmbeddedColorLine($"[yellow]   Visible {printed}/{allModulesByProcess[processGroup.Key].Count()} of all loaded modules[/yellow]");
+                }
+            
             }
         }
 
