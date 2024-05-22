@@ -316,7 +316,10 @@ namespace ETWAnalyzer.EventDump
                             }
                             bHeaderPrinted = true;
                         }
-                        ColorConsole.WriteLine($"    {module.ModuleName} {module.ModulePath} {GetModuleString(module)}");
+                        if( ShowTotal != TotalModes.Total) 
+                        { 
+                            ColorConsole.WriteLine($"    {module.ModuleName} {module.ModulePath} {GetModuleString(module)}");
+                        }
                     }
                     lret.Add(
                             new MatchData
@@ -338,7 +341,7 @@ namespace ETWAnalyzer.EventDump
 
                 if (!IsCSVEnabled && ShowTotal != TotalModes.None)
                 {
-                    ColorConsole.WriteEmbeddedColorLine($"[yellow]   Visible {printed}/{allModulesByProcess[processGroup.Key].ToHashSet().Count} of all loaded modules[/yellow]");
+                    ColorConsole.WriteEmbeddedColorLine($"[yellow]   Selected {printed}/{allModulesByProcess[processGroup.Key].ToHashSet().Count} of all loaded modules[/yellow]");
                 }
             
             }
