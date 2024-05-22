@@ -112,8 +112,6 @@ namespace ETWAnalyzer.EventDump
                               Col_Process, Col_ProcessName,
                               Col_StartTime, Col_CommandLine);
 
-
-
             foreach (var objectEvent in lret)
             {
                 foreach (var create in objectEvent.ObjTrace.HandleCreateEvents)
@@ -129,6 +127,21 @@ namespace ETWAnalyzer.EventDump
                         "",
                         GetProcessAndStartStopTags(createProcess, objectEvent.Extract), createProcess.GetProcessName(UsePrettyProcessName), 
                         createProcess.StartTime, NoCmdLine ? "" : createProcess.CommandLineNoExe);
+                }
+
+                if( objectEvent.ObjTrace.ProcessIdx != null ) // existing object
+                {
+                    ETWProcess owningProcess = objectEvent.Extract.GetProcess(objectEvent.ObjTrace.ProcessIdx.Value);
+
+                    WriteCSVLine(CSVOptions, Path.GetFileNameWithoutExtension(objectEvent.File.FileName), objectEvent.File.PerformedAt, objectEvent.File.TestName, objectEvent.File.DurationInMs, objectEvent.BaseLine,
+                        objectEvent.Id, "", "Existing Handle", "", "", objectEvent.ObjTrace.HandleValue != null ? GetHandleValue(objectEvent.ObjTrace.HandleValue.Value) : "", objectEvent.HandleType, objectEvent.ObjTrace.Name, GetHandleValue((ulong)objectEvent.ObjTrace.ObjectPtr),
+                        "", "",
+                        "", "", "", "",
+                        "",
+                        "", "", "", "",
+                        "",
+                        GetProcessAndStartStopTags(objectEvent.ObjTrace.ProcessIdx.Value, objectEvent.Extract), owningProcess.GetProcessName(UsePrettyProcessName),
+                        owningProcess.StartTime, NoCmdLine ? "" : owningProcess.CommandLineNoExe);
                 }
 
                 // add inherited also to close handle events to allow to check if processes did close the duplicated handles again
@@ -210,7 +223,6 @@ namespace ETWAnalyzer.EventDump
                     "",
                     GetProcessAndStartStopTags(refChangeProc, objectEvent.Extract), refChangeProc.GetProcessName(UsePrettyProcessName),
                     refChangeProc.StartTime, NoCmdLine ? "" : refChangeProc.CommandLineNoExe);
-
                 }
             }
         }
@@ -246,7 +258,6 @@ namespace ETWAnalyzer.EventDump
                                                CreateStackFilter.Key != null ||
                                                DestroyStackFilter.Key != null
                                                ) ? file.Extract.HandleData.Stacks : null;
-
                     foreach (ObjectRefTrace handle in file.Extract.HandleData.ObjectReferences)
                     {
                         handle.RefreshCollectionsAfterDeserialize();
@@ -347,7 +358,7 @@ namespace ETWAnalyzer.EventDump
 
                      
 
-                        if( !handle.IsFileMap )
+                        if( !handle.IsFileMap && HandleFilter.Key != null)
                         {
                             handle.HandleDuplicateEvents = handle.HandleDuplicateEvents.Where(x => IsHandleMatch(x.HandleValue)).ToList();
                             handle.HandleCreateEvents = handle.HandleCreateEvents.Where(x => IsHandleMatch(x.HandleValue)).ToList();
@@ -394,11 +405,6 @@ namespace ETWAnalyzer.EventDump
                             maxRefCount = Math.Max(maxRefCount, currentRefCount);
                         }
 
-                        if (handle.IsEmpty)
-                        {
-                            continue;
-                        }
-
                         lret.Add(new MatchData
                         {
                             ObjTrace = handle,
@@ -441,6 +447,16 @@ namespace ETWAnalyzer.EventDump
                 creator = trace.FirstCreateEvent.ProcessIdx;
                 lret = ProcessNameFilter(GetProcessWithId(creator, resolver));
             }
+            else if( trace.ProcessIdx != null )
+            {
+                ETWProcessIndex owner = trace.ProcessIdx.Value;
+                lret = ProcessNameFilter(GetProcessWithId(owner, resolver));
+            }
+            else
+            {
+                lret = true;
+            }
+
             return lret;
         }
 
@@ -454,10 +470,23 @@ namespace ETWAnalyzer.EventDump
         /// <returns>true if process was calling create/close/duplicate for given object.</returns>
         bool MatchAnyProcess(IObjectRefTrace trace, Dictionary<IHandleDuplicateEvent, ETWProcess> clonedChildHandles, IProcessExtract resolver)
         {
+            if( RelatedProcessFilter.Key == null ) 
+            {
+                return true;
+            }
+
             bool lret = false;
             if (trace.CreateEvent != null)
             {
-                if( RelatedProcessFilter.Value(GetProcessWithId(trace.CreateEvent.ProcessIdx, resolver)))
+                if( RelatedProcessFilter.Value( GetProcessWithId(trace.CreateEvent.ProcessIdx, resolver) ) )
+                {
+                    lret = true;
+                }
+            }
+
+            if( trace.ProcessIdx != null )
+            {
+                if( RelatedProcessFilter.Value( GetProcessWithId(trace.ProcessIdx.Value, resolver) ) ) 
                 {
                     lret = true;
                 }
@@ -608,7 +637,7 @@ namespace ETWAnalyzer.EventDump
             string fileName = null;
             int fileCount = 0;
 
-            foreach (var ev in matches.OrderBy(x=>x.File.PerformedAt).ThenBy(x=> (x.ObjTrace?.CreateEvent.TimeNs ?? 0)) )
+            foreach (var ev in matches.OrderBy(x=>x.File.PerformedAt).ThenBy(x=> (x.ObjTrace?.FirstCreateEvent?.TimeNs ?? 0)) )
             {
                 fileTotal.Add(ev.ObjTrace, ev.Extract);
                 allfileTotal.Add(ev.ObjTrace, ev.Extract);

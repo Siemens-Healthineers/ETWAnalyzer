@@ -61,7 +61,12 @@ namespace ETWAnalyzer.Extractors.Handle
         /// At trace start end all already open handles are dumped via this event
         /// </summary>
         const int HandleDCEnd = 0x27;
-        
+
+        /// <summary>
+        /// At trace start all already open handles are dumped via this event
+        /// </summary>
+        const int HandleDCStart = 0x26;
+
         /// <summary>
         /// Kernel object manager create object event
         /// </summary>
@@ -261,18 +266,30 @@ namespace ETWAnalyzer.Extractors.Handle
                     });
                     break;
                 case HandleDCEnd:
-                    HandleDCEndETW handleDCEnd = MemoryMarshal.Read<HandleDCEndETW>(classicEvent.Data);
-                    var remainingDCEnd = classicEvent.Data.Slice(Marshal.SizeOf<HandleDCEndETW>());
+                case HandleDCStart:
+                    HandleDCETW handleDCEnd = MemoryMarshal.Read<HandleDCETW>(classicEvent.Data);
+                    var remainingDCEnd = classicEvent.Data.Slice(Marshal.SizeOf<HandleDCETW>());
                     string handleName = null;
                     if(remainingDCEnd.Length > 0)
                     {
                         remainingDCEnd = ReadNullTerminatedString(remainingDCEnd, out handleName);
                         if(remainingDCEnd.Length > 0)
                         {
-                            throw new InvalidTraceDataException($"Invalid HandleDCEndETW event. Found additional {remainingDCEnd.Length} bytes in event.");
+                            throw new InvalidTraceDataException($"Invalid {nameof(HandleDCETW)} event. Found additional {remainingDCEnd.Length} bytes in event.");
                         }
                     }
 
+                    myObjectTraceEvents.Add(new HandleDCEndEvent
+                    {
+                        TimeStamp = timestamp,
+                        ProcessId = (int) handleDCEnd.ProcessId,
+                        ThreadId = threadId,
+
+                        ObjectPtr = handleDCEnd.ObjectPtr,
+                        ObjectType = handleDCEnd.ObjectType,
+                        HandleValue = handleDCEnd.Handle,
+                        Name = handleName,
+                    });
                     break;
                 case TypeDCEnd:
                     TypeDCEndETW typeDCEnd;
@@ -476,6 +493,20 @@ namespace ETWAnalyzer.Extractors.Handle
                                 ObjectType = createHandle.ObjectType,
                             };
                             trace.AddHandlCreate(createHandle.TimeStamp, createHandle.HandleValue, processIdx, createHandle.ThreadId, stackIndex);
+                            OpenHandles.Add(trace.ObjectPtr, trace);
+                        }
+                        break;
+                    case HandleDCEndEvent dcEnd:
+                        if (!OpenHandles.TryGetValue(dcEnd.ObjectPtr, out hTrace))
+                        {
+                            trace = new ObjectRefTrace()
+                            {
+                                ObjectPtr = dcEnd.ObjectPtr,
+                                ObjectType = dcEnd.ObjectType,
+                                Name = dcEnd.Name,
+                                HandleValue = dcEnd.HandleValue,
+                                ProcessIdx = processIdx,
+                            };
                             OpenHandles.Add(trace.ObjectPtr, trace);
                         }
                         break;

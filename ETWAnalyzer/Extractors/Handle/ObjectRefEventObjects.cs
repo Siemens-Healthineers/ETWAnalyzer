@@ -42,7 +42,7 @@ namespace ETWAnalyzer.Extractors.Handle
         };
      */
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    struct HandleDCEndETW
+    struct HandleDCETW
     {
         public long ObjectPtr;
         public UInt32 ProcessId;
@@ -140,6 +140,13 @@ namespace ETWAnalyzer.Extractors.Handle
         public int SourceProcessId { get; set; }
         public UInt32 TargetHandleId { get; set; }
         public UInt16 ObjectType { get; set; }
+    }
+
+    class HandleDCEndEvent : ObjectTraceBase
+    {
+        public UInt32 HandleValue { get; set; }
+        public UInt16 ObjectType  { get; set; }
+        public string Name { get; internal set; }
     }
 
     class HandleTypeEvent : ObjectTraceBase

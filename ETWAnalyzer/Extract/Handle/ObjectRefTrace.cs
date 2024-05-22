@@ -120,6 +120,16 @@ namespace ETWAnalyzer.Extract.Handle
         public UInt16 ObjectType { get; set; }
 
         /// <summary>
+        /// Existing Handle which belongs to this process
+        /// </summary>
+        public ETWProcessIndex? ProcessIdx { get; set; }
+
+        /// <summary>
+        /// Existing (possibly leaked) handle which belongs to <see cref="ProcessIdx"/>.
+        /// </summary>
+        public UInt32? HandleValue { get; set; }
+
+        /// <summary>
         /// Get Object Type string
         /// </summary>
         /// <param name="extract">Extracted data</param>
@@ -503,7 +513,7 @@ namespace ETWAnalyzer.Extract.Handle
 
         internal bool AddHandleClose(TraceTimestamp time, ulong handleValue, string handleName, ETWProcessIndex processIdx, int threadId, StackIdx stackIdx)
         {
-            if (Name != null && Name != handleName)
+            if (Name != null && Name != handleName && Name != "")
             {
                 Name += " -- Other Name -- " + handleName; // should never happen but if it does we know we deal with corrupt data.
             }
