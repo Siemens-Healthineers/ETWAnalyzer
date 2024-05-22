@@ -75,7 +75,10 @@ namespace ETWAnalyzer.EventDump
         
         public ProcessStates? NewProcessFilter { get; internal set; }
 
-        string myCSVOptions = Environment.CommandLine;
+        /// <summary>
+        /// Passed arguments to DumpCommand
+        /// </summary>
+        public string CommandArguments { get; internal set; }
 
         /// <summary>
         /// Used by GetZeroFromMethod to get the full qualified method name excluding dll name
@@ -93,9 +96,6 @@ namespace ETWAnalyzer.EventDump
         /// </summary>
         Tuple<ZeroTimeModes, WeakReference, Func<string, bool>, string, double> myLastZeroTime;
 
-
-
-
         /// <summary>
         /// Return on first read the current extract command line options so it can easily be added to CSV output once
         /// </summary>
@@ -103,8 +103,8 @@ namespace ETWAnalyzer.EventDump
         {
             get
             {
-                string tmp = myCSVOptions;
-                myCSVOptions = null;
+                string tmp = CommandArguments;
+                CommandArguments = null;
                 return tmp;
             }
                 
@@ -633,22 +633,27 @@ namespace ETWAnalyzer.EventDump
                 return false;
             }
 
+            return IsMatchingProcessAndCmdLine(proc);
+        }
+
+        protected bool IsMatchingProcessAndCmdLine(ETWProcess process)
+        {
             // filter by process name with pid like cmd.exe(100)
-            if (!ProcessNameFilter(proc.GetProcessWithId(UsePrettyProcessName)) )
+            if (!ProcessNameFilter(process.GetProcessWithId(UsePrettyProcessName)))
             {
                 return false;
             }
 
             // filter by SessionIds for process
-            if (!Session(proc.SessionId.ToString()))
+            if (!Session(process.SessionId.ToString()))
             {
                 return false;
             }
 
-            bool lret = proc.IsMatch(NewProcessFilter);
-            if( lret )
+            bool lret = process.IsMatch(NewProcessFilter);
+            if (lret)
             {
-                lret = CommandLineFilter(proc.CmdLine);
+                lret = CommandLineFilter(process.CmdLine);
             }
 
             return lret;
