@@ -9,8 +9,10 @@ using ETWAnalyzer.Infrastructure;
 using ETWAnalyzer.ProcessTools;
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 
 namespace ETWAnalyzer.EventDump
 {
@@ -72,6 +74,7 @@ namespace ETWAnalyzer.EventDump
         public DumpCommand.TotalModes? ShowTotal { get; internal set; }
         public bool Inherit { get; internal set; }
         public KeyValuePair<string, Func<string, bool>> TypeFilter { get; internal set; }
+        public SkipTakeRange TopN { get; internal set; } = new();
 
         Dictionary<StackIdx, bool> myStackFilterResult = new();
         
@@ -112,8 +115,6 @@ namespace ETWAnalyzer.EventDump
                               Col_Process, Col_ProcessName,
                               Col_StartTime, Col_CommandLine);
 
-
-
             foreach (var objectEvent in lret)
             {
                 foreach (var create in objectEvent.ObjTrace.HandleCreateEvents)
@@ -129,6 +130,24 @@ namespace ETWAnalyzer.EventDump
                         "",
                         GetProcessAndStartStopTags(createProcess, objectEvent.Extract), createProcess.GetProcessName(UsePrettyProcessName), 
                         createProcess.StartTime, NoCmdLine ? "" : createProcess.CommandLineNoExe);
+                }
+
+                if( objectEvent.ObjTrace.Existing != null ) // existing object
+                {
+                    foreach(var existing in objectEvent.ObjTrace.Existing)
+                    {
+                        ETWProcess owningProcess = objectEvent.Extract.GetProcess(existing.Process);
+
+                        WriteCSVLine(CSVOptions, Path.GetFileNameWithoutExtension(objectEvent.File.FileName), objectEvent.File.PerformedAt, objectEvent.File.TestName, objectEvent.File.DurationInMs, objectEvent.BaseLine,
+                            objectEvent.Id, "", "Existing Handle", "", "", GetHandleValue(existing.Handle), objectEvent.HandleType, objectEvent.ObjTrace.Name, GetHandleValue((ulong)objectEvent.ObjTrace.ObjectPtr),
+                            "", "",
+                            "", "", "", "",
+                            "",
+                            "", "", "", "",
+                            "",
+                            GetProcessAndStartStopTags(existing.Process, objectEvent.Extract), owningProcess.GetProcessName(UsePrettyProcessName),
+                            owningProcess.StartTime, NoCmdLine ? "" : owningProcess.CommandLineNoExe);
+                    }
                 }
 
                 // add inherited also to close handle events to allow to check if processes did close the duplicated handles again
@@ -210,7 +229,6 @@ namespace ETWAnalyzer.EventDump
                     "",
                     GetProcessAndStartStopTags(refChangeProc, objectEvent.Extract), refChangeProc.GetProcessName(UsePrettyProcessName),
                     refChangeProc.StartTime, NoCmdLine ? "" : refChangeProc.CommandLineNoExe);
-
                 }
             }
         }
@@ -246,7 +264,6 @@ namespace ETWAnalyzer.EventDump
                                                CreateStackFilter.Key != null ||
                                                DestroyStackFilter.Key != null
                                                ) ? file.Extract.HandleData.Stacks : null;
-
                     foreach (ObjectRefTrace handle in file.Extract.HandleData.ObjectReferences)
                     {
                         handle.RefreshCollectionsAfterDeserialize();
@@ -347,7 +364,7 @@ namespace ETWAnalyzer.EventDump
 
                      
 
-                        if( !handle.IsFileMap )
+                        if( !handle.IsFileMap && HandleFilter.Key != null)
                         {
                             handle.HandleDuplicateEvents = handle.HandleDuplicateEvents.Where(x => IsHandleMatch(x.HandleValue)).ToList();
                             handle.HandleCreateEvents = handle.HandleCreateEvents.Where(x => IsHandleMatch(x.HandleValue)).ToList();
@@ -394,11 +411,6 @@ namespace ETWAnalyzer.EventDump
                             maxRefCount = Math.Max(maxRefCount, currentRefCount);
                         }
 
-                        if (handle.IsEmpty)
-                        {
-                            continue;
-                        }
-
                         lret.Add(new MatchData
                         {
                             ObjTrace = handle,
@@ -441,6 +453,22 @@ namespace ETWAnalyzer.EventDump
                 creator = trace.FirstCreateEvent.ProcessIdx;
                 lret = ProcessNameFilter(GetProcessWithId(creator, resolver));
             }
+            else if( trace.Existing != null )
+            {
+                foreach(var existing in trace.Existing)
+                {
+                    lret = ProcessNameFilter(GetProcessWithId(existing.Process, resolver));
+                    if( lret )
+                    {
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                lret = true;
+            }
+
             return lret;
         }
 
@@ -454,12 +482,29 @@ namespace ETWAnalyzer.EventDump
         /// <returns>true if process was calling create/close/duplicate for given object.</returns>
         bool MatchAnyProcess(IObjectRefTrace trace, Dictionary<IHandleDuplicateEvent, ETWProcess> clonedChildHandles, IProcessExtract resolver)
         {
+            if( RelatedProcessFilter.Key == null ) 
+            {
+                return true;
+            }
+
             bool lret = false;
             if (trace.CreateEvent != null)
             {
-                if( RelatedProcessFilter.Value(GetProcessWithId(trace.CreateEvent.ProcessIdx, resolver)))
+                if( RelatedProcessFilter.Value( GetProcessWithId(trace.CreateEvent.ProcessIdx, resolver) ) )
                 {
                     lret = true;
+                }
+            }
+
+            if( trace.Existing != null )
+            {
+                foreach (var existing in trace.Existing)
+                {
+                    if (RelatedProcessFilter.Value(GetProcessWithId(existing.Process, resolver)))
+                    {
+                        lret = true;
+                        break;
+                    }
                 }
             }
 
@@ -546,6 +591,10 @@ namespace ETWAnalyzer.EventDump
             public int RefChangeCount { get; internal set; }
             public HashSet<ETWProcess> Processes { get; internal set; } = new();
 
+            
+            Dictionary<ETWProcess,Counter<string>> myNotClosedHandles = new();
+            Counter<string> myTotalNotClosedHandles = new();
+
             void AddProcess(IReadOnlyList<IStackEventBase> items, IETWExtract extract)
             {
                 foreach(IStackEventBase item in items)
@@ -554,13 +603,26 @@ namespace ETWAnalyzer.EventDump
                 }
             }
 
-            void AddProcess(IReadOnlyList<IHandleDuplicateEvent> duplicates, IETWExtract extract)
+            void AddProcess(IReadOnlyList<IHandleDuplicateEvent> duplicates, string objectType, IETWExtract extract)
             {
                 foreach (IHandleDuplicateEvent duplicate in duplicates)
                 {
-                    Processes.Add(extract.GetProcess(duplicate.ProcessIdx));
+                    var process = extract.GetProcess(duplicate.ProcessIdx);
+                    Processes.Add(process);
                     Processes.Add(extract.GetProcess(duplicate.SourceProcessIdx));
                 }
+            }
+
+            void AddNotClosedHandle(ETWProcess process, string handleType)
+            {
+                if( !myNotClosedHandles.TryGetValue(process, out  var count))
+                {
+                    count = new Counter<string>();
+                    myNotClosedHandles[process] = count;
+                }
+
+                myTotalNotClosedHandles.Increment(handleType);
+                count.Increment(handleType);
             }
 
             public void Add(IObjectRefTrace trace, IETWExtract extract)
@@ -582,7 +644,7 @@ namespace ETWAnalyzer.EventDump
                 AddProcess(trace.HandleCloseEvents, extract);
 
                 DuplicateCount += trace.HandleDuplicateEvents.Count;
-                AddProcess(trace.HandleDuplicateEvents, extract);   
+                AddProcess(trace.HandleDuplicateEvents, trace.GetObjectType(extract), extract);   
 
                 MapCount += trace.FileMapEvents.Count;
                 AddProcess(trace.FileMapEvents, extract);   
@@ -592,11 +654,59 @@ namespace ETWAnalyzer.EventDump
 
                 RefChangeCount += trace.RefChanges.Count;
                 AddProcess(trace.RefChanges, extract);
+
+                if (trace.Existing != null)
+                {
+                    foreach (var existing in trace.Existing)
+                    {
+                        AddNotClosedHandle(extract.GetProcess(existing.Process), trace.GetObjectType(extract));
+                    }
+                }
             }
 
-            public void PrintTotals(ConsoleColor color)
+            void PrintValue(string name, int value, ConsoleColor color)
             {
-                ColorConsole.WriteEmbeddedColorLine($"Totals: Processes: {Processes.Count},  Objects Created/Destroyed: {ObjectCreateCount}/{ObjectDestroyCount} Diff: {ObjectCreateCount-ObjectDestroyCount},  Handles Created/Closed/Duplicated: {CreateCount}/{CloseCount}/{DuplicateCount} Diff: {CreateCount+DuplicateCount-CloseCount},  RefChanges: {RefChangeCount}, FileMap/Unmap: {MapCount}/{UnmapCount}", color);
+                ColorConsole.WriteEmbeddedColorLine($"{name,-60}: {value,7}", color);
+            }
+
+            void PrintHR(ConsoleColor color)
+            {
+                ColorConsole.WriteEmbeddedColorLine($"=====================================================================", color);
+            }
+
+            public void PrintTotals(ConsoleColor color, DumpCommand.TotalModes? showTotal, SkipTakeRange range)
+            {
+                int sum = 0;
+                switch (showTotal)
+                {
+                    case DumpCommand.TotalModes.Process:
+                        ColorConsole.WriteEmbeddedColorLine($"Not closed handles at trace end:", color);
+                        foreach (KeyValuePair<ETWProcess, Counter<string>> total in myNotClosedHandles.SortAscendingGetTopNLast(x=>x.Value.TotalCount, null, range))
+                        {
+                            sum+= total.Value.TotalCount;
+                            PrintValue(total.Key.GetProcessWithId(true), total.Value.TotalCount, color);
+                        }
+                        PrintHR(color);
+                        PrintValue("Sum", sum, color);
+                        break;
+                    case DumpCommand.TotalModes.Total:
+                        ColorConsole.WriteEmbeddedColorLine($"Not closed Handle counts for {myNotClosedHandles.Count} processes", color);
+                        foreach (var total in myTotalNotClosedHandles.Counts.OrderBy(x => x.Value))
+                        {
+                            sum += total.Value;
+                            PrintValue(total.Key, total.Value, color);
+                        }
+                        PrintHR(color);
+                        PrintValue("Sum", sum, color);
+                        break;
+                    case DumpCommand.TotalModes.None:
+                        break;
+                    case null:
+                        break;
+                }
+
+                ColorConsole.WriteEmbeddedColorLine($"Objects Created/Destroyed: {ObjectCreateCount}/{ObjectDestroyCount} Diff: {ObjectCreateCount-ObjectDestroyCount},  Handles Created/Closed/Duplicated: {CreateCount}/{CloseCount}/{DuplicateCount} Diff: {CreateCount+DuplicateCount-CloseCount},  RefChanges: {RefChangeCount}, FileMap/Unmap: {MapCount}/{UnmapCount}", color);
+
             }
         }
 
@@ -608,7 +718,7 @@ namespace ETWAnalyzer.EventDump
             string fileName = null;
             int fileCount = 0;
 
-            foreach (var ev in matches.OrderBy(x=>x.File.PerformedAt).ThenBy(x=> (x.ObjTrace?.CreateEvent.TimeNs ?? 0)) )
+            foreach (var ev in matches.OrderBy(x=>x.File.PerformedAt).ThenBy(x=> (x.ObjTrace?.FirstCreateEvent?.TimeNs ?? 0)) )
             {
                 fileTotal.Add(ev.ObjTrace, ev.Extract);
                 allfileTotal.Add(ev.ObjTrace, ev.Extract);
@@ -617,7 +727,7 @@ namespace ETWAnalyzer.EventDump
                 {
                     if( ShowTotal != DumpCommand.TotalModes.None && fileName != null)
                     {
-                        fileTotal.PrintTotals(ConsoleColor.Yellow);
+                        fileTotal.PrintTotals(ConsoleColor.Yellow, ShowTotal, TopN);
                     }
 
                     PrintFileName(ev.File.FileName, null, ev.File.PerformedAt, ev.File.Extract.MainModuleVersion?.ToString());
@@ -652,12 +762,12 @@ namespace ETWAnalyzer.EventDump
 
             if( matches.Count > 0 && ShowTotal != DumpCommand.TotalModes.None)
             {
-                fileTotal.PrintTotals(ConsoleColor.Yellow);
+                fileTotal.PrintTotals(ConsoleColor.Yellow, ShowTotal, TopN);
             }
 
             if (fileCount > 1 && (ShowTotal == DumpCommand.TotalModes.Total || ShowTotal == null))
             {
-                allfileTotal.PrintTotals(ConsoleColor.Red);
+                allfileTotal.PrintTotals(ConsoleColor.Red, null, null);
             }
         }
 
@@ -694,8 +804,29 @@ namespace ETWAnalyzer.EventDump
 
         private void PrintObjectEvent(MatchData ev)
         {
-            ColorConsole.WriteEmbeddedColorLine($"Id: {ev.Id} Object: 0x{ev.ObjTrace.ObjectPtr:X} {ev.ObjTrace.Name} Lifetime: {ev.ObjTrace.Duration.TotalSeconds:F6} s  Type: [green]{ev.HandleType}[/green] " +
-                              $"Create+Duplicate-Close: {ev.ObjTrace.HandleCreateEvents.Count}+{ev.ObjTrace.HandleDuplicateEvents.Count}-{ev.ObjTrace.HandleCloseEvents.Count} = {ev.ObjTrace.HandleCreateEvents.Count + ev.ObjTrace.HandleDuplicateEvents.Count - ev.ObjTrace.HandleCloseEvents.Count}");
+            if (ev.ObjTrace.Existing != null && ev.ObjTrace.HandleCloseEvents.Count == 0 && ev.ObjTrace.HandleCreateEvents.Count == 0 && ev.ObjTrace.HandleDuplicateEvents.Count == 0)
+            {
+
+                if (ev.ObjTrace.Existing.Count == 1)
+                {
+                    var existing = ev.ObjTrace.Existing[0];
+                    ColorConsole.WriteEmbeddedColorLine($"Id: {ev.Id} Object: 0x{ev.ObjTrace.ObjectPtr:X} {ev.ObjTrace.Name} Lifetime: {ev.ObjTrace.Duration.TotalSeconds:F6} s  Type: [green]{ev.HandleType}[/green] " +
+                                      $"Owner: [magenta]{GetProcessAndStartStopTags(existing.Process, ev.Extract)}[/magenta], Handle Value: {GetHandleValue(existing.Handle)}");
+
+                }
+                else
+                {
+                    ColorConsole.WriteEmbeddedColorLine($"Id: {ev.Id} Object: 0x{ev.ObjTrace.ObjectPtr:X} {ev.ObjTrace.Name} Lifetime: {ev.ObjTrace.Duration.TotalSeconds:F6} s  Type: [green]{ev.HandleType}[/green] " +
+                                      $"Handle Count: {ev.ObjTrace.Existing.Count}");
+                }
+
+
+            }
+            else
+            {
+                ColorConsole.WriteEmbeddedColorLine($"Id: {ev.Id} Object: 0x{ev.ObjTrace.ObjectPtr:X} {ev.ObjTrace.Name} Lifetime: {ev.ObjTrace.Duration.TotalSeconds:F6} s  Type: [green]{ev.HandleType}[/green] " +
+                                  $"Create+Duplicate-Close: {ev.ObjTrace.HandleCreateEvents.Count}+{ev.ObjTrace.HandleDuplicateEvents.Count}-{ev.ObjTrace.HandleCloseEvents.Count} = {ev.ObjTrace.HandleCreateEvents.Count + ev.ObjTrace.HandleDuplicateEvents.Count - ev.ObjTrace.HandleCloseEvents.Count}");
+            }
 
             foreach (IHandleCreateEvent handleCreate in ev.ObjTrace.HandleCreateEvents)
             {

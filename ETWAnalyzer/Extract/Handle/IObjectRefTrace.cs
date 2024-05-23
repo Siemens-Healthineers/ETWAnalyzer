@@ -28,6 +28,11 @@ namespace ETWAnalyzer.Extract.Handle
         public UInt16 ObjectType { get; }
 
         /// <summary>
+        /// Existing (possibly leaked) handle which still exist at trace end.
+        /// </summary>
+        public IReadOnlyList<IHandleProcess> Existing { get; }
+
+        /// <summary>
         /// Get Object Type string
         /// </summary>
         /// <param name="extract">Extracted data</param>

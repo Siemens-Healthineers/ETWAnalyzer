@@ -57,6 +57,23 @@ namespace ETWAnalyzer.Infrastructure
         }
 
         /// <summary>
+        /// Get total count
+        /// </summary>
+        public int TotalCount
+        {
+            get
+            {
+                int lret = 0;
+                foreach(var kvp in myCounter)
+                {
+                    lret += kvp.Value;
+                }
+
+                return lret;
+            }
+        }
+
+        /// <summary>
         /// Get all counts for all keys as KeyValuePairs
         /// The setter is only needed for serialization purposes
         /// </summary>

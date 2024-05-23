@@ -61,7 +61,12 @@ namespace ETWAnalyzer.Extractors.Handle
         /// At trace start end all already open handles are dumped via this event
         /// </summary>
         const int HandleDCEnd = 0x27;
-        
+
+        /// <summary>
+        /// At trace start all already open handles are dumped via this event
+        /// </summary>
+        const int HandleDCStart = 0x26;
+
         /// <summary>
         /// Kernel object manager create object event
         /// </summary>
@@ -261,9 +266,29 @@ namespace ETWAnalyzer.Extractors.Handle
                     });
                     break;
                 case HandleDCEnd:
-                    HandleDCEndETW handleDCEnd;
-                    handleDCEnd = MemoryMarshal.Read<HandleDCEndETW>(classicEvent.Data);
+                    HandleDCETW handleDCEnd = MemoryMarshal.Read<HandleDCETW>(classicEvent.Data);
+                    var remainingDCEnd = classicEvent.Data.Slice(Marshal.SizeOf<HandleDCETW>());
+                    string handleName = null;
+                    if(remainingDCEnd.Length > 0)
+                    {
+                        remainingDCEnd = ReadNullTerminatedString(remainingDCEnd, out handleName);
+                        if(remainingDCEnd.Length > 0)
+                        {
+                            throw new InvalidTraceDataException($"Invalid {nameof(HandleDCETW)} event. Found additional {remainingDCEnd.Length} bytes in event.");
+                        }
+                    }
 
+                    myObjectTraceEvents.Add(new HandleDCEndEvent
+                    {
+                        TimeStamp = timestamp,
+                        ProcessId = (int) handleDCEnd.ProcessId,
+                        ThreadId = threadId,
+
+                        ObjectPtr = handleDCEnd.ObjectPtr,
+                        ObjectType = handleDCEnd.ObjectType,
+                        HandleValue = handleDCEnd.Handle,
+                        Name = handleName,
+                    });
                     break;
                 case TypeDCEnd:
                     TypeDCEndETW typeDCEnd;
@@ -372,7 +397,7 @@ namespace ETWAnalyzer.Extractors.Handle
         {
             str = null;
             int idx = buffer.IndexOf(Null);
-            if( idx != -1 && idx % 2  != 0 && idx+1 < buffer.Length)
+            if ( idx != -1 && idx % 2  != 0 && idx+1 < buffer.Length)
             {
                 idx++; // index did match zero from UTF-16 char like 65 00 00 00 
             }
@@ -469,6 +494,33 @@ namespace ETWAnalyzer.Extractors.Handle
                             trace.AddHandlCreate(createHandle.TimeStamp, createHandle.HandleValue, processIdx, createHandle.ThreadId, stackIndex);
                             OpenHandles.Add(trace.ObjectPtr, trace);
                         }
+                        break;
+                    case HandleDCEndEvent dcEnd:
+                        if (!OpenHandles.TryGetValue(dcEnd.ObjectPtr, out hTrace))
+                        {
+                            hTrace = new ObjectRefTrace()
+                            {
+                                ObjectPtr = dcEnd.ObjectPtr,
+                                ObjectType = dcEnd.ObjectType,
+                                Name = dcEnd.Name,
+                                Existing = new List<HandleProcess>()
+                            };
+                            OpenHandles.Add(hTrace.ObjectPtr, hTrace);
+                        }
+
+                        if( hTrace.Existing == null  )
+                        {
+                            hTrace.Existing = new List<HandleProcess>(); 
+                        }
+
+                        var existingHandle = new HandleProcess
+                        {
+                            Handle = dcEnd.HandleValue,
+                            Process = processIdx,
+                        };
+
+                        hTrace.Existing.Add(existingHandle);
+
                         break;
                     case DuplicateObjectEvent duplicateObjectEvent:
                         var sourceProcessIndex = results.GetProcessIndexByPidAtTime(duplicateObjectEvent.SourceProcessId, ev.TimeStamp.DateTimeOffset);
