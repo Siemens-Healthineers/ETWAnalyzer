@@ -6,6 +6,7 @@ using ETWAnalyzer.ProcessTools;
 using Microsoft.Diagnostics.Tracing.Parsers.Kernel;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -22,6 +23,7 @@ namespace ETWAnalyzer.Commands
         class ConsoleHelpCommand : ArgParser
         {
             public override string Help =>
+                ".cls                               Clear screen." + Environment.NewLine +
                $".dump xxx                          Query loaded file/s. Options are the same as in -Dump command. e.g. .dump CPU will print CPU metrics. Allowed values are {DumpCommand.AllDumpCommands}" + Environment.NewLine +
                 ".load file1.json file2.json ...    Load one or more data files. Use . to load all files in current directory." + Environment.NewLine +
                 ".list                              List loaded files" + Environment.NewLine +
@@ -92,16 +94,17 @@ namespace ETWAnalyzer.Commands
             {
                 ".load" => Load(args),
                 ".unload" => Unload(args),
-                ".list" => ListFiles(args),
+                ".cls" => Cls(args),
                 ".dump" => new DumpCommand(args, myInputFiles)
                 {
                     ShowFullFileName = ShowFullFileNameFlag,
                 },
+                ".exit" => new QuitCommand(args),
+                ".list" => ListFiles(args),
                 ".sffn" => ShowFullFileName(args),
                 ".quit" => new QuitCommand(args),
                 ".q" => new QuitCommand(args),
                 "q" => new QuitCommand(args),
-                ".exit" => new QuitCommand(args),
                 ".help" => new ConsoleHelpCommand(args),
                 "help" => new ConsoleHelpCommand(args),
                 "?" => new ConsoleHelpCommand(args),
@@ -138,6 +141,22 @@ namespace ETWAnalyzer.Commands
             return bCancel;
         }
 
+        private ICommand Cls(string[] args)
+        {
+            Console.Clear();  // does not work in Windows Terminal with vtm 
+
+            // use as second try virtual terminal sequences
+            // https://learn.microsoft.com/en-us/windows/console/console-virtual-terminal-sequences
+            //#define ESC "\x1b"
+            //#define CSI "\x1b["
+            //printf(CSI "1;1H");
+            //printf(CSI "2J"); // Clear screen
+
+            Console.Write("\x1b[1:1H");
+            Console.Write("\x1b[2J");
+
+            return null;
+        }
 
         ICommand ShowFullFileName(string[] args)
         {
