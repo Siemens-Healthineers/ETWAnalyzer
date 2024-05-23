@@ -2,7 +2,6 @@
 //// SPDX-License-Identifier:   MIT
 
 using ETWAnalyzer.Extract.Common;
-using Microsoft.Diagnostics.Tracing.Parsers;
 using Microsoft.Windows.EventTracing;
 using Newtonsoft.Json;
 using System;
@@ -26,6 +25,7 @@ namespace ETWAnalyzer.Extract.Handle
         /// Object creation event which originates from Object creation or handle creation event depending on which ETW providers were enabled during recording.
         /// </summary>
         public RefCountChangeEvent CreateEvent { get; set; }
+        IRefCountChangeEvent IObjectRefTrace.CreateEvent => CreateEvent;
 
         IRefCountChangeEvent IObjectRefTrace.FirstCreateEvent => FirstCreateEvent;
 
@@ -70,8 +70,7 @@ namespace ETWAnalyzer.Extract.Handle
         /// Object deletion event which originates from object ref DestroyObject or Handle close events
         /// </summary>
         public RefCountChangeEvent DestroyEvent { get; set; }
-
-        IRefCountChangeEvent IObjectRefTrace.LastDestroyEvent => LastDestroyEvent;
+        IRefCountChangeEvent IObjectRefTrace.DestroyEvent => DestroyEvent;
 
         /// <summary>
         /// Object destroy event from Object Reference Tracing, otherwise the last handle close or file unmap event is returned.
@@ -108,6 +107,7 @@ namespace ETWAnalyzer.Extract.Handle
                 return last;
             }
         }
+        IRefCountChangeEvent IObjectRefTrace.LastDestroyEvent => LastDestroyEvent;
 
         /// <summary>
         /// Handle Name
@@ -120,37 +120,10 @@ namespace ETWAnalyzer.Extract.Handle
         public UInt16 ObjectType { get; set; }
 
         /// <summary>
-        /// Existing Handle which belongs to this process
+        /// Existing (possibly leaked) handle which still exist at trace end.
         /// </summary>
-        public ETWProcessIndex? ProcessIdx { get; set; }
-
-        /// <summary>
-        /// Existing (possibly leaked) handle which belongs to <see cref="ProcessIdx"/>.
-        /// </summary>
-        public UInt32? HandleValue { get; set; }
-
-        /// <summary>
-        /// Get Object Type string
-        /// </summary>
-        /// <param name="extract">Extracted data</param>
-        /// <returns>Stringified type string.</returns>
-        public string GetObjectType(IETWExtract extract)
-        {
-            string lret = "";
-            if (ObjectType == HandleObjectData.FileMapTypeId)
-            {
-                lret = "FileMapping";
-            }
-            else
-            {
-                if (!extract.HandleData.ObjectTypeMap.TryGetValue(ObjectType, out lret))
-                {
-                    lret = "UnknownType";
-                }
-            }
-
-            return lret;
-        }
+        public List<HandleProcess> Existing { get; set; }
+        IReadOnlyList<IHandleProcess> IObjectRefTrace.Existing => Existing;
 
         /// <summary>
         /// Magic value for events where are not closed or we do not have the create time at hand.
@@ -173,31 +146,38 @@ namespace ETWAnalyzer.Extract.Handle
         /// Contains all handle create events if Handle tracing was enabled.
         /// </summary>
         public List<HandleCreateEvent> HandleCreateEvents { get; set; } = new();
+        IReadOnlyList<IHandleCreateEvent> IObjectRefTrace.HandleCreateEvents => HandleCreateEvents;
 
         /// <summary>
         /// Contains all handle duplicate events if Handle tracing was enabled.
         /// </summary>
         public List<HandleDuplicateEvent> HandleDuplicateEvents { get; set; } = new();
+        IReadOnlyList<IHandleDuplicateEvent> IObjectRefTrace.HandleDuplicateEvents => HandleDuplicateEvents;
 
         /// <summary>
         /// Contains all handle close events if Handle tracing was enabled.
         /// </summary>
         public List<HandleCloseEvent> HandleCloseEvents { get; set; } = new();
+        IReadOnlyList<IHandleCloseEvent> IObjectRefTrace.HandleCloseEvents => HandleCloseEvents;
 
         /// <summary>
         /// Contains all object reference change events if ObjectRef tracing was enabled.
         /// </summary>
         public List<RefCountChangeEvent> RefChanges { get; set; } = new();
+        IReadOnlyList<IRefCountChangeEvent> IObjectRefTrace.RefChanges => RefChanges;
 
         /// <summary>
         /// Contains all file mapping events if VAMAP provider was enabled.
         /// </summary>
         public List<FileMapEvent> FileMapEvents { get; set; } = new();
+        IReadOnlyList<IFileMapEvent> IObjectRefTrace.FileMapEvents => FileMapEvents;
 
         /// <summary>
         /// Contains all file unmapping events if VAMAP provider was enabled.
         /// </summary>
         public List<FileUnmapEvent> FileUnmapEvents { get; set; } = new();
+
+        IReadOnlyList<IFileMapEvent> IObjectRefTrace.FileUnmapEvents => FileUnmapEvents;
 
 
         /// <summary>
@@ -334,22 +314,6 @@ namespace ETWAnalyzer.Extract.Handle
                 return false;
             }
         }
-
-        IReadOnlyList<IHandleCloseEvent> IObjectRefTrace.HandleCloseEvents => HandleCloseEvents;
-
-        IReadOnlyList<IHandleCreateEvent> IObjectRefTrace.HandleCreateEvents => HandleCreateEvents;
-
-        IReadOnlyList<IHandleDuplicateEvent> IObjectRefTrace.HandleDuplicateEvents => HandleDuplicateEvents;
-
-        IReadOnlyList<IRefCountChangeEvent> IObjectRefTrace.RefChanges => RefChanges;
-
-        IReadOnlyList<IFileMapEvent> IObjectRefTrace.FileMapEvents => FileMapEvents;
-
-        IReadOnlyList<IFileMapEvent> IObjectRefTrace.FileUnmapEvents => FileUnmapEvents;
-
-        IRefCountChangeEvent IObjectRefTrace.CreateEvent => CreateEvent;
-
-        IRefCountChangeEvent IObjectRefTrace.DestroyEvent => DestroyEvent;
 
         bool? myIsOverlapped;
 
@@ -564,5 +528,27 @@ namespace ETWAnalyzer.Extract.Handle
             });
         }
 
+        /// <summary>
+        /// Get Object Type string
+        /// </summary>
+        /// <param name="extract">Extracted data</param>
+        /// <returns>Stringified type string.</returns>
+        public string GetObjectType(IETWExtract extract)
+        {
+            string lret = "";
+            if (ObjectType == HandleObjectData.FileMapTypeId)
+            {
+                lret = "FileMapping";
+            }
+            else
+            {
+                if (!extract.HandleData.ObjectTypeMap.TryGetValue(ObjectType, out lret))
+                {
+                    lret = "UnknownType";
+                }
+            }
+
+            return lret;
+        }
     }
 }

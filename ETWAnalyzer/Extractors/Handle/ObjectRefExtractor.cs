@@ -266,7 +266,6 @@ namespace ETWAnalyzer.Extractors.Handle
                     });
                     break;
                 case HandleDCEnd:
-                case HandleDCStart:
                     HandleDCETW handleDCEnd = MemoryMarshal.Read<HandleDCETW>(classicEvent.Data);
                     var remainingDCEnd = classicEvent.Data.Slice(Marshal.SizeOf<HandleDCETW>());
                     string handleName = null;
@@ -499,16 +498,29 @@ namespace ETWAnalyzer.Extractors.Handle
                     case HandleDCEndEvent dcEnd:
                         if (!OpenHandles.TryGetValue(dcEnd.ObjectPtr, out hTrace))
                         {
-                            trace = new ObjectRefTrace()
+                            hTrace = new ObjectRefTrace()
                             {
                                 ObjectPtr = dcEnd.ObjectPtr,
                                 ObjectType = dcEnd.ObjectType,
                                 Name = dcEnd.Name,
-                                HandleValue = dcEnd.HandleValue,
-                                ProcessIdx = processIdx,
+                                Existing = new List<HandleProcess>()
                             };
-                            OpenHandles.Add(trace.ObjectPtr, trace);
+                            OpenHandles.Add(hTrace.ObjectPtr, hTrace);
                         }
+
+                        if( hTrace.Existing == null  )
+                        {
+                            hTrace.Existing = new List<HandleProcess>(); 
+                        }
+
+                        var existingHandle = new HandleProcess
+                        {
+                            Handle = dcEnd.HandleValue,
+                            Process = processIdx,
+                        };
+
+                        hTrace.Existing.Add(existingHandle);
+
                         break;
                     case DuplicateObjectEvent duplicateObjectEvent:
                         var sourceProcessIndex = results.GetProcessIndexByPidAtTime(duplicateObjectEvent.SourceProcessId, ev.TimeStamp.DateTimeOffset);

@@ -28,14 +28,9 @@ namespace ETWAnalyzer.Extract.Handle
         public UInt16 ObjectType { get; }
 
         /// <summary>
-        /// Existing Handle which belongs to this process
+        /// Existing (possibly leaked) handle which still exist at trace end.
         /// </summary>
-        public ETWProcessIndex? ProcessIdx { get; }
-
-        /// <summary>
-        /// Existing (possibly leaked) handle which belongs to <see cref="ProcessIdx"/>.
-        /// </summary>
-        public UInt32? HandleValue { get; }
+        public IReadOnlyList<IHandleProcess> Existing { get; }
 
         /// <summary>
         /// Get Object Type string

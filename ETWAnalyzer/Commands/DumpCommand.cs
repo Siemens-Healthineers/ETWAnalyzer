@@ -390,9 +390,10 @@ namespace ETWAnalyzer.Commands
         "                        -CreateStack filter          Keep all object events (create/objRef/duplicate...) where the create stack matches." + Environment.NewLine +
         "                        -DestroyStack filter         Keep all object events (create/objRef/duplicate...) where the destroy stack matches." + Environment.NewLine +
         "                        -StackFilter filter          Keep only the events where the stack matches and throw away all other events. To keep all events which have e.g. CreateWebRequest in their stack use -StackFilter *CreateWebRequest*" + Environment.NewLine +
-        "                        -ShowTotal [Total,File,None] Do not print individual events, just the counts. Total will print totals across multiple files, while File will print the per File totals." + Environment .NewLine + 
         "                        -Object filter               Filter for kernel object pointer value. E.g. -Object 0x8300004." + Environment.NewLine +
-        "                        -Type filter                 Filter by object type e.g. -Type Event;Section" + Environment.NewLine +
+        "                        -Type filter                 Filter by object type e.g. -Type Event;Section. This influences also the display of totals." + Environment.NewLine +
+        "                        -ShowTotal [Total,Process,None] Do not print individual events, just the counts. Total counts all handle types, Process shows handle counts per process. None omits all totals." + Environment.NewLine +
+        "                        -TopN dd nn                  Show top n processes/object types in summary when -ShowTotal is Process or Total." + Environment.NewLine +
         "                        -ObjectName filter           Filter for object name. E.g. -ObjectName *IO to filter for all object which end with :IO." + Environment.NewLine +
         "                        -Handle filter               Text filter for handle value/s. E.g. -Handle 0xABC." + Environment.NewLine +
         "                        -ShowRef                     Show Object Reference increment/decrement operations." + Environment.NewLine +
@@ -622,7 +623,12 @@ namespace ETWAnalyzer.Commands
         "[green]Dump only handles with object names ending with :IO.[/green]" + Environment.NewLine +
         " ETWAnalyzer -fd xx.json -dump ObjectRef -ObjectName *:IO" + Environment.NewLine +
         "[green]Dump only file mapping events in the id range 500-600[/green]" + Environment.NewLine +
-        " ETWAnalyzer -fd xx.json -dump ObjectRef -Map 1 -MinMaxId 500 600" + Environment.NewLine;
+        " ETWAnalyzer -fd xx.json -dump ObjectRef -Map 1 -MinMaxId 500 600" + Environment.NewLine+
+        "[green]Get a list of all handles in system[/green]" + Environment.NewLine +
+        " ETWAnalyzer -fd xx.json -dump ObjectRef -ShowTotal Total" + Environment.NewLine +
+        "[green]Get a list of top 10 processes with highest handle counts[/green]" + Environment.NewLine +
+        " ETWAnalyzer -fd xx.json -dump ObjectRef -ShowTotal Process -TopN 10" + Environment.NewLine;
+
 
 
 
@@ -2444,6 +2450,7 @@ namespace ETWAnalyzer.Commands
                             UsePrettyProcessName = UsePrettyProcessName,
                             TimeFormatOption = TimeFormat,
 
+                            TopN = TopN,
                             ObjectNameFilter = ObjectNameFilter,
                             TypeFilter = TypeFilter,
                             StackFilter = StackFilter,
