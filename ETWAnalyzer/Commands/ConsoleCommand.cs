@@ -25,7 +25,8 @@ namespace ETWAnalyzer.Commands
             public override string Help =>
                 ".cls                               Clear screen." + Environment.NewLine +
                $".dump xxx                          Query loaded file/s. Options are the same as in -Dump command. e.g. .dump CPU will print CPU metrics. Allowed values are {DumpCommand.AllDumpCommands}" + Environment.NewLine +
-                ".load file1.json file2.json ...    Load one or more data files. Use . to load all files in current directory." + Environment.NewLine +
+                ".load file1.json file2.json ...    Load one or more data files. Use . to load all files in current directory. Previously loaded files are removed." + Environment.NewLine +
+                ".load+ file.json                   Add file to list of loaded files but keep other files." + Environment.NewLine +  
                 ".list                              List loaded files" + Environment.NewLine +
                 ".quit or .q                        Quit ETWAnalyzer" + Environment.NewLine +
                 ".unload                            Unload all files if no parameter is passed. Otherwise only the passed files are unloaded from the file list." + Environment.NewLine +
@@ -92,7 +93,8 @@ namespace ETWAnalyzer.Commands
             string[] args = parts.Skip(1).ToArray();
             ICommand command = cmd switch
             {
-                ".load" => Load(args),
+                ".load" => Load(args, bKeepOldFiles:false),
+                ".load+" => Load(args, bKeepOldFiles:true),
                 ".unload" => Unload(args),
                 ".cls" => Cls(args),
                 ".dump" => new DumpCommand(args, myInputFiles)
@@ -197,8 +199,9 @@ namespace ETWAnalyzer.Commands
         /// Load one or multiple input files
         /// </summary>
         /// <param name="args">Input file query</param>
+        /// <param name="bKeepOldFiles">Add to existing do not replace previously loaded files.</param>
         /// <returns>null because it is not a real command.</returns>
-        ICommand Load(string[] args)
+        ICommand Load(string[] args, bool bKeepOldFiles)
         {
             ICommand cmd = null;
 
@@ -219,7 +222,8 @@ namespace ETWAnalyzer.Commands
                 tests.AddRange(filesToAdd);
             }
 
-            myInputFiles = tests.ToArray();
+
+            myInputFiles = bKeepOldFiles ? myInputFiles.Concat(tests).ToArray() : tests.ToArray();
 
             if( myInputFiles != null )
             {
