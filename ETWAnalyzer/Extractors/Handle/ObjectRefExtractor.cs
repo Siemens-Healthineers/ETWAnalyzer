@@ -419,7 +419,7 @@ namespace ETWAnalyzer.Extractors.Handle
         public override void Extract(ITraceProcessor processor, ETWExtract results)
         {
             using var logger = new PerfLogger("Extract ObjectRef");
-            StackPrinter printer = new StackPrinter();
+            StackPrinter printer = new StackPrinter(StackFormat.DllAndMethod);
 
             var objectEvents = myObjectTraceEvents.OrderBy(x => x.TimeStamp).ToList();
 

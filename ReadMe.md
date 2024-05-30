@@ -81,20 +81,84 @@ The following command extracts everything, using Microsoft symbols from a single
 ![](ETWAnalyzer/Documentation/Images/ExtractionCommand.png "Extract Command")
 The option -AllCPU will include also methods with < 10 ms CPU or Wait time which are normally not relevant for performance regression issues to keep the file size as small as possible. 
 You can also extract small Json files without symbol server access and resolve methods later from the Json files. See [Build Profiling At Scale At Github](ETWAnalyzer/Documentation/BuildProfiling.md) for more details.
-There is extracted example data located at [Test Data](https://github.com/Siemens-Healthineers/ETWAnalyzer/blob/main/ETWAnalyzer_uTest/TestData/CallupAdhocWarmReadingCT_3117msFO9DE01T0162PC.20200717-124447.json) which you can query at your own. Can you find the performance bug? The curl command downloads the test data from Github. Then you can start working with the data.
+There is extracted example data located at [Test Data](https://github.com/Siemens-Healthineers/ETWAnalyzer/blob/main/ETWAnalyzer_uTest/TestData/CallupAdhocWarmReadingCT_3117msFO9DE01T0162PC.20200717-124447.json) which you can query at your own. Can you find the performance bug? 
+The curl command downloads the test data from Github. Then you can start working with the data. Since v3.0.0.6 ETWAnalyzer also supports an interactive console mode.
 ```
-curl https://raw.githubusercontent.com/Siemens-Healthineers/ETWAnalyzer/main/ETWAnalyzer_uTest/TestData/CallupAdhocWarmReadingCT_3117msFO9DE01T0162PC.20200717-124447.json > c:\Temp\ETWAnalzyerTest.json
-set f=-filedir c:\Temp\ETWAnalzyerTest.json
-ETWAnalyzer %f% -dump CPU -topN 5
-ETWAnalyzer %f% -dump CPU -topN 1 -methods *
-ETWAnalyzer %f% -dump CPU -topN 1 -methods * -sortby stackdepth -MinMaxCPUMs 1000
-ETWAnalyzer %f% -dump CPU -topN 1 -methods * -sortby stackdepth -MinMaxCPUMs 1000 -includedll
-ETWAnalyzer %f% -dump CPU -topN 1 -methods * -sortby stackdepth -MinMaxCPUMs 1000 -includedll -threadcount
-ETWAnalyzer %f% -dump CPU -topN 1 -methods * -sortby stackdepth -MinMaxCPUMs 1000 -FirstLastDuration s s
-ETWAnalyzer %f% -dump Stats -Properties SessionDurations
+curl https://raw.githubusercontent.com/Siemens-Healthineers/ETWAnalyzer/main/ETWAnalyzer_uTest/TestData/CallupAdhocWarmReadingCT_3117msFO9DE01T0162PC.20200717-124447.json > c:\Temp\ETWAnalyzerTest.json
+ETWAnalyzer -console
+.load c:\Temp\ETWAnalyzerTest.json
+.dump CPU -topN 1 -methods *
+.dump CPU -topN 1 -methods * -sortby stackdepth -MinMaxCPUMs 1000
+         CPU ms Method
+5/29/2024 4:27:46 PM   ETWAnalyzerTest
+   VSIXAutoUpdate.exe(12996) 
+      36,540 ms _RtlUserThreadStart 
+      36,540 ms __RtlUserThreadStart 
+      36,540 ms _CorExeMain_Exported 
+      36,540 ms ShellShim__CorExeMain 
+      36,540 ms _CorExeMain 
+      36,540 ms _CorExeMain 
+      36,540 ms EEPolicy::HandleExitProcess 
+      36,540 ms HandleExitProcessHelper 
+      36,540 ms SafeExitProcess 
+      36,540 ms EEPolicy::ExitProcessViaShim 
+      36,540 ms CLRRuntimeHostInternalImpl::ShutdownAllRuntimesThenExit 
+      36,540 ms RuntimeDesc::ShutdownAllActiveRuntimes 
+      36,540 ms ExitProcessImplementation 
+      36,540 ms RtlExitUserProcess 
+      36,540 ms LdrShutdownProcess 
+      36,540 ms LdrpCallInitRoutine 
+      36,540 ms LdrxCallInitRoutine 
+      36,540 ms _CorDllMain_Exported 
+      36,540 ms ShellShim__CorDllMain 
+      36,540 ms _CorDllMain 
+      36,540 ms _DllMainCRTStartup 
+      36,540 ms dllmain_dispatch 
+      36,540 ms dllmain_crt_dispatch 
+      36,540 ms ___scrt_acquire_startup_lock  
+.dump CPU -topN 1 -methods * -sortby stackdepth -MinMaxCPUMs 1000 -includedll -threadcount
+5/29/2024 4:27:46 PM   ETWAnalyzerTest
+   VSIXAutoUpdate.exe(12996) 
+      36,540 ms #1        ntdll.dll!_RtlUserThreadStart 
+      36,540 ms #1        ntdll.dll!__RtlUserThreadStart 
+      36,540 ms #1        mscoree.dll!_CorExeMain_Exported 
+      36,540 ms #1        mscoree.dll!ShellShim__CorExeMain 
+      36,540 ms #1        mscoreei.dll!_CorExeMain 
+      36,540 ms #1        clr.dll!_CorExeMain 
+      36,540 ms #1        clr.dll!EEPolicy::HandleExitProcess 
+      36,540 ms #1        clr.dll!HandleExitProcessHelper 
+      36,540 ms #1        clr.dll!SafeExitProcess 
+      36,540 ms #1        clr.dll!EEPolicy::ExitProcessViaShim 
+      36,540 ms #1        mscoreei.dll!CLRRuntimeHostInternalImpl::ShutdownAllRuntimesThenExit 
+      36,540 ms #1        mscoreei.dll!RuntimeDesc::ShutdownAllActiveRuntimes 
+      36,540 ms #1        kernel32.dll!ExitProcessImplementation 
+      36,540 ms #1        ntdll.dll!RtlExitUserProcess 
+      36,540 ms #1        ntdll.dll!LdrShutdownProcess 
+      36,540 ms #1        ntdll.dll!LdrpCallInitRoutine 
+      36,540 ms #1        ntdll.dll!LdrxCallInitRoutine 
+      36,540 ms #1        mscoree.dll!_CorDllMain_Exported 
+      36,540 ms #1        mscoree.dll!ShellShim__CorDllMain 
+      36,540 ms #1        mscoreei.dll!_CorDllMain 
+      36,540 ms #1        CustomMarshalers.dll!_DllMainCRTStartup 
+      36,540 ms #1        CustomMarshalers.dll!dllmain_dispatch 
+      36,540 ms #1        CustomMarshalers.dll!dllmain_crt_dispatch 
+      36,540 ms #1        CustomMarshalers.dll!___scrt_acquire_startup_lock 
+.dump CPU -topN 1 -methods * -sortby stackdepth -MinMaxCPUMs 1000 -FirstLastDuration s s
+         CPU ms Last-First First(s) Last(s)  Method
+5/29/2024 4:27:46 PM   ETWAnalyzerTest
+   VSIXAutoUpdate.exe(12996) 
+...
+      36,540 ms   37.417 s    0.599   38.016 _CorDllMain 
+      36,540 ms   37.417 s    0.599   38.016 _DllMainCRTStartup 
+      36,540 ms   37.417 s    0.599   38.016 dllmain_dispatch 
+      36,540 ms   37.417 s    0.599   38.016 dllmain_crt_dispatch 
+      36,540 ms   37.417 s    0.599   38.016 ___scrt_acquire_startup_lock
+.dump Stats -Properties SessionDurations
+5/29/2024 4:27:46 PM   ETWAnalyzerTest
+        SessionDurationS    : 38
 ``` 
 
-This shows a Microsoft Bug at work while some serialization performance test was executed.
+This shows a Microsoft Bug at work after pretty much every Visual Studio update where shutting down the .NET Runtime gets stuck.
 
 ## Querying the Data
 After extraction from a > 600 MB input file a small ca. 6 MB file in the output folder. 

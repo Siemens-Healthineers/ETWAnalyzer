@@ -237,26 +237,12 @@ namespace ETWAnalyzer.Extract
         public int ParentPid { get; set; }
 
         /// <summary>
-        /// Cache hash value to prevent recalculating things over and over again because command lines can be large strings which take a significant amount of time to calculate
-        /// </summary>
-        int myHash = 1;
-
-        /// <summary>
         /// Needed when used in a dictionary or HashSet.
         /// </summary>
         /// <returns></returns>
         public override int GetHashCode()
         {
-            if (myHash == -1)
-            {
-                // To combine hash codes from different fields see
-                // https://stackoverflow.com/questions/1646807/quick-and-simple-hash-code-combinations
-                int hash = 17 * 31 + ProcessID;
-                hash = hash * 31 + (CmdLine ?? "").GetHashCode();
-                hash = hash * 31 + StartTime.GetHashCode();
-                myHash = hash;
-            }
-            return myHash;
+            return 17 * 31 + ProcessID;
         }
 
         /// <summary>

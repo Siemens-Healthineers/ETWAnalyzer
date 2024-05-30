@@ -42,20 +42,20 @@ namespace ETWAnalyzer.Extract.Handle
                 RefCountChangeEvent first = CreateEvent;
                 if (first == null)
                 {
-                    if (IsFileMap && FileMapEvents.Count > 0)
+                    if (IsFileMap && FileMapEvents?.Count > 0)
                     {
                         var firstMap = FileMapEvents.OrderBy(x => x.TimeNs).First();
                         first = new RefCountChangeEvent(default(TraceTimestamp), 1, firstMap.ProcessIdx, firstMap.ThreadId, firstMap.StackIdx)
                         {
-                            TimeNs = firstMap.TimeNs 
+                            TimeNs = firstMap.TimeNs
                         };
                     }
-                    else if (HandleCreateEvents.Count > 0)
+                    else if (HandleCreateEvents?.Count > 0)
                     {
                         var firstHandleCreate = HandleCreateEvents.OrderBy(x => x.TimeNs).First();
                         first = new RefCountChangeEvent(default(TraceTimestamp), 1, firstHandleCreate.ProcessIdx, firstHandleCreate.ThreadId, firstHandleCreate.StackIdx)
-                        { 
-                            TimeNs = firstHandleCreate.TimeNs 
+                        {
+                            TimeNs = firstHandleCreate.TimeNs
                         };
                     }
 
@@ -89,10 +89,10 @@ namespace ETWAnalyzer.Extract.Handle
                     {
                         var lastUnmap = FileUnmapEvents.OrderBy(x => x.TimeNs).Last();
                         last = new RefCountChangeEvent(default(TraceTimestamp), -1, lastUnmap.ProcessIdx, lastUnmap.ThreadId, lastUnmap.StackIdx)
-                        { 
-                            TimeNs = lastUnmap.TimeNs 
-                        };   
-                    } else if( HandleCloseEvents.Count > 0 && ( HandleCreateEvents.Count - (HandleCloseEvents.Count+HandleDuplicateEvents.Count) == 0  ))
+                        {
+                            TimeNs = lastUnmap.TimeNs
+                        };
+                    } else if (HandleCloseEvents.Count > 0 && (HandleCreateEvents.Count - (HandleCloseEvents.Count + HandleDuplicateEvents.Count) == 0))
                     {
                         var lastClose = HandleCloseEvents.Last();
                         last = new RefCountChangeEvent(default(TraceTimestamp), -1, lastClose.ProcessIdx, lastClose.ThreadId, lastClose.StackIdx)
@@ -101,7 +101,7 @@ namespace ETWAnalyzer.Extract.Handle
                         };
                     }
 
-                    DestroyEvent = last;    
+                    DestroyEvent = last;
                 }
 
                 return last;
@@ -130,6 +130,7 @@ namespace ETWAnalyzer.Extract.Handle
         /// </summary>
         public static TimeSpan LeakTime { get; } = TimeSpan.FromSeconds(9999);
 
+        TimeSpan? myDuration;
         /// <summary>
         /// Handle lifetime or <see cref="LeakTime"/> duration to indicate a potential leak.
         /// </summary>
@@ -138,9 +139,15 @@ namespace ETWAnalyzer.Extract.Handle
         {
             get
             {
-                return FirstCreateEvent == null ? LeakTime : ((LastDestroyEvent == null) ? LeakTime : TimeSpan.FromTicks((LastDestroyEvent.TimeNs - FirstCreateEvent.TimeNs) / 100));
+                if (myDuration == null)
+                {
+                    myDuration = FirstCreateEvent == null ? LeakTime : ((LastDestroyEvent == null) ? LeakTime : TimeSpan.FromTicks((LastDestroyEvent.TimeNs - FirstCreateEvent.TimeNs) / 100));
+                }
+                return myDuration.Value;
             }
         }
+
+        List<HandleCreateEvent> HandleCreateEvents_Backup {get;set;}
 
         /// <summary>
         /// Contains all handle create events if Handle tracing was enabled.
@@ -148,11 +155,16 @@ namespace ETWAnalyzer.Extract.Handle
         public List<HandleCreateEvent> HandleCreateEvents { get; set; } = new();
         IReadOnlyList<IHandleCreateEvent> IObjectRefTrace.HandleCreateEvents => HandleCreateEvents;
 
+
+        List<HandleDuplicateEvent> HandleDuplicateEvents_Backup { get; set; }
         /// <summary>
         /// Contains all handle duplicate events if Handle tracing was enabled.
         /// </summary>
         public List<HandleDuplicateEvent> HandleDuplicateEvents { get; set; } = new();
         IReadOnlyList<IHandleDuplicateEvent> IObjectRefTrace.HandleDuplicateEvents => HandleDuplicateEvents;
+
+
+        List<HandleCloseEvent> HandleCloseEvents_Backup { get; set; }
 
         /// <summary>
         /// Contains all handle close events if Handle tracing was enabled.
@@ -160,18 +172,22 @@ namespace ETWAnalyzer.Extract.Handle
         public List<HandleCloseEvent> HandleCloseEvents { get; set; } = new();
         IReadOnlyList<IHandleCloseEvent> IObjectRefTrace.HandleCloseEvents => HandleCloseEvents;
 
+
+        List<RefCountChangeEvent> RefChanges_Backup { get; set; }
         /// <summary>
         /// Contains all object reference change events if ObjectRef tracing was enabled.
         /// </summary>
         public List<RefCountChangeEvent> RefChanges { get; set; } = new();
         IReadOnlyList<IRefCountChangeEvent> IObjectRefTrace.RefChanges => RefChanges;
 
+        List<FileMapEvent> FileMapEvents_Backup { get; set; }
         /// <summary>
         /// Contains all file mapping events if VAMAP provider was enabled.
         /// </summary>
         public List<FileMapEvent> FileMapEvents { get; set; } = new();
         IReadOnlyList<IFileMapEvent> IObjectRefTrace.FileMapEvents => FileMapEvents;
 
+        List<FileUnmapEvent> FileUnmapEvents_Backup { get; set; }
         /// <summary>
         /// Contains all file unmapping events if VAMAP provider was enabled.
         /// </summary>
@@ -203,30 +219,26 @@ namespace ETWAnalyzer.Extract.Handle
         /// </summary>
         internal void RefreshCollectionsAfterDeserialize()
         {
-            if (HandleCreateEvents == null)
-            {
-                HandleCreateEvents = new();
-            }
-            if (HandleDuplicateEvents == null)
-            {
-                HandleDuplicateEvents = new();
-            }
-            if (HandleCloseEvents == null)
-            {
-                HandleCloseEvents = new();
-            }
-            if (RefChanges == null)
-            {
-                RefChanges = new();
-            }
-            if (FileMapEvents == null)
-            {
-                FileMapEvents = new();
-            }
-            if (FileUnmapEvents == null)
-            {
-                FileUnmapEvents = new();
-            }
+            var tmp = this.Duration; // cache duration before any events are removed 
+
+            HandleCreateEvents_Backup = HandleCreateEvents_Backup ?? HandleCreateEvents;
+            // restore backed up collections from state modifying operations 
+            HandleCreateEvents = HandleCreateEvents_Backup ?? new();
+
+            HandleDuplicateEvents_Backup = HandleDuplicateEvents_Backup ?? HandleDuplicateEvents;
+            HandleDuplicateEvents = HandleDuplicateEvents_Backup ?? new();
+
+            HandleCloseEvents_Backup = HandleCloseEvents_Backup ?? HandleCloseEvents;
+            HandleCloseEvents = HandleCloseEvents_Backup ?? new();
+
+            RefChanges_Backup = RefChanges_Backup ?? RefChanges;
+            RefChanges = RefChanges_Backup ?? new();
+
+            FileMapEvents_Backup = FileMapEvents_Backup ?? FileMapEvents;
+            FileMapEvents = FileMapEvents_Backup ?? new();
+
+            FileUnmapEvents_Backup = FileUnmapEvents ?? FileUnmapEvents;
+            FileUnmapEvents = FileUnmapEvents_Backup ?? new();
         }
 
         /// <summary>
@@ -443,6 +455,7 @@ namespace ETWAnalyzer.Extract.Handle
                         }
                     }
                 }
+
 
                 HandleCreateEvents = leakedCreate;
                 HandleCloseEvents = new(); // by definition we are missing closed

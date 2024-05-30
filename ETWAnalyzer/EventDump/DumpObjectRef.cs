@@ -306,6 +306,10 @@ namespace ETWAnalyzer.EventDump
                         if (Leak)
                         {
                             handle.CheckLeakAndRemoveNonLeakingEvents();
+                            if( handle.HandleCloseEvents.Count == 0 && handle.HandleCreateEvents.Count == 0 && handle.HandleDuplicateEvents.Count == 0 )
+                            {
+                                continue;
+                            }
                         }
                         
                         if( StackFilter.Key != null)
@@ -589,29 +593,9 @@ namespace ETWAnalyzer.EventDump
             public int MapCount { get; internal set; }
             public int UnmapCount { get; internal set; }
             public int RefChangeCount { get; internal set; }
-            public HashSet<ETWProcess> Processes { get; internal set; } = new();
-
             
             Dictionary<ETWProcess,Counter<string>> myNotClosedHandles = new();
             Counter<string> myTotalNotClosedHandles = new();
-
-            void AddProcess(IReadOnlyList<IStackEventBase> items, IETWExtract extract)
-            {
-                foreach(IStackEventBase item in items)
-                {
-                    Processes.Add(extract.GetProcess(item.ProcessIdx));
-                }
-            }
-
-            void AddProcess(IReadOnlyList<IHandleDuplicateEvent> duplicates, string objectType, IETWExtract extract)
-            {
-                foreach (IHandleDuplicateEvent duplicate in duplicates)
-                {
-                    var process = extract.GetProcess(duplicate.ProcessIdx);
-                    Processes.Add(process);
-                    Processes.Add(extract.GetProcess(duplicate.SourceProcessIdx));
-                }
-            }
 
             void AddNotClosedHandle(ETWProcess process, string handleType)
             {
@@ -638,22 +622,16 @@ namespace ETWAnalyzer.EventDump
                 }
 
                 CreateCount += trace.HandleCreateEvents.Count;
-                AddProcess(trace.HandleCreateEvents, extract);
 
                 CloseCount += trace.HandleCloseEvents.Count;
-                AddProcess(trace.HandleCloseEvents, extract);
 
                 DuplicateCount += trace.HandleDuplicateEvents.Count;
-                AddProcess(trace.HandleDuplicateEvents, trace.GetObjectType(extract), extract);   
 
                 MapCount += trace.FileMapEvents.Count;
-                AddProcess(trace.FileMapEvents, extract);   
 
                 UnmapCount += trace.FileUnmapEvents.Count;
-                AddProcess(trace.FileUnmapEvents, extract);
 
                 RefChangeCount += trace.RefChanges.Count;
-                AddProcess(trace.RefChanges, extract);
 
                 if (trace.Existing != null)
                 {
@@ -691,7 +669,7 @@ namespace ETWAnalyzer.EventDump
                         break;
                     case DumpCommand.TotalModes.Total:
                         ColorConsole.WriteEmbeddedColorLine($"Not closed Handle counts for {myNotClosedHandles.Count} processes", color);
-                        foreach (var total in myTotalNotClosedHandles.Counts.OrderBy(x => x.Value))
+                        foreach (var total in myTotalNotClosedHandles.Counts.SortAscendingGetTopNLast( x=> x.Value, null, range))
                         {
                             sum += total.Value;
                             PrintValue(total.Key, total.Value, color);
