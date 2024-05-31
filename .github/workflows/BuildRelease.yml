@@ -58,3 +58,10 @@ jobs:
             name: ETWAnalyzer.nupkg
             path: ${{ github.workspace }}/bin/Release/ETWAnalyzer*.nupkg
             retention-days: 90
+
+        - name: Upload Samples
+          uses: actions/upload-artifact@v4
+          with:
+            name: Samples_Binaries
+            path: ${{ github.workspace }}//Release/Samples_Binaries.zip
+            retention-days: 90
