@@ -88,6 +88,7 @@ curl https://raw.githubusercontent.com/Siemens-Healthineers/ETWAnalyzer/main/ETW
 ETWAnalyzer -console
 .load c:\Temp\ETWAnalyzerTest.json
 .dump CPU -topN 1 -methods *
+    ...
 .dump CPU -topN 1 -methods * -sortby stackdepth -MinMaxCPUMs 1000
          CPU ms Method
 5/29/2024 4:27:46 PM   ETWAnalyzerTest
