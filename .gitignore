@@ -275,3 +275,4 @@ ETWAnalyzer/Documentation/Contributing.html
 # Avoid Logs from runsettings
 **/*.txt
 **/*log
+/Samples_Binaries.zip
