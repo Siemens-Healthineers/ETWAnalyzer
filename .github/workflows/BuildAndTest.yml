@@ -69,6 +69,9 @@ jobs:
         - name: Get .NET Information
           run: dotnet --info
 
+        - name: Nuget Restore
+          run: msbuild -t:restore
+
         - name: Build Release
           run: msbuild "/p:Configuration=Release;Platform=x64"
 
