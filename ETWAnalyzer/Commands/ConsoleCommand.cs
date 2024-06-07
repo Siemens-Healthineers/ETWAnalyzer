@@ -323,10 +323,13 @@ namespace ETWAnalyzer.Commands
         {
             if (bFullLoad)
             {
-                var tmp = x.Files[0].Extract.CPU;
-                var tmp2 = x.Files[0].Extract.Modules;
-                var tmp4 = x.Files[0].Extract.FileIO;
-                var tmp3 = x.Files[0].Extract.HandleData;
+                foreach (var file in x.Files)
+                {
+                    var tmp = file.Extract.CPU;
+                    var tmp2 = file.Extract.Modules;
+                    var tmp4 = file.Extract.FileIO;
+                    var tmp3 = file.Extract.HandleData;
+                }
             }
         }
 
