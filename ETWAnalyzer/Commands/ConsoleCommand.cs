@@ -30,7 +30,8 @@ namespace ETWAnalyzer.Commands
                 "   Query loaded file/s. Options are the same as in -Dump command. e.g. .dump CPU will print CPU metrics." + Environment.NewLine +
                 "     -fd *filter*    Filter loaded files which are queried. Filter is applied to full path file name." + Environment.NewLine +  
                $"   Allowed values are {DumpCommand.AllDumpCommands}" + Environment.NewLine +
-                ".load file1.json file2.json ...    "+ Environment.NewLine + 
+                ".load [-all] file1.json file2.json ...    " + Environment.NewLine + 
+                "     -all    Fully load all json files during load. By default the files are fully loaded during the dump command." + Environment.NewLine +
                 "   Load one or more data files. Use . to load all files in current directory. Previously loaded files are removed." + Environment.NewLine +
                 ".load+ file.json                   " + Environment.NewLine + 
                 "   Add file to list of loaded files but keep other files." + Environment.NewLine +  
@@ -268,6 +269,8 @@ namespace ETWAnalyzer.Commands
         {
             ICommand cmd = null;
 
+            bool bFullLoad = false;
+
             List<Lazy <SingleTest>> tests  = new();
             foreach (var arg in args)
             {
@@ -275,11 +278,18 @@ namespace ETWAnalyzer.Commands
                 {
                     continue;
                 }
+                if( arg.ToLowerInvariant() == "-all")
+                {
+                    bFullLoad = true;
+                    continue;
+                }
+
                 Console.WriteLine($"Loading {arg}");
                 var runs = TestRun.CreateFromDirectory(arg, System.IO.SearchOption.TopDirectoryOnly, null);
                 IEnumerable<Lazy<SingleTest>> filesToAdd = runs.SelectMany(x => x.Tests).SelectMany(x => x.Value).Select(x =>
                 {
                     x.KeepExtract = true; // do not unload serialized Extract when test is disposed.
+                    ForceDeserializeOnLoadWhenRequested(bFullLoad, x);
                     return new Lazy<SingleTest>(() => x);
                 });
                 tests.AddRange(filesToAdd);
@@ -301,6 +311,23 @@ namespace ETWAnalyzer.Commands
             }
 
             return cmd;
+        }
+
+        /// <summary>
+        /// Deserialize json file and all dependant json files if requested.
+        /// By default the files are loaded when it is accessed.
+        /// </summary>
+        /// <param name="bFullLoad"></param>
+        /// <param name="x"></param>
+        private static void ForceDeserializeOnLoadWhenRequested(bool bFullLoad, SingleTest x)
+        {
+            if (bFullLoad)
+            {
+                var tmp = x.Files[0].Extract.CPU;
+                var tmp2 = x.Files[0].Extract.Modules;
+                var tmp4 = x.Files[0].Extract.FileIO;
+                var tmp3 = x.Files[0].Extract.HandleData;
+            }
         }
 
 
