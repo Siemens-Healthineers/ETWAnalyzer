@@ -309,8 +309,8 @@ namespace ETWAnalyzer_iTest
             if (IsSymbolServerReachable())
             {
                 // Create a changed file to 
-                ExtractSerializer ser = new ExtractSerializer();
-                ser.Serialize(resolvedJson, RemoveUnresolvedSymbolsExceptForDwmRedir(extract2.Extract));
+                ExtractSerializer ser = new ExtractSerializer(resolvedJson);
+                ser.Serialize(RemoveUnresolvedSymbolsExceptForDwmRedir(extract2.Extract));
 
 
                 // resolve a second time with more symbols which should lead some more resolved files

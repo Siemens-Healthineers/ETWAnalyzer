@@ -325,7 +325,7 @@ namespace ETWAnalyzer.Extract
         {
             string ext = Path.GetExtension(FileName).ToLowerInvariant();
             string jsonFile = null;
-            if (ext == TestRun.ExtractExtension)
+            if (ext == TestRun.ExtractExtension || ext == TestRun.CompressedExtractExtension)
             {
                 jsonFile = FileName;
             }
@@ -336,14 +336,28 @@ namespace ETWAnalyzer.Extract
                 if (directory?.OutputDirectory != null)
                 {
                     jsonFile = Path.Combine(directory.OutputDirectory, directory.IsDefault ? Program.ExtractFolder : "", fileNameWithoutExtension + TestRun.ExtractExtension);
+                    if (!File.Exists(jsonFile)) // search below 7z file in Extract Folder
+                    {
+                        jsonFile = Path.Combine(directory.OutputDirectory, directory.IsDefault ? Program.ExtractFolder : "", fileNameWithoutExtension + TestRun.CompressedExtractExtension);
+                    }
                 }
-                if( !File.Exists(jsonFile)) // search below 7z file in Extract Folder
+
+                if ( !File.Exists(jsonFile)) // search below 7z file in Extract Folder
                 {
                     jsonFile = Path.Combine(Path.GetDirectoryName(FileName), Program.ExtractFolder, fileNameWithoutExtension + TestRun.ExtractExtension);
                 }
-                if( !File.Exists(jsonFile)) // search side by side of etl/zip file
+                if (!File.Exists(jsonFile)) // search below 7z file in Extract Folder
+                {
+                    jsonFile = Path.Combine(Path.GetDirectoryName(FileName), Program.ExtractFolder, fileNameWithoutExtension + TestRun.CompressedExtractExtension);
+                }
+
+                if ( !File.Exists(jsonFile)) // search side by side of etl/zip file
                 {
                     jsonFile = Path.Combine(Path.GetDirectoryName(FileName), fileNameWithoutExtension + TestRun.ExtractExtension);
+                }
+                if (!File.Exists(jsonFile)) // search side by side of etl/zip file
+                {
+                    jsonFile = Path.Combine(Path.GetDirectoryName(FileName), fileNameWithoutExtension + TestRun.CompressedExtractExtension);
                 }
             }
             return File.Exists(jsonFile) ? jsonFile : null;

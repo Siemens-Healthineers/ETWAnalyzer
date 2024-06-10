@@ -150,6 +150,7 @@ namespace ETWAnalyzer.Commands
         internal const string DryRunArg = "-dryrun";
         internal const string NoSampling = "-nosampling";
         internal const string NoCSwitch = "-nocswitch";
+        internal const string NoCompress = "-nocompress";
 
 
 
@@ -186,6 +187,15 @@ namespace ETWAnalyzer.Commands
         /// separated with a comma
         /// </summary>
         List<string> myProcessingActionList = new();
+
+        /// <summary>
+        /// Set via <see cref="NoCompress"/> flag. Default is compressed
+        /// </summary>
+        bool Compress
+        {
+            get; set;
+
+        } = true;
 
 
         /// <summary>
@@ -389,6 +399,9 @@ namespace ETWAnalyzer.Commands
                         string outDir = GetNextNonArg(OutDirArg);
                         OutDir.OutputDirectory = ArgParser.CheckIfFileOrDirectoryExistsAndExtension(outDir);
                         OutDir.IsDefault = false;
+                        break;
+                    case NoCompress:
+                        Compress = false;
                         break;
                     case NoTestRunGrouping:
                         TestRun.MaxTimeBetweenTests = TimeSpan.MaxValue;
@@ -826,7 +839,7 @@ namespace ETWAnalyzer.Commands
                 return;
             }
 
-            IReadOnlyList<string> outFiles = ExtractFile(Extractors, fileToAnalyze.EtlFileNameIfPresent ?? fileToAnalyze.FileName, OutDir, Symbols, HaveToDeleteTemp, AfterUnzipCommand);
+            IReadOnlyList<string> outFiles = ExtractFile(Extractors, fileToAnalyze.EtlFileNameIfPresent ?? fileToAnalyze.FileName, OutDir, Symbols, HaveToDeleteTemp, AfterUnzipCommand, Compress);
 
             if( outFiles == null || outFiles.Count == 0 )
             {
@@ -915,10 +928,11 @@ namespace ETWAnalyzer.Commands
         /// <param name="symbols">Gives access to local and remote symbol folder and servers.</param>
         /// <param name="haveToDeleteTemp">True: Deletes all temp files</param>
         /// <param name="afterUnzipCommand">Command line of exe which is executed after an ETL was extracted.</param>
+        /// <param name="bCompress">if true output files are written to a compressed file with extension <see cref="TestRun.CompressedExtractExtension"/></param>
         /// <returns>Serialized Json file name</returns>
-        static IReadOnlyList<string> ExtractFile(List<ExtractorBase> extractors, string inputETLFileOrZip, OutDir outputDirectory, SymbolPaths symbols, bool haveToDeleteTemp, string afterUnzipCommand)
+        static IReadOnlyList<string> ExtractFile(List<ExtractorBase> extractors, string inputETLFileOrZip, OutDir outputDirectory, SymbolPaths symbols, bool haveToDeleteTemp, string afterUnzipCommand, bool bCompress)
         {
-            var singleFile = new ExtractSingleFile(inputETLFileOrZip, extractors, outputDirectory.TempDirectory ?? Path.GetDirectoryName(inputETLFileOrZip), symbols, afterUnzipCommand); // unzip
+            var singleFile = new ExtractSingleFile(inputETLFileOrZip, extractors, outputDirectory.TempDirectory ?? Path.GetDirectoryName(inputETLFileOrZip), symbols, afterUnzipCommand, bCompress); // unzip
             return singleFile.Execute(outputDirectory, haveToDeleteTemp);
         }
 

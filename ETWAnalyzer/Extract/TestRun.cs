@@ -42,14 +42,14 @@ namespace ETWAnalyzer.Extract
         internal const string ExtractExtension = ".json";
 
         /// <summary>
-        /// Compressed Json extension
+        /// Compressed Json extension which has all extracted json files stored in one archive.
         /// </summary>
         internal const string CompressedExtractExtension = ".json7z";
 
         /// <summary>
         /// Valid files are compressed ETL files and extracted ETL files, as well as extracted Json files
         /// </summary>
-        static readonly string[] ValidExtensions = new string[] { SevenZExtension, ZipExtension, ETLExtension, ExtractExtension };
+        static readonly string[] ValidExtensions = new string[] { SevenZExtension, ZipExtension, ETLExtension, ExtractExtension, CompressedExtractExtension };
 
         /// <summary>
         /// When between two tests a time gap > 1h exists then map it to a new TestRun

@@ -2,6 +2,7 @@
 //// SPDX-License-Identifier:   MIT
 
 
+using Dia2Lib;
 using ETWAnalyzer.Extract;
 using ETWAnalyzer.Extract.Common;
 using ETWAnalyzer.Extract.CPU;
@@ -9,14 +10,19 @@ using ETWAnalyzer.Extract.CPU.Extended;
 using ETWAnalyzer.Extract.FileIO;
 using ETWAnalyzer.Extract.Handle;
 using ETWAnalyzer.Extract.Modules;
+using ETWAnalyzer.Infrastructure;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
+using SevenZip;
 using System;
 using System.Collections.Generic;
+using System.Configuration;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.Serialization;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace ETWAnalyzer.Extractors
@@ -74,8 +80,19 @@ namespace ETWAnalyzer.Extractors
             }
         }
 
-        public ExtractSerializer()
+        public string ExtractMainFileName
         {
+            get;private set;
+        }
+
+        /// <summary>
+        /// Name of input/output file
+        /// </summary>
+        /// <param name="extractMainFileName">Input/output main json file, or compressed json <see cref="TestRun.CompressedExtractExtension"/> which contains all extracted json files in the archive.</param>
+        public ExtractSerializer(string extractMainFileName)
+        {
+            ExtractMainFileName = extractMainFileName;
+            SetSerializerModeOnExtension(ExtractMainFileName);
         }
 
 
@@ -93,8 +110,20 @@ namespace ETWAnalyzer.Extractors
         {
             string newFileName = GetFileNameFor(outputFile, type);
             files.Add(newFileName);
-            Logger.Info($"Created output file name {newFileName} for output file {outputFile}");
-            return File.Create(newFileName);
+            Logger.Info($"Created output file name {newFileName} for output file {outputFile}, Compressed: {Compressed}");
+
+            Stream lret = null;
+            if( Compressed )
+            {
+                lret = new ReusableMemoryStream();
+                myCompressStreams.Add(Path.GetFileName(newFileName), lret);
+            }
+            else
+            {
+                lret = File.Create(newFileName);
+            }
+
+            return lret;
         }
 
         static internal string[] GetDerivedFileNameParts()
@@ -106,78 +135,155 @@ namespace ETWAnalyzer.Extractors
         internal string GetFileNameFor(string outputFile, string type)
         {
             string fileNameNoExt = Path.GetFileNameWithoutExtension(outputFile);
-            string ext = Path.GetExtension(outputFile);
             string dir = Path.GetDirectoryName(outputFile);
 
-            string extension = type == null ? ext : $"_Derived_{type}" + ext;
+            string extension = type == null ? TestRun.ExtractExtension : $"_Derived_{type}" + TestRun.ExtractExtension;
             string newfileName = Path.Combine(dir, fileNameNoExt + extension);
             return newfileName;
         }
 
-        public List<string> Serialize(string outputFile, ETWExtract extract)
+        internal T Deserialize<T>(string type) where T:class
+        {
+            string fileName = GetFileNameFor(ExtractMainFileName, type);
+            T lret = null;
+
+            if (Compressed)
+            {
+                using (var extractor = new SevenZipExtractor(ExtractMainFileName))
+                {
+                    string fileNoPath = Path.GetFileName(fileName);
+                    if (extractor.ArchiveFileNames.Contains(fileNoPath))
+                    {
+                        var memoryStream = new MemoryStream();
+                        extractor.ExtractFile(fileNoPath, memoryStream);
+                        memoryStream.Position = 0;
+                        lret = Deserialize<T>(memoryStream);
+                    }
+                }
+            }
+            else
+            {
+                if (File.Exists(fileName))
+                {
+                    using var fileStream = ExtractSerializer.OpenFileReadOnly(fileName);
+                    lret = ExtractSerializer.Deserialize<T>(fileStream);
+                }
+            }
+
+            return lret;
+        }
+
+
+        bool Compressed
+        {
+            get;set;
+        }
+
+        Dictionary<string, Stream> myCompressStreams = null;
+
+        public List<string> Serialize(ETWExtract extract)
         {
             List<string> outputFiles = new();
 
+            SevenZipCompressor compressor = null;
+            
+
+            if( Compressed)
+            {
+                compressor = new SevenZipCompressor();
+                compressor.ArchiveFormat = OutArchiveFormat.SevenZip;
+                myCompressStreams = new();
+            }
+
             // overwrite any previous result in case we use a new extractor with changed functionality
-            { 
+            {
                 if (extract.FileIO != null)
                 {
-                    using var fileIOStream = GetOutputStreamFor(outputFile, FileIOPostFix, outputFiles);
+                    using var fileIOStream = GetOutputStreamFor(ExtractMainFileName, FileIOPostFix, outputFiles);
                     Serialize<FileIOData>(fileIOStream, extract.FileIO);
                     extract.FileIO = null;
                 }
                 if (extract.Modules != null)
                 {
-                    using var moduleStream = GetOutputStreamFor(outputFile, ModulesPostFix, outputFiles);
+                    using var moduleStream = GetOutputStreamFor(ExtractMainFileName, ModulesPostFix, outputFiles);
                     Serialize<ModuleContainer>(moduleStream, extract.Modules);
                     extract.Modules = null;
                 }
 
                 // write extended CPU file only if we have data inside it or we have E-Core data
-                if( extract?.CPU?.ExtendedCPUMetrics != null && ( extract.CPU.ExtendedCPUMetrics.HasFrequencyData  || extract.CPU.ExtendedCPUMetrics.MethodData.Count > 0) )
+                if (extract?.CPU?.ExtendedCPUMetrics != null && (extract.CPU.ExtendedCPUMetrics.HasFrequencyData || extract.CPU.ExtendedCPUMetrics.MethodData.Count > 0))
                 {
-                    using var frequencyStream = GetOutputStreamFor(outputFile, ExtendedCPUPostFix, outputFiles);
+                    using var frequencyStream = GetOutputStreamFor(ExtractMainFileName, ExtendedCPUPostFix, outputFiles);
                     Serialize<CPUExtended>(frequencyStream, extract.CPU.ExtendedCPUMetrics);
                 }
 
-                if( extract?.CPU?.ExtendedCPUMetrics != null )
+                if (extract?.CPU?.ExtendedCPUMetrics != null)
                 {
                     // remove remanents from json which will never be read anyway because the explicit interface will read another file
-                    extract.CPU.ExtendedCPUMetrics = null; 
+                    extract.CPU.ExtendedCPUMetrics = null;
                 }
 
-                if( extract?.HandleData != null && extract.HandleData.ObjectReferences.Count > 0 )
+                if (extract?.HandleData != null && extract.HandleData.ObjectReferences.Count > 0)
                 {
                     StackCollection stacks = extract.HandleData.Stacks;
                     extract.HandleData.Stacks = null;
 
-                    using var handleStream = GetOutputStreamFor(outputFile, HandlePostFix, outputFiles);
+                    using var handleStream = GetOutputStreamFor(ExtractMainFileName, HandlePostFix, outputFiles);
                     Serialize<HandleObjectData>(handleStream, extract.HandleData);
                     extract.HandleData = null;
 
-                    using var handleStackStream = GetOutputStreamFor(outputFile, HandleStackPostFix, outputFiles);
+                    using var handleStackStream = GetOutputStreamFor(ExtractMainFileName, HandleStackPostFix, outputFiles);
                     Serialize<StackCollection>(handleStackStream, stacks);
                 }
 
-                // After all externalized data was removed serialize data to main extract file.
 
-                using var mainfileStream = GetOutputStreamFor(outputFile, null, outputFiles);
+                // After all externalized data was removed serialize data to main extract file.
+                using var mainfileStream = GetOutputStreamFor(ExtractMainFileName, null, outputFiles);
                 Serialize<ETWExtract>(mainfileStream, extract);
+
+                if ( Compressed)
+                {
+                    compressor.CompressStreamDictionary(myCompressStreams, ExtractMainFileName);
+                }
 
                 outputFiles.Reverse(); // first file is the main file which is printed to console 
             }
 
             // Set the Modify DateTime of extract to ETW session start so we can later easily sort tests by file time
             DateTime fileTime = extract.SessionStart.LocalDateTime;
-            if (fileTime.Year > 1 )
+            if (fileTime.Year > 1)
             {
-                foreach (var file in outputFiles)
+                if (Compressed)
                 {
-                    File.SetLastWriteTime(file, fileTime);
+                    File.SetLastWriteTime(ExtractMainFileName, fileTime);
+                }
+                else
+                {
+                    foreach (var file in outputFiles)
+                    {
+                        File.SetLastWriteTime(file, fileTime);
+                    }
                 }
             }
 
             return outputFiles;
+        }
+
+        private void SetSerializerModeOnExtension(string outputFile)
+        {
+            string extension = Path.GetExtension(outputFile).ToLowerInvariant();
+            Compressed = extension switch
+            {
+                TestRun.CompressedExtractExtension => true,
+                TestRun.ExtractExtension => false,
+                _ => throw new NotSupportedException($"The extension {extension} is not supported.")
+            };
+
+            if( Compressed )
+            {
+                // SevenZipSharp uses 7zx64.dll which does not exist. Set dll on our own
+                ConfigurationManager.AppSettings["7zLocation"] = Path.Combine(Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName), "7z.dll");
+            }
         }
 
 
@@ -216,6 +322,11 @@ namespace ETWAnalyzer.Extractors
                     writer.Dispose();
                 }
             }
+
+            if (stream is MemoryStream)  // compressor needs to read serialized data again later
+            {
+                stream.Position = 0;
+            }
         }
 
         /// <summary>
@@ -226,8 +337,8 @@ namespace ETWAnalyzer.Extractors
         {
             try
             {
-                using var fileStream = ExtractSerializer.OpenFileReadOnly(inFile);
-                ETWExtract extract =  Deserialize<ETWExtract>(fileStream);
+                ExtractSerializer ser = new(inFile);
+                ETWExtract extract = ser.Deserialize<ETWExtract>(null);
                 extract.DeserializedFileName = inFile;
                 return extract;
             }

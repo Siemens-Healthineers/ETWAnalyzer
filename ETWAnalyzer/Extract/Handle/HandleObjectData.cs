@@ -74,13 +74,8 @@ namespace ETWAnalyzer.Extract.Handle
             StackCollection lret = Stacks;
             if (DeserializedFileName != null)
             {
-                ExtractSerializer ser = new();
-                string file = ser.GetFileNameFor(DeserializedFileName, ExtractSerializer.HandleStackPostFix);
-                if (File.Exists(file))
-                {
-                    using var fileStream = ExtractSerializer.OpenFileReadOnly(file);
-                    lret = ExtractSerializer.Deserialize<StackCollection>(fileStream);
-                }
+                ExtractSerializer ser = new(DeserializedFileName);
+                lret = ser.Deserialize<StackCollection>(ExtractSerializer.HandleStackPostFix);
             }
 
             return lret;

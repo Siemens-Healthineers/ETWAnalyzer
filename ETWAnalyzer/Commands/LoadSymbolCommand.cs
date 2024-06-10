@@ -137,7 +137,7 @@ namespace ETWAnalyzer.Commands
             };
 
             using SymbolLoader loader = new SymbolLoader(reader);
-            ExtractSerializer ser = new ExtractSerializer();
+            
 
             for(int i=0;i<myInputJsonFiles.Length;i++)
             {
@@ -153,7 +153,8 @@ namespace ETWAnalyzer.Commands
                 {
                     outputFile = Path.Combine(outdir, Path.GetFileName(jsonFile.JsonExtractFileWhenPresent));
                 }
-                ser.Serialize(outputFile, (ETWExtract) jsonFile.Extract);
+                ExtractSerializer ser = new ExtractSerializer(outputFile);
+                ser.Serialize((ETWExtract) jsonFile.Extract);
             }
         }
     }
