@@ -27,6 +27,11 @@ using System.Threading.Tasks;
 
 namespace ETWAnalyzer.Extractors
 {
+
+    /// <summary>
+    /// Serializes the ETWExtract object into multiple json files or one compressed <see cref="TestRun.CompressedExtractExtension"/> file.
+    /// Deserialization is also handled by this class which supplies utility methods to load other Derived files on access when needed.
+    /// </summary>
     class ExtractSerializer
     {
         /// <summary>
@@ -80,10 +85,35 @@ namespace ETWAnalyzer.Extractors
             }
         }
 
+        /// <summary>
+        /// True when input file has file extension <see cref="TestRun.CompressedExtractExtension"/>, false otherwise
+        /// </summary>
+        bool Compressed
+        {
+            get; set;
+        }
+
+        /// <summary>
+        /// Needed during compression to store a list of files with streams in 7z archive when compression is used.
+        /// </summary>
+        Dictionary<string, Stream> myCompressStreams = null;
+
+        /// <summary>
+        /// Full path to compressed or main input Json file.
+        /// </summary>
         public string ExtractMainFileName
         {
             get;private set;
         }
+
+
+        /// <summary>
+        /// Get/Set how json indention is done. Default is Indented.
+        /// </summary>
+        internal static Formatting JsonFormatting
+        {
+            get; set;
+        } = Formatting.None;
 
         /// <summary>
         /// Name of input/output file
@@ -95,104 +125,29 @@ namespace ETWAnalyzer.Extractors
             SetSerializerModeOnExtension(ExtractMainFileName);
         }
 
-
         /// <summary>
-        /// Open file read only.
+        /// Deserialize an input file for further analyze
         /// </summary>
-        /// <param name="filename"></param>
-        /// <returns></returns>
-        static internal FileStream OpenFileReadOnly(string filename)
+        /// <param name="inFile"></param>
+        internal static ETWExtract DeserializeFile(string inFile)
         {
-            return new FileStream(filename, FileMode.Open, FileAccess.Read, FileShare.Read);
-        }
-
-        internal Stream GetOutputStreamFor(string outputFile, string type, List<string> files)
-        {
-            string newFileName = GetFileNameFor(outputFile, type);
-            Logger.Info($"Created output file name {newFileName} for output file {outputFile} {(Compressed ? "in file " + ExtractMainFileName : "")}");
-
-            Stream lret = null;
-            if( Compressed )
+            try
             {
-                lret = new ReusableMemoryStream();
-                myCompressStreams.Add(Path.GetFileName(newFileName), lret);
+                ExtractSerializer ser = new(inFile);
+                ETWExtract extract = ser.Deserialize<ETWExtract>(null);
+                return extract;
             }
-            else
+            catch (Exception e)
             {
-                lret = File.Create(newFileName);
-                files.Add(newFileName);
+                throw new SerializationException($"Deserialize file: {inFile} failed.", e);
             }
-
-            return lret;
         }
-
-        static internal string[] GetDerivedFileNameParts()
-        {
-            string[] all = new string[] { FileIOPostFix, ModulesPostFix, ExtendedCPUPostFix, HandlePostFix, HandleStackPostFix };
-            return all.Select(x => "_Derived_" + x).ToArray();
-        }
-
-        internal string GetFileNameFor(string outputFile, string derivedName)
-        {
-            string fileNameNoExt = Path.GetFileNameWithoutExtension(outputFile);
-            string dir = Path.GetDirectoryName(outputFile);
-
-            string extension = derivedName == null ? TestRun.ExtractExtension : $"_Derived_{derivedName}" + TestRun.ExtractExtension;
-            string newfileName = Path.Combine(dir, fileNameNoExt + extension);
-            return newfileName;
-        }
-
-        internal T Deserialize<T>(string derivedName) where T:class
-        {
-            string fileName = GetFileNameFor(ExtractMainFileName, derivedName);
-            T lret = null;
-
-            if (Compressed)
-            {
-                using (var extractor = new SevenZipExtractor(ExtractMainFileName))
-                {
-                    string fileNoPath = Path.GetFileName(fileName);
-                    if (extractor.ArchiveFileNames.Contains(fileNoPath))
-                    {
-                        var memoryStream = new MemoryStream();
-                        extractor.ExtractFile(fileNoPath, memoryStream);
-                        memoryStream.Position = 0;
-                        lret = Deserialize<T>(memoryStream);
-                    }
-                }
-            }
-            else
-            {
-                if (File.Exists(fileName))
-                {
-                    using var fileStream = ExtractSerializer.OpenFileReadOnly(fileName);
-                    lret = ExtractSerializer.Deserialize<T>(fileStream);
-                }
-            }
-
-            if( lret is ETWExtract extract)
-            {
-                extract.DeserializedFileName = ExtractMainFileName;
-            }
-
-
-            return lret;
-        }
-
-
-        bool Compressed
-        {
-            get;set;
-        }
-
-        Dictionary<string, Stream> myCompressStreams = null;
 
         public List<string> Serialize(ETWExtract extract)
         {
             List<string> outputFiles = new();
 
             SevenZipCompressor compressor = null;
-            
 
             if( Compressed)
             {
@@ -251,7 +206,7 @@ namespace ETWAnalyzer.Extractors
 
                 if ( Compressed)
                 {
-                    compressor.CompressStreamDictionary(myCompressStreams, ExtractMainFileName);
+                    compressor.CompressStreamDictionary(myCompressStreams, ExtractMainFileName);  // write 7z file with our serialized Json data
                 }
 
                 outputFiles.Reverse(); // first file is the main file which is printed to console 
@@ -277,6 +232,89 @@ namespace ETWAnalyzer.Extractors
             return outputFiles;
         }
 
+        /// <summary>
+        /// Open file read only.
+        /// </summary>
+        /// <param name="filename"></param>
+        /// <returns></returns>
+        static internal FileStream OpenFileReadOnly(string filename)
+        {
+            return new FileStream(filename, FileMode.Open, FileAccess.Read, FileShare.Read);
+        }
+
+        internal Stream GetOutputStreamFor(string outputFile, string type, List<string> files)
+        {
+            string newFileName = GetFileNameFor(outputFile, type);
+            Logger.Info($"Created output file name {newFileName} for output file {outputFile} {(Compressed ? "in file " + ExtractMainFileName : "")}");
+
+            Stream lret = null;
+            if (Compressed)
+            {
+                lret = new ReusableMemoryStream();
+                myCompressStreams.Add(Path.GetFileName(newFileName), lret);
+            }
+            else
+            {
+                lret = File.Create(newFileName);
+                files.Add(newFileName);
+            }
+
+            return lret;
+        }
+
+        static internal string[] GetDerivedFileNameParts()
+        {
+            string[] all = new string[] { FileIOPostFix, ModulesPostFix, ExtendedCPUPostFix, HandlePostFix, HandleStackPostFix };
+            return all.Select(x => "_Derived_" + x).ToArray();
+        }
+
+        internal string GetFileNameFor(string outputFile, string derivedName)
+        {
+            string fileNameNoExt = Path.GetFileNameWithoutExtension(outputFile);
+            string dir = Path.GetDirectoryName(outputFile);
+
+            string extension = derivedName == null ? TestRun.ExtractExtension : $"_Derived_{derivedName}" + TestRun.ExtractExtension;
+            string newfileName = Path.Combine(dir, fileNameNoExt + extension);
+            return newfileName;
+        }
+
+        internal T Deserialize<T>(string derivedName) where T : class
+        {
+            string fileName = GetFileNameFor(ExtractMainFileName, derivedName);
+            T lret = null;
+
+            if (Compressed)
+            {
+                using (var extractor = new SevenZipExtractor(ExtractMainFileName))
+                {
+                    string fileNoPath = Path.GetFileName(fileName);
+                    if (extractor.ArchiveFileNames.Contains(fileNoPath))
+                    {
+                        var memoryStream = new MemoryStream();
+                        extractor.ExtractFile(fileNoPath, memoryStream);
+                        memoryStream.Position = 0;
+                        lret = Deserialize<T>(memoryStream);
+                    }
+                }
+            }
+            else
+            {
+                if (File.Exists(fileName))
+                {
+                    using var fileStream = ExtractSerializer.OpenFileReadOnly(fileName);
+                    lret = ExtractSerializer.Deserialize<T>(fileStream);
+                }
+            }
+
+            if (lret is ETWExtract extract) // sub serializers need to get the input file name to deserialize derived files.
+            {
+                extract.DeserializedFileName = ExtractMainFileName;
+            }
+
+
+            return lret;
+        }
+
         private void SetSerializerModeOnExtension(string outputFile)
         {
             string extension = Path.GetExtension(outputFile).ToLowerInvariant();
@@ -293,15 +331,6 @@ namespace ETWAnalyzer.Extractors
                 ConfigurationManager.AppSettings["7zLocation"] = Path.Combine(Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName), "7z.dll");
             }
         }
-
-
-        /// <summary>
-        /// Get/Set how json indention is done. Default is Indented.
-        /// </summary>
-        internal static Formatting JsonFormatting
-        {
-            get; set;
-        } = Formatting.None;
 
         /// <summary>
         /// Serialize data to a stream. This method abstracts away the used serializer which 
@@ -331,27 +360,9 @@ namespace ETWAnalyzer.Extractors
                 }
             }
 
-            if (stream is MemoryStream)  // compressor needs to read serialized data again later
+            if (stream is MemoryStream)  // compressor needs to read serialized data again later which is the reason why we need ReusableMemoryStream.
             {
                 stream.Position = 0;
-            }
-        }
-
-        /// <summary>
-        /// Deserialize an input file for further analyze
-        /// </summary>
-        /// <param name="inFile"></param>
-        internal static ETWExtract DeserializeFile(string inFile)
-        {
-            try
-            {
-                ExtractSerializer ser = new(inFile);
-                ETWExtract extract = ser.Deserialize<ETWExtract>(null);
-                return extract;
-            }
-            catch (Exception e)
-            {
-                throw new SerializationException($"Deserialize file: {inFile} failed.", e);
             }
         }
 
