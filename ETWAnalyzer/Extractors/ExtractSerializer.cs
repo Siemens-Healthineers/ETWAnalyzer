@@ -109,8 +109,7 @@ namespace ETWAnalyzer.Extractors
         internal Stream GetOutputStreamFor(string outputFile, string type, List<string> files)
         {
             string newFileName = GetFileNameFor(outputFile, type);
-            files.Add(newFileName);
-            Logger.Info($"Created output file name {newFileName} for output file {outputFile}, Compressed: {Compressed}");
+            Logger.Info($"Created output file name {newFileName} for output file {outputFile} {(Compressed ? "in file " + ExtractMainFileName : "")}");
 
             Stream lret = null;
             if( Compressed )
@@ -121,6 +120,7 @@ namespace ETWAnalyzer.Extractors
             else
             {
                 lret = File.Create(newFileName);
+                files.Add(newFileName);
             }
 
             return lret;
@@ -132,19 +132,19 @@ namespace ETWAnalyzer.Extractors
             return all.Select(x => "_Derived_" + x).ToArray();
         }
 
-        internal string GetFileNameFor(string outputFile, string type)
+        internal string GetFileNameFor(string outputFile, string derivedName)
         {
             string fileNameNoExt = Path.GetFileNameWithoutExtension(outputFile);
             string dir = Path.GetDirectoryName(outputFile);
 
-            string extension = type == null ? TestRun.ExtractExtension : $"_Derived_{type}" + TestRun.ExtractExtension;
+            string extension = derivedName == null ? TestRun.ExtractExtension : $"_Derived_{derivedName}" + TestRun.ExtractExtension;
             string newfileName = Path.Combine(dir, fileNameNoExt + extension);
             return newfileName;
         }
 
-        internal T Deserialize<T>(string type) where T:class
+        internal T Deserialize<T>(string derivedName) where T:class
         {
-            string fileName = GetFileNameFor(ExtractMainFileName, type);
+            string fileName = GetFileNameFor(ExtractMainFileName, derivedName);
             T lret = null;
 
             if (Compressed)
@@ -170,6 +170,12 @@ namespace ETWAnalyzer.Extractors
                 }
             }
 
+            if( lret is ETWExtract extract)
+            {
+                extract.DeserializedFileName = ExtractMainFileName;
+            }
+
+
             return lret;
         }
 
@@ -193,6 +199,8 @@ namespace ETWAnalyzer.Extractors
                 compressor = new SevenZipCompressor();
                 compressor.ArchiveFormat = OutArchiveFormat.SevenZip;
                 myCompressStreams = new();
+
+                outputFiles.Add(ExtractMainFileName);
             }
 
             // overwrite any previous result in case we use a new extractor with changed functionality
@@ -339,7 +347,6 @@ namespace ETWAnalyzer.Extractors
             {
                 ExtractSerializer ser = new(inFile);
                 ETWExtract extract = ser.Deserialize<ETWExtract>(null);
-                extract.DeserializedFileName = inFile;
                 return extract;
             }
             catch (Exception e)

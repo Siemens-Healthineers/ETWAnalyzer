@@ -14,6 +14,7 @@ using ETWAnalyzer_uTest.TestInfrastructure;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.Eventing.Reader;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -50,7 +51,7 @@ namespace ETWAnalyzer_iTest
             string pathName = Path.Combine(tmp.Name, Path.GetFileName(TestData.ServerZipFile));
             File.Copy(TestData.ServerZipFile, pathName);
 
-            Program.MainCore(new string[] { "-extract", "Disk", "CPU", "Memory","-filedir", pathName,  "-outdir", tmp.Name });
+            Program.MainCore(new string[] { "-extract", "Disk", "CPU", "Memory", "-noCompress", "-filedir", pathName,  "-outdir", tmp.Name });
 
             string outFile = GetExtractFile(tmp, TestData.ServerZipFile);
             var fileInfo = new FileInfo(outFile);
@@ -73,7 +74,7 @@ namespace ETWAnalyzer_iTest
             string pathName = Path.Combine(tmp.Name, Path.GetFileName(TestData.ServerZipFile));
             File.Copy(TestData.ServerZipFile, pathName);
 
-            Program.MainCore(new string[] { "-extract", "Disk", "CPU", "Memory", "-filedir", pathName, "-outdir", tmp.Name ,"-symServer", "syngo","-keepTemp", "-NoOverwrite","-pthreads","80", "-child","-recursive" });
+            Program.MainCore(new string[] { "-extract", "Disk", "CPU", "Memory", "-noCompress", "-filedir", pathName, "-outdir", tmp.Name ,"-symServer", "syngo","-keepTemp", "-NoOverwrite","-pthreads","80", "-child","-recursive" });
 
             string outFile = GetExtractFile(tmp, TestData.ServerZipFile);
             var fileInfo = new FileInfo(outFile);
@@ -98,7 +99,7 @@ namespace ETWAnalyzer_iTest
             using var tmp = TempDir.Create();
             string pathName = Path.Combine(tmp.Name, Path.GetFileName(TestData.ServerEtlFile));
             Program.DebugOutput = false;
-            Program.MainCore(new string[] { "-extract", "Disk", "CPU", "Memory", "Exception", "Stacktag","-filedir", TestData.ServerEtlFile,   "-outdir", tmp.Name });
+            Program.MainCore(new string[] { "-extract", "Disk", "CPU", "Memory", "Exception", "Stacktag", "-noCompress", "-filedir", TestData.ServerEtlFile,   "-outdir", tmp.Name });
 
             string outFile = GetExtractFile(tmp, TestData.ServerEtlFile);
             var fileInfo = new FileInfo(outFile);
@@ -128,7 +129,7 @@ namespace ETWAnalyzer_iTest
             pathName = Path.Combine(tmp.Name, Path.GetFileName(TestData.ClientEtlFile));
             File.Copy(TestData.ClientEtlFile, pathName);
 
-            Program.MainCore(new string[] { "-extract", "Exception","-filedir", tmp.Name,  "-outdir", tmp.Name });
+            Program.MainCore(new string[] { "-extract", "Exception", "-noCompress", "-filedir", tmp.Name,  "-outdir", tmp.Name });
 
             string outFile1 = GetExtractFile(tmp, TestData.ServerEtlFile);
             var fileInfo1 = new FileInfo(outFile1);
@@ -160,7 +161,7 @@ namespace ETWAnalyzer_iTest
             File.Copy(TestData.ServerEtlFile, pathName);
 
 
-            string[] extractArgs = new string[] { "-extract", "Disk", "CPU", "Memory", "Exception", "-filedir", tmp.Name, "-outdir", tmp.Name };
+            string[] extractArgs = new string[] { "-extract", "Disk", "CPU", "Memory", "Exception", "-noCompress", "-filedir", tmp.Name, "-outdir", tmp.Name };
                         
             if (!TestContext.IsInGithubPipeline()) // when we are executed with symbol server access then use it to resolve method names
             {
@@ -185,6 +186,44 @@ namespace ETWAnalyzer_iTest
             CheckServerExtract(extractedServer, etractServerJson);
         }
 
+
+        [Fact]
+        public void Can_Extract_From_ETLFolder_Check_Compressed_Extract()
+        {
+            Program.DebugOutput = false;
+            using var tmp = TempDir.Create();
+            string pathName = Path.Combine(tmp.Name, Path.GetFileName(TestData.ServerEtlFile));
+            File.Copy(TestData.ServerEtlFile, pathName);
+
+
+            string[] extractArgs = new string[] { "-extract", "Disk", "CPU", "File", "Memory", "Exception", "-filedir", tmp.Name, "-outdir", tmp.Name };
+
+            if (!TestContext.IsInGithubPipeline()) // when we are executed with symbol server access then use it to resolve method names
+            {
+                //           extractArgs = extractArgs.Concat(new string[] { "-symserver", "MS" }).ToArray();
+            }
+
+            Program.MainCore(extractArgs);
+
+            string extractServerJson = GetExtractFile(tmp, TestData.ServerEtlFile, bCompressed:true);
+            var fileInfo1 = new FileInfo(extractServerJson);
+
+            string extract1 = Path.Combine(tmp.Name, TestData.ServerEtlFileNameNoPath);
+
+            Assert.True(File.Exists(extract1), $"Extracted ETL file should have been kept at {extract1}");
+
+            Assert.True(fileInfo1.Exists, $"Output file {extractServerJson} was not created");
+            Assert.True(fileInfo1.Length > 0, $"File {extractServerJson} has no content");
+
+            ExtractSerializer deser = new ExtractSerializer(extractServerJson);
+            var extractedServer = deser.Deserialize<ETWExtract>(null);
+
+            IETWExtract iextract = (IETWExtract)extractedServer;
+
+            Assert.NotNull(iextract.FileIO);
+
+            CheckServerExtract(extractedServer, extractServerJson);
+        }
 
         bool IsSymbolServerReachable()
         {
@@ -253,7 +292,7 @@ namespace ETWAnalyzer_iTest
             string pathName = Path.Combine(tmp.Name, Path.GetFileName(TestData.ServerEtlFile));
             File.Copy(TestData.ServerEtlFile, pathName);
 
-            Program.MainCore(new string[] { "-extract", "CPU", "-filedir", tmp.Name, "-outdir", tmp.Name, 
+            Program.MainCore(new string[] { "-extract", "CPU", "-noCompress","-filedir", tmp.Name, "-outdir", tmp.Name, 
                 "-NoOverwrite",
                 "-symFolder", Path.Combine(tmp.Name, "symfolder"),
                 "-symcache",  Path.Combine(tmp.Name, "symcache") });
@@ -534,7 +573,7 @@ namespace ETWAnalyzer_iTest
             pathName = Path.Combine(tmp.Name, Path.GetFileName(TestData.ClientZipFile));
             File.Copy(TestData.ClientZipFile, pathName);
 
-            Program.MainCore(new string[] { "-extract", "Disk", "CPU", "Memory","-filedir", tmp.Name,  "-outdir", tmp.Name });
+            Program.MainCore(new string[] { "-extract", "Disk", "CPU", "Memory", "-noCompress", "-filedir", tmp.Name,  "-outdir", tmp.Name });
 
             string outFile1 = GetExtractFile(tmp, TestData.ServerZipFile);
             var fileInfo1 = new FileInfo(outFile1);
@@ -564,7 +603,7 @@ namespace ETWAnalyzer_iTest
             pathName = Path.Combine(tmp.Name, Path.GetFileName(TestData.ClientZipFile));
             File.Copy(TestData.ClientZipFile, pathName);
 
-            Program.MainCore(new string[] { "-extract", "Disk", "CPU", "Memory","-filedir", tmp.Name,  "-outdir", tmp.Name, "-keepTemp" });
+            Program.MainCore(new string[] { "-extract", "Disk", "CPU", "Memory", "-noCompress", "-filedir", tmp.Name,  "-outdir", tmp.Name, "-keepTemp" });
 
             string outFile1 = GetExtractFile(tmp, TestData.ServerZipFile);
             var fileInfo1 = new FileInfo(outFile1);
@@ -579,14 +618,14 @@ namespace ETWAnalyzer_iTest
             Assert.True(fileInfo2.Length > 0, $"File {outFile2} has no content");
         }
 
-        string GetExtractFile(ITempOutput outDir, string inputFile)
+        string GetExtractFile(ITempOutput outDir, string inputFile, bool bCompressed=false)
         {
-            return GetExtractFile(outDir.Name, inputFile);
+            return GetExtractFile(outDir.Name, inputFile, bCompressed);
         }
 
-        string GetExtractFile(string outDir, string inputFile)
+        string GetExtractFile(string outDir, string inputFile, bool bCompressed=false)
         {
-            string outFile = Path.Combine(outDir, Path.GetFileNameWithoutExtension(inputFile) + ".json");
+            string outFile = Path.Combine(outDir, Path.GetFileNameWithoutExtension(inputFile) + (bCompressed ? TestRun.CompressedExtractExtension : TestRun.ExtractExtension));
             return outFile;
         }
 
