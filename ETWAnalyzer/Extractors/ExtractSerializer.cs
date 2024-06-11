@@ -30,6 +30,8 @@ namespace ETWAnalyzer.Extractors
     /// </summary>
     class ExtractSerializer
     {
+        const string DerivedFilePart = "_Derived_";
+
         /// <summary>
         /// File IO data is stored in external file by default
         /// </summary>
@@ -261,7 +263,7 @@ namespace ETWAnalyzer.Extractors
         static internal string[] GetDerivedFileNameParts()
         {
             string[] all = new string[] { FileIOPostFix, ModulesPostFix, ExtendedCPUPostFix, HandlePostFix, HandleStackPostFix };
-            return all.Select(x => "_Derived_" + x).ToArray();
+            return all.Select(x => DerivedFilePart + x).ToArray();
         }
 
         internal string GetFileNameFor(string outputFile, string derivedName)
@@ -269,7 +271,7 @@ namespace ETWAnalyzer.Extractors
             string fileNameNoExt = Path.GetFileNameWithoutExtension(outputFile);
             string dir = Path.GetDirectoryName(outputFile);
 
-            string extension = derivedName == null ? TestRun.ExtractExtension : $"_Derived_{derivedName}" + TestRun.ExtractExtension;
+            string extension = derivedName == null ? TestRun.ExtractExtension : $"{DerivedFilePart}{derivedName}" + TestRun.ExtractExtension;
             string newfileName = Path.Combine(dir, fileNameNoExt + extension);
             return newfileName;
         }
@@ -284,7 +286,8 @@ namespace ETWAnalyzer.Extractors
                 using (var extractor = new SevenZipExtractor(ExtractMainFileName))
                 {
                     string fileNoPath = Path.GetFileName(fileName);
-                    if (extractor.ArchiveFileNames.Contains(fileNoPath))
+                    fileNoPath = MatchArchiveFileName(extractor, fileNoPath);
+                    if (fileNoPath != null)
                     {
                         var memoryStream = new MemoryStream();
                         extractor.ExtractFile(fileNoPath, memoryStream);
@@ -308,6 +311,41 @@ namespace ETWAnalyzer.Extractors
             }
 
 
+            return lret;
+        }
+
+
+        /// <summary>
+        /// Support also renamed .json7z files without the need to match the compressed file names of the outer file. 
+        /// </summary>
+        /// <param name="extractor"></param>
+        /// <param name="fileNoPath"></param>
+        /// <returns>Matching file name inside 7z archive or null if none could be found.</returns>
+        private static string MatchArchiveFileName(SevenZipExtractor extractor, string fileNoPath)
+        {
+            string lret = null;
+            if( extractor.ArchiveFileNames.Contains(fileNoPath) )
+            {
+                lret = fileNoPath;  // should be default if archive file was not renamed
+            }
+            else
+            {
+                string[] fileEndings = GetDerivedFileNameParts();
+
+                // .json7z file might have been renamed. Cope with it
+                if ( fileNoPath.Contains(DerivedFilePart))  // we need to look up a _Derived_Modules/FileIO.... file
+                {
+                    string end = fileEndings.Where(x =>  Path.GetFileNameWithoutExtension(fileNoPath).EndsWith(x)).FirstOrDefault();
+                    if( end != null )
+                    {
+                        lret = extractor.ArchiveFileNames.Where(x => Path.GetFileNameWithoutExtension(x).EndsWith(end)).FirstOrDefault();
+                    }
+                }
+                else  // we need to match any files which has not _Dervied_ in its name
+                {
+                    lret = extractor.ArchiveFileNames.Where(x => !x.Contains(DerivedFilePart)).FirstOrDefault();
+                }
+            }
             return lret;
         }
 
