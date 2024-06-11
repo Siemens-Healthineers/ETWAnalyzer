@@ -2,10 +2,8 @@
 //// SPDX-License-Identifier:   MIT
 
 
-using Dia2Lib;
 using ETWAnalyzer.Extract;
 using ETWAnalyzer.Extract.Common;
-using ETWAnalyzer.Extract.CPU;
 using ETWAnalyzer.Extract.CPU.Extended;
 using ETWAnalyzer.Extract.FileIO;
 using ETWAnalyzer.Extract.Handle;
@@ -22,8 +20,6 @@ using System.IO;
 using System.Linq;
 using System.Runtime.Serialization;
 using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace ETWAnalyzer.Extractors
 {
