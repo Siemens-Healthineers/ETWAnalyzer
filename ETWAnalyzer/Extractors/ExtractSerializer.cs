@@ -14,6 +14,7 @@ using Newtonsoft.Json.Converters;
 using SevenZip;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Configuration;
 using System.Diagnostics;
 using System.IO;
@@ -160,13 +161,13 @@ namespace ETWAnalyzer.Extractors
             {
                 if (extract.FileIO != null)
                 {
-                    using var fileIOStream = GetOutputStreamFor(ExtractMainFileName, FileIOPostFix, outputFiles);
+                    using var fileIOStream = GetOutputStreamFor(FileIOPostFix, outputFiles);
                     Serialize<FileIOData>(fileIOStream, extract.FileIO);
                     extract.FileIO = null;
                 }
                 if (extract.Modules != null)
                 {
-                    using var moduleStream = GetOutputStreamFor(ExtractMainFileName, ModulesPostFix, outputFiles);
+                    using var moduleStream = GetOutputStreamFor(ModulesPostFix, outputFiles);
                     Serialize<ModuleContainer>(moduleStream, extract.Modules);
                     extract.Modules = null;
                 }
@@ -174,7 +175,7 @@ namespace ETWAnalyzer.Extractors
                 // write extended CPU file only if we have data inside it or we have E-Core data
                 if (extract?.CPU?.ExtendedCPUMetrics != null && (extract.CPU.ExtendedCPUMetrics.HasFrequencyData || extract.CPU.ExtendedCPUMetrics.MethodData.Count > 0))
                 {
-                    using var frequencyStream = GetOutputStreamFor(ExtractMainFileName, ExtendedCPUPostFix, outputFiles);
+                    using var frequencyStream = GetOutputStreamFor(ExtendedCPUPostFix, outputFiles);
                     Serialize<CPUExtended>(frequencyStream, extract.CPU.ExtendedCPUMetrics);
                 }
 
@@ -189,17 +190,17 @@ namespace ETWAnalyzer.Extractors
                     StackCollection stacks = extract.HandleData.Stacks;
                     extract.HandleData.Stacks = null;
 
-                    using var handleStream = GetOutputStreamFor(ExtractMainFileName, HandlePostFix, outputFiles);
+                    using var handleStream = GetOutputStreamFor(HandlePostFix, outputFiles);
                     Serialize<HandleObjectData>(handleStream, extract.HandleData);
                     extract.HandleData = null;
 
-                    using var handleStackStream = GetOutputStreamFor(ExtractMainFileName, HandleStackPostFix, outputFiles);
+                    using var handleStackStream = GetOutputStreamFor(HandleStackPostFix, outputFiles);
                     Serialize<StackCollection>(handleStackStream, stacks);
                 }
 
 
                 // After all externalized data was removed serialize data to main extract file.
-                using var mainfileStream = GetOutputStreamFor(ExtractMainFileName, null, outputFiles);
+                using var mainfileStream = GetOutputStreamFor(null, outputFiles);
                 Serialize<ETWExtract>(mainfileStream, extract);
 
                 if ( Compressed)
@@ -240,10 +241,10 @@ namespace ETWAnalyzer.Extractors
             return new FileStream(filename, FileMode.Open, FileAccess.Read, FileShare.Read);
         }
 
-        internal Stream GetOutputStreamFor(string outputFile, string type, List<string> files)
+        internal Stream GetOutputStreamFor(string type, List<string> files)
         {
-            string newFileName = GetFileNameFor(outputFile, type);
-            Logger.Info($"Created output file name {newFileName} for output file {outputFile} {(Compressed ? "in file " + ExtractMainFileName : "")}");
+            string newFileName = GetFileNameFor(type);
+            Logger.Info($"Created output file name {newFileName} for output file {ExtractMainFileName} {(Compressed ? "in file " + ExtractMainFileName : "")}");
 
             Stream lret = null;
             if (Compressed)
@@ -266,10 +267,10 @@ namespace ETWAnalyzer.Extractors
             return all.Select(x => DerivedFilePart + x).ToArray();
         }
 
-        internal string GetFileNameFor(string outputFile, string derivedName)
+        internal string GetFileNameFor(string derivedName)
         {
-            string fileNameNoExt = Path.GetFileNameWithoutExtension(outputFile);
-            string dir = Path.GetDirectoryName(outputFile);
+            string fileNameNoExt = Path.GetFileNameWithoutExtension(ExtractMainFileName);
+            string dir = Path.GetDirectoryName(ExtractMainFileName);
 
             string extension = derivedName == null ? TestRun.ExtractExtension : $"{DerivedFilePart}{derivedName}" + TestRun.ExtractExtension;
             string newfileName = Path.Combine(dir, fileNameNoExt + extension);
@@ -278,7 +279,7 @@ namespace ETWAnalyzer.Extractors
 
         internal T Deserialize<T>(string derivedName) where T : class
         {
-            string fileName = GetFileNameFor(ExtractMainFileName, derivedName);
+            string fileName = GetFileNameFor(derivedName);
             T lret = null;
 
             if (Compressed)
@@ -286,7 +287,7 @@ namespace ETWAnalyzer.Extractors
                 using (var extractor = new SevenZipExtractor(ExtractMainFileName))
                 {
                     string fileNoPath = Path.GetFileName(fileName);
-                    fileNoPath = MatchArchiveFileName(extractor, fileNoPath);
+                    fileNoPath = MatchArchiveFileName(extractor.ArchiveFileNames, fileNoPath);
                     if (fileNoPath != null)
                     {
                         var memoryStream = new MemoryStream();
@@ -318,13 +319,13 @@ namespace ETWAnalyzer.Extractors
         /// <summary>
         /// Support also renamed .json7z files without the need to match the compressed file names of the outer file. 
         /// </summary>
-        /// <param name="extractor"></param>
+        /// <param name="archiveFileNames"></param>
         /// <param name="fileNoPath"></param>
         /// <returns>Matching file name inside 7z archive or null if none could be found.</returns>
-        private static string MatchArchiveFileName(SevenZipExtractor extractor, string fileNoPath)
+        internal static string MatchArchiveFileName(ReadOnlyCollection<string> archiveFileNames, string fileNoPath)
         {
             string lret = null;
-            if( extractor.ArchiveFileNames.Contains(fileNoPath) )
+            if( archiveFileNames.Contains(fileNoPath) )
             {
                 lret = fileNoPath;  // should be default if archive file was not renamed
             }
@@ -338,12 +339,21 @@ namespace ETWAnalyzer.Extractors
                     string end = fileEndings.Where(x =>  Path.GetFileNameWithoutExtension(fileNoPath).EndsWith(x)).FirstOrDefault();
                     if( end != null )
                     {
-                        lret = extractor.ArchiveFileNames.Where(x => Path.GetFileNameWithoutExtension(x).EndsWith(end)).FirstOrDefault();
+                        lret = archiveFileNames.Where(x => Path.GetFileNameWithoutExtension(x).EndsWith(end)).FirstOrDefault();
                     }
                 }
                 else  // we need to match any files which has not _Dervied_ in its name
                 {
-                    lret = extractor.ArchiveFileNames.Where(x => !x.Contains(DerivedFilePart)).FirstOrDefault();
+                    string derived = archiveFileNames.Where(x => x.Contains(DerivedFilePart)).FirstOrDefault();
+                    if (derived != null) // use as root file name the derived file name
+                    {
+                        string fileNoExt = Path.GetFileNameWithoutExtension(derived);
+                        lret = fileNoExt.Substring(0, fileNoExt.IndexOf(DerivedFilePart)) + Path.GetExtension(derived);
+                    }
+                    else // use the first (possibly only file)
+                    {
+                        lret = archiveFileNames.Where(x => !x.Contains(DerivedFilePart)).FirstOrDefault();
+                    }
                 }
             }
             return lret;
