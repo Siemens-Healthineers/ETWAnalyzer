@@ -345,7 +345,7 @@ namespace ETWAnalyzer.Extractors
                 else  // we need to match any files which has not _Dervied_ in its name
                 {
                     string derived = archiveFileNames.Where(x => x.Contains(DerivedFilePart)).FirstOrDefault();
-                    if (derived != null) // use as root file name the derived file name
+                    if (derived != null) // use as root file any derived file because we also want to support additional files in the archive 
                     {
                         string fileNoExt = Path.GetFileNameWithoutExtension(derived);
                         lret = fileNoExt.Substring(0, fileNoExt.IndexOf(DerivedFilePart)) + Path.GetExtension(derived);
