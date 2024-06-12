@@ -36,7 +36,7 @@ namespace ETWAnalyzer.Commands
     {
         internal static readonly string HelpString =
          "ETWAnalyzer [-extract [All, Default or Disk File CPU Memory Exception Stacktag ThreadPool PMC Frequency Power Dns TCP] -filedir/-fd inEtlOrZip [-DryRun] [-symServer NtSymbolPath/MS/Google/syngo] [-keepTemp] [-NoOverwrite] [-pThreads dd] [-nThreads dd]" + Environment.NewLine +
-         "            [-NoReady] [-allCPU] [-Concurrency dd] [-NoIndent] [-LastNDays dd] [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd] [-NoTestRunGrouping]  " + Environment.NewLine + 
+         "            [-NoReady] [-allCPU] [-Concurrency dd] [-NoIndent] [-NoCompress] [-LastNDays dd] [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd] [-NoTestRunGrouping]  " + Environment.NewLine + 
          "Retrieve data from ETL files and store extracted data in a serialized format in Json in the output directory \\Extract folder." + Environment.NewLine +
          "The data can the be analyzed by other tools or ETWAnalyzer itself which can also analyze the data for specific patterns or issues." + Environment.NewLine +
          "Extract Options are separated by space" + Environment.NewLine +
@@ -77,7 +77,8 @@ namespace ETWAnalyzer.Commands
          " -DryRun              Do not extract. Only print which files would be extracted." + Environment.NewLine + 
          " -NoOverwrite         By default existing Json files are overwritten during a new extraction run. If you want to extract from a large directory only the missing extraction files you can use this option" + Environment.NewLine +
          "                      This way you can have the same extract command line in a script after a profiling run to extract only the newly added profiling data." + Environment.NewLine +
-         " -Indent              By default a not readable non indented json file is written to save space. For readability you can save the json files with extra spaces and line feeds. This increases the file size ca. by 30%." + Environment.NewLine +    
+         " -Indent              By default a not readable non indented json file is written to save space. For readability you can save the json files with extra spaces and line feeds. This increases the file size ca. by 30%." + Environment.NewLine +
+        $" -NoCompress          By default the extracted json files are stored in a 7z archive with the extension {TestRun.CompressedExtractExtension}. Use this flag if you need uncompressed json files." + Environment.NewLine +
          " -recursive           Test data is searched recursively below -filedir" + Environment.NewLine +
          " -filedir/-fd  xxx    Can occur multiple times. If a directory is entered all compressed and contained ETL files are extracted. You can also specify a single etl/zip file." + Environment.NewLine +
         @"                      File queries and exclusions are also supported. E.g. -fd C:\Temp\*error*.etl;!*disk* will extract all etl files in c:\temp containing the name error but exclude the ones which contain disk in the file name" + Environment.NewLine +
@@ -150,6 +151,7 @@ namespace ETWAnalyzer.Commands
         internal const string DryRunArg = "-dryrun";
         internal const string NoSampling = "-nosampling";
         internal const string NoCSwitch = "-nocswitch";
+        internal const string NoCompress = "-nocompress";
 
 
 
@@ -186,6 +188,15 @@ namespace ETWAnalyzer.Commands
         /// separated with a comma
         /// </summary>
         List<string> myProcessingActionList = new();
+
+        /// <summary>
+        /// Set via <see cref="NoCompress"/> flag. Default is compressed
+        /// </summary>
+        bool Compress
+        {
+            get; set;
+
+        } = true;
 
 
         /// <summary>
@@ -389,6 +400,9 @@ namespace ETWAnalyzer.Commands
                         string outDir = GetNextNonArg(OutDirArg);
                         OutDir.OutputDirectory = ArgParser.CheckIfFileOrDirectoryExistsAndExtension(outDir);
                         OutDir.IsDefault = false;
+                        break;
+                    case NoCompress:
+                        Compress = false;
                         break;
                     case NoTestRunGrouping:
                         TestRun.MaxTimeBetweenTests = TimeSpan.MaxValue;
@@ -826,7 +840,7 @@ namespace ETWAnalyzer.Commands
                 return;
             }
 
-            IReadOnlyList<string> outFiles = ExtractFile(Extractors, fileToAnalyze.EtlFileNameIfPresent ?? fileToAnalyze.FileName, OutDir, Symbols, HaveToDeleteTemp, AfterUnzipCommand);
+            IReadOnlyList<string> outFiles = ExtractFile(Extractors, fileToAnalyze.EtlFileNameIfPresent ?? fileToAnalyze.FileName, OutDir, Symbols, HaveToDeleteTemp, AfterUnzipCommand, Compress);
 
             if( outFiles == null || outFiles.Count == 0 )
             {
@@ -915,10 +929,11 @@ namespace ETWAnalyzer.Commands
         /// <param name="symbols">Gives access to local and remote symbol folder and servers.</param>
         /// <param name="haveToDeleteTemp">True: Deletes all temp files</param>
         /// <param name="afterUnzipCommand">Command line of exe which is executed after an ETL was extracted.</param>
+        /// <param name="bCompress">if true output files are written to a compressed file with extension <see cref="TestRun.CompressedExtractExtension"/></param>
         /// <returns>Serialized Json file name</returns>
-        static IReadOnlyList<string> ExtractFile(List<ExtractorBase> extractors, string inputETLFileOrZip, OutDir outputDirectory, SymbolPaths symbols, bool haveToDeleteTemp, string afterUnzipCommand)
+        static IReadOnlyList<string> ExtractFile(List<ExtractorBase> extractors, string inputETLFileOrZip, OutDir outputDirectory, SymbolPaths symbols, bool haveToDeleteTemp, string afterUnzipCommand, bool bCompress)
         {
-            var singleFile = new ExtractSingleFile(inputETLFileOrZip, extractors, outputDirectory.TempDirectory ?? Path.GetDirectoryName(inputETLFileOrZip), symbols, afterUnzipCommand); // unzip
+            var singleFile = new ExtractSingleFile(inputETLFileOrZip, extractors, outputDirectory.TempDirectory ?? Path.GetDirectoryName(inputETLFileOrZip), symbols, afterUnzipCommand, bCompress); // unzip
             return singleFile.Execute(outputDirectory, haveToDeleteTemp);
         }
 

@@ -357,13 +357,8 @@ namespace ETWAnalyzer.Extract
             FileIOData lret = FileIO;
             if( lret == null && DeserializedFileName != null)
             {
-                ExtractSerializer ser = new();
-                string file = ser.GetFileNameFor(DeserializedFileName, ExtractSerializer.FileIOPostFix);
-                if (File.Exists(file))
-                {
-                    using var fileStream = ExtractSerializer.OpenFileReadOnly(file);
-                    lret = ExtractSerializer.Deserialize<FileIOData>(fileStream);
-                }
+                ExtractSerializer ser = new(DeserializedFileName);
+                lret = ser.Deserialize<FileIOData>(ExtractSerializer.FileIOPostFix);
             }
             return lret;
         }
@@ -375,12 +370,10 @@ namespace ETWAnalyzer.Extract
             HandleObjectData lret = HandleData;
             if( DeserializedFileName != null)
             {
-                ExtractSerializer ser = new();
-                string file = ser.GetFileNameFor(DeserializedFileName, ExtractSerializer.HandlePostFix);
-                if( File.Exists(file))
+                ExtractSerializer ser = new(DeserializedFileName);
+                lret = ser.Deserialize<HandleObjectData>(ExtractSerializer.HandlePostFix);
+                if (lret != null)
                 {
-                    using var fileStream = ExtractSerializer.OpenFileReadOnly(file);
-                    lret = ExtractSerializer.Deserialize<HandleObjectData>(fileStream);
                     lret.DeserializedFileName = DeserializedFileName;
                 }
             }
@@ -398,15 +391,12 @@ namespace ETWAnalyzer.Extract
             ModuleContainer lret = Modules;
             if (lret == null && DeserializedFileName != null)
             {
-                ExtractSerializer ser = new();
-                string file = ser.GetFileNameFor(DeserializedFileName, ExtractSerializer.ModulesPostFix);
-                if (File.Exists(file))
+                ExtractSerializer ser = new(DeserializedFileName);
+                lret = ser.Deserialize<ModuleContainer>(ExtractSerializer.ModulesPostFix);
+                if (lret != null)
                 {
-                    using var fileStream = ExtractSerializer.OpenFileReadOnly(file);
-                    lret = ExtractSerializer.Deserialize<ModuleContainer>(fileStream);
-                    // Set parent nodes for shared strings and process list of ETWExtract after deserialization
                     lret.Extract = this;
-                    foreach(var module in lret.Modules)
+                    foreach (var module in lret.Modules)
                     {
                         module.Container = lret;
                     }

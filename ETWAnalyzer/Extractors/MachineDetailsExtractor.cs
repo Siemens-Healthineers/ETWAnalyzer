@@ -182,7 +182,16 @@ namespace ETWAnalyzer.Extractors
                         continue;
                     }
 
-                    currentPartition.FileSystem = (FileSystemFormat) partition.FileSystem;
+
+                    try
+                    {
+                        currentPartition.FileSystem = (FileSystemFormat)partition.FileSystem;
+                    }
+                    catch (NotImplementedException ex)
+                    {
+                        Logger.Warn($"File system could not be determined for partition Drive {partition.DriveLetter.ToString()}, {ex}");
+                    }
+
                     currentPartition.Drive = partition.DriveLetter.ToString();
                     currentPartition.FreeSizeGiB = partition.FreeCapacity.TotalGibibytes;
                     currentPartition.TotalSizeGiB = partition.UsedCapacity.TotalGibibytes + partition.FreeCapacity.TotalGibibytes;

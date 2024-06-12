@@ -130,6 +130,20 @@ Perfview
    [Win32ErrorCodes.cs](https://github.com/Siemens-Healthineers/ETWAnalyzer/blob/main/ETWAnalyzer/Extract/PInvoke.NET/WinErrorCodes.cs)
 
 
+**Squid-Box.SevenZipSharp.Lite**
+-----
+* version  
+  1.6.2.24
+ * copyrights
+
+ * license terms  
+   https://github.com/squid-box/SevenZipSharp?tab=LGPL-3.0-1-ov-file#readme
+ * source code  
+   https://github.com/squid-box/SevenZipSharp
+ * integration  
+	The publicly available [Squid-Box.SevenZipSharp] package is consumed and hence contained in releases.
+
+
 <!-- References -->
 [ColorConsole]:                                             <../Infrastructure/ColorConsole>
 [ColorConsoleLicense]:                                      <https://docs.github.com/en/github/site-policy/github-terms-of-service#d-user-generated-content>
@@ -159,3 +173,5 @@ Perfview
 [7-ZipLicense]:                                             <../3rdParty/7-Zip/LICENSE>
 [7-ZipSourceCode]:                                          <../3rdParty/7-Zip/7z1900-src.7z>
 [7-ZipSourceCode_sourceforgenet]:                           <https://sourceforge.net/projects/sevenzip/files/7-Zip/19.00/7z1900-src.7z/download>
+
+[Squid-Box.SevenZipSharp]:                                   <https://www.nuget.org/packages/Squid-Box.SevenZipSharp/>

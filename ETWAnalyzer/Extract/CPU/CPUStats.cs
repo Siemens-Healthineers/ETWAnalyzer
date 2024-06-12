@@ -149,13 +149,8 @@ namespace ETWAnalyzer.Extract
                 CPUExtended lret = null;
                 if (DeserializedFileName != null)
                 {
-                    ExtractSerializer ser = new();
-                    string file = ser.GetFileNameFor(DeserializedFileName, ExtractSerializer.ExtendedCPUPostFix);
-                    if (File.Exists(file))
-                    {
-                        using var fileStream = ExtractSerializer.OpenFileReadOnly(file);
-                        lret = ExtractSerializer.Deserialize<CPUExtended>(fileStream);
-                    }
+                    ExtractSerializer ser = new(DeserializedFileName);
+                    lret = ser.Deserialize<CPUExtended>(ExtractSerializer.ExtendedCPUPostFix);
                 }
                 
                 if( lret == null )
