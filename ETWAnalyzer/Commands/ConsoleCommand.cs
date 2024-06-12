@@ -296,7 +296,7 @@ namespace ETWAnalyzer.Commands
             }
 
 
-            myInputFiles = bKeepOldFiles ? myInputFiles.Concat(tests).ToArray() : tests.ToArray();
+            myInputFiles = (bKeepOldFiles && myInputFiles != null) ? myInputFiles.Concat(tests).ToArray() : tests.ToArray();
 
             if( myInputFiles != null )
             {
