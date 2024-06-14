@@ -89,9 +89,10 @@ namespace ETWAnalyzer.Commands
          " -Concurrency dd      Number of threads used in one extraction process to extract data multithreaded." + Environment.NewLine + 
          " -symServer [NtSymbolPath, MS, Google, syngo or your own symbol server]  Load pdbs from remote symbol server which is stored in the ETWAnalyzer.dll/exe.config file." + Environment.NewLine +
          "                      With NtSymbolPath the contents of the environment variable _NT_SYMBOL_PATH are used." + Environment.NewLine +
-         "                      When using a custom remote symbol server use this form with a local folder: E.g. SRV*C:\\Symbols*https://msdl.microsoft.com/download/symbols" + Environment.NewLine + 
-        $"                      The config file {ConfigFiles.RequiredPDBs} declares which pdbs" + Environment.NewLine + 
-         "                      must have been successfully loaded during extraction. Otherwise a warning is printed due to symbol loading errors." + Environment.NewLine +
+         "                      You can use multiple remote symbols servers e.g. https://msdl.microsoft.com/download/symbols;https://chromium-browser-symsrv.commondatastorage.googleapis.com." + Environment.NewLine +
+         "                      The symbols are downloaded to C:\\Symbols unless you use -SymCache." + Environment.NewLine + 
+        $"                      The config file {ConfigFiles.RequiredPDBs} declares which pdbs must have been successfully loaded during extraction. Otherwise a warning is printed due to symbol loading errors." + Environment.NewLine + 
+         " -SymCache folder     Stored downloaded pdbs in a different folder. By default c:\\SymCache is used, regardless of the NtSymbolPath settings." + Environment.NewLine + 
          " -keepTemp            If you want to analyze the ETL files more than once from compressed files you can use this option to keep the uncompressed ETL files in the output folder. " + Environment.NewLine +
          " -allCPU              By default only methods with CPU or Wait > 10 ms are extracted. Used together with -extract CPU." + Environment.NewLine +
          " -NoSampling          Do not process CPU sampling data. Sometimes VMWare VMs produce invalid CPU sampling data. In that case you can ignore it and process only the Context Switch data. " + Environment.NewLine + 
