@@ -41,23 +41,23 @@ namespace ETWAnalyzer.Commands
          "The data can the be analyzed by other tools or ETWAnalyzer itself which can also analyze the data for specific patterns or issues." + Environment.NewLine +
          "Multiple extractor options are separated by space." + Environment.NewLine +
          " -extract Op1 Op2 ..." + Environment.NewLine +
-         "  All      : Include all extractors" + Environment.NewLine +
-         "  CPU      : CPU consumption of all proceses part of the recording. CPU Sampling (PROFILE) and/or Context Switch tracing (CSWITCH) data with stacks must be present." + Environment.NewLine +
-         "  Default  : Include all extractors except File" + Environment.NewLine +
-         "  Disk     : Disk IO summary and a per file summary of read/write/flush disk service times. DISK_IO data must be present in trace to get this data." + Environment.NewLine +
+         "  All       : Include all extractors" + Environment.NewLine +
+         "  CPU       : CPU consumption of all proceses part of the recording. CPU Sampling (PROFILE) and/or Context Switch tracing (CSWITCH) data with stacks must be present." + Environment.NewLine +
+         "  Default   : Include all extractors except File" + Environment.NewLine +
+         "  Disk      : Disk IO summary and a per file summary of read/write/flush disk service times. DISK_IO data must be present in trace to get this data." + Environment.NewLine +
          "  DNS       : Extract DNS Queries. You need to enable ETW provider Microsoft-Windows-DNS-Client." + Environment.NewLine +
-         "  Exception: Get all .NET Exception Messages, Type and their call stacks when present with Process,ThreadId and TimeStamp" + Environment.NewLine +
-         "             To get call stacks you need symbols. See below -symServer section. The Microsoft-Windows-DotNETRuntime ETW provider with ExceptionKeyword 0x8000 and stacks must be present." + Environment.NewLine +
-         "  File     : Open/Close/Read/Write summary of all accessed files per process" + Environment.NewLine +
-         "             The ETL file must contain FILEIO data." + Environment.NewLine +
+         "  Exception : Get all .NET Exception Messages, Type and their call stacks when present with Process,ThreadId and TimeStamp" + Environment.NewLine +
+         "              To get call stacks you need symbols. See below -symServer section. The Microsoft-Windows-DotNETRuntime ETW provider with ExceptionKeyword 0x8000 and stacks must be present." + Environment.NewLine +
+         "  File      : Open/Close/Read/Write summary of all accessed files per process" + Environment.NewLine +
+         "              The ETL file must contain FILEIO data." + Environment.NewLine +
          "  Frequency : Extract CPU Frequency data when present from enabled Microsoft-Windows-Kernel-Processor-Power and Microsoft-Windows-Kernel-Power (capture state data from both providers is also needed) ETW providers." + Environment.NewLine +
-         "  Memory   : Get workingset/committed memory machine wide and of all processes at trace start and a second time at trace end. MEMINFO_WS must be present." + Environment.NewLine +
-         "  Module   : Dump all loaded modules with file path and version. LOADER data must be present in trace." + Environment.NewLine +
+         "  Memory    : Get workingset/committed memory machine wide and of all processes at trace start and a second time at trace end. MEMINFO_WS must be present." + Environment.NewLine +
+         "  Module    : Dump all loaded modules with file path and version. LOADER data must be present in trace." + Environment.NewLine +
          "  ObjectRef : Extract all Handle (Create/Duplicate/Close) with kernel provider OB_HANDLE, Object (AddRef/ReleaseRef) with kernel provider OB_OBJECT and File map/unmap events with provider VAMAP." + Environment.NewLine +
          "  PMC       : Extract Performance Monitoring Counters and Last Branch Record CPU traces. You need to enable PMC/LBR ETW Tracing during the recording to get data." + Environment.NewLine +
          "  Power     : Extract Power profile data when present from Microsoft-Windows-Kernel-Power provider (capture state is needed to get power profile data)." + Environment.NewLine +
-         "  Stacktag : Get from all processes the CPU call stack summary by the WPA stacktag names" + Environment.NewLine +
-         "             To work properly you need symbols. See below -symServer section" + Environment.NewLine +
+         "  Stacktag  : Get from all processes the CPU call stack summary by the WPA stacktag names" + Environment.NewLine +
+         "              To work properly you need symbols. See below -symServer section" + Environment.NewLine +
          "              Json Nodes: SummaryStackTags-UsedStackTagFiles,Stats..." + Environment.NewLine +
          "                           This uses default.stacktags and GCAndJit.stacktags. For each process the GC and JIT overhead is printed extra while the default stacktags contain implicitly GC and JIT also." + Environment.NewLine +
          "              Json Nodes: SpecialStackTags-UsedStackTagFiles,Stats..." + Environment.NewLine +
