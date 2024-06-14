@@ -35,37 +35,37 @@ namespace ETWAnalyzer.Commands
     class ExtractCommand : ArgParser
     {
         internal static readonly string HelpString =
-         "ETWAnalyzer [-extract [All, Default or Disk File CPU Memory Exception Stacktag ThreadPool PMC Frequency Power Dns TCP] -filedir/-fd inEtlOrZip [-DryRun] [-symServer NtSymbolPath/MS/Google/syngo] [-keepTemp] [-NoOverwrite] [-pThreads dd] [-nThreads dd]" + Environment.NewLine +
+         "ETWAnalyzer [-extract [All, Default or CPU Disk Dns Exception File Frequency Memory Module ObjectRef PMC Power Stacktag TCP ThreadPool] -filedir/-fd inEtlOrZip [-DryRun] [-symServer NtSymbolPath/MS/Google/syngo] [-keepTemp] [-NoOverwrite] [-pThreads dd] [-nThreads dd]" + Environment.NewLine +
          "            [-NoReady] [-allCPU] [-Concurrency dd] [-NoIndent] [-NoCompress] [-LastNDays dd] [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd] [-NoTestRunGrouping]  " + Environment.NewLine + 
          "Retrieve data from ETL files and store extracted data in a serialized format in Json in the output directory \\Extract folder." + Environment.NewLine +
          "The data can the be analyzed by other tools or ETWAnalyzer itself which can also analyze the data for specific patterns or issues." + Environment.NewLine +
-         "Extract Options are separated by space" + Environment.NewLine +
+         "Multiple extractor options are separated by space." + Environment.NewLine +
          " -extract Op1 Op2 ..." + Environment.NewLine +
          "  All      : Include all extractors" + Environment.NewLine +
-         "  Default  : Include all extractors except File" + Environment.NewLine +
          "  CPU      : CPU consumption of all proceses part of the recording. CPU Sampling (PROFILE) and/or Context Switch tracing (CSWITCH) data with stacks must be present." + Environment.NewLine +
-         "  Memory   : Get workingset/committed memory machine wide and of all processes at trace start and a second time at trace end. MEMINFO_WS must be present." + Environment.NewLine +
+         "  Default  : Include all extractors except File" + Environment.NewLine +
+         "  Disk     : Disk IO summary and a per file summary of read/write/flush disk service times. DISK_IO data must be present in trace to get this data." + Environment.NewLine +
+         "  DNS       : Extract DNS Queries. You need to enable ETW provider Microsoft-Windows-DNS-Client." + Environment.NewLine +
          "  Exception: Get all .NET Exception Messages, Type and their call stacks when present with Process,ThreadId and TimeStamp" + Environment.NewLine +
          "             To get call stacks you need symbols. See below -symServer section. The Microsoft-Windows-DotNETRuntime ETW provider with ExceptionKeyword 0x8000 and stacks must be present." + Environment.NewLine +
-         "  Disk     : Disk IO summary and a per file summary of read/write/flush disk service times. DISK_IO data must be present in trace to get this data." + Environment.NewLine +
-         "  Module   : Dump all loaded modules with file path and version. LOADER data must be present in trace." + Environment.NewLine +
          "  File     : Open/Close/Read/Write summary of all accessed files per process" + Environment.NewLine +
          "             The ETL file must contain FILEIO data." + Environment.NewLine +
+         "  Frequency : Extract CPU Frequency data when present from enabled Microsoft-Windows-Kernel-Processor-Power and Microsoft-Windows-Kernel-Power (capture state data from both providers is also needed) ETW providers." + Environment.NewLine +
+         "  Memory   : Get workingset/committed memory machine wide and of all processes at trace start and a second time at trace end. MEMINFO_WS must be present." + Environment.NewLine +
+         "  Module   : Dump all loaded modules with file path and version. LOADER data must be present in trace." + Environment.NewLine +
+         "  ObjectRef : Extract all Handle (Create/Duplicate/Close) with kernel provider OB_HANDLE, Object (AddRef/ReleaseRef) with kernel provider OB_OBJECT and File map/unmap events with provider VAMAP." + Environment.NewLine +
+         "  PMC       : Extract Performance Monitoring Counters and Last Branch Record CPU traces. You need to enable PMC/LBR ETW Tracing during the recording to get data." + Environment.NewLine +
+         "  Power     : Extract Power profile data when present from Microsoft-Windows-Kernel-Power provider (capture state is needed to get power profile data)." + Environment.NewLine +
          "  Stacktag : Get from all processes the CPU call stack summary by the WPA stacktag names" + Environment.NewLine +
          "             To work properly you need symbols. See below -symServer section" + Environment.NewLine +
          "              Json Nodes: SummaryStackTags-UsedStackTagFiles,Stats..." + Environment.NewLine +
          "                           This uses default.stacktags and GCAndJit.stacktags. For each process the GC and JIT overhead is printed extra while the default stacktags contain implicitly GC and JIT also." + Environment.NewLine +
          "              Json Nodes: SpecialStackTags-UsedStackTagFiles,Stats..." + Environment.NewLine +
          "                           There you can configure with the ETWAnalyzer\\Configuration\\Special.stacktags to trend e.g. specific methods over one or more testruns to find regression issues or when an issue did start occurring." + Environment.NewLine +
+         "  TCP       : Extract TCP statistic per connection. You need to enable the provider Microsoft-Windows-TCPIP." + Environment.NewLine +
          "  ThreadPool: Extract relevant data from .NET Runtime ThreadPool if available. ThreadingKeyword 0x10000 needs to be set for the Microsoft-Windows-DotNETRuntime ETW Provider during recording." + Environment.NewLine +
          "              Json Nodes: ThreadPool-PerProcessThreadPoolStarvations" + Environment.NewLine +
-         "  PMC       : Extract Performance Monitoring Counters and Last Branch Record CPU traces. You need to enable PMC/LBR ETW Tracing during the recording to get data." + Environment.NewLine +
-         "  Frequency : Extract CPU Frequency data when present from enabled Microsoft-Windows-Kernel-Processor-Power and Microsoft-Windows-Kernel-Power (capture state data from both providers is also needed) ETW providers." + Environment.NewLine +
-         "  Power     : Extract Power profile data when present from Microsoft-Windows-Kernel-Power provider (capture state is needed to get power profile data)." + Environment.NewLine +
-         "  DNS       : Extract DNS Queries. You need to enable ETW provider Microsoft-Windows-DNS-Client." + Environment.NewLine +
-         "  TCP       : Extract TCP statistic per connection. You need to enable the provider Microsoft-Windows-TCPIP." + Environment.NewLine +
-         "  ObjectRef : Extract all Handle (Create/Duplicate/Close) with kernel provider OB_HANDLE, Object (AddRef/ReleaseRef) with kernel provider OB_OBJECT and File map/unmap events with provider VAMAP." + Environment.NewLine +
-         "The following filters work only if the adhere to a specific file naming convention." + Environment.NewLine + 
+         "The following filters work only if the input files adhere to a specific file naming convention." + Environment.NewLine + 
          "Select files from a testrun (all tests which have a time gap < 1h) to e.g. select only the first, or skip the warmump run or to extract just a sample of test cases." + Environment.NewLine +
          "         TestCaseName_ddddmsMachineName.yyyymmdd-hhmmss.7z/.zip/.etl  e.g. Build_166375msfv-az192-659.20230127-093520"  + Environment.NewLine + 
          "         TestCaseName_ddddms_Machine_CLT/SRV/SINGLE_TestStatus-Passed/Failed_yyyymmdd-hhmmss.7z/.etl e.g. LoadPrepUseCase_4897ms_RN6498AA8B-B18F_SRV_TestStatus-Passed_20230112-170100.7z" + Environment.NewLine + 
@@ -75,7 +75,7 @@ namespace ETWAnalyzer.Commands
          "   -TestsPerRun dd            Number of test cases to load of each test run. Useful if you want get an overview how a test behaves over time without loading thousands of files." + Environment.NewLine +
          "   -SkipNTests dd             Skip the first n tests of a testcase in a TestRun. Use this to e.g. skip the first test run which shows normally first time init effects which may be not representative" + Environment.NewLine +
          " -DryRun              Do not extract. Only print which files would be extracted." + Environment.NewLine + 
-         " -NoOverwrite         By default existing Json files are overwritten during a new extraction run. If you want to extract from a large directory only the missing extraction files you can use this option" + Environment.NewLine +
+         " -NoOverwrite         By default existing Json files are overwritten during a new extraction run. If you want to extract from a large directory only the missing extraction files you can use this option." + Environment.NewLine +
          "                      This way you can have the same extract command line in a script after a profiling run to extract only the newly added profiling data." + Environment.NewLine +
          " -Indent              By default a not readable non indented json file is written to save space. For readability you can save the json files with extra spaces and line feeds. This increases the file size ca. by 30%." + Environment.NewLine +
         $" -NoCompress          By default the extracted json files are stored in a 7z archive with the extension {TestRun.CompressedExtractExtension}. Use this flag if you need uncompressed json files." + Environment.NewLine +
@@ -122,7 +122,6 @@ namespace ETWAnalyzer.Commands
          " ETWAnalyzer -extract All -filedir C:\\Profiling\\Baseline_12122022 -symServer MS -outdir c:\\temp\\Profiling\\Baseline_Extracted -noOverwrite" + Environment.NewLine +
          "[green]Show which files would be extracted. Select only files which are not older than one day.[/green]" + Environment.NewLine +
          " ETWAnalyzer -extract All -fd C:\\Profiling\\Baseline_12122022 -DryRun -LastNDays 1" + Environment.NewLine +
-
          "" + Environment.NewLine
          ;
 
