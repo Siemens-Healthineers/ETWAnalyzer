@@ -285,14 +285,22 @@ namespace ETWAnalyzer.Commands
                 }
 
                 Console.WriteLine($"Loading {arg}");
-                var runs = TestRun.CreateFromDirectory(arg, System.IO.SearchOption.TopDirectoryOnly, null);
-                IEnumerable<Lazy<SingleTest>> filesToAdd = runs.SelectMany(x => x.Tests).SelectMany(x => x.Value).Select(x =>
+                try
                 {
-                    x.KeepExtract = true; // do not unload serialized Extract when test is disposed.
-                    ForceDeserializeOnLoadWhenRequested(bFullLoad, x);
-                    return new Lazy<SingleTest>(() => x);
-                });
-                tests.AddRange(filesToAdd);
+                    var runs = TestRun.CreateFromDirectory(arg, System.IO.SearchOption.TopDirectoryOnly, null);
+                    IEnumerable<Lazy<SingleTest>> filesToAdd = runs.SelectMany(x => x.Tests).SelectMany(x => x.Value).Select(x =>
+                    {
+                        x.KeepExtract = true; // do not unload serialized Extract when test is disposed.
+                        ForceDeserializeOnLoadWhenRequested(bFullLoad, x);
+                        return new Lazy<SingleTest>(() => x);
+                    });
+                    tests.AddRange(filesToAdd);
+                }
+                catch(Exception ex)
+                {
+                    Logger.Error(ex.ToString());
+                    ColorConsole.WriteEmbeddedColorLine($"[red]Error: Could not load file {arg}. Got {ex.GetType().Name}: {ex.Message}[/red]");
+                }
             }
 
 
