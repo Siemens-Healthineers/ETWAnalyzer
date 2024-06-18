@@ -221,7 +221,7 @@ namespace ETWAnalyzer.EventDump
                     ETWProcess refChangeProc = objectEvent.Extract.GetProcess(refChange.ProcessIdx);
 
                     WriteCSVLine(CSVOptions, Path.GetFileNameWithoutExtension(objectEvent.File.FileName), objectEvent.File.PerformedAt, objectEvent.File.TestName, objectEvent.File.DurationInMs, objectEvent.BaseLine,
-                    objectEvent.Id, GetStack(objectEvent.Stacks, refChange.StackIdx), refChange.GetType().Name, refChange.TimeNs, refChange.ThreadId, "", "", GetHandleValue((ulong)objectEvent.ObjTrace.ObjectPtr), objectEvent.HandleType,
+                    objectEvent.Id, GetStack(objectEvent.Stacks, refChange.StackIdx), refChange.GetType().Name, refChange.TimeNs, refChange.ThreadId, "", objectEvent.ObjTrace.GetObjectType(objectEvent.Extract), objectEvent.ObjTrace.Name, GetHandleValue((ulong)objectEvent.ObjTrace.ObjectPtr), 
                     "", "",
                     "", "", "", "",
                     refChange.RefCountChange,
