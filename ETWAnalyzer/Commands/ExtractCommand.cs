@@ -34,8 +34,10 @@ namespace ETWAnalyzer.Commands
     /// </summary>
     class ExtractCommand : ArgParser
     {
+        internal const string AllExtractCommands = "All, Default or CPU Disk Dns Exception File Frequency Memory Module ObjectRef PMC Power Stacktag TCP ThreadPool";
+
         internal static readonly string HelpString =
-         "ETWAnalyzer [-extract [All, Default or CPU Disk Dns Exception File Frequency Memory Module ObjectRef PMC Power Stacktag TCP ThreadPool] -filedir/-fd inEtlOrZip [-DryRun] [-symServer NtSymbolPath/MS/Google/syngo] [-keepTemp] [-NoOverwrite] [-pThreads dd] [-nThreads dd]" + Environment.NewLine +
+        $"ETWAnalyzer [-extract [{AllExtractCommands}] -filedir/-fd inEtlOrZip [-DryRun] [-symServer NtSymbolPath/MS/Google/syngo] [-keepTemp] [-NoOverwrite] [-pThreads dd] [-nThreads dd]" + Environment.NewLine +
          "            [-NoReady] [-allCPU] [-Concurrency dd] [-NoIndent] [-NoCompress] [-LastNDays dd] [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd] [-NoTestRunGrouping]  " + Environment.NewLine + 
          "Retrieve data from ETL files and store extracted data in a serialized format in Json in the output directory \\Extract folder." + Environment.NewLine +
          "The data can the be analyzed by other tools or ETWAnalyzer itself which can also analyze the data for specific patterns or issues." + Environment.NewLine +
