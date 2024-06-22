@@ -22,7 +22,7 @@
     <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
     <PackageProjectUrl>https://github.com/Siemens-Healthineers/ETWAnalyzer</PackageProjectUrl>
     <PackageReadmeFile>ProgramaticAccess.md</PackageReadmeFile>
-    <Version>3.0.0.6</Version>
+    <Version>3.0.0.8</Version>
     <Platforms>x64</Platforms>
     <ServerGarbageCollection>true</ServerGarbageCollection>
     <GarbageCollectionAdaptationMode>1</GarbageCollectionAdaptationMode>
@@ -89,6 +89,7 @@
     <PackageReference Include="Newtonsoft.Json">
       <Version>13.0.3</Version>
     </PackageReference>
+    <PackageReference Include="Squid-Box.SevenZipSharp.Lite" Version="1.6.2.24" />
     <PackageReference Include="System.Configuration.ConfigurationManager" Version="5.0.0" />
     <PackageReference Include="System.Net.Http" Version="4.3.4" />
   </ItemGroup>

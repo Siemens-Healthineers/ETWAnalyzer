@@ -69,8 +69,11 @@ jobs:
         - name: Get .NET Information
           run: dotnet --info
 
+        - name: Nuget Restore
+          run: msbuild -t:restore
+
         - name: Build Release
-          run: dotnet build -c Release
+          run: msbuild "/p:Configuration=Release;Platform=x64"
 
         # Stop Profiling
         - name: Stop Profiling
@@ -100,7 +103,8 @@ jobs:
         # Execute all unit tests in the solution
         - name: Execute unit tests
           run: |
-            dotnet test /nodeReuse:false -m:1 -p:ParallelizeTestCollections=false /p:CopyLocalLockFileAssemblies=true --logger GitHubActions --verbosity detailed --settings Test.runsettings --diag:log.txt --collect:"XPlat Code Coverage" --results-directory ./ults --logger trx
+            dotnet test ETWAnalyzer_uTest /nodeReuse:false -m:1 -p:ParallelizeTestCollections=false /p:CopyLocalLockFileAssemblies=true --logger GitHubActions --verbosity detailed --settings Test.runsettings --diag:log.txt --collect:"XPlat Code Coverage" --results-directory ./ults --logger trx
+            dotnet test ETWAnalyzer_iTest /nodeReuse:false -m:1 -p:ParallelizeTestCollections=false /p:CopyLocalLockFileAssemblies=true --logger GitHubActions --verbosity detailed --settings Test.runsettings --diag:log.txt --collect:"XPlat Code Coverage" --results-directory ./ults --logger trx
         
         # Stop Profiling
         - name: Stop Test Profiling

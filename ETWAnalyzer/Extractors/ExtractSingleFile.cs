@@ -5,21 +5,17 @@
 using ETWAnalyzer.Commands;
 using ETWAnalyzer.Configuration;
 using ETWAnalyzer.Extract;
-using ETWAnalyzer.Extract.FileIO;
 using ETWAnalyzer.Extract.Modules;
 using ETWAnalyzer.Helper;
 using ETWAnalyzer.TraceProcessorHelpers;
 using Microsoft.Windows.EventTracing;
 using Microsoft.Windows.EventTracing.Symbols;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.Serialization;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace ETWAnalyzer.Extractors
@@ -64,14 +60,26 @@ namespace ETWAnalyzer.Extractors
         IPendingResult<ISymbolDataSource> myPendingSymbols;
 
         /// <summary>
+        /// When true output will be compressed.
+        /// </summary>
+        public bool CompressOutput
+        {
+            get; private set;
+        }
+
+        string Extension => CompressOutput ? TestRun.CompressedExtractExtension : TestRun.ExtractExtension;
+
+
+        /// <summary>
         /// Extract data from one ETL file
         /// </summary>
         /// <param name="etlOrZipFile">Input etl file</param>
         /// <param name="extractors">List of extractors</param>
         /// <param name="outTempETLDirectory">Temp folder to extract etl files</param>
         /// <param name="symbols">Symbol server and folders.</param>
-        /// <param name="afterunzipCommand">Execute external application after zip file was uncompressed</param>
-        public ExtractSingleFile(string etlOrZipFile, List<ExtractorBase> extractors, string outTempETLDirectory, SymbolPaths symbols, string afterunzipCommand)
+        /// <param name="afterUnzipCommand">Execute external application after zip file was uncompressed</param>
+        /// <param name="bCompress">if true output files are written to a compressed file with extensione <see cref="TestRun.CompressedExtractExtension"/></param>
+        public ExtractSingleFile(string etlOrZipFile, List<ExtractorBase> extractors, string outTempETLDirectory, SymbolPaths symbols, string afterUnzipCommand, bool bCompress)
         {
             if (String.IsNullOrWhiteSpace(etlOrZipFile))
             {
@@ -82,13 +90,14 @@ namespace ETWAnalyzer.Extractors
                 throw new ArgumentException("Pass a non null or empty temp output directory", nameof(outTempETLDirectory));
             }
             myOutTempEtlDirectory = outTempETLDirectory;
+            CompressOutput = bCompress;
             myExtractors = extractors ?? throw new ArgumentNullException(nameof(extractors));
             mySymbols = symbols;
 
             myEtlFile = ExtractETLIfZipped(etlOrZipFile, outTempETLDirectory, symbols, out myWasExtracted);
-            if (!String.IsNullOrEmpty(afterunzipCommand) && myWasExtracted)
+            if (!String.IsNullOrEmpty(afterUnzipCommand) && myWasExtracted)
             {
-                ExecutePostUnzipCommand(myEtlFile, afterunzipCommand);
+                ExecutePostUnzipCommand(myEtlFile, afterUnzipCommand);
             }
 
         }
@@ -206,12 +215,12 @@ namespace ETWAnalyzer.Extractors
                 Logger.Info(perfMsg);
                 if (outputDirectory.IsDefault)
                 {
-                    outputJsonFile = Path.Combine(outputDirectory.OutputDirectory, Program.ExtractFolder, Path.GetFileNameWithoutExtension(myEtlFile) + ".json");
+                    outputJsonFile = Path.Combine(outputDirectory.OutputDirectory, Program.ExtractFolder, Path.GetFileNameWithoutExtension(myEtlFile) + Extension);
                 }
                 else
                 {
                     // when output directory is explicitly set extract to given folder
-                    outputJsonFile = Path.Combine(outputDirectory.OutputDirectory, Path.GetFileNameWithoutExtension(myEtlFile) + ".json");
+                    outputJsonFile = Path.Combine(outputDirectory.OutputDirectory, Path.GetFileNameWithoutExtension(myEtlFile) + Extension);
                 }
 
                 outputFiles = SerializeResults(outputJsonFile, myResults);
@@ -227,8 +236,6 @@ namespace ETWAnalyzer.Extractors
 
             return outputFiles;
         }
-
-
 
         void LoadSymbols()
         {
@@ -350,8 +357,8 @@ namespace ETWAnalyzer.Extractors
                     Directory.CreateDirectory(outDir);
                 }
 
-                ExtractSerializer serializer = new();
-                outputFiles = serializer.Serialize(outFile, result);
+                ExtractSerializer serializer = new(outFile);
+                outputFiles = serializer.Serialize(result);
 
             }
             catch (Exception ex)

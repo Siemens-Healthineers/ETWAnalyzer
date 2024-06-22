@@ -2,6 +2,7 @@
 //// SPDX-License-Identifier:   MIT
 
 using ETWAnalyzer.Extract;
+using ETWAnalyzer.Infrastructure;
 using ETWAnalyzer.ProcessTools;
 using Microsoft.Diagnostics.Tracing.Parsers.Kernel;
 using System;
@@ -23,14 +24,25 @@ namespace ETWAnalyzer.Commands
         class ConsoleHelpCommand : ArgParser
         {
             public override string Help =>
-                ".cls                               Clear screen." + Environment.NewLine +
-               $".dump xxx                          Query loaded file/s. Options are the same as in -Dump command. e.g. .dump CPU will print CPU metrics. Allowed values are {DumpCommand.AllDumpCommands}" + Environment.NewLine +
-                ".load file1.json file2.json ...    Load one or more data files. Use . to load all files in current directory. Previously loaded files are removed." + Environment.NewLine +
-                ".load+ file.json                   Add file to list of loaded files but keep other files." + Environment.NewLine +  
-                ".list                              List loaded files" + Environment.NewLine +
-                ".quit or .q                        Quit ETWAnalyzer" + Environment.NewLine +
-                ".unload                            Unload all files if no parameter is passed. Otherwise only the passed files are unloaded from the file list." + Environment.NewLine +
-                ".sffn                              Enable/disable -ShowFullFileName to display full path of output files." + Environment.NewLine +
+                ".cls                               "+ Environment.NewLine + 
+                "   Clear screen." + Environment.NewLine +
+               $".dump xxx [ -fd *usecase1* ]         " + Environment.NewLine + 
+                "   Query loaded file/s. Options are the same as in -Dump command. e.g. .dump CPU will print CPU metrics." + Environment.NewLine +
+                "     -fd *filter*    Filter loaded files which are queried. Filter is applied to full path file name." + Environment.NewLine +  
+               $"   Allowed values are {DumpCommand.AllDumpCommands}" + Environment.NewLine +
+                ".load [-all] file1.json file2.json ...    " + Environment.NewLine + 
+                "     -all    Fully load all json files during load. By default the files are fully loaded during the dump command." + Environment.NewLine +
+                "   Load one or more data files. Use . to load all files in current directory. Previously loaded files are removed." + Environment.NewLine +
+                ".load+ file.json                   " + Environment.NewLine + 
+                "   Add file to list of loaded files but keep other files." + Environment.NewLine +  
+                ".list                              " + Environment.NewLine + 
+                "   List loaded files" + Environment.NewLine +
+                ".quit or .q                        "+Environment.NewLine + 
+                "   Quit ETWAnalyzer" + Environment.NewLine +
+                ".unload                            "+Environment.NewLine + 
+                "   Unload all files if no parameter is passed. Otherwise only the passed files are unloaded from the file list." + Environment.NewLine +
+                ".sffn                              " +Environment.NewLine + 
+                "   Enable/disable -ShowFullFileName to display full path of output files." + Environment.NewLine +
                 "Pressing Ctrl-C will cancel current command, Ctrl-Break will terminate";
 
             public override void Parse()
@@ -97,10 +109,7 @@ namespace ETWAnalyzer.Commands
                 ".load+" => Load(args, bKeepOldFiles:true),
                 ".unload" => Unload(args),
                 ".cls" => Cls(args),
-                ".dump" => new DumpCommand(args, myInputFiles)
-                {
-                    ShowFullFileName = ShowFullFileNameFlag,
-                },
+                ".dump" => CreateDumpCommand(args),
                 ".exit" => new QuitCommand(args),
                 ".list" => ListFiles(args),
                 ".sffn" => ShowFullFileName(args),
@@ -196,6 +205,61 @@ namespace ETWAnalyzer.Commands
         }
 
         /// <summary>
+        /// Create dump command from filtered list of arguments.
+        /// </summary>
+        /// <param name="args"></param>
+        /// <returns></returns>
+        DumpCommand CreateDumpCommand(string[] args)
+        {
+            var argsAndTests = ApplyFileDirFilter(args);
+            return new DumpCommand(argsAndTests.Item1, argsAndTests.Item2)
+            {
+                ShowFullFileName = ShowFullFileNameFlag,
+            };
+        }
+
+        /// <summary>
+        /// Apply -fd queries to filter current file list based on full path.
+        /// </summary>
+        /// <param name="args"></param>
+        /// <returns></returns>
+        (string[], Lazy<SingleTest>[]) ApplyFileDirFilter(string[] args)
+        {
+            List<Lazy<SingleTest>> filteredFiles = new(myInputFiles ?? Enumerable.Empty<Lazy<SingleTest>>());
+            List<string> filteredArgs = new();
+            for (int i = 0; i < args.Length; i++)
+            {
+                string lower = args[i].ToLowerInvariant();
+                switch (lower)
+                {
+                    case FileOrDirectoryAlias:
+                    case FileOrDirectoryArg:
+                        if (i + 1 < args.Length)
+                        {
+                            string filter = args[i + 1];
+                            var match = Matcher.CreateMatcher(filter);
+                            filteredFiles = filteredFiles.Where(x => match(x.Value.Files[0].FileName)).ToList();
+                            if (filteredFiles.Count == myInputFiles?.Length)
+                            {
+                                Console.WriteLine($"Warning: Filter did not filter any files.");
+                            }
+                        }
+                        else
+                        {
+                            ColorConsole.WriteLine($"{FileOrDirectoryAlias}/{FileOrDirectoryArg} needs an argument. No filter is applied. Dumping all files.", ConsoleColor.Red);
+                        }
+                        i++;
+                        break;
+                    default:
+                        filteredArgs.Add(args[i]);
+                        break;
+                }
+            }
+
+            return (filteredArgs.ToArray(),filteredFiles.ToArray());
+        }
+
+        /// <summary>
         /// Load one or multiple input files
         /// </summary>
         /// <param name="args">Input file query</param>
@@ -205,6 +269,8 @@ namespace ETWAnalyzer.Commands
         {
             ICommand cmd = null;
 
+            bool bFullLoad = false;
+
             List<Lazy <SingleTest>> tests  = new();
             foreach (var arg in args)
             {
@@ -212,18 +278,33 @@ namespace ETWAnalyzer.Commands
                 {
                     continue;
                 }
-                Console.WriteLine($"Loading {arg}");
-                var runs = TestRun.CreateFromDirectory(arg, System.IO.SearchOption.TopDirectoryOnly, null);
-                IEnumerable<Lazy<SingleTest>> filesToAdd = runs.SelectMany(x => x.Tests).SelectMany(x => x.Value).Select(x =>
+                if( arg.ToLowerInvariant() == "-all")
                 {
-                    x.KeepExtract = true; // do not unload serialized Extract when test is disposed.
-                    return new Lazy<SingleTest>(() => x);
-                });
-                tests.AddRange(filesToAdd);
+                    bFullLoad = true;
+                    continue;
+                }
+
+                Console.WriteLine($"Loading {arg}");
+                try
+                {
+                    var runs = TestRun.CreateFromDirectory(arg, System.IO.SearchOption.TopDirectoryOnly, null);
+                    IEnumerable<Lazy<SingleTest>> filesToAdd = runs.SelectMany(x => x.Tests).SelectMany(x => x.Value).Select(x =>
+                    {
+                        x.KeepExtract = true; // do not unload serialized Extract when test is disposed.
+                        ForceDeserializeOnLoadWhenRequested(bFullLoad, x);
+                        return new Lazy<SingleTest>(() => x);
+                    });
+                    tests.AddRange(filesToAdd);
+                }
+                catch(Exception ex)
+                {
+                    Logger.Error(ex.ToString());
+                    ColorConsole.WriteEmbeddedColorLine($"[red]Error: Could not load file {arg}. Got {ex.GetType().Name}: {ex.Message}[/red]");
+                }
             }
 
 
-            myInputFiles = bKeepOldFiles ? myInputFiles.Concat(tests).ToArray() : tests.ToArray();
+            myInputFiles = (bKeepOldFiles && myInputFiles != null) ? myInputFiles.Concat(tests).ToArray() : tests.ToArray();
 
             if( myInputFiles != null )
             {
@@ -238,6 +319,26 @@ namespace ETWAnalyzer.Commands
             }
 
             return cmd;
+        }
+
+        /// <summary>
+        /// Deserialize json file and all dependant json files if requested.
+        /// By default the files are loaded when it is accessed.
+        /// </summary>
+        /// <param name="bFullLoad"></param>
+        /// <param name="x"></param>
+        private static void ForceDeserializeOnLoadWhenRequested(bool bFullLoad, SingleTest x)
+        {
+            if (bFullLoad)
+            {
+                foreach (var file in x.Files)
+                {
+                    var tmp = file.Extract.CPU;
+                    var tmp2 = file.Extract.Modules;
+                    var tmp4 = file.Extract.FileIO;
+                    var tmp3 = file.Extract.HandleData;
+                }
+            }
         }
 
 

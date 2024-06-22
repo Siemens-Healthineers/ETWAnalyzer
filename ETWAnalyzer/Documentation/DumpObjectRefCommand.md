@@ -10,6 +10,61 @@ To extract data gathered from Handle, Object and File mapping events you need to
 
 or you can use ```All``` instead of ```ObjectRef``` which will include it. 
 
+## Getting an Overview
+To view the top five machine-wide allocated handle types, use the command: ```.dump ObjectRef -topN 5 -ShowTotal Total``` 
+```
+>.dump ObjectRef -topN 5 -ShowTotal Total 
+5/10/2024 12:46:34 PM  HandleLeak 
+Not closed Handle counts for 486 processes
+File                                                        :   36558
+Key                                                         :   37249
+EtwRegistration                                             :   58854
+Thread                                                      :   90260
+Event                                                       :  106711
+=====================================================================
+Sum                                                         :  329632
+Objects Created/Destroyed: 76565/74555 Diff: 2010,  Handles Created/Closed/Duplicated: 78833/77596/614 Diff: 1851,  RefChanges: 0, FileMap/Unmap: 0/0
+```
+
+To obtain a breakdown of handle allocation per process, replace Total with ```Process``` in your command.
+```
+>.dump ObjectRef -topN 5 -ShowTotal Process 
+5/10/2024 12:46:34 PM  HandleLeak 
+Not closed handles at trace end:
+ZSATrayManager.exe(13260)                                   :    9278
+wpa.exe(2415968)                                            :   10695
+System(4)                                                   :   15562
+explorer.exe(60060)                                         :   31838
+ZSATunnel.exe(10232)                                        :   73044
+=====================================================================
+Sum                                                         :  140417
+Objects Created/Destroyed: 76565/74555 Diff: 2010,  Handles Created/Closed/Duplicated: 78833/77596/614 Diff: 1851,  RefChanges: 0, FileMap/Unmap: 0/0
+```
+
+To display the top five processes that have allocated thread handles, you can append ```-type Thread``` to your command.
+```
+>.dump Objectref -topN 5 -ShowTotal Process -type Thread 
+5/10/2024 12:46:34 PM  HandleLeak 
+Not closed handles at trace end:
+devenv.exe(509560)                                          :     343
+devenv.exe(2619964)                                         :     363
+csrss.exe(1536)                                             :     553
+explorer.exe(60060)                                         :    1054
+ZSATunnel.exe(10232)                                        :   72410
+=====================================================================
+Sum                                                         :   74723
+Objects Created/Destroyed: 1058/882 Diff: 176,  Handles Created/Closed/Duplicated: 1072/951/80 Diff: 201,  RefChanges: 0, FileMap/Unmap: 0/0
+```
+This indicates that there's a thread leak in ZSATunnel.exe, which requires the software vendor's attention. 
+Additionally, we can perform a version check to report that this particular version has a thread handle leak.
+```
+>.dump Version -Dll ZSATunnel.exe 
+5/10/2024 12:46:34 PM  HandleLeak 
+  ZSATunnel.exe(10232) 
+    ZSATunnel.exe C:\Program Files (x86)\Zscaler\ZSATunnel 4.3.0.161 ProductName: Zscaler, Description: ZscalerTunnel
+   Selected 1/75 of all loaded modules
+```
+
 ## Data Analysis
 To dump all objects which were created by process EventLeak which are named objects which have the string signalevent_ in their name you can use:
 

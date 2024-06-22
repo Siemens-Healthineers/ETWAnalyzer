@@ -7,7 +7,7 @@ ETWAnalyzer main license is [MIT][ETWAnalyzerLicense].
 ETWAnalyzer uses Open Source and 3rd Party Software listed in [ReadMe.oss][ETWAnalyzerOSS].
 
 ## What is it? 
-ETWAnalyzer extracts from ETL files summary information into Json files. The ETL files are produced by the builtin profiling infrastructure of Windows [Event Tracing for Windows (ETW)](https://docs.microsoft.com/en-us/windows/win32/etw/about-event-tracing). 
+ETWAnalyzer extracts from ETL files summary information into compressed (.json7z) files. The ETL files are produced by the builtin profiling infrastructure of Windows [Event Tracing for Windows (ETW)](https://docs.microsoft.com/en-us/windows/win32/etw/about-event-tracing). 
 Profiling data can be collected with e.g. [wpr](https://docs.microsoft.com/en-us/windows-hardware/test/wpt/windows-performance-recorder), wprUI, xperf, PerfView, ... . Wpr is part of Windows 10 which enables you to record data on any Windows machine without additional software installation in the field. 
 These recorded ETL files are usually large (multi GB) and load slow into analysis tools such as 
 [Windows Performance Analyzer (WPA)](https://docs.microsoft.com/en-us/windows-hardware/test/wpt/windows-performance-analyzer#:~:text=Included%20in%20the%20Windows%20Assessment,run%20in%20the%20Assessment%20Platform.) 
@@ -19,9 +19,9 @@ or written to a CSV file for further analysis.
 
 The Json files can also be accessed via a C# interface [**IETWExtract**](ETWAnalyzer/Documentation/ProgramaticAccess.md) which enables you to write custom analyzers.
 
-Json files are much faster to query than the input ETL files without slow symbol server lookups.
+Compressed Json files are much faster to query than the input ETL files without slow symbol server lookups.
 It is based on years of field experience with ETW file analysis to keep the extracted Json file size as small as possible while maximizing the insights you can get of the extracted files.
-An ETW Json file is typically a few MB while the input .etl file including PDBs is hundreds of MB. 
+An ETW .json7z file is typically a few hundred KB while the input .etl file including PDBs is hundreds of MB. 
 
 ## Contributing
 You want to contribute, miss specific data, or want to add your specific dump command? Check out [Contributing](ETWAnalyzer/Documentation/Contributing.md) to get started.
@@ -59,20 +59,22 @@ ETWController supports
   - Taking Screenshots which are put besides profiling data which can be viewed in Browser.
  - Capturing Keyboard/Mouse events.
  - Distributed Profiling (Client/Server scenarios).
-   
+
+## Data Extraction  
 The 7z archives created by ETWController can be directly consumed with ETWAnalyzer. To e.g. unpack all compressed 7z files in a folder generated
 by ETWController and keep the files uncompressed so you can analyze further with WPA:
 ```
 ETWAnalyzer -extract all -fd c:\Cases\Failure\*.7z -keepTemp -symserver MS 
 ```
+
+### Extract Command
+
+  - [Extract Command Documentation](ETWAnalyzer/Documentation/ExtractCommand.md)
+
 ## Use Cases
  - [Profiler Driven Development](https://aloiskraus.wordpress.com/2022/07/25/pdd-profiler-driven-development/)
  - [Run tests with ETW Profiling](https://github.com/Alois-xx/SerializerTests)
  - [Build Profiling At Scale At Github](ETWAnalyzer/Documentation/BuildProfiling.md)
-
-## Data Extraction
-Data extraction is done for one or a directory of ETL files. Zipped ETL files are also extracted. By default 75% of all cores are used.
-See [Extract](ETWAnalyzer/Documentation/ExtractCommand.md) for more information.
 
 ### Example
 
@@ -88,6 +90,7 @@ curl https://raw.githubusercontent.com/Siemens-Healthineers/ETWAnalyzer/main/ETW
 ETWAnalyzer -console
 .load c:\Temp\ETWAnalyzerTest.json
 .dump CPU -topN 1 -methods *
+     ...
 .dump CPU -topN 1 -methods * -sortby stackdepth -MinMaxCPUMs 1000
          CPU ms Method
 5/29/2024 4:27:46 PM   ETWAnalyzerTest
@@ -95,39 +98,19 @@ ETWAnalyzer -console
       36,540 ms _RtlUserThreadStart 
       36,540 ms __RtlUserThreadStart 
       36,540 ms _CorExeMain_Exported 
-      36,540 ms ShellShim__CorExeMain 
-      36,540 ms _CorExeMain 
-      36,540 ms _CorExeMain 
-      36,540 ms EEPolicy::HandleExitProcess 
-      36,540 ms HandleExitProcessHelper 
-      36,540 ms SafeExitProcess 
-      36,540 ms EEPolicy::ExitProcessViaShim 
-      36,540 ms CLRRuntimeHostInternalImpl::ShutdownAllRuntimesThenExit 
-      36,540 ms RuntimeDesc::ShutdownAllActiveRuntimes 
-      36,540 ms ExitProcessImplementation 
+      ...
       36,540 ms RtlExitUserProcess 
       36,540 ms LdrShutdownProcess 
       36,540 ms LdrpCallInitRoutine 
       36,540 ms LdrxCallInitRoutine 
-      36,540 ms _CorDllMain_Exported 
-      36,540 ms ShellShim__CorDllMain 
-      36,540 ms _CorDllMain 
-      36,540 ms _DllMainCRTStartup 
+      ...
       36,540 ms dllmain_dispatch 
       36,540 ms dllmain_crt_dispatch 
       36,540 ms ___scrt_acquire_startup_lock  
 .dump CPU -topN 1 -methods * -sortby stackdepth -MinMaxCPUMs 1000 -includedll -threadcount
 5/29/2024 4:27:46 PM   ETWAnalyzerTest
    VSIXAutoUpdate.exe(12996) 
-      36,540 ms #1        ntdll.dll!_RtlUserThreadStart 
-      36,540 ms #1        ntdll.dll!__RtlUserThreadStart 
-      36,540 ms #1        mscoree.dll!_CorExeMain_Exported 
-      36,540 ms #1        mscoree.dll!ShellShim__CorExeMain 
-      36,540 ms #1        mscoreei.dll!_CorExeMain 
-      36,540 ms #1        clr.dll!_CorExeMain 
-      36,540 ms #1        clr.dll!EEPolicy::HandleExitProcess 
-      36,540 ms #1        clr.dll!HandleExitProcessHelper 
-      36,540 ms #1        clr.dll!SafeExitProcess 
+      ...
       36,540 ms #1        clr.dll!EEPolicy::ExitProcessViaShim 
       36,540 ms #1        mscoreei.dll!CLRRuntimeHostInternalImpl::ShutdownAllRuntimesThenExit 
       36,540 ms #1        mscoreei.dll!RuntimeDesc::ShutdownAllActiveRuntimes 
@@ -136,10 +119,7 @@ ETWAnalyzer -console
       36,540 ms #1        ntdll.dll!LdrShutdownProcess 
       36,540 ms #1        ntdll.dll!LdrpCallInitRoutine 
       36,540 ms #1        ntdll.dll!LdrxCallInitRoutine 
-      36,540 ms #1        mscoree.dll!_CorDllMain_Exported 
-      36,540 ms #1        mscoree.dll!ShellShim__CorDllMain 
-      36,540 ms #1        mscoreei.dll!_CorDllMain 
-      36,540 ms #1        CustomMarshalers.dll!_DllMainCRTStartup 
+      ...
       36,540 ms #1        CustomMarshalers.dll!dllmain_dispatch 
       36,540 ms #1        CustomMarshalers.dll!dllmain_crt_dispatch 
       36,540 ms #1        CustomMarshalers.dll!___scrt_acquire_startup_lock 
@@ -147,7 +127,7 @@ ETWAnalyzer -console
          CPU ms Last-First First(s) Last(s)  Method
 5/29/2024 4:27:46 PM   ETWAnalyzerTest
    VSIXAutoUpdate.exe(12996) 
-...
+      ...
       36,540 ms   37.417 s    0.599   38.016 _CorDllMain 
       36,540 ms   37.417 s    0.599   38.016 _DllMainCRTStartup 
       36,540 ms   37.417 s    0.599   38.016 dllmain_dispatch 
@@ -161,14 +141,14 @@ ETWAnalyzer -console
 This shows a Microsoft Bug at work after pretty much every Visual Studio update where shutting down the .NET Runtime gets stuck.
 
 ## Querying the Data
-After extraction from a > 600 MB input file a small ca. 6 MB file in the output folder. 
+After extraction from a > 600 MB input file a small ca. 600 KB .json7z file is created which contains multiple json files which consume ca 4 MB. 
 
 ![alt text](ETWAnalyzer/Documentation/Images/ExtractedDataFiles.png "Extracted Data Files")
 
 ETWAnalyzer will query all files in the current directory if you do not use -filedir/-fd xxx.  
 The first query would be to check on which machine with how much memory, CPU and Windows version it was running. 
 ```
-set f=-fd c:\Temp\C:\Temp\Extract\ZScaler_Download_Slow_100KB_Over100MBit_MouseLags
+set f=-fd C:\Temp\Extract\ZScaler_Download_Slow_100KB_Over100MBit_MouseLags.json7z
 EtwAnalyzer %f% -dump Stats 
 ```
 ![alt text](ETWAnalyzer/Documentation/Images/DumpStatsCommand.png "Dump Stats")

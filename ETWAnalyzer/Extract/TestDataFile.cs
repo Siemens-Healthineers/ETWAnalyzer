@@ -29,6 +29,8 @@ namespace ETWAnalyzer.Extract
 
         static readonly string[] ArchiveExtensions = new string[] { ".7z", ".zip", };
 
+        static readonly string[] JsonExtensions = new[] { TestRun.ExtractExtension, TestRun.CompressedExtractExtension };
+
         const string EtlExtension = ".etl";
 
         //[JsonIgnore]
@@ -325,28 +327,59 @@ namespace ETWAnalyzer.Extract
         {
             string ext = Path.GetExtension(FileName).ToLowerInvariant();
             string jsonFile = null;
-            if (ext == TestRun.ExtractExtension)
+            bool bFound = false;    
+            if (ext == TestRun.ExtractExtension || ext == TestRun.CompressedExtractExtension)  // if full path is given just check once to prevent huge slowdowns on network shares
             {
-                jsonFile = FileName;
+                bFound = File.Exists(FileName);
+                jsonFile = bFound ? FileName : null;
             }
-            else
+            else  // file name extension is .etl or .7z then try to locate extracted file where the .json is preferred over the .json7z file
             {
                 string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(FileName);
                 OutDir directory = ParentTest?.Parent?.Parent?.OutputDirectory;
                 if (directory?.OutputDirectory != null)
                 {
-                    jsonFile = Path.Combine(directory.OutputDirectory, directory.IsDefault ? Program.ExtractFolder : "", fileNameWithoutExtension + TestRun.ExtractExtension);
+                    jsonFile = LocateExistingFile(directory.OutputDirectory, directory.IsDefault ? Program.ExtractFolder : "", fileNameWithoutExtension, ref bFound);
                 }
-                if( !File.Exists(jsonFile)) // search below 7z file in Extract Folder
+
+                if( !bFound) // search below 7z file in Extract Folder
                 {
-                    jsonFile = Path.Combine(Path.GetDirectoryName(FileName), Program.ExtractFolder, fileNameWithoutExtension + TestRun.ExtractExtension);
+                    jsonFile = LocateExistingFile(Path.GetDirectoryName(FileName), Program.ExtractFolder, fileNameWithoutExtension, ref bFound);
                 }
-                if( !File.Exists(jsonFile)) // search side by side of etl/zip file
+
+                if (!bFound ) // search side by side of etl/zip file
                 {
-                    jsonFile = Path.Combine(Path.GetDirectoryName(FileName), fileNameWithoutExtension + TestRun.ExtractExtension);
+                    jsonFile = LocateExistingFile(Path.GetDirectoryName(FileName), "", fileNameWithoutExtension, ref bFound);
                 }
             }
-            return File.Exists(jsonFile) ? jsonFile : null;
+
+            return jsonFile;
+        }
+
+
+        /// <summary>
+        /// Locate an existing json/json7z file in a given folder
+        /// </summary>
+        /// <param name="folder">Root folder</param>
+        /// <param name="subdir">optional sub folder. Use "" when no folder is needed.</param>
+        /// <param name="fileNameWithoutExtension">Target file name with no extension</param>
+        /// <param name="bFound">bFound is updated if file does exist.</param>
+        /// <returns>null and bFound=false when file could not be found, or existing file name and bFound=true.</returns>
+        string LocateExistingFile(string folder, string subdir, string fileNameWithoutExtension, ref bool bFound)
+        {
+            string json = null;
+
+            foreach (var extension in JsonExtensions)
+            {
+                json = Path.Combine(folder, subdir, fileNameWithoutExtension + extension);
+                if (File.Exists(json))
+                {
+                    bFound = true;
+                    break;
+                }
+            }
+
+            return bFound ? json : null;
         }
 
         Lazy<IETWExtract> myExtract;
