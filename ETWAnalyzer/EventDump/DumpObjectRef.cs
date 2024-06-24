@@ -75,6 +75,7 @@ namespace ETWAnalyzer.EventDump
         public bool Inherit { get; internal set; }
         public KeyValuePair<string, Func<string, bool>> TypeFilter { get; internal set; }
         public SkipTakeRange TopN { get; internal set; } = new();
+        public MinMaxRange<double> MinMaxTime { get; internal set; }
 
         Dictionary<StackIdx, bool> myStackFilterResult = new();
         
@@ -312,6 +313,16 @@ namespace ETWAnalyzer.EventDump
                             }
                         }
                         
+
+                        if( !MinMaxTime.IsDefault )
+                        {
+                            ThrowAwayAllEventsNotMatchingTimeFilter(MinMaxTime, handle);
+                            if( handle.IsEmpty ) 
+                            {
+                                continue;
+                            }
+                        }
+
                         if( StackFilter.Key != null)
                         {
                             ThrowAwayAllEventsWithNotMatchingStacks(stacks, handle);
@@ -432,6 +443,7 @@ namespace ETWAnalyzer.EventDump
 
             return lret;
         }
+
 
 
         private void HarmonizeFilterSettings()
@@ -581,6 +593,28 @@ namespace ETWAnalyzer.EventDump
             handle.RefChanges = handle.RefChanges.Where(x => CachingStackFilter(stacks, x.StackIdx)).ToList();
             handle.FileMapEvents = handle.FileMapEvents.Where(x => CachingStackFilter(stacks, x.StackIdx)).ToList();
             handle.FileUnmapEvents = handle.FileUnmapEvents.Where(x => CachingStackFilter(stacks, x.StackIdx)).ToList();
+        }
+
+        private void ThrowAwayAllEventsNotMatchingTimeFilter(MinMaxRange<double> minMaxTime, ObjectRefTrace handle)
+        {
+            const double Giga = 1_000_000_000.0d;
+            if ( handle.CreateEvent != null && !minMaxTime.IsWithin(handle.CreateEvent.TimeNs/Giga) )
+            {
+                handle.CreateEvent = null;
+            }
+
+            if( handle.DestroyEvent != null && !minMaxTime.IsWithin(handle.DestroyEvent.TimeNs/Giga) )
+            {
+                handle.DestroyEvent = null;
+            }
+
+            Func<StackEventBase, bool> timeFilter = x => minMaxTime.IsWithin(x.TimeNs / Giga);
+            handle.HandleCreateEvents = handle.HandleCreateEvents.Where(timeFilter).Cast<HandleCreateEvent>().ToList();
+            handle.HandleCloseEvents = handle.HandleCloseEvents.Where(timeFilter).Cast<HandleCloseEvent>().ToList();  
+            handle.HandleDuplicateEvents = handle.HandleDuplicateEvents.Where(timeFilter).Cast<HandleDuplicateEvent>().ToList();
+            handle.RefChanges = handle.RefChanges.Where(timeFilter).Cast<RefCountChangeEvent>().ToList();
+            handle.FileMapEvents = handle.FileMapEvents.Where(timeFilter).Cast<FileMapEvent>().ToList();
+            handle.FileUnmapEvents = handle.FileUnmapEvents.Where(timeFilter).Cast<FileUnmapEvent>().ToList();
         }
 
         class Totals

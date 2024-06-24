@@ -397,13 +397,14 @@ namespace ETWAnalyzer.Commands
         "  ObjectRef -filedir/fd Extract\\ or xx.json7z" + Environment.NewLine +
         "             [-TimeFmt s,Local,LocalTime,UTC,UTCTime,Here,HereTime] [-csv xx.csv] [-NoCSVSeparator] [-NoCmdLine] [-Clip] [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd] [-MinMaxMsTestTimes xx-yy ...] [-ProcessName/pn xx.exe(pid)] " + Environment.NewLine +
         "             [-RelatedProcess xx.exe(pid)] [-MinMaxDuration minS [maxS]] [-MinMaxId min [max]] [-CreateStack filter] [-DestroyStack filter] [-StackFilter filter] [-Object filter] [-ObjectName filter] [-Handle filter] [-ShowRef]" + Environment.NewLine +
-        "             [-ShowStack] [-Type filter] [-Leak] [-MultiProcess] [-Map [0,1]] [-PtrInMap 0x...] [-MinMaxMapSize min [max]] [-Overlapped] [-Showtotal Total,File,None]" + Environment.NewLine +
+        "             [-ShowStack] [-Type filter] [-Leak] [-MultiProcess] [-Map [0,1]] [-PtrInMap 0x...] [-MinMaxMapSize min [max]] [-MinMaxTime min [max]] [-Overlapped] [-Showtotal Total,File,None]" + Environment.NewLine +
         "             [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-CmdLine substring]" + Environment.NewLine;
         static readonly string ObjectRefHelpString = ObjectRefHelpStringHeader +
         "             -ProcessName/pn xx.exe(pid) Filter for processes which did create the object." + Environment.NewLine +
         "             -RelatedProcess xx.exe(pid) Filter in all events for this process. You can also use a negative filter to exclude specific processes like -pn *creator.exe -realatedprocess !other.exe" + Environment.NewLine +    
         "             -MinMaxDuration minS [maxS]  Filter for handle lifetime. Never closed handles get a lifetime of 9999 s which serves as magic marker value." + Environment.NewLine +
         "             -MinMaxId min [max]          Filter for one or a range of objects. E.g. -MinMaxId 500 600 to filter for all object events with id 500-600. The ids are sorted by object creation time." + Environment.NewLine +
+        "             -MinMaxTime min [max]        Remove all events which are not within time filter. Time is specified in ETW session time in seconds." +Environment.NewLine +
         "             -CreateStack filter          Keep all object events (create/objRef/duplicate...) where the create stack matches." + Environment.NewLine +
         "             -DestroyStack filter         Keep all object events (create/objRef/duplicate...) where the destroy stack matches." + Environment.NewLine +
         "             -StackFilter filter          Keep only the events where the stack matches and throw away all other events. To keep all events which have e.g. CreateWebRequest in their stack use -StackFilter *CreateWebRequest*" + Environment.NewLine +
@@ -883,6 +884,8 @@ namespace ETWAnalyzer.Commands
         public KeyValuePair<string, Func<string, bool>> StackFilter { get; private set; } = new(null, _ => true);
         public KeyValuePair<string, Func<string, bool>> TypeFilter { get; private set; } = new(null, _ => true);
 
+        public MinMaxRange<double> MinMaxTime { get; private set; } = new();
+        
         // Dump Exception specific Flags
         public bool FilterExceptions { get; private set; }
         
@@ -1561,6 +1564,12 @@ namespace ETWAnalyzer.Commands
                         string maxTimeMs = GetNextNonArg("-minmaxtimems", false); // optional
                         Tuple<double, double> minMaxTimeMsDouble = minTimeMs.GetMinMaxDouble(maxTimeMs, MSUnit);
                         MinMaxTimeMs = new MinMaxRange<double>(minMaxTimeMsDouble.Item1, minMaxTimeMsDouble.Item2);
+                        break;
+                    case "-minmaxtime":
+                        string minTime = GetNextNonArg("-minmaxtime");
+                        string maxTime = GetNextNonArg("-minmaxtime", false); // optional
+                        Tuple<double, double> minMaxTimeDouble = minTime.GetMinMaxDouble(maxTime, 1);
+                        MinMaxTime = new MinMaxRange<double>(minMaxTimeDouble.Item1, minMaxTimeDouble.Item2);
                         break;
                     case "-minmaxtotaltimems":
                         string minTotalTimeMs = GetNextNonArg("-minmaxtimems");
@@ -2474,6 +2483,7 @@ namespace ETWAnalyzer.Commands
                             ViewBaseFilter = ViewBaseFilter,
                             HandleFilter = HandleFilter,
                             MinMaxDurationS = MinMaxDurationS,
+                            MinMaxTime = MinMaxTime,
                             ShowStack = ShowStack,
                             ShowRef = ShowRef,
                             Leak = Leak,
