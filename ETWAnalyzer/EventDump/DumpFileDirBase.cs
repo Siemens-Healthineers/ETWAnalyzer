@@ -25,6 +25,7 @@ namespace ETWAnalyzer.EventDump
     internal abstract class DumpFileDirBase<T> : DumpBase<T>
     {
         public Func<string, bool> ProcessNameFilter { get; set; } = _ => true;
+        public bool ProcessNameFilterSet { get; set; } = false;
 
         public Func<string, bool> Session { get; set; } = _ => true;
 

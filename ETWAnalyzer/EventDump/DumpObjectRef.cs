@@ -450,7 +450,8 @@ namespace ETWAnalyzer.EventDump
 
         bool MatchCreatingProcess(ObjectRefTrace trace, IProcessExtract resolver)
         {
-            bool lret = false;
+            bool lret = ProcessNameFilterSet ? false : true;
+
             ETWProcessIndex creator = ETWProcessIndex.Invalid;
             if (trace.FirstCreateEvent != null)
             {
@@ -467,10 +468,6 @@ namespace ETWAnalyzer.EventDump
                         break;
                     }
                 }
-            }
-            else
-            {
-                lret = true;
             }
 
             return lret;

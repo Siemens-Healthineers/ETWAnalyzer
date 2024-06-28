@@ -796,6 +796,8 @@ namespace ETWAnalyzer.Commands
         SearchOption mySearchOption = SearchOption.TopDirectoryOnly;
 
         public Func<string, bool> ProcessNameFilter { get; private set; } = _ => true;
+        public bool ProcessNameFilterSet = false;
+
         public Func<string, bool> CmdLineFilter { get; private set; } = _ => true;
         public List<string> FileOrDirectoryQueries { get; private set; } = new();
         public string CSVFile { get; private set; }
@@ -1259,6 +1261,7 @@ namespace ETWAnalyzer.Commands
                     case "-processname":
                     case "-pn":
                         ProcessNameFilter = Matcher.CreateMatcher(GetNextNonArg("-processname"), MatchingMode.CaseInsensitive, pidFilterFormat:true);
+                        ProcessNameFilterSet = true;
                         break;
                     case "-relatedprocess":
                         string realatedProcssFilterStr = GetNextNonArg("-relatedprocess");
@@ -1921,6 +1924,7 @@ namespace ETWAnalyzer.Commands
                             NoCSVSeparator = NoCSVSeparator,
                             TimeFormatOption = TimeFormat,
                             ProcessNameFilter = ProcessNameFilter,
+                            ProcessNameFilterSet = ProcessNameFilterSet,
                             CommandLineFilter = CmdLineFilter,
                             NewProcessFilter = NewProcess,
                             NoCmdLine = NoCmdLine,
@@ -1954,6 +1958,7 @@ namespace ETWAnalyzer.Commands
                             NoCSVSeparator = NoCSVSeparator,
                             TimeFormatOption = TimeFormat,
                             ProcessNameFilter = ProcessNameFilter,
+                            ProcessNameFilterSet = ProcessNameFilterSet,
                             // Stay consistent and allow -processfmt or -timefmt as time format string for process tree visualization
                             ProcessFormatOption = ProcessFormat ?? (TimeFormat == DumpBase.TimeFormats.Local ? null : TimeFormat),
                             CommandLineFilter = CmdLineFilter,
@@ -1996,6 +2001,7 @@ namespace ETWAnalyzer.Commands
                             NoCSVSeparator = NoCSVSeparator,
                             TimeFormatOption = TimeFormat,
                             ProcessNameFilter = ProcessNameFilter,
+                            ProcessNameFilterSet = ProcessNameFilterSet,
                             ProcessFormatOption = ProcessFormat,
                             CommandLineFilter = CmdLineFilter,
                             NewProcessFilter = NewProcess,
@@ -2055,6 +2061,7 @@ namespace ETWAnalyzer.Commands
                             NoCSVSeparator = NoCSVSeparator,
                             TimeFormatOption = TimeFormat,
                             ProcessNameFilter = ProcessNameFilter,
+                            ProcessNameFilterSet = ProcessNameFilterSet,
                             CommandLineFilter = CmdLineFilter,
                             NewProcessFilter = NewProcess,
                             UsePrettyProcessName = UsePrettyProcessName,
@@ -2094,6 +2101,7 @@ namespace ETWAnalyzer.Commands
                             NoCSVSeparator = NoCSVSeparator,
                             TimeFormatOption = TimeFormat,
                             ProcessNameFilter = ProcessNameFilter,
+                            ProcessNameFilterSet = ProcessNameFilterSet,
                             ProcessFormatOption = ProcessFormat,
                             CommandLineFilter = CmdLineFilter,
                             NewProcessFilter = NewProcess,
@@ -2164,6 +2172,7 @@ namespace ETWAnalyzer.Commands
                             NoCSVSeparator = NoCSVSeparator,
                             TimeFormatOption = TimeFormat,
                             ProcessNameFilter = ProcessNameFilter,
+                            ProcessNameFilterSet = ProcessNameFilterSet,
                             ProcessFormatOption = ProcessFormat,
                             CommandLineFilter = CmdLineFilter,
                             NewProcessFilter = NewProcess,
@@ -2207,6 +2216,7 @@ namespace ETWAnalyzer.Commands
                             NoCSVSeparator = NoCSVSeparator,
                             TimeFormatOption = TimeFormat,
                             ProcessNameFilter = ProcessNameFilter,
+                            ProcessNameFilterSet = ProcessNameFilterSet,
                             ProcessFormatOption = ProcessFormat,
                             CommandLineFilter = CmdLineFilter,
                             NewProcessFilter = NewProcess,
@@ -2248,6 +2258,7 @@ namespace ETWAnalyzer.Commands
                             NoCSVSeparator = NoCSVSeparator,
                             TimeFormatOption = TimeFormat,
                             ProcessNameFilter = ProcessNameFilter,
+                            ProcessNameFilterSet = ProcessNameFilterSet,
                             ProcessFormatOption = ProcessFormat,
                             CommandLineFilter = CmdLineFilter,
                             NewProcessFilter = NewProcess,
@@ -2274,6 +2285,7 @@ namespace ETWAnalyzer.Commands
                             NoCSVSeparator = NoCSVSeparator,
                             TimeFormatOption = TimeFormat,
                             ProcessNameFilter = ProcessNameFilter,
+                            ProcessNameFilterSet = ProcessNameFilterSet,
                             CommandLineFilter = CmdLineFilter,
                             NewProcessFilter = NewProcess,
                             UsePrettyProcessName = UsePrettyProcessName,
@@ -2324,6 +2336,7 @@ namespace ETWAnalyzer.Commands
                             CSVFile = CSVFile,
                             NoCSVSeparator = NoCSVSeparator,
                             ProcessNameFilter = ProcessNameFilter,
+                            ProcessNameFilterSet = ProcessNameFilterSet,
                             NoCmdLine = NoCmdLine,
                             CommandLineFilter = CmdLineFilter,
                             NewProcessFilter = NewProcess,
@@ -2349,6 +2362,7 @@ namespace ETWAnalyzer.Commands
                             CSVFile = CSVFile,
                             NoCSVSeparator = NoCSVSeparator,
                             ProcessNameFilter = ProcessNameFilter,
+                            ProcessNameFilterSet = ProcessNameFilterSet,
                             CommandLineFilter = CmdLineFilter,
                             NewProcessFilter = NewProcess,
                             UsePrettyProcessName = UsePrettyProcessName,
@@ -2380,6 +2394,7 @@ namespace ETWAnalyzer.Commands
                             CSVFile = CSVFile,
                             NoCSVSeparator = NoCSVSeparator,
                             ProcessNameFilter = ProcessNameFilter,
+                            ProcessNameFilterSet = ProcessNameFilterSet,
                             CommandLineFilter = CmdLineFilter,
                             NewProcessFilter = NewProcess,
                             UsePrettyProcessName = UsePrettyProcessName,
@@ -2414,6 +2429,7 @@ namespace ETWAnalyzer.Commands
                             CSVFile = CSVFile,
                             NoCSVSeparator = NoCSVSeparator,
                             ProcessNameFilter = ProcessNameFilter,
+                            ProcessNameFilterSet = ProcessNameFilterSet,
                             ProcessFormatOption = ProcessFormat,
                             CommandLineFilter = CmdLineFilter,
                             NewProcessFilter = NewProcess,
@@ -2458,6 +2474,7 @@ namespace ETWAnalyzer.Commands
                             CSVFile = CSVFile,
                             NoCSVSeparator = NoCSVSeparator,
                             ProcessNameFilter = ProcessNameFilter,
+                            ProcessNameFilterSet = ProcessNameFilterSet,
                             ProcessFormatOption = ProcessFormat,
                             CommandLineFilter = CmdLineFilter,
                             NewProcessFilter = NewProcess,
