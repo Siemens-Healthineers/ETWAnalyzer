@@ -76,7 +76,9 @@ reason we have 108 Create handle calls which is disturbing because this means th
 
 Before diving deeper lets explain what data is shown:
 
-The Id is a unique number which can be used with ```-MinMaxId``` filter to select a specific object instance or a range of them. The kernel object pointer is printed, but 
+The Id is a unique number which can be used with ```-MinMaxId``` filter to select a specific object instance or a range of them. You can also filter by time with ```-MinMaxTime min max``` which 
+will throw away all events not passing the time filter. Time is entered in ETW session time in seconds since trace start (use ```-Timefmt s``` to display instead of local time).
+The kernel object pointer is printed, but 
 this value can be reused so it is not always unique (can be filtered with ```-Object``` filter). After the kernel pointer the object name (can be filtered with ```-ObjectName``` filter) is printed, if present. Then the object
 lifetime is printed or 9999s is used to mark objects which were never closed (can be filtered with ```-MinMaxDuration```).
 Then the individual events grouped by type sorted by time are printed. Each line contains

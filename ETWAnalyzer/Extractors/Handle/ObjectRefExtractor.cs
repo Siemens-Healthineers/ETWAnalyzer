@@ -507,6 +507,10 @@ namespace ETWAnalyzer.Extractors.Handle
                             };
                             OpenHandles.Add(hTrace.ObjectPtr, hTrace);
                         }
+                        else
+                        {
+                            hTrace.Name = dcEnd.Name;   // when no handle close handle was called add object name form DCEndEvent
+                        }
 
                         if( hTrace.Existing == null  )
                         {
