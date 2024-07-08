@@ -67,10 +67,10 @@ namespace ETWAnalyzer_uTest.EventDump
 
             var lTime = TimeZoneInfo.ConvertTimeFromUtc(new DateTime(2000, 1, 1, 1, 0, 0) - utcOffset, TimeZoneInfo.Local);
 
-            Assert.Equal(lTime.ToString(DumpBase.DateTimeFormat), hereDateTime);
+            Assert.Equal(lTime.ToString(DumpBase.DateTimeFormat3), hereDateTime);
 
             string hereTime = dmp.GetDateTimeString(time, sessionStart, TimeFormats.HereTime);
-            Assert.Equal(lTime.ToString(DumpBase.TimeFormat), hereTime);
+            Assert.Equal(lTime.ToString(DumpBase.TimeFormat3), hereTime);
         }
 
         [Fact]

@@ -66,6 +66,21 @@ namespace ETWAnalyzer.Extract.Network.Tcp
         DateTimeOffset? TimeStampOpen { get; }
 
         /// <summary>
+        /// Time when data was last sent
+        /// </summary>
+        public DateTimeOffset? LastSent { get; }
+
+        /// <summary>
+        /// Time when data was last received
+        /// </summary>
+        public DateTimeOffset? LastReceived { get; }
+
+        /// <summary>
+        /// Time when connection was closed due to retransmission timeout
+        /// </summary>
+        public DateTimeOffset? RetransmitTimeout { get; }
+
+        /// <summary>
         /// Check if connection was active at a given time.
         /// </summary>
         /// <param name="tcb">TCB pointer value of etw event which uses it to correlate events.</param>

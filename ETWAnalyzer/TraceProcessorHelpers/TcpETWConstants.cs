@@ -97,6 +97,11 @@ namespace ETWAnalyzer.TraceProcessorHelpers
         public const int TcpAcceptListenerComplete = 1017;
 
         /// <summary>
+        /// Fields: LocalAddress:Binary RemoteAddress:Binary  Status:UInt32  ProcessId:UInt32  Compartment:UInt32  Tcb:Pointer 
+        /// </summary>
+        public const int TcpDisconnectTcbRtoTimeout = 1046;
+
+        /// <summary>
         /// Transfer Control block
         /// </summary>
         public const string TcbField = "Tcb";

@@ -11,6 +11,7 @@ namespace ETWAnalyzer.Extract.Network.Tcp
 {
     /// <summary>
     /// Contains information about one TCP connection (Tcb, open/close time, src/dst ip and ports). Fired during inital handshake.
+    /// Serialized to Json
     /// </summary>
     public class TcpConnection : ITcpConnection
     {
@@ -45,7 +46,6 @@ namespace ETWAnalyzer.Extract.Network.Tcp
         /// </summary>
         public string LastTcpTemplate { get; }
 
-
         /// <summary>
         /// Received data over duration of trace
         /// </summary>
@@ -71,6 +71,24 @@ namespace ETWAnalyzer.Extract.Network.Tcp
         /// </summary>
         public ETWProcessIndex ProcessIdx { get; }
 
+
+        /// <summary>
+        /// Time when data was last sent
+        /// </summary>
+        public DateTimeOffset? LastSent { get; internal set; }
+
+        /// <summary>
+        /// Time when data was last received
+        /// </summary>
+        public DateTimeOffset? LastReceived { get; }
+
+
+        /// <summary>
+        /// Time when connection was closed due to retransmission timeout
+        /// </summary>
+        public DateTimeOffset? RetransmitTimeout { get; }
+
+
         /// <summary>
         /// Socket connect/disconnect time format string
         /// </summary>
@@ -78,7 +96,7 @@ namespace ETWAnalyzer.Extract.Network.Tcp
 
 
         /// <summary>
-        /// Create an instance
+        /// Create an instance which is used also by Json.NET to deserialize this object.
         /// </summary>
         /// <param name="tcb"></param>
         /// <param name="localipandPort"></param>
@@ -91,10 +109,13 @@ namespace ETWAnalyzer.Extract.Network.Tcp
         /// <param name="datagramsSent"></param>
         /// <param name="datagramsReceived"></param>
         /// <param name="processIdx"></param>
+        /// <param name="lastReceived"></param>
+        /// <param name="lastSent"></param>
+        /// <param name="retransmitTimeout"></param>
         /// <exception cref="ArgumentNullException">When localipandPort or remoteipAndPort are null.</exception>
         public TcpConnection(ulong tcb, SocketConnection localipandPort, SocketConnection remoteipAndPort, DateTimeOffset? timeStampOpen, DateTimeOffset? timeStampClose, string lastTcpTemplate,
             ulong bytesSent, int datagramsSent,
-            ulong bytesReceived, int datagramsReceived, ETWProcessIndex processIdx)
+            ulong bytesReceived, int datagramsReceived, ETWProcessIndex processIdx, DateTimeOffset? retransmitTimeout, DateTimeOffset? lastSent, DateTimeOffset? lastReceived)
         {
             Tcb = tcb;
             LocalIpAndPort = localipandPort ?? throw new ArgumentNullException(nameof(localipandPort));
@@ -107,6 +128,9 @@ namespace ETWAnalyzer.Extract.Network.Tcp
             DatagramsSent = datagramsSent;
             DatagramsReceived = datagramsReceived;
             ProcessIdx = processIdx;
+            RetransmitTimeout = retransmitTimeout;
+            LastSent = lastSent;    
+            LastReceived = lastReceived;  
         }
 
 
