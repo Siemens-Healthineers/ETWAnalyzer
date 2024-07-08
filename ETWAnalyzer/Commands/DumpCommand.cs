@@ -1748,6 +1748,10 @@ namespace ETWAnalyzer.Commands
                     case "-timedigits":
                         string timedigits = GetNextNonArg("-timedigits");
                         TimeDigits = int.Parse(timedigits, CultureInfo.InvariantCulture);
+                        if( TimeDigits < 0 || TimeDigits > 6)
+                        {
+                            throw new NotSupportedException($"-Timedigits supports only values from 0-6. Value was: {TimeDigits}.");
+                        }
                         break;
                     case "-properties":
                         Properties = GetNextNonArg("-properties");

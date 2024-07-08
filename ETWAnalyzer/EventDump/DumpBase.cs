@@ -202,20 +202,22 @@ namespace ETWAnalyzer.EventDump
             }
         }
 
+        int WidthDiffTo3 { get => OverridenOrDefaultTimePrecision - 3; }
+
         protected int GetWidth(TimeFormats format)
         {
             return format switch
             {
-                TimeFormats.s => SecondsColWidth,
-                TimeFormats.second => SecondsColWidth,
+                TimeFormats.s => SecondsColWidth + WidthDiffTo3,
+                TimeFormats.second => SecondsColWidth + WidthDiffTo3,
 
-                TimeFormats.HereTime => TimeFormatColWidth,
-                TimeFormats.LocalTime => TimeFormatColWidth,
-                TimeFormats.UTCTime => TimeFormatColWidth,
+                TimeFormats.HereTime => TimeFormatColWidth+ WidthDiffTo3,
+                TimeFormats.LocalTime => TimeFormatColWidth + WidthDiffTo3,
+                TimeFormats.UTCTime => TimeFormatColWidth + WidthDiffTo3,
                 
-                TimeFormats.Here => DateTimeColWidth,
-                TimeFormats.Local => DateTimeColWidth,
-                TimeFormats.UTC => DateTimeColWidth,
+                TimeFormats.Here => DateTimeColWidth + WidthDiffTo3,
+                TimeFormats.Local => DateTimeColWidth + WidthDiffTo3,
+                TimeFormats.UTC => DateTimeColWidth + WidthDiffTo3,
                 _ => 0 // should not happen
             };
         }
