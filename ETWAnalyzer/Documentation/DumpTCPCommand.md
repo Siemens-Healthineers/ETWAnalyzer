@@ -121,9 +121,10 @@ On Windows Server you can change the Template settings with *Set-NetTCPSetting* 
 TCP template if the automatic detection mechanism does not work for you. 
 On client operating systems you cannot change the TCP template settings in a supported way (Windows 10,11). The most important setting is MinRto(ms) which defines
 the minimum retransmission timeout. It is the time the TCP stack of Windows will resend packets if after the MinRto time no ACK from the receiver was returned.
-If that did not work Windows will resend the missing packet with a delay of RTO_i which is proportional to i^3 where i is th i-th resend try.
-After n failed retransmits Windows resets the TCP connection by sending a RST packet and close the connection on his side. 
-
+If that did not work Windows will resend the missing packet with a delay of MinRto where the delay is doubled on each round until ca. 9 retransmissions have occurred.
+After n failed retransmits Windows waits additionally ca. 10s and then resets the TCP connection by sending a RST packet (TcpDisconnectTcbRtoTimeout event) and close the connection on his side. 
+If the connection could not be established after the initial SYN packet because no one did answer TcpConnectRestransmit events are logged which can be used to check
+if invalid or not reachable hosts were tried to connect to.
 
 ## Recording Hints
 The *Microsoft-Windows-TCPIP* provider traces many events which are internal to how TCP works on Windows. To record data for some minutes you need to filter out the irrelevant events.
