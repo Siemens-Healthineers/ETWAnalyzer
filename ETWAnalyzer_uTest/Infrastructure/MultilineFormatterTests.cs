@@ -235,5 +235,62 @@ namespace ETWAnalyzer_uTest.Infrastructure
 
 
         }
+
+
+        [Fact]
+        public void CanFormat_PrefixedData()
+        {
+            using var testOutput = new ExceptionalPrinter(myWriter, true);
+
+            MultiLineFormatter formatter = new(
+               new()
+               {
+                   Enabled = true,
+                   Title = "Header1",
+                   Prefix = "",
+                   DataWidth = 5,
+               },
+               new()
+               {
+                   Enabled = true,
+                   Title = "Header2",
+                   Prefix = "Pref2: ",
+                   DataWidth = 5,
+               }
+            );
+
+            string[] colData = new string[] { "Data1", "Data2" };
+
+            /*
+    Heade Heade 
+    r1    r2    
+    Data1 Pref2 
+          : Dat 
+             a2 
+             */
+
+            formatter.PrintHeader();
+            formatter.Print(true, colData);
+
+            formatter.Printer = ColumnPrinter;
+            Columns.Clear();
+
+            formatter.PrintHeader();
+            Assert.Equal(4, Columns.Count);
+            Assert.Equal("Heade ", Columns[0]);
+            Assert.Equal("r1    ", Columns[2]);
+            Assert.Equal("Heade ", Columns[1]);
+            Assert.Equal("r2    ", Columns[3]);
+
+            Columns.Clear();
+            formatter.Print(true, colData);
+            Assert.Equal(6, Columns.Count);
+            Assert.Equal("Data1 ", Columns[0]);
+            Assert.Equal("      ", Columns[2]);
+            Assert.Equal("      ", Columns[4]);
+            Assert.Equal("Pref2 ", Columns[1]);
+            Assert.Equal(": Dat ", Columns[3]);
+            Assert.Equal("   a2 ", Columns[5]);
+        }
     }
 }

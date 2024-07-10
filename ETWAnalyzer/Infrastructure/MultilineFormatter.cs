@@ -62,7 +62,9 @@ namespace ETWAnalyzer.Infrastructure
                     throw new NotSupportedException($"Data is missing for column {curColumn.Title}.");
                 }
 
-                string nextData = curColumn.Enabled ? GetLine(curColumn, columnData[idx], lineNo, false) : null;
+                string stringToFormat = isHeader ? columnData[idx] : (String.IsNullOrEmpty(columnData[idx]) ? columnData[idx] : curColumn.Prefix + columnData[idx]);    
+
+                string nextData = curColumn.Enabled ? GetLine(curColumn, stringToFormat, lineNo, false) : null;
                 if( nextData != null)
                 {
                     columns.Add(new KeyValuePair<string, ColumnDefinition>(nextData, curColumn));
@@ -132,7 +134,6 @@ namespace ETWAnalyzer.Infrastructure
             while (true)
             {
                 List<KeyValuePair<string, ColumnDefinition>> columns = GetCombinedFormattedLine(lineNo, isHeader, columnData.ToArray());
-                
 
                 if (columns.Count  == 0 )
                 {

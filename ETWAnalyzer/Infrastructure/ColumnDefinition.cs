@@ -26,6 +26,11 @@ namespace ETWAnalyzer.Infrastructure
         public string Name { get; set; }
 
         /// <summary>
+        /// String which is printed at each row
+        /// </summary>
+        public string Prefix { get; set; } = "";
+
+        /// <summary>
         /// Color in which the text is printed
         /// </summary>
         public ConsoleColor? Color { get; set; }
@@ -35,11 +40,18 @@ namespace ETWAnalyzer.Infrastructure
         /// </summary>
         public bool Enabled { get; set; } = true;
 
+
+        int myDataWidth;
         /// <summary>
         /// Column width excluding extra space to separate columns in output.
         /// When zero then the column data is simply appended which in effect turns wrapping off.
+        /// Minimum non zero data width is 3
         /// </summary>
-        public int DataWidth { get; set; }
+        public int DataWidth 
+        { 
+            get => myDataWidth;
+            set => myDataWidth = value > 0 ? Math.Max(3, value) : Math.Max(0,value); 
+        }
 
     }
 }

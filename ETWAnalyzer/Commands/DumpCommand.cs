@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using static ETWAnalyzer.Extract.ETWProcess;
 
 namespace ETWAnalyzer.Commands
@@ -50,7 +51,7 @@ namespace ETWAnalyzer.Commands
         "            -VersionFilter filter     Filter against module path and version strings. Multiple filters are separated by ;. Wildcards are * and ?. Exclusion filters start with !" + Environment.NewLine +
         "            -ModuleFilter  filter     Extracted data from Config\\DllToBuildMapping.json. Print only version information for module. Multiple filters are separated by ;. Wildcards are * and ?. Exclusion filters start with !" + Environment.NewLine;
         static readonly string ProcessHelpStringHeader =
-        "  Process  -filedir/fd x.etl/.json7z [-recursive] [-csv xx.csv] [-NoCSVSeparator] [-TimeFmt s,Local,LocalTime,UTC,UTCTime,Here,HereTime] [-TimeDigits d] [-ProcessName/pn xx.exe(pid)] [-Parent xx.exe(pid)]" + Environment.NewLine +
+        "  Process  -filedir/fd x.etl/.json7z [-recursive] [-csv xx.csv] [-NoCSVSeparator] [-TimeFmt s,Local,LocalTime,UTC,UTCTime,Here,HereTime] [-TimeDigits d] [-Column xx;yy] [-ProcessName/pn xx.exe(pid)] [-Parent xx.exe(pid)]" + Environment.NewLine +
         "            [-CmdLine *xx*] [-Crash] [-ShowUser] [-Session dd] [-User abc] [-SortBy Tree/Time/StopTime/Default] [-ZeroTime/zt Marker/First/Last/ProcessStart filter] [-ZeroProcessName/zpn filter]" + Environment.NewLine +
         "            [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-MinMaxStart xx-yy] [-ShowFileOnLine] [-ShowAllProcesses] [-NoCmdLine] [-Details] [-Clip] [-TestsPerRun dd -SkipNTests dd] " + Environment.NewLine +
         "            [-TestRunIndex dd -TestRunCount dd] [-MinMaxMsTestTimes xx-yy ...] [-ShowFullFileName/-sffn]" + Environment.NewLine;
@@ -76,7 +77,10 @@ namespace ETWAnalyzer.Commands
         "               UTCTime                 Same as UTC but without date string." + Environment.NewLine +
         "               Here                    Print time as local time in the current system time zone." + Environment.NewLine +
         "               HereTime                Same as Here but without date string." + Environment.NewLine +
-        "            -TimeDigits d              By default time is formatted with ms (= 3 digits) precision. Supported values are from 0-6." + Environment.NewLine +  
+        "            -TimeDigits d              By default time is formatted with ms (= 3 digits) precision. Supported values are from 0-6." + Environment.NewLine +
+        "            -Column xx;yy              Enable/disable specific columns which are printed, or exclude them by prepending them with !. E.g. -column !Duration;!Parentpid;!process will exclude these columns from " + Environment.NewLine +
+       $"                                       the default enabled columns. Valid column names are {String.Join(";", DumpProcesses.ColumnNames.Take(7))}" + Environment.NewLine +
+       $"                                       {String.Join(";", DumpProcesses.ColumnNames.Skip(7))}" + Environment.NewLine +
         "            -ProcessName/pn x;y.exe    Filter by process name or process id. Exclusion filters start with !, Multiple filters are separated by ;" + Environment.NewLine +
         "                                       E.g. cmd;!1234 will filter for all cmd.exe instances excluding cmd.exe(1234). The wildcards * and ? are supported for all filter strings." + Environment.NewLine +
         "            -Parent         x;y.exe    Same as -ProcessName but it will filter for parent process names/ids. Useful with -SortBy Tree to show child processes of specific parent processes as process tree." + Environment.NewLine +
@@ -465,7 +469,12 @@ namespace ETWAnalyzer.Commands
         "[green]Dump processes and user names abc and xyz.[/green]" + Environment.NewLine +
         " ETWAnalyzer -dump Process -fd xx.etl/.json7z -details" + Environment.NewLine +
         "[green]Dump processes as process tree where the parent process was cmd.exe and show process start/stop times as ETW trace session times in seconds.[/green]" + Environment.NewLine +
-        " ETWAnalyzer -dump Process -fd xx.etl/.json7z -sortby tree -parent cmd -timefmt s";
+        " ETWAnalyzer -dump Process -fd xx.etl/.json7z -sortby tree -parent cmd -timefmt s" + Environment.NewLine +
+        "[green]Explicitly configure the displayed columns. Print start/stop/duration with ms precision.[/green]" + Environment.NewLine +
+        " ETWAnalyzer -dump Process -fd xx.etl/.json7z .dump process -timefmt s -timedigits 3 -column ProcessId;StartTime;StopTime;CommandLine"
+        ;
+
+
 
 
         static readonly string TestRunExamples = ExamplesHelpString +
@@ -1845,6 +1854,7 @@ namespace ETWAnalyzer.Commands
             HashSet<string> allowedColumnNames = myCommand switch
             {
                 DumpCommands.TCP => new HashSet<string>(DumpTcp.ColumnNames, StringComparer.OrdinalIgnoreCase),
+                DumpCommands.Process => new HashSet<string>(DumpProcesses.ColumnNames, StringComparer.OrdinalIgnoreCase),
                 _ => throw new NotSupportedException($"The command {myCommand} does not support explicit column configuration (yet).")
             };
 
@@ -1867,9 +1877,12 @@ namespace ETWAnalyzer.Commands
                 {
                     lret[col] = true;
                 }
+
+                // we need to expand on every run to be able to use ordered configs like
+                // !*;xx disable all enable xx
+                ExpandColumnWildCards(allowedColumnNames, lret);
             }
 
-            ExpandColumnWildCards(allowedColumnNames, lret);
             ThrowOnInvalidColumnName(myCommand, allowedColumnNames, lret);
 
             return lret;
@@ -1883,6 +1896,7 @@ namespace ETWAnalyzer.Commands
         static void ExpandColumnWildCards(HashSet<string> allowedColumnNames, Dictionary<string,bool> configuredColumns)
         {
             List<string> toRemove = new();
+
             foreach (var configcolumn in configuredColumns.Where(x => x.Key.Contains("*")).ToArray())
             {
                 toRemove.Add(configcolumn.Key);
@@ -2081,6 +2095,7 @@ namespace ETWAnalyzer.Commands
                             NoCSVSeparator = NoCSVSeparator,
                             TimeFormatOption = TimeFormat,
                             TimePrecision = TimeDigits,
+                            ColumnConfiguration = ColumnConfiguration,
                             ProcessNameFilter = ProcessNameFilter,
                             ProcessNameFilterSet = ProcessNameFilterSet,
                             // Stay consistent and allow -processfmt or -timefmt as time format string for process tree visualization
@@ -2570,6 +2585,7 @@ namespace ETWAnalyzer.Commands
                             UsePrettyProcessName = UsePrettyProcessName,
                             TimeFormatOption = TimeFormat,
                             TimePrecision = TimeDigits,
+                            ColumnConfiguration = ColumnConfiguration,
 
                             ShowTotal = ShowTotal,
                             NoCmdLine = NoCmdLine,
@@ -2594,7 +2610,6 @@ namespace ETWAnalyzer.Commands
                             ZeroTimeMode = ZeroTimeMode,
                             ZeroTimeFilter = ZeroTimeFilter,
                             ZeroTimeProcessNameFilter = ZeroTimeProcessNameFilter,
-                            ColumnConfiguration = ColumnConfiguration,
                         };
                         break;
                     case DumpCommands.ObjectRef:

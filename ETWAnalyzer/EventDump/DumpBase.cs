@@ -25,12 +25,17 @@ namespace ETWAnalyzer.EventDump
 
         protected bool GetOverrideFlag(string column, bool defaultFlag)
         {
+            // if only disable rules are active we leave the enabled defaults 
+            // otherwise just the enabled/disabled columns are enabled
+            bool onlyDisableRules = ColumnConfiguration.Values.All(x => x == false);
+
             if(ColumnConfiguration.TryGetValue(column, out bool overrideFlag))
             {
                 return overrideFlag;
             }
 
-            return defaultFlag;
+            // all other columns are disabled if explicit enable columns are configured.
+            return onlyDisableRules ? defaultFlag : false;
         }
 
 
@@ -435,6 +440,18 @@ namespace ETWAnalyzer.EventDump
                 return lret;
             }
 
+        }
+
+        /// <summary>
+        /// Get maximum string length for column width calculation.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="collection">items to be formatted</param>
+        /// <param name="getter">String extractor</param>
+        /// <returns>Maximum string length returned by getter for all items.</returns>
+        protected static int GetMaxLength<T>(IList<T> collection, Func<T,string> getter)
+        {
+            return collection.Max(x => (getter(x)?.Length).GetValueOrDefault());
         }
 
         #region IDisposable Support
