@@ -161,7 +161,7 @@ namespace ETWAnalyzer_uTest.EventDump
                 "Proces Start T Stop T Duration   Return  Parent         Process Command Line",
                 "sId    ime     ime               Code                   ",
                 "1/1/2000 12:00:00 AM   test ",
-                "  5001                                     Parent: 5000 ImmortalChild.exe ImmortalChild.exe"
+                "  5001                                   Parent:   5000 ImmortalChild.exe ImmortalChild.exe"
             };
 
             var lines = testOutput.GetSingleLines();
