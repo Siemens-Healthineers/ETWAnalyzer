@@ -493,7 +493,12 @@ namespace ETWAnalyzer.Commands
         /// <param name="args"></param>
         public ConsoleCommand(string[] args) : base(args)
         {
-
+            // skip -console argument and treat rest as input file names
+            string[] fileCandidates = args.Skip(1).Where(x => x.ToLowerInvariant() != "-fd").ToArray();
+            if( fileCandidates.Length > 0 ) 
+            {
+                Load(fileCandidates, false);
+            }
         }
 
 
