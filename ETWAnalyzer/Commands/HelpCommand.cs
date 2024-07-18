@@ -17,7 +17,7 @@ namespace ETWAnalyzer.Commands
         private static readonly string HelpString =
            $"ETWAnalyzer {FileVersionInfo.GetVersionInfo(Process.GetCurrentProcess().MainModule.FileName).FileVersion}" + Environment.NewLine +
             " ETWAnalyzer [green]-help[/green] [Extract, Dump, Console, Convert or LoadSymbol]  Get further information about the specific sub command" + Environment.NewLine +
-            " ETWAnalyzer [green]-Console[/green]" + Environment.NewLine +
+            " ETWAnalyzer [green]-Console [input files] [/green]" + Environment.NewLine +
             "        Interactive mode. Useful if working with bigger data sets without the need to reload data on every query. Enter .help to get more information." + Environment.NewLine +
             " ETWAnalyzer [green]-Convert[/green] -filedir xx.etl -pid dd [-perthread]" + Environment.NewLine +
             "        Convert from an ETL File a process to a speedscope json file." + Environment.NewLine +

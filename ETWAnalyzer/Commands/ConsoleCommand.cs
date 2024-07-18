@@ -4,11 +4,8 @@
 using ETWAnalyzer.Extract;
 using ETWAnalyzer.Infrastructure;
 using ETWAnalyzer.ProcessTools;
-using Microsoft.Diagnostics.Tracing.Parsers.Kernel;
 using System;
 using System.Collections.Generic;
-using System.Data;
-using System.IO;
 using System.Linq;
 using System.Text;
 
@@ -21,28 +18,44 @@ namespace ETWAnalyzer.Commands
     {
         public override string Help => "";
 
+        string TimeFormatString = null;
+        string TimeDigitString = null;
+        string ProcessFmt = null;
+
+        bool ShowFullFileNameFlag { get; set; }
+        /// <summary>
+        /// Currently loaded files
+        /// </summary>
+        Lazy<SingleTest>[] myInputFiles;
+
         class ConsoleHelpCommand : ArgParser
         {
             public override string Help =>
-                ".cls                               "+ Environment.NewLine + 
+                ".cls"+ Environment.NewLine + 
                 "   Clear screen." + Environment.NewLine +
-               $".dump xxx [ -fd *usecase1* ]         " + Environment.NewLine + 
+               $".dump xxx [ -fd *usecase1* ]" + Environment.NewLine + 
                 "   Query loaded file/s. Options are the same as in -Dump command. e.g. .dump CPU will print CPU metrics." + Environment.NewLine +
                 "     -fd *filter*    Filter loaded files which are queried. Filter is applied to full path file name." + Environment.NewLine +  
                $"   Allowed values are {DumpCommand.AllDumpCommands}" + Environment.NewLine +
-                ".load [-all] file1.json file2.json ...    " + Environment.NewLine + 
+                ".load [-all] file1.json file2.json .." + Environment.NewLine + 
                 "     -all    Fully load all json files during load. By default the files are fully loaded during the dump command." + Environment.NewLine +
                 "   Load one or more data files. Use . to load all files in current directory. Previously loaded files are removed." + Environment.NewLine +
-                ".load+ file.json                   " + Environment.NewLine + 
+                ".load+ file.json" + Environment.NewLine + 
                 "   Add file to list of loaded files but keep other files." + Environment.NewLine +  
-                ".list                              " + Environment.NewLine + 
+                ".list" + Environment.NewLine + 
                 "   List loaded files" + Environment.NewLine +
-                ".quit or .q                        "+Environment.NewLine + 
+                ".processfmt timefmt" + Environment.NewLine +
+                "   Display for process start/end marker not +- but actual time and duration." + Environment.NewLine +
+                ".quit or .q"+Environment.NewLine + 
                 "   Quit ETWAnalyzer" + Environment.NewLine +
-                ".unload                            "+Environment.NewLine + 
+                ".unload"+Environment.NewLine + 
                 "   Unload all files if no parameter is passed. Otherwise only the passed files are unloaded from the file list." + Environment.NewLine +
-                ".sffn                              " +Environment.NewLine + 
+                ".sffn" +Environment.NewLine + 
                 "   Enable/disable -ShowFullFileName to display full path of output files." + Environment.NewLine +
+                ".timedigits n" + Environment.NewLine + 
+                "   Set time precision (0-6)." + Environment.NewLine +
+                ".timefmt fmt [precision]" + Environment.NewLine + 
+               $"   Set time display format ({String.Join(" ", Enum.GetNames(typeof(EventDump.DumpBase.TimeFormats)).Where(x=>x!="None"))}) and precision (0-6) where default is 3." + Environment.NewLine +
                 "Pressing Ctrl-C will cancel current command, Ctrl-Break will terminate";
 
             public override void Parse()
@@ -57,11 +70,6 @@ namespace ETWAnalyzer.Commands
             public ConsoleHelpCommand(string[] args) : base(args)
             { }
         }
-
-        /// <summary>
-        /// Currently loaded files
-        /// </summary>
-        Lazy<SingleTest>[] myInputFiles;
 
 
         public override void Run()
@@ -92,8 +100,6 @@ namespace ETWAnalyzer.Commands
             }
         }
 
-        bool ShowFullFileNameFlag { get; set; }
-
         /// <summary>
         /// Command syntax is first string is command name and all following arguments are arguments for that command like in the command line
         /// </summary>
@@ -112,7 +118,10 @@ namespace ETWAnalyzer.Commands
                 ".dump" => CreateDumpCommand(args),
                 ".exit" => new QuitCommand(args),
                 ".list" => ListFiles(args),
+                ".processfmt" => SetProcessFmt(args),
                 ".sffn" => ShowFullFileName(args),
+                ".timedigits" => SetTimeDigits(args),
+                ".timefmt" => SetTimeFormat(args),
                 ".quit" => new QuitCommand(args),
                 ".q" => new QuitCommand(args),
                 "q" => new QuitCommand(args),
@@ -176,6 +185,51 @@ namespace ETWAnalyzer.Commands
             return lret;
         }
 
+        private ICommand SetTimeDigits(string[] args)
+        {
+            ICommand lret = null;
+            TimeDigitString = null;
+
+            if (args.Length > 0)
+            {
+                TimeDigitString = args[0];
+            }
+            return lret;
+        }
+
+        private ICommand SetTimeFormat(string[] args)
+        {
+            ICommand lret = null;
+            TimeFormatString = null;
+            TimeDigitString = null;
+
+            if ( args.Length > 1 )
+            {
+                TimeFormatString = args[0]; 
+
+                if( args.Length > 1 )
+                {
+                    TimeDigitString = args[1];  
+                }
+            }
+            return lret;
+        }
+
+
+        private ICommand SetProcessFmt(string[] args)
+        {
+            ICommand lret = null;
+            ProcessFmt = null;
+
+            if (args.Length > 0)
+            {
+                ProcessFmt = args[0];
+            }
+
+            return lret;
+        }
+
+
         /// <summary>
         /// 
         /// </summary>
@@ -203,7 +257,7 @@ namespace ETWAnalyzer.Commands
 
             return lret;
         }
-
+        
         /// <summary>
         /// Create dump command from filtered list of arguments.
         /// </summary>
@@ -212,7 +266,26 @@ namespace ETWAnalyzer.Commands
         DumpCommand CreateDumpCommand(string[] args)
         {
             var argsAndTests = ApplyFileDirFilter(args);
-            return new DumpCommand(argsAndTests.Item1, argsAndTests.Item2)
+            List<string> filteredArgs = argsAndTests.Item1.ToList();
+            if( this.TimeDigitString != null )
+            {
+                filteredArgs.Add("-TimeDigits");
+                filteredArgs.Add(TimeDigitString);
+            }
+
+            if( this.TimeFormatString != null ) 
+            {
+                filteredArgs.Add("-TimeFmt");
+                filteredArgs.Add(TimeFormatString);
+            }
+
+            if (ProcessFmt != null)
+            {
+                filteredArgs.Add("-ProcessFmt");
+                filteredArgs.Add(ProcessFmt);
+            }
+
+            return new DumpCommand(filteredArgs.ToArray(), argsAndTests.Item2)
             {
                 ShowFullFileName = ShowFullFileNameFlag,
             };
@@ -420,7 +493,12 @@ namespace ETWAnalyzer.Commands
         /// <param name="args"></param>
         public ConsoleCommand(string[] args) : base(args)
         {
-
+            // skip -console argument and treat rest as input file names
+            string[] fileCandidates = args.Skip(1).Where(x => x.ToLowerInvariant() != "-fd").ToArray();
+            if( fileCandidates.Length > 0 ) 
+            {
+                Load(fileCandidates, false);
+            }
         }
 
 

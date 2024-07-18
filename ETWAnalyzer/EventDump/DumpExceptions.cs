@@ -189,7 +189,7 @@ namespace ETWAnalyzer.EventDump
                 string directory = match.Module?.ModulePath ?? "";
                 WriteCSVLine(CSVOptions, GetDateTimeString(match.TimeStamp, match.SessionStart, TimeFormatOption), match.Type, match.Message, match.Process.GetProcessWithId(UsePrettyProcessName), 
                     match.Process.GetProcessName(UsePrettyProcessName), match.Process.SessionId, match.Process.StartTime,
-                    match.Process.CmdLine, match.Stack, match.TestCase, match.BaseLine, GetDateTimeString(match.PerformedAt), match.SourceFile,
+                    match.Process.CmdLine, match.Stack, match.TestCase, match.BaseLine, match.PerformedAt, match.SourceFile,
                     fileVersion, versionString, productVersion, productName, description, directory);
             }
         }

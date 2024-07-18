@@ -87,6 +87,7 @@ namespace ETWAnalyzer.EventDump
 
         public override List<MatchData> ExecuteInternal()
         {
+            DefaultTimePrecision = 6; // we need us time precision by default
             HarmonizeFilterSettings();
 
             List<MatchData> lret = ReadFileData();
@@ -920,7 +921,7 @@ namespace ETWAnalyzer.EventDump
 
         void PrintEventHeader(IStackEventBase ev, IETWExtract resolver, string name, string beforeProc = null)
         {
-            string timeStr = base.GetTimeString(ev.GetTime(resolver.SessionStart), resolver.SessionStart, this.TimeFormatOption, 6);
+            string timeStr = base.GetTimeString(ev.GetTime(resolver.SessionStart), resolver.SessionStart, this.TimeFormatOption);
             ColorConsole.WriteEmbeddedColorLine($"\t{timeStr} [magenta]{GetProcessId(ev.ProcessIdx, resolver),5}[/magenta]/{ev.ThreadId,-5} {name} {beforeProc}[magenta]{GetProcessAndStartStopTags(ev.ProcessIdx, resolver,false)}[/magenta] ", null, true);
         }
 

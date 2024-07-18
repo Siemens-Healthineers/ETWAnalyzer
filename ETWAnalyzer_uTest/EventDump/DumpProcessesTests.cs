@@ -158,8 +158,10 @@ namespace ETWAnalyzer_uTest.EventDump
             testOutput.Flush();
             string[] expectedOutput = new string[]
             {
+                "Proces Start T Stop T Duration   Return  Parent         Process Command Line",
+                "sId    ime     ime               Code                   ",
                 "1/1/2000 12:00:00 AM   test ",
-                "PID: 5001   Start:  Stop:  Duration:  RCode:  Parent:  5000  ImmortalChild.exe "
+                "  5001                                   Parent:   5000 ImmortalChild.exe ImmortalChild.exe"
             };
 
             var lines = testOutput.GetSingleLines();
@@ -446,13 +448,15 @@ namespace ETWAnalyzer_uTest.EventDump
 
             string[] expectedOutput = new string[]
             {
-                "1/1/0001 12:00:00 AM   File3 " ,
-                "PID: 111    Start: 2000-01-01 10:00:00.000 Stop: 2000-01-01 10:00:10.000 Duration:  RCode:  Parent:    11  Session:  1 User1      " ,
-                "1/1/0001 12:00:00 AM   File2 " ,
-                "PID: 999    Start: 2000-01-01 10:00:00.000 Stop: 2000-01-01 10:00:40.000 Duration:  RCode:  Parent:     1  Session:  6 UserAdmin  " ,
-                "1/1/0001 12:00:00 AM   File1 " ,
-                "PID: 111    Start: 2000-01-01 10:00:00.000 Stop: 2000-01-01 10:01:00.000 Duration:  RCode:  Parent:    11  Session:  1 UserAdmin  " ,
-                "PID: 666    Start: 2000-01-01 10:00:00.000 Stop: 2000-01-01 10:00:05.000 Duration:  RCode:  Parent:     1  Session:  8 User100    ",
+                "Proces Start Time                     Stop Time                     Duration   Return  Sess User      Parent         Process Command Line",
+                "sId                                                                            Code    ion                           ",
+                "1/1/0001 12:00:00 AM   File3 ",
+                "   111 Start: 2000-01-01 10:00:00.000 Stop: 2000-01-01 10:00:10.000                       1     User1 Parent:     11  ",
+                "1/1/0001 12:00:00 AM   File2 ",
+                "   999 Start: 2000-01-01 10:00:00.000 Stop: 2000-01-01 10:00:40.000                       6 UserAdmin Parent:      1  ",
+                "1/1/0001 12:00:00 AM   File1 ",
+                "   111 Start: 2000-01-01 10:00:00.000 Stop: 2000-01-01 10:01:00.000                       1 UserAdmin Parent:     11  ",
+                "   666 Start: 2000-01-01 10:00:00.000 Stop: 2000-01-01 10:00:05.000                       8   User100 Parent:      1  ",
                 "FileTotals: 2 Processes, 0 new, 2 exited, 0 permanent in 2 sessions of 2 users.",
                 "Totals: 4 Processes, 1 new, 3 exited, 1 permanent in 3 sessions of 3 users."
             };
@@ -483,20 +487,20 @@ namespace ETWAnalyzer_uTest.EventDump
                 ShowTotal = ETWAnalyzer.Commands.DumpCommand.TotalModes.File,
                 SortOrder = ETWAnalyzer.Commands.DumpCommand.SortOrders.Session,
             };
-
             dumper.Print(data);
-
             testOutput.Flush();
 
             string[] expectedOutput = new string[]
             {
-                "1/1/0001 12:00:00 AM   File3 " ,
-                "PID: 111    Start: 2000-01-01 10:00:00.000 Stop: 2000-01-01 10:00:10.000 Duration:  RCode:  Parent:    11  Session:  1 User1      " ,
-                "1/1/0001 12:00:00 AM   File2 " ,
-                "PID: 999    Start: 2000-01-01 10:00:00.000 Stop: 2000-01-01 10:00:40.000 Duration:  RCode:  Parent:     1  Session:  6 UserAdmin  " ,
-                "1/1/0001 12:00:00 AM   File1 " ,
-                "PID: 111    Start: 2000-01-01 10:00:00.000 Stop: 2000-01-01 10:01:00.000 Duration:  RCode:  Parent:    11  Session:  1 UserAdmin  " ,
-                "PID: 666    Start: 2000-01-01 10:00:00.000 Stop: 2000-01-01 10:00:05.000 Duration:  RCode:  Parent:     1  Session:  8 User100    ",
+                "Proces Start Time                     Stop Time                     Duration   Return  Sess User      Parent         Process Command Line",
+                "sId                                                                            Code    ion                           ",
+                "1/1/0001 12:00:00 AM   File3 ",
+                "   111 Start: 2000-01-01 10:00:00.000 Stop: 2000-01-01 10:00:10.000                       1     User1 Parent:     11  ",
+                "1/1/0001 12:00:00 AM   File2 ",
+                "   999 Start: 2000-01-01 10:00:00.000 Stop: 2000-01-01 10:00:40.000                       6 UserAdmin Parent:      1  ",
+                "1/1/0001 12:00:00 AM   File1 ",
+                "   111 Start: 2000-01-01 10:00:00.000 Stop: 2000-01-01 10:01:00.000                       1 UserAdmin Parent:     11  ",
+                "   666 Start: 2000-01-01 10:00:00.000 Stop: 2000-01-01 10:00:05.000                       8   User100 Parent:      1  ",
                 "FileTotals: 2 Processes, 0 new, 2 exited, 0 permanent in 2 sessions of 2 users."
             };
 
@@ -534,13 +538,15 @@ namespace ETWAnalyzer_uTest.EventDump
 
             string[] expectedOutput = new string[]
             {
+                "Proces Start Time                     Stop Time                     Duration   Return  Sess User      Parent         Process Command Line",
+                "sId                                                                            Code    ion                           ",
                 "1/1/0001 12:00:00 AM   File3 " ,
-                "PID: 111    Start: 2000-01-01 10:00:00.000 Stop: 2000-01-01 10:00:10.000 Duration:  RCode:  Parent:    11  Session:  1 User1      " ,
+                "   111 Start: 2000-01-01 10:00:00.000 Stop: 2000-01-01 10:00:10.000                       1     User1 Parent:     11  " ,
                 "1/1/0001 12:00:00 AM   File2 " ,
-                "PID: 999    Start: 2000-01-01 10:00:00.000 Stop: 2000-01-01 10:00:40.000 Duration:  RCode:  Parent:     1  Session:  6 UserAdmin  " ,
+                "   999 Start: 2000-01-01 10:00:00.000 Stop: 2000-01-01 10:00:40.000                       6 UserAdmin Parent:      1  " ,
                 "1/1/0001 12:00:00 AM   File1 " ,
-                "PID: 111    Start: 2000-01-01 10:00:00.000 Stop: 2000-01-01 10:01:00.000 Duration:  RCode:  Parent:    11  Session:  1 UserAdmin  " ,
-                "PID: 666    Start: 2000-01-01 10:00:00.000 Stop: 2000-01-01 10:00:05.000 Duration:  RCode:  Parent:     1  Session:  8 User100    "
+                "   111 Start: 2000-01-01 10:00:00.000 Stop: 2000-01-01 10:01:00.000                       1 UserAdmin Parent:     11  " ,
+                "   666 Start: 2000-01-01 10:00:00.000 Stop: 2000-01-01 10:00:05.000                       8   User100 Parent:      1  "
             };
 
             var lines = testOutput.GetSingleLines();
