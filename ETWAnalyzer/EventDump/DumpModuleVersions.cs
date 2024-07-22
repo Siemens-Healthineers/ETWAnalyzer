@@ -88,7 +88,7 @@ namespace ETWAnalyzer.EventDump
                 switch (Mode)
                 {
                     case PrintMode.Module:
-                        string moduleBuildData = GetDateTimeString(MachineDetailsExtractor.GetBuildDate(new Version(data.ModuleVersion.Version)));
+                        string moduleBuildData = MachineDetailsExtractor.GetBuildDate(new Version(data.ModuleVersion.Version)).ToString();
                         int diffDays = (int)(MachineDetailsExtractor.GetBuildDate(new Version(data.MainModuleVersion.Version)) - MachineDetailsExtractor.GetBuildDate(new Version(data.ModuleVersion.Version))).TotalDays;
                         diffDays = Math.Abs(diffDays) > 400 ? 400 : diffDays;
                         WriteCSVLine(CSVOptions, data.TestName, data.Duration, data.Machine, data.TestDate, data.MainModuleVersion.Version, data.ModuleVersion.Module, data.ModuleVersion.Version, moduleBuildData, diffDays, data.SourceFile);

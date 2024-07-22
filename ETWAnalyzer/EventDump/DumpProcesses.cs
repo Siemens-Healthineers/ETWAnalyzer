@@ -71,6 +71,36 @@ namespace ETWAnalyzer.EventDump
             _ => true,
         };
 
+        /// <summary>
+        /// Process Id width used for formatting.
+        /// </summary>
+        const int PidWidth = 6;
+
+        const string Col_Pid = "ProcessId";
+        const string Col_StartTimeHeader = "StartTime";
+        const string Col_StopTime = "StopTime";
+        const string Col_Duration = "Duration";
+        const string Col_ReturnCode = "ReturnCode";
+        const string Col_Parent = "ParentPid";
+        const string Col_SessionHeader = "Session";
+        const string Col_User = "User";
+        const string Col_ProcessHeader = "Process";
+        const string Col_CommandLineHeader = "CommandLine";
+        const string Col_FileNameHeader = "FileName";
+
+        /// <summary>
+        /// Valid column names which can be enabled for more flexible output
+        /// </summary>
+        public static string[] ColumnNames =
+        {
+            Col_Pid, Col_StartTimeHeader, Col_StopTime,
+            Col_Duration, Col_ReturnCode, Col_Parent,
+            Col_SessionHeader, Col_User, Col_ProcessHeader,
+            Col_CommandLineHeader, Col_FileNameHeader
+        };
+
+        string myCurrentSourceFile = null;
+
         const string WerFault = "WerFault.exe";
 
         public override List<MatchData> ExecuteInternal()
@@ -98,7 +128,6 @@ namespace ETWAnalyzer.EventDump
             return lret;
         }
 
-
         /// <summary>
         /// Used by context sensitive help
         /// </summary>
@@ -111,10 +140,33 @@ namespace ETWAnalyzer.EventDump
             SortOrders.Default,
         };
 
+        /// <summary>
+        /// Get column enabled status
+        /// </summary>
+        /// <param name="columnName">Column Name</param>
+        /// <returns>ture if column is enabled, or false otherwise.</returns>
+        /// <exception cref="NotSupportedException">When a not existing column is found.</exception>
+        bool GetEnable(string columnName)
+        {
+            bool lret = columnName switch
+            {
+                Col_Pid => GetOverrideFlag(Col_Pid, true),
+                Col_StartTimeHeader => GetOverrideFlag(Col_StartTimeHeader, true),
+                Col_StopTime => GetOverrideFlag(Col_StopTime, true),
+                Col_Duration => GetOverrideFlag(Col_Duration, true),    
+                Col_ReturnCode => GetOverrideFlag(Col_ReturnCode, true),
+                Col_Parent => GetOverrideFlag(Col_Parent, true),
+                Col_SessionHeader => GetOverrideFlag(Col_SessionHeader, ShowDetails),
+                Col_User => GetOverrideFlag(Col_User, ShowUser),
+                Col_ProcessHeader => GetOverrideFlag(Col_ProcessHeader, true),
+                Col_CommandLineHeader => GetOverrideFlag(Col_CommandLineHeader, !NoCmdLine),
+                Col_FileNameHeader => GetOverrideFlag(Col_FileNameHeader, ShowFileOnLine),
 
-        string myCurrentSourceFile = null;
+                _ => throw new NotSupportedException($"Column {columnName} is not handled by GetEnable method. Please add case for it."),
+            };
+            return lret;
+        }
 
- 
         /// <summary>
         /// Print output to console
         /// </summary>
@@ -164,20 +216,134 @@ namespace ETWAnalyzer.EventDump
 
                 return;
             }
-            
-            int userWidth = data.Max(x => x.User.Length);
-            int lifeTimeWidth = data.Max(x => x.LifeTimeString.Length);
-            int startTimeWidth = data.Max(x => x.StartTime.HasValue ? GetDateTimeString(x.StartTime.Value, x.SessionStart, TimeFormatOption).Length : 0);
-            int stopTimeWidth = data.Max(x => x.EndTime.HasValue ? GetDateTimeString(x.EndTime.Value, x.SessionStart, TimeFormatOption).Length : 0);
-            int returnCodeWidth = data.Max(x => (x.ReturnCodeString?.Length).GetValueOrDefault());
 
-            
+            string timeSpanFormat = "hh\\:mm\\:ss\\." + new string('f', OverridenOrDefaultTimePrecision);
+
+
+            // column data extractors
+            Func<MatchData, string> getpid = m => m.ProcessId.ToString().WithWidth(PidWidth);
+            Func<MatchData, string> getStartTime = m => m.StartTime != null ? GetDateTimeString(m.StartTime.Value, m.SessionStart, TimeFormatOption) : "";
+            Func<MatchData, string> getStopTime = m => m.EndTime != null ? GetDateTimeString(m.EndTime.Value, m.SessionStart, TimeFormatOption) : "";
+            Func<MatchData, string> getDuration = m => (TimePrecision == null || m.LifeTime == null) ? m.LifeTimeString : m.LifeTime.Value.ToString(timeSpanFormat);
+            Func<MatchData, string> getReturnCode = m => m.ReturnCodeString;
+            Func<MatchData, string> getParent = m => m.ParentProcessId.ToString().WithWidth(PidWidth);  
+            Func<MatchData, string> getSessionId = m => m.SessionId.ToString();
+            Func<MatchData, string> getUser = m => m.User;
+            Func<MatchData, string> getProcess = m => m.ProcessName;
+            Func<MatchData, string> getCommandLine = m => " " + m.CmdLine;
+            Func<MatchData, string> getFileName = m => " " + Path.GetFileNameWithoutExtension(m.SourceFile);
+
+            // calculate for each column the maximum width
+            int startTimeWidth = GetMaxLength(data, getStartTime);
+            int stopTimeWidth = GetMaxLength(data, getStopTime);
+            int lifeTimeWidth = GetMaxLength(data, getDuration);
+            int returnCodeWidth = GetMaxLength(data, getReturnCode);
+            int sessionIdWidth = GetMaxLength(data, getSessionId);  
+            int userWidth = GetMaxLength(data, getUser);
+
+            // declare columns, color and enabled status
+            MultiLineFormatter formatter = new(
+            new()
+            {
+                Title = "ProcessId",
+                Name = Col_Pid,
+                Enabled = GetEnable(Col_Pid),
+                Prefix = "",
+                DataWidth = PidWidth,
+                Color = ConsoleColor.Yellow,
+            },
+            new()
+            {
+                Title = "Start Time",
+                Name = Col_StartTimeHeader,
+                Enabled = GetEnable(Col_StartTimeHeader),
+                Prefix = "Start: ",
+                DataWidth = startTimeWidth + "Start: ".Length,
+                Color = ConsoleColor.Green,
+            },
+            new()
+            {
+                Title = "Stop Time",
+                Name = Col_StopTime,
+                Enabled = GetEnable(Col_StopTime),
+                Prefix = "Stop: ",
+                DataWidth = stopTimeWidth + "Stop: ".Length,
+                Color = ConsoleColor.Blue,
+            },
+            new()
+            {
+                Title = "Duration",
+                Name = Col_Duration,
+                Enabled = GetEnable(Col_Duration),
+                Prefix = "Duration: ",
+                DataWidth = lifeTimeWidth + "Duration: ".Length,
+                Color = ConsoleColor.Blue,
+            },
+            new()
+            {
+                Title = "Return Code",
+                Name = Col_ReturnCode,
+                Enabled = GetEnable(Col_ReturnCode),
+                Prefix = "RCode: ",
+                DataWidth = returnCodeWidth + "RCode: ".Length,
+                Color = null,
+            },
+            new()
+            {
+                Title = "Session",
+                Name = Col_Session,
+                Enabled = GetEnable(Col_Session),
+                DataWidth = sessionIdWidth+3,
+                Color = null
+            },
+            new()
+            {
+                Title = "User",
+                Name = Col_User,
+                Enabled = GetEnable(Col_User),
+                DataWidth = userWidth,
+                Color = null,
+            },
+            new()
+            {
+                Title = "Parent",
+                Name = Col_Parent,
+                Enabled = GetEnable(Col_Parent),
+                Prefix = "Parent: ",
+                DataWidth = PidWidth + "Parent: ".Length,
+                Color = null,
+            },
+            new()
+            {
+                Title = "Process",
+                Name = Col_ProcessHeader,
+                Enabled = GetEnable(Col_ProcessHeader),
+                DataWidth = 0,
+                Color = null,
+            },
+            new()
+            {
+                Title = " Command Line",
+                Name = Col_CommandLineHeader,
+                Enabled = GetEnable(Col_CommandLineHeader),
+                Color = ConsoleColor.Yellow,
+            },
+            new()
+            {
+                Title = " File Name",
+                Name = Col_FileName,
+                Enabled = GetEnable(Col_FileName),
+                Color = ConsoleColor.Magenta,
+            }
+            );
+
             var processTotals = new TotalCounter();
             var globalProcessCounts = new TotalCounter();
 
+            formatter.PrintHeader();
+
             foreach (var m in data)
             {
-                
                 if ( currentSourceFile != m.SourceFile && !ShowFileOnLine )
                 {
                     if (IsSummary || IsFileTotalMode)
@@ -193,50 +359,23 @@ namespace ETWAnalyzer.EventDump
                 globalProcessCounts.Add(m);
                 processTotals.Add(m);
 
-                string startTime = "";
-                if (m.StartTime != null)
+                // get column data
+                string[] columnData = new string[]
                 {
-                    startTime = GetDateTimeString(m.StartTime.Value, m.SessionStart, TimeFormatOption);
-                }
+                    getpid(m),
+                    getStartTime(m),
+                    getStopTime(m),
+                    getDuration(m),
+                    getReturnCode(m),
+                    getSessionId(m),
+                    getUser(m),
+                    getParent(m),
+                    getProcess(m),
+                    getCommandLine(m),
+                    getFileName(m),
+                };
 
-                string stopTime = "";
-                if (m.EndTime != null)
-                {
-                    stopTime = GetDateTimeString(m.EndTime.Value, m.SessionStart, TimeFormatOption);
-                }
-
-                string user = "";
-                if (ShowUser)
-                {
-                    user = m.User.WithWidth(-1 * userWidth) + " ";
-                }
-
-
-                string fileName = "";
-                if( ShowFileOnLine )
-                {
-                    fileName = Path.GetFileNameWithoutExtension(m.SourceFile);
-                }
-                string cmdLine = m.ProcessName;
-                if (!NoCmdLine)
-                {
-                    cmdLine = String.IsNullOrEmpty(m.CmdLine) ? m.ProcessName : m.CmdLine;
-                }
-
-                string sessionId = "";
-                if (ShowDetails)
-                {
-                    sessionId = ShowDetails ? $" Session: { m.SessionId, 2}" : "";
-                }
-
-                string str = $"PID: [yellow]{m.ProcessId,-6}[/yellow] " +
-                             $"Start: [green]{startTime.WithWidth(startTimeWidth)}[/green] " +
-                             $"Stop: [darkcyan]{stopTime.WithWidth(stopTimeWidth)} Duration: {m.LifeTimeString.WithWidth(lifeTimeWidth)}[/darkcyan] " +
-                             $"RCode: {m.ReturnCodeString.WithWidth(returnCodeWidth)} Parent: {m.ParentProcessId, 5} " +
-                             $"[yellow]{sessionId}[/yellow] " +
-                             $"[yellow]{user}[/yellow]{cmdLine} {fileName}";
-                ColorConsole.WriteEmbeddedColorLine(str);
-
+                formatter.Print(true, columnData); // print row data which supports multiline wrapping
             }
             
             // print the summary for last file

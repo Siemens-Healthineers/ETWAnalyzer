@@ -173,19 +173,19 @@ namespace ETWAnalyzer_uTest.Extract
             var tcpData = iExtract.Network.TcpData;
 
             Assert.Single(tcpData.Connections);
-            Assert.Equal(2, tcpData.Retransmissions.Count);
+            Assert.Equal(3, tcpData.Retransmissions.Count);
 
             var retrans0 = tcpData.Retransmissions[0];
             Assert.Equal(100, retrans0.NumBytes);
             Assert.Equal((uint)SequenceNr.S_2000, retrans0.SequenceNumber);
-            Assert.Equal((long)Time.T0_4, retrans0.RetransmitTime.Ticks);
+            Assert.Equal((long)Time.T0_3, retrans0.RetransmitTime.Ticks);
             Assert.Equal((long)Time.T0_3, retrans0.SendTime.Ticks);
 
             var retrans1 = tcpData.Retransmissions[1];
             Assert.Equal(100, retrans1.NumBytes);
             Assert.Equal((uint)SequenceNr.S_2000, retrans1.SequenceNumber);
-            Assert.Equal((long)Time.T0_5, retrans1.RetransmitTime.Ticks);
-            Assert.Equal((long)Time.T0_3, retrans1.SendTime.Ticks);
+            Assert.Equal((long)Time.T0_4, retrans1.RetransmitTime.Ticks);
+            Assert.Equal((long)Time.T0_4, retrans1.SendTime.Ticks);
         }
 
 
@@ -318,7 +318,7 @@ namespace ETWAnalyzer_uTest.Extract
             Assert.Equal((uint) SequenceNr.S_3000, retrans2.SequenceNumber);
             Assert.Equal(600, retrans2.NumBytes);
             Assert.Equal((long) Time.T2_8, retrans2.RetransmitTime.Ticks);
-            Assert.Equal((long) Time.T2_5, retrans2.SendTime.Ticks);
+            Assert.Equal((long) Time.T2_8, retrans2.SendTime.Ticks);
         }
 
 

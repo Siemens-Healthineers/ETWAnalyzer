@@ -55,6 +55,8 @@ Supported values for *-TimeFmt* are:
 | UTC|  2022-02-04 08:56:34.670|
 | UTCTime| 08:56:34.670|
 
+## Time Precision
+The default time precision is ms, but it can be configured by using the ```-TimeDigits d``` flag to display time from 0-6 decimal places.
 
 ## Process Selection/Filters
 

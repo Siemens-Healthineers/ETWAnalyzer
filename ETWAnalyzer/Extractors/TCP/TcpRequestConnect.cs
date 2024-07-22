@@ -1,19 +1,12 @@
 ﻿//// SPDX-FileCopyrightText:  © 2023 Siemens Healthcare GmbH
 //// SPDX-License-Identifier:   MIT
 
-
 using ETWAnalyzer.Extract;
 using ETWAnalyzer.Extract.Network.Tcp;
 using ETWAnalyzer.TraceProcessorHelpers;
-using Microsoft.Windows.EventTracing;
 using Microsoft.Windows.EventTracing.Events;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Net;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace ETWAnalyzer.Extractors.TCP
 {
@@ -97,6 +90,7 @@ namespace ETWAnalyzer.Extractors.TCP
 
         public DateTimeOffset? TimeStampOpen { get;  }
         public DateTimeOffset? TimeStampClose { get; internal set; }
+        public DateTimeOffset? TCPRetansmitTimeout { get; internal set; }
 
         public SocketConnection LocalIpAndPort { get;  }
         public SocketConnection RemoteIpAndPort { get; }

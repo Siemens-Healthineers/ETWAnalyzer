@@ -19,6 +19,28 @@ namespace ETWAnalyzer.EventDump
     abstract class DumpBase : IDisposable
     {
         /// <summary>
+        /// Explicitly enabled/disabled columns
+        /// </summary>
+        internal Dictionary<string, bool> ColumnConfiguration { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+
+        protected bool GetOverrideFlag(string column, bool defaultFlag)
+        {
+            // if only disable rules are active we leave the enabled defaults 
+            // otherwise just the enabled/disabled columns are enabled
+            bool onlyDisableRules = ColumnConfiguration.Values.All(x => x == false);
+
+            if(ColumnConfiguration.TryGetValue(column, out bool overrideFlag))
+            {
+                return overrideFlag;
+            }
+
+            // all other columns are disabled if explicit enable columns are configured.
+            return onlyDisableRules ? defaultFlag : false;
+        }
+
+
+
+        /// <summary>
         /// Specifies how time is formatted
         /// </summary>
         internal enum TimeFormats
@@ -77,6 +99,30 @@ namespace ETWAnalyzer.EventDump
             get;set;
         }
 
+        /// <summary>
+        /// Overriden Time Precision supplied at command line
+        /// </summary>
+        internal int? TimePrecision
+        {
+            get; set;
+        }
+
+        /// <summary>
+        /// Default precision for this command which can be different, depending on what granularity time makes sense
+        /// </summary>
+        internal int DefaultTimePrecision
+        {
+            get; set;
+        } = 3;
+
+        /// <summary>
+        /// Get effective time precision used for formatting strings
+        /// </summary>
+        internal int OverridenOrDefaultTimePrecision
+        {
+            get => TimePrecision == null ? DefaultTimePrecision : TimePrecision.Value;
+        }
+
         internal TimeFormats? ProcessFormatOption
         {
             get;set;
@@ -85,12 +131,35 @@ namespace ETWAnalyzer.EventDump
         /// <summary>
         /// DateTime Format string used by various methods.
         /// </summary>
-        internal const string DateTimeFormat = "yyyy-MM-dd HH:mm:ss.fff";
+        internal const string DateTimeFormat0 = "yyyy-MM-dd HH:mm:ss";
+        internal const string DateTimeFormat1 = "yyyy-MM-dd HH:mm:ss.f";
+        internal const string DateTimeFormat2 = "yyyy-MM-dd HH:mm:ss.ff";
+        internal const string DateTimeFormat3 = "yyyy-MM-dd HH:mm:ss.fff";
+        internal const string DateTimeFormat4 = "yyyy-MM-dd HH:mm:ss.ffff";
+        internal const string DateTimeFormat5 = "yyyy-MM-dd HH:mm:ss.fffff";
+        internal const string DateTimeFormat6 = "yyyy-MM-dd HH:mm:ss.ffffff";
+
+        internal static readonly string[] DateTimeFormatStrings = new string[]
+        {
+            DateTimeFormat0, DateTimeFormat1, DateTimeFormat2, DateTimeFormat3, DateTimeFormat4, DateTimeFormat5, DateTimeFormat6
+        };
 
         /// <summary>
         /// Time format string
         /// </summary>
-        internal const string TimeFormat = "HH:mm:ss.fff";
+        internal const string TimeFormat0 = "HH:mm:ss";
+        internal const string TimeFormat1 = "HH:mm:ss.f";
+        internal const string TimeFormat2 = "HH:mm:ss.ff";
+        internal const string TimeFormat3 = "HH:mm:ss.fff";
+        internal const string TimeFormat4 = "HH:mm:ss.ffff";
+        internal const string TimeFormat5 = "HH:mm:ss.fffff";
+        internal const string TimeFormat6 = "HH:mm:ss.ffffff";
+
+        internal static readonly string[] TimeFormatStrings = new string[]
+        {
+            TimeFormat0, TimeFormat1, TimeFormat2, TimeFormat3, TimeFormat4, TimeFormat5, TimeFormat6
+        };
+
 
         /// <summary>
         /// Default column width with which seconds are formatted. This needs to be at least 8, otherwise the header description will not fit
@@ -98,12 +167,11 @@ namespace ETWAnalyzer.EventDump
         protected const int SecondsColWidth = 8;
 
         /// <summary>
-        /// Related to <see cref="TimeFormat"/> string
         /// </summary>
         protected const int TimeFormatColWidth = 12;
 
         /// <summary>
-        /// Related to <see cref="DateTimeFormat"/> string
+        /// Related to <see cref="DateTimeFormatStrings"/> strings with default precison 3
         /// </summary>
         protected const int DateTimeColWidth = 23;
 
@@ -139,20 +207,22 @@ namespace ETWAnalyzer.EventDump
             }
         }
 
+        int WidthDiffTo3 { get => OverridenOrDefaultTimePrecision - 3; }
+
         protected int GetWidth(TimeFormats format)
         {
             return format switch
             {
-                TimeFormats.s => SecondsColWidth,
-                TimeFormats.second => SecondsColWidth,
+                TimeFormats.s => SecondsColWidth + WidthDiffTo3,
+                TimeFormats.second => SecondsColWidth + WidthDiffTo3,
 
-                TimeFormats.HereTime => TimeFormatColWidth,
-                TimeFormats.LocalTime => TimeFormatColWidth,
-                TimeFormats.UTCTime => TimeFormatColWidth,
+                TimeFormats.HereTime => TimeFormatColWidth+ WidthDiffTo3,
+                TimeFormats.LocalTime => TimeFormatColWidth + WidthDiffTo3,
+                TimeFormats.UTCTime => TimeFormatColWidth + WidthDiffTo3,
                 
-                TimeFormats.Here => DateTimeColWidth,
-                TimeFormats.Local => DateTimeColWidth,
-                TimeFormats.UTC => DateTimeColWidth,
+                TimeFormats.Here => DateTimeColWidth + WidthDiffTo3,
+                TimeFormats.Local => DateTimeColWidth + WidthDiffTo3,
+                TimeFormats.UTC => DateTimeColWidth + WidthDiffTo3,
                 _ => 0 // should not happen
             };
         }
@@ -181,9 +251,8 @@ namespace ETWAnalyzer.EventDump
         /// <param name="time">Local time</param>
         /// <param name="sessionStart">Trace sessions start time</param>
         /// <param name="fmt">Controls how time is formatted.</param>
-        /// <param name="precision">decimal numbers after second. Default is 3.</param>
         /// <returns>Formatted time locale independent.</returns>
-        protected string GetTimeString(DateTimeOffset ?time, DateTimeOffset sessionStart, TimeFormats fmt, int precision=3)
+        protected string GetTimeString(DateTimeOffset ?time, DateTimeOffset sessionStart, TimeFormats fmt)
         {
             string lret = "";
 
@@ -192,15 +261,11 @@ namespace ETWAnalyzer.EventDump
                 Tuple<double?,DateTime?>  newTime = ConvertTime(time.Value, sessionStart, fmt);
                 if (newTime.Item1.HasValue) // interpret as timespan 
                 {
-                    lret = FormatAsSeconds(newTime.Item1.Value, precision);
+                    lret = FormatAsSeconds(newTime.Item1.Value, OverridenOrDefaultTimePrecision);
                 }
                 else
                 {
-                    string preciseFormat = TimeFormat;
-                    if( precision > 3)
-                    {
-                        preciseFormat += new string('f', precision - 3);
-                    }
+                    string preciseFormat = TimeFormatStrings[OverridenOrDefaultTimePrecision];
                     lret = newTime.Item2.Value.ToString(preciseFormat, CultureInfo.InvariantCulture);
                 }
             }
@@ -332,19 +397,14 @@ namespace ETWAnalyzer.EventDump
             string lret = "";
             if( time.Item1.HasValue) // interpret as timespan
             {
-                lret = FormatAsSeconds(time.Item1.Value,3);
+                lret = FormatAsSeconds(time.Item1.Value, OverridenOrDefaultTimePrecision);
             }
             else
             {
-                lret = time.Item2.Value.ToString(DateTimeFormat, CultureInfo.InvariantCulture);
+                lret = time.Item2.Value.ToString(DateTimeFormatStrings[OverridenOrDefaultTimePrecision], CultureInfo.InvariantCulture);
             }
             
             return lret;
-        }
-
-        protected string GetDateTimeString(DateTime time)
-        {
-            return time.ToString(DateTimeFormat, CultureInfo.InvariantCulture);
         }
 
         protected string GetProcessTags(ETWProcess process, DateTimeOffset sessionStart)
@@ -380,6 +440,18 @@ namespace ETWAnalyzer.EventDump
                 return lret;
             }
 
+        }
+
+        /// <summary>
+        /// Get maximum string length for column width calculation.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="collection">items to be formatted</param>
+        /// <param name="getter">String extractor</param>
+        /// <returns>Maximum string length returned by getter for all items.</returns>
+        protected static int GetMaxLength<T>(IList<T> collection, Func<T,string> getter)
+        {
+            return collection.Max(x => (getter(x)?.Length).GetValueOrDefault());
         }
 
         #region IDisposable Support

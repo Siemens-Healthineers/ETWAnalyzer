@@ -113,6 +113,9 @@ namespace ETWAnalyzer.Extractors.TCP
                     case TcpETWConstants.TcpCloseTcbRequest:
                         OnClose(ev);
                         break;
+                    case TcpETWConstants.TcpDisconnectTcbRtoTimeout:
+                        OnRetransmitTimeout(ev);
+                        break;
                     default:
                         // Do nothing
                         break;
@@ -158,14 +161,14 @@ namespace ETWAnalyzer.Extractors.TCP
                 }
 
                 ulong bytesReceived = (ulong)receivedByConnection[tcpconnection].Sum(x => (decimal)((TcpDataTransferReceive)x).NumBytes);
-
+                var lastreceiveTime = receivedByConnection[tcpconnection].LastOrDefault()?.Timestamp;
 
                 ulong bytesSent = (ulong)sentByConnection[tcpconnection].Sum(x => (decimal)((TcpDataSend)x).BytesSent);
                 int datagramsReceived = receivedByConnection[tcpconnection].Count();
                 int datagramsSent = sentByConnection[tcpconnection].Count();
 
                 TcpConnection connection = new(tcpconnection.Tcb, tcpconnection.LocalIpAndPort, tcpconnection.RemoteIpAndPort, tcpconnection.TimeStampOpen, tcpconnection.TimeStampClose,
-                    templates.LastOrDefault(), bytesSent, datagramsSent, bytesReceived, datagramsReceived, tcpconnection.ProcessIdx);
+                    templates.LastOrDefault(), bytesSent, datagramsSent, bytesReceived, datagramsReceived, tcpconnection.ProcessIdx, tcpconnection.TCPRetansmitTimeout, null, lastreceiveTime);
                 ConnectionIdx connIdx = results.Network.TcpData.AddConnection(connection);
                 connect2Idx[tcpconnection] = connIdx;
 
@@ -202,15 +205,25 @@ namespace ETWAnalyzer.Extractors.TCP
 
                 // Get all sent packets just before the current retransmit event
                 // we need the last sent packet because the first packet often was an ACK with 0 send size
-                List<TcpDataSend> retransmittedSent = sentByConnection[retrans.Connection].Where(x => x.SequenceNr == retrans.SndUna && x.Timestamp < retrans.Timestamp)
+                List<TcpDataSend> retransmittedSent = sentByConnection[retrans.Connection].Where(x => x.SequenceNr == retrans.SndUna && x.Timestamp <= retrans.Timestamp)
                                                     .OrderBy(x => x.Timestamp).ToList();
 
                 if( retransmittedSent.Count > 0)
                 {
+                    var lastSent = retransmittedSent.Last(); // this is the send which caused later retransmit events
+                    // The application can issue further send events without canceling the current pending retransmissions
+
                     // store retransmit event with send time of first sent packet. It might be an ACK packet but for now the heuristics should be good enough
                     // to be useful.
                     results.Network.TcpData.Retransmissions.Add(new TcpRetransmission(connect2Idx[retrans.Connection], retrans.Timestamp,
-                        retransmittedSent[0].Timestamp, retransmittedSent[0].SequenceNr, retransmittedSent[retransmittedSent.Count-1].BytesSent));
+                        lastSent.Timestamp, lastSent.SequenceNr, lastSent.BytesSent));
+
+                    // set last send time before retransmissions did start
+                    TcpConnection connection = results.Network.TcpData.Connections[(int)connect2Idx[retrans.Connection]];
+                    if (connection.RetransmitTimeout != null) // connection was closed due to retransmit
+                    {
+                        connection.LastSent = retransmittedSent.Last().Timestamp; // last send event 
+                    }
                 }
             }
         }
@@ -232,6 +245,29 @@ namespace ETWAnalyzer.Extractors.TCP
                     if (connect.Tcb == tcb && connect.TimeStampOpen < rst.Timestamp && connect.TimeStampClose == null)
                     {
                         connect.TimeStampClose = rst.Timestamp;
+                        break;
+                    }
+                }
+            }
+        }
+
+
+        readonly List<TcpDisconnectTcbRtoTimeout> myTcpDisconnectTcbRtoTimeout = new();
+
+        private void OnRetransmitTimeout(IGenericEvent ev)
+        {
+            TcpDisconnectTcbRtoTimeout rst = new(ev);
+            if( TCBFilter(rst.Tcb)) 
+            {
+                myTcpDisconnectTcbRtoTimeout.Add(rst);
+
+                ulong tcp = rst.Tcb;
+
+                foreach(var connect in myConnections.OrderByDescending(x=> x.TimeStampOpen))
+                {
+                    if( connect.Tcb == tcp && connect.TimeStampOpen < rst.Timestamp && connect.TimeStampClose == null )
+                    {
+                        connect.TCPRetansmitTimeout = rst.Timestamp;
                         break;
                     }
                 }
