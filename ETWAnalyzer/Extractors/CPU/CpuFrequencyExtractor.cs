@@ -29,9 +29,17 @@ namespace ETWAnalyzer.Extractors.CPU
 
                 foreach(Microsoft.Windows.EventTracing.Power.IProcessorFrequencyInterval cpu in myCpuFrequencies.Result.Intervals) 
                 {
-                    if( cpu.AverageFrequency == null)
+                    try
                     {
-                        Console.WriteLine($"Warning: File {results.SourceETLFileName} contains CPU frequency ETW data, but AverageFrequency is null. This happens when the CaptureState for the Microsoft-Windows-Kernel-Processor-Power provider is missing.");
+                        if (cpu.AverageFrequency == null)
+                        {
+                            Console.WriteLine($"Warning: File {results.SourceETLFileName} contains CPU frequency ETW data, but AverageFrequency is null. This happens when the CaptureState for the Microsoft-Windows-Kernel-Processor-Power provider is missing.");
+                            break;
+                        }
+                    }
+                    catch(ArgumentOutOfRangeException)
+                    {
+                        Console.WriteLine($"Warning: File {results.SourceETLFileName} contains CPU frequency ETW data, but AverageFrequency is not accessible. This happens when the CaptureState for the Microsoft-Windows-Kernel-Processor-Power provider is missing.");
                         break;
                     }
 
