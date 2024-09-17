@@ -43,5 +43,15 @@ namespace ETWAnalyzer.Extractors.TCP
             Compartment = ev.Fields[TcpETWConstants.CompartmentField].AsUInt32;
             Timestamp = ev.Timestamp.DateTimeOffset;
         }
+
+        public override int GetHashCode()
+        {
+            return base.GetHashCode();
+        }
+
+        public override string ToString()
+        {
+            return $"LocalIpPort: {LocalIpAndPort} -> {RemoteIpAndPort} TCB: 0x{Tcb:X} TimeStamp: {Timestamp} ProcessId {ProcessId} Compartment: {Compartment}";
+        }
     }
 }

@@ -51,6 +51,11 @@ namespace ETWAnalyzer.Extractors.TCP
         /// </summary>
         readonly List<TcpAcceptListenerComplete> myAcceptListenerCompletes = new();
 
+        /// <summary>
+        /// Prevent adding accept events more than once from <see cref="myAcceptListenerCompletes"/>. Otherwise we will duplicate keep adding duplicate connection with 
+        /// same tcb, connect and disconnect time. 
+        /// </summary>
+        HashSet<TcpAcceptListenerComplete> myAlreadyAdded = new();
 
         public TCPExtractor()
         {
@@ -391,6 +396,8 @@ namespace ETWAnalyzer.Extractors.TCP
             return ev.ProviderId == TcpETWConstants.Guid && ev.Process?.ImageName != null && ev.Fields != null;
         }
 
+
+
         TcpRequestConnect LocateConnection(ulong tcb, DateTimeOffset time, ETWExtract extract, ref ILookup<ulong, TcpRequestConnect> connectionsByTcb)
         {
             // Check if we have already a stored connection
@@ -419,12 +426,13 @@ namespace ETWAnalyzer.Extractors.TCP
             // Some connections are in connecting state but we have not got connect event anymore. Use This event instead
             foreach (var complete in myAcceptListenerCompletes)
             {
-                if (complete.Tcb == tcb)
+                if (complete.Tcb == tcb && !myAlreadyAdded.Contains(complete) )
                 {
                     var processIdx = extract.GetProcessIndexByPidAtTime((int) complete.ProcessId, complete.Timestamp);
                     var connection = new TcpRequestConnect(complete.Tcb, complete.LocalIpAndPort, complete.RemoteIpAndPort, complete.Timestamp, null, processIdx);
                     myConnections.Add(connection);
                     connectionsByTcb = myConnections.ToLookup(x => x.Tcb);
+                    myAlreadyAdded.Add(complete);
                     return connection;
                 }
             }
