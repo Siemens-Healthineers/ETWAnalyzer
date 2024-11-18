@@ -407,9 +407,10 @@ namespace ETWAnalyzer.Commands
                 foreach (var file in x.Files)
                 {
                     var tmp = file.Extract.CPU;
-                    var tmp2 = file.Extract.Modules;
-                    var tmp4 = file.Extract.FileIO;
+                    var tmp1 = file.Extract.Modules;
+                    var tmp2 = file.Extract.FileIO;
                     var tmp3 = file.Extract.HandleData;
+                    var tmp4 = file.Extract.CPU.ExtendedCPUMetrics;
                 }
             }
         }
