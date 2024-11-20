@@ -37,9 +37,16 @@ namespace ETWAnalyzer.Extractors.CPU
                             break;
                         }
                     }
-                    catch(ArgumentOutOfRangeException)
+                    catch (ArgumentOutOfRangeException)
                     {
                         Console.WriteLine($"Warning: File {results.SourceETLFileName} contains CPU frequency ETW data, but AverageFrequency is not accessible. This happens when the CaptureState for the Microsoft-Windows-Kernel-Processor-Power provider is missing.");
+                        break;
+                    }
+                    catch (InvalidTraceDataException ex)
+                    {
+                        string msg  = $"File {results.SourceETLFileName} contains CPU frequency ETW data, but AverageFrequency is not accessible, because of a CPU count mismatch: ";
+                        Console.WriteLine("Warning: " + msg + ex.Message);
+                        Logger.Warn(msg + ex);
                         break;
                     }
 
