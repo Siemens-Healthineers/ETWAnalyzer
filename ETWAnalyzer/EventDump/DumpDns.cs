@@ -17,7 +17,7 @@ namespace ETWAnalyzer.EventDump
     class DumpDns : DumpFileDirBase<DumpDns.MatchData>
     {
         public bool NoCmdLine { get; set; }
-        public SkipTakeRange TopN { get; set; }
+        public SkipTakeRange TopN { get; set; } = new();
 
         public SkipTakeRange TopNDetails { get; set; } = new();
 
@@ -129,7 +129,7 @@ namespace ETWAnalyzer.EventDump
                 ETWProcess[] previous = null;
                 foreach (MatchData data in sorted)
                 {
-                    if( !MinMaxTotalTimeMs.IsWithin( (double) (data.GroupQueryTimeS*1000) ) )
+                    if( !MinMaxTotalTimeMs.IsWithin( (double) (data.GroupQueryTimeS) ) )
                     {
                         continue;
                     }
@@ -228,7 +228,7 @@ namespace ETWAnalyzer.EventDump
                             continue;
                         }
 
-                        if( !MinMaxTimeMs.IsWithin( dns.Duration.TotalMilliseconds) )
+                        if( !MinMaxTimeMs.IsWithin( dns.Duration.TotalSeconds) )
                         {
                             continue;
                         }
