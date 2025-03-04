@@ -9292,9 +9292,15 @@ namespace ETWAnalyzer.Extract
         /// </summary>
         CPP_EH_Exception = 0xe06d7363,
 
+
+        /// <summary>
+        /// Process was killed by OS forcefully
+        /// </summary>
+        Force_Shutdown = 0x40010004,
+
         /// <summary>
         /// Maximum value
         /// </summary>
-        Max_Value= 0xefffffff,
+        Max_Value = 0xefffffff,
     };
 }
