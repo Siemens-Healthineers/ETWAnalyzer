@@ -194,8 +194,9 @@ namespace ETWAnalyzer.EventDump
             {
                 // sort by time or by alphabet if no time info is there
                 var nostartEnd = data.Where(x => x.StartTime == null && x.EndTime == null).OrderBy(x => x.ProcessName);
-                var ended = data.Where(x => x.EndTime != null).OrderBy(x => x.EndTime);
-                var startedbutnotEnded = data.Where(x => x.StartTime != null && x.EndTime != null).OrderBy(x => x.StartTime);
+                var ended = data.Where(x => x.EndTime != null ).OrderBy(x => x.EndTime);
+                var endedSet = ended.ToHashSet(); // temporary processes (start+end) would be printed twice if we do not filter them out
+                var startedbutnotEnded = data.Where(x => x.StartTime != null && x.EndTime != null && !endedSet.Contains(x)).OrderBy(x => x.StartTime);
                 data = nostartEnd.ToList();
                 data.AddRange(startedbutnotEnded);
                 data.AddRange(ended);

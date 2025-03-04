@@ -89,8 +89,8 @@ namespace ETWAnalyzer_uTest.EventDump
 
             processStart.myPreloadedTests = new Lazy<SingleTest>[] { new Lazy<SingleTest>(CreateSingleTest) };
             List<DumpProcesses.MatchData> matching = processStart.ExecuteInternal();
-            
-            foreach(var m in matching)
+
+            foreach (var m in matching)
             {
                 Assert.Equal(15.0d, m.ZeroTimeS);
             }
@@ -113,7 +113,7 @@ namespace ETWAnalyzer_uTest.EventDump
                 SortOrder = ETWAnalyzer.Commands.DumpCommand.SortOrders.Tree,
             };
 
-            dumper.myPreloadedTests = new Lazy<SingleTest>[] { new Lazy<SingleTest>(() => CreateProcessTree() )};
+            dumper.myPreloadedTests = new Lazy<SingleTest>[] { new Lazy<SingleTest>(() => CreateProcessTree()) };
 
             List<DumpProcesses.MatchData> matching = dumper.ExecuteInternal();
 
@@ -133,7 +133,7 @@ namespace ETWAnalyzer_uTest.EventDump
 
             var lines = testOutput.GetSingleLines();
             Assert.Equal(expectedOutput.Length, lines.Count);
-            for(int i=0;i<expectedOutput.Length;i++)
+            for (int i = 0; i < expectedOutput.Length; i++)
             {
                 Assert.Equal(expectedOutput[i], lines[i]);
             }
@@ -198,7 +198,7 @@ namespace ETWAnalyzer_uTest.EventDump
             };
 
             Assert.False(dumper.SessionIdFilter(procSession0));
-            Assert.True( dumper.SessionIdFilter(procSession1));
+            Assert.True(dumper.SessionIdFilter(procSession1));
             Assert.False(dumper.SessionIdFilter(procSession2));
         }
 
@@ -370,7 +370,7 @@ namespace ETWAnalyzer_uTest.EventDump
                     Process = proc1,
                     User = proc1.Identity,
                     ProcessId = proc1.ProcessID,
-                    ParentProcessId = proc1.ParentPid, 
+                    ParentProcessId = proc1.ParentPid,
                     SessionId = proc1.SessionId,
                     SourceFile = File3,
                     HasEnded = proc1.HasEnded,
@@ -565,7 +565,7 @@ namespace ETWAnalyzer_uTest.EventDump
         SingleTest CreateSingleTest()
         {
             TestDataFile file = new TestDataFile("Test", "test.etl", new DateTime(2000, 1, 1), 5000, 100, "TestMachine", "None", true);
-            
+
             var extract = new ETWExtract()
             {
                 SessionStart = TenClock,
@@ -632,12 +632,12 @@ namespace ETWAnalyzer_uTest.EventDump
                     EndTime = proc.EndTime == DateTimeOffset.MaxValue ? null : proc.EndTime,
                     StartTime = proc.StartTime == DateTimeOffset.MinValue ? null : proc.StartTime,
                     ProcessName = proc.ProcessName,
-                    HasEnded = proc.HasEnded, 
+                    HasEnded = proc.HasEnded,
                     ProcessId = proc.ProcessID,
                     ParentProcessId = proc.ParentPid,
                     PerformedAt = test.PerformedAt,
                     SessionId = proc.SessionId,
-                    ReturnCode  = proc.ReturnCode,
+                    ReturnCode = proc.ReturnCode,
                     User = proc.Identity,
                 });
             }
@@ -657,7 +657,7 @@ namespace ETWAnalyzer_uTest.EventDump
         [Fact]
         public void CanConvert_ComplexProcessTree()
         {
-            SingleTest test = CreateProcessTree(true, true, true,true);
+            SingleTest test = CreateProcessTree(true, true, true, true);
 
             IETWExtract extract = test.Files[0].Extract;
             List<DumpProcesses.MatchData> matches = new List<DumpProcesses.MatchData>();
@@ -735,7 +735,7 @@ namespace ETWAnalyzer_uTest.EventDump
             Assert.Empty(fifth.Childs);
         }
 
-        SingleTest CreateProcessTree(bool bParentWrong=true, bool bEndOnly=true, bool bStartOnly=true, bool bImmortal=true)
+        SingleTest CreateProcessTree(bool bParentWrong = true, bool bEndOnly = true, bool bStartOnly = true, bool bImmortal = true)
         {
             TestDataFile file = new TestDataFile("Test", "test.etl", new DateTime(2000, 1, 1), 5000, 100, "TestMachine", "None", true);
 
@@ -762,7 +762,7 @@ namespace ETWAnalyzer_uTest.EventDump
                 extract.Processes.Add(wrongParent);
             }
 
-            
+
             // Same Pid but started later as ParentWrong
             ETWProcess parent = new ETWProcess
             {
@@ -807,7 +807,7 @@ namespace ETWAnalyzer_uTest.EventDump
                 extract.Processes.Add(cmdEndOnly);
             }
 
-            if( bStartOnly )
+            if (bStartOnly)
             {
                 ETWProcess cmdStartOnly = new ETWProcess
                 {
@@ -864,5 +864,106 @@ namespace ETWAnalyzer_uTest.EventDump
 
             return t;
         }
+
+        [Fact]
+        public void DoNotPrintExitedProcessesTwice()
+        {
+            using var testOutput = new ExceptionalPrinter(myWriter, true);
+            using var setInvariantCulture = new CultureSwitcher();
+
+            var data = new List<DumpProcesses.MatchData>
+            {
+                new DumpProcesses.MatchData
+                {
+                    Process = proc1,
+                    User = proc1.Identity,
+                    ProcessId = proc1.ProcessID,
+                    ParentProcessId = proc1.ParentPid,
+                    SessionId = proc1.SessionId,
+                    SourceFile = File3,
+                    HasEnded = true,
+                    ProcessWithPid = proc1.ToString(),
+                    IsNewProcess = true,
+                    StartTime = TenClock,
+                    EndTime = TenClock + TimeSpan.FromSeconds(10),
+                },
+            };
+
+            DumpProcesses dumper = new DumpProcesses()
+            {
+                ShowTotal = ETWAnalyzer.Commands.DumpCommand.TotalModes.None,
+                SortOrder = ETWAnalyzer.Commands.DumpCommand.SortOrders.StopTime,
+            };
+
+            dumper.Print(data);
+
+            testOutput.Flush();
+
+            string[] expectedOutput = new string[]
+            {
+                "Proces Start Time                     Stop Time                     Duration   Return  Parent         Process Command Line",
+                "sId                                                                            Code                   ",
+                "1/1/0001 12:00:00 AM   File3 " ,
+                "   111 Start: 2000-01-01 10:00:00.000 Stop: 2000-01-01 10:00:10.000                    Parent:     11  " ,
+            };
+
+            var lines = testOutput.GetSingleLines();
+            Assert.Equal(expectedOutput.Length, lines.Count);
+            for (int i = 0; i < expectedOutput.Length; i++)
+            {
+                Assert.Equal(expectedOutput[i], lines[i]);
+            }
+        }
+
+        [Fact]
+        public void DoNotPrintStartedProcessesTwice()
+        {
+            using var testOutput = new ExceptionalPrinter(myWriter, true);
+            using var setInvariantCulture = new CultureSwitcher();
+
+            var data = new List<DumpProcesses.MatchData>
+            {
+                new DumpProcesses.MatchData
+                {
+                    Process = proc1,
+                    User = proc1.Identity,
+                    ProcessId = proc1.ProcessID,
+                    ParentProcessId = proc1.ParentPid,
+                    SessionId = proc1.SessionId,
+                    SourceFile = File3,
+                    HasEnded = true,
+                    ProcessWithPid = proc1.ToString(),
+                    IsNewProcess = true,
+                    StartTime = TenClock,
+                    EndTime = TenClock + TimeSpan.FromSeconds(10),
+                },
+            };
+
+            DumpProcesses dumper = new DumpProcesses()
+            {
+                ShowTotal = ETWAnalyzer.Commands.DumpCommand.TotalModes.None,
+                SortOrder = ETWAnalyzer.Commands.DumpCommand.SortOrders.StartTime,
+            };
+
+            dumper.Print(data);
+
+            testOutput.Flush();
+
+            string[] expectedOutput = new string[]
+            {
+                "Proces Start Time                     Stop Time                     Duration   Return  Parent         Process Command Line",
+                "sId                                                                            Code                   ",
+                "1/1/0001 12:00:00 AM   File3 " ,
+                "   111 Start: 2000-01-01 10:00:00.000 Stop: 2000-01-01 10:00:10.000                    Parent:     11  " ,
+            };
+
+            var lines = testOutput.GetSingleLines();
+            Assert.Equal(expectedOutput.Length, lines.Count);
+            for (int i = 0; i < expectedOutput.Length; i++)
+            {
+                Assert.Equal(expectedOutput[i], lines[i]);
+            }
+        }
+
     }
 }
