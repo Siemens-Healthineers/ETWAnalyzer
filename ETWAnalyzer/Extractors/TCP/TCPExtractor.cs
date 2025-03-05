@@ -116,7 +116,7 @@ namespace ETWAnalyzer.Extractors.TCP
                         OnTcpAcceptListenerComplete(ev);
                         break;
                     case TcpETWConstants.TcpCloseTcbRequest:
-                        OnClose(ev);
+                        OnClose(ev, results);
                         break;
                     case TcpETWConstants.TcpDisconnectTcbRtoTimeout:
                         OnRetransmitTimeout(ev);
@@ -337,19 +337,29 @@ namespace ETWAnalyzer.Extractors.TCP
             }
         }
 
-        private void OnClose(IGenericEvent ev)
+        private void OnClose(IGenericEvent ev, ETWExtract extract)
         {
-            ulong tcb =  (ulong) ev.Fields[TcpETWConstants.TcbField].AsAddress.Value;
-            if (TCBFilter(tcb))
+            TcpCloseTcbRequest close = new TcpCloseTcbRequest(ev);
+
+            if (TCBFilter(close.Tcb))
             {
+                bool bFound = false;
                 foreach (var connect in myConnections.OrderByDescending(x => x.TimeStampOpen))
                 {
-                    if (connect.Tcb == tcb)
+                    if (connect.Tcb == close.Tcb)
                     {
                         connect.TimeStampClose = ev.Timestamp.DateTimeOffset;
+                        bFound = true;
                         break;
                     }
                 }
+
+                if( !bFound)  // connections which are closed, but were not opened during the trace need to add a synthetic connection
+                {
+                    // normally close is issued by Idle which is not a real process. Use invalid here.
+                    myConnections.Add( new TcpRequestConnect(close.Tcb, close.LocalIpAndPort, close.RemoteIpAndPort, null, close.Timestamp, ETWProcessIndex.Invalid));
+                }
+
             }
         }
 
