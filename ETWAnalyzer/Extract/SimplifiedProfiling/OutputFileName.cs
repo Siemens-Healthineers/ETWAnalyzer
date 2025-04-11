@@ -63,7 +63,7 @@ namespace TAU.Toolkit.Diagnostics.Profiling.Simplified
         /// </summary>
         /// <param name="filename">complete file name with out path</param>
         /// <returns>a new instance of <see cref="OutputFileName"/>, if the format is matching or null, if parsing was not sucessfull</returns>
-        public static OutputFileName ParseFromFileName(string filename)
+        public static OutputFileName ParseFromFileName(string filename, bool bAllowAlternateFileNames=false)
         {
             OutputFileName outputFileName = new OutputFileName
             {
@@ -137,7 +137,15 @@ namespace TAU.Toolkit.Diagnostics.Profiling.Simplified
                 }
                 else
                 {
-                    goto failure;
+                    if (bAllowAlternateFileNames)
+                    {
+                        goto success;
+                    }
+                    else
+                    {
+                        goto failure;
+                    }
+
                 }
 
                 if (fragments.Count > 0)
@@ -145,7 +153,15 @@ namespace TAU.Toolkit.Diagnostics.Profiling.Simplified
                     success = DateTime.TryParseExact(fragments.Dequeue(), @"yyyyMMdd-HHmmss", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime stopTime);
                     if (!success)
                     {
-                        goto failure;
+                        if (bAllowAlternateFileNames)
+                        {
+                            goto success;
+                        }
+                        else
+                        {
+                            goto failure;
+                        }
+
                     }
                     outputFileName.ProfilingStoppedTime = stopTime;
                 }
@@ -160,6 +176,7 @@ namespace TAU.Toolkit.Diagnostics.Profiling.Simplified
                     goto failure;
                 }
 
+             success:
                 return outputFileName;
             }
             catch (Exception)
