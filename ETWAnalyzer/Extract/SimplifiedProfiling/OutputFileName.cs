@@ -62,6 +62,7 @@ namespace TAU.Toolkit.Diagnostics.Profiling.Simplified
         /// decomposes the given file name to the seperate pieces
         /// </summary>
         /// <param name="filename">complete file name with out path</param>
+        /// <param name="bAllowAlternateFileNames"></param>
         /// <returns>a new instance of <see cref="OutputFileName"/>, if the format is matching or null, if parsing was not sucessfull</returns>
         public static OutputFileName ParseFromFileName(string filename, bool bAllowAlternateFileNames=false)
         {
