@@ -186,11 +186,11 @@ namespace ETWAnalyzer.EventDump
         /// Common method to format time into the same format across all commands
         /// </summary>
         /// <param name="time">Local time</param>
-        /// <param name="sessionstart">ETW Trace session start time</param>
+        /// <param name="sessionStart">ETW Trace session start time</param>
         /// <param name="fmt">Controls how time is formatted.</param>
         /// <param name="alignWidth">if true the output width is adjusted to some common width depending on the used time format</param>
         /// <returns>Formatted time string locale independent</returns>
-        protected internal string GetDateTimeString(DateTimeOffset? time, DateTimeOffset sessionstart, TimeFormats fmt, bool alignWidth=false)
+        protected internal string GetDateTimeString(DateTimeOffset? time, DateTimeOffset sessionStart, TimeFormats fmt, bool alignWidth=false)
         {
             if (time == null)
             {
@@ -199,11 +199,11 @@ namespace ETWAnalyzer.EventDump
 
             if (fmt == TimeFormats.LocalTime || fmt == TimeFormats.HereTime || fmt == TimeFormats.UTCTime)
             {
-                return GetTimeString(time.Value, sessionstart, fmt).WithWidth(alignWidth ? GetWidth(fmt) : 0);
+                return GetTimeString(time.Value, sessionStart, fmt).WithWidth(alignWidth ? GetWidth(fmt) : 0);
             }
             else
             {
-                return GetDateTimeString(ConvertTime(time.Value, sessionstart, fmt)).WithWidth(alignWidth ? GetWidth(fmt) : 0);
+                return GetDateTimeString(ConvertTime(time.Value, sessionStart, fmt)).WithWidth(alignWidth ? GetWidth(fmt) : 0);
             }
         }
 
