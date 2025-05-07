@@ -20,6 +20,7 @@ namespace ETWAnalyzer.Commands
         internal const string AnalyzeArg = "-analyze";
         internal const string LoadSymbolArg = "-loadsymbol";
         internal const string ConsoleArg = "-console";
+        internal const string ConvertTimeCommand = "-converttime";
 
         /// <summary>
         /// Create a command 
@@ -52,6 +53,9 @@ namespace ETWAnalyzer.Commands
                     case ConsoleArg:
                         lret = new ConsoleCommand(args);
                         break;
+                    case ConvertTimeCommand:
+                        lret = new ConvertTimeCommand(args);
+                        break;  
                     default:
                         break;
                 }

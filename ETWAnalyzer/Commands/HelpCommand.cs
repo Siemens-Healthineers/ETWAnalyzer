@@ -16,7 +16,7 @@ namespace ETWAnalyzer.Commands
     {
         private static readonly string HelpString =
            $"ETWAnalyzer {FileVersionInfo.GetVersionInfo(Process.GetCurrentProcess().MainModule.FileName).FileVersion}" + Environment.NewLine +
-            " ETWAnalyzer [green]-help[/green] [Extract, Dump, Console, Convert or LoadSymbol]  Get further information about the specific sub command" + Environment.NewLine +
+            " ETWAnalyzer [green]-help[/green] [Extract, Dump, Console, Convert, ConvertTime or LoadSymbol]  Get further information about the specific sub command" + Environment.NewLine +
             " ETWAnalyzer [green]-Console[/green] [input files]" + Environment.NewLine +
             "        Interactive mode. Useful if working with bigger data sets without the need to reload data on every query. Enter .help to get more information." + Environment.NewLine +
             " ETWAnalyzer [green]-Convert[/green] -filedir xx.etl -pid dd [-perthread]" + Environment.NewLine +
@@ -27,6 +27,8 @@ namespace ETWAnalyzer.Commands
             "        Extract data from etl file/s and write summary data into json files." + Environment.NewLine +
             " ETWAnalyzer [green]-LoadSymbol[/green] -filedir xxx.json -symserver ..." + Environment.NewLine +
             "        Resolve method names from an extracted Json file." + Environment.NewLine +
+            " ETWAnalyzer [green]-ConvertTime[/green] -filedir xxx.json -time ..." + Environment.NewLine +
+            "        Convert a time string to an ETW session time in seconds." + Environment.NewLine +
             "[yellow]Examples:[/yellow] " + Environment.NewLine +
             "[green]Get more help on specific option[/green]" + Environment.NewLine +
             "    ETWAnalyzer -help [Extract, Dump, Convert or Loadsymbol]" + Environment.NewLine +

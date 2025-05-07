@@ -117,6 +117,7 @@ namespace ETWAnalyzer.Commands
                 ".unload" => Unload(args),
                 ".cls" => Cls(args),
                 ".dump" => CreateDumpCommand(args),
+                ".converttime" => CreateConvertTimeCommand(args),
                 ".exit" => new QuitCommand(args),
                 ".list" => ListFiles(args),
                 ".processfmt" => SetProcessFmt(args),
@@ -290,6 +291,14 @@ namespace ETWAnalyzer.Commands
             {
                 ShowFullFileName = ShowFullFileNameFlag,
             };
+        }
+
+        ConvertTimeCommand CreateConvertTimeCommand(string[] args)
+        {
+            var argsAndTests = ApplyFileDirFilter(args);
+            List<string> filteredArgs = argsAndTests.Item1.ToList();
+
+            return new ConvertTimeCommand(filteredArgs.ToArray(), argsAndTests.Item2);
         }
 
         /// <summary>
