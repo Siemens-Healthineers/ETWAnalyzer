@@ -54,8 +54,26 @@ namespace ETWAnalyzer.Extractors.TCP
         public ulong Tcb { get; set; }
         public UInt64 DataBytesOut { get; set; }
         public UInt64 DataBytesIn { get; set; }
+
+        /// <summary>
+        /// Seem to combine Segments. This count is always lower than SegmentsOut
+        /// </summary>
         public UInt64 DataSegmentsOut { get; set; }
+
+        /// <summary>
+        /// Seems to combine Segments. This count is always lower than SegmentsOut
+        /// </summary>
         public UInt64 DataSegmentsIn { get; set;}
+
+        /// <summary>
+        /// Relates to Packets Out 
+        /// </summary>
+        public ulong SegmentsOut { get; }
+
+        /// <summary>
+        /// Relates to Packets In  
+        /// </summary>
+        public ulong SegmentsIn { get; }
         public UInt32 DupAcksIn { get; set; }
         public UInt32 BytesRetrans { get; set; }
         public UInt32 Timeouts { get; set; }
@@ -70,6 +88,8 @@ namespace ETWAnalyzer.Extractors.TCP
             DataBytesIn = ev.Fields["DataBytesIn"].AsUInt64;
             DataSegmentsOut = ev.Fields["DataSegmentsOut"].AsUInt64;
             DataSegmentsIn = ev.Fields["DataSegmentsIn"].AsUInt64;
+            SegmentsOut = ev.Fields["SegmentsOut"].AsUInt64;
+            SegmentsIn = ev.Fields["SegmentsIn"].AsUInt64;
             DupAcksIn = ev.Fields["DupAcksIn"].AsUInt32;
             BytesRetrans = ev.Fields["BytesRetrans"].AsUInt32;
             Timeouts = ev.Fields["Timeouts"].AsUInt32;
