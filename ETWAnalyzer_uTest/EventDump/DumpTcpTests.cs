@@ -67,9 +67,9 @@ namespace ETWAnalyzer_uTest.EventDump
             
             tcpDumper.MinMaxConnectionDurationS = new MinMaxRange<double>(0, 10);
 
-            Assert.True(tcpDumper.MinMaxConnectionDurationFilter(connect_0s, connect_5s));
+            Assert.True(tcpDumper.MinMaxConnectionDurationFilter(connect_0s, connect_5s, DateTimeOffset.MaxValue));
 
-            Assert.True(tcpDumper.MinMaxConnectionDurationFilter(connect_0s, connect_10s));
+            Assert.True(tcpDumper.MinMaxConnectionDurationFilter(connect_0s, connect_10s, DateTimeOffset.MaxValue));
 
         }
 
@@ -80,7 +80,7 @@ namespace ETWAnalyzer_uTest.EventDump
 
             tcpDumper.MinMaxConnectionDurationS = new MinMaxRange<double>(0, 10);
 
-            Assert.False(tcpDumper.MinMaxConnectionDurationFilter(connect_0s, connect_11s));
+            Assert.False(tcpDumper.MinMaxConnectionDurationFilter(connect_0s, connect_11s, DateTimeOffset.MaxValue));
 
         }
 
@@ -89,7 +89,17 @@ namespace ETWAnalyzer_uTest.EventDump
         {
             DumpTcp tcpDumper = new();
 
-            Assert.True(tcpDumper.MinMaxConnectionDurationFilter(connect_0s, connect_11s));
+            Assert.True(tcpDumper.MinMaxConnectionDurationFilter(connect_0s, connect_11s, DateTimeOffset.MaxValue));
+        }
+
+        [Fact]
+        public void MinMaxConnectionDuration_NoEndTime_UsesSessionEnd()
+        {
+            DumpTcp tcpDumper = new();
+            tcpDumper.MinMaxConnectionDurationS = new MinMaxRange<double>(10, null);
+
+            Assert.True(tcpDumper.MinMaxConnectionDurationFilter(connect_0s, null, connect_11s));
+            Assert.False(tcpDumper.MinMaxConnectionDurationFilter(connect_0s, null, connect_5s));
 
         }
 

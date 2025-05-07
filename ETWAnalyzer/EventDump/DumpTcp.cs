@@ -752,7 +752,7 @@ namespace ETWAnalyzer.EventDump
                             continue;
                         }
 
-                        if (!MinMaxConnectionDurationFilter(connection.TimeStampOpen, connection.TimeStampClose))
+                        if (!MinMaxConnectionDurationFilter(connection.TimeStampOpen, connection.TimeStampClose, file.Extract.SessionEnd))
                         {
                             continue;
                         }
@@ -912,11 +912,11 @@ namespace ETWAnalyzer.EventDump
             };
         }
 
-        internal bool MinMaxConnectionDurationFilter(DateTimeOffset? connectTime, DateTimeOffset? closeTime)
+        internal bool MinMaxConnectionDurationFilter(DateTimeOffset? connectTime, DateTimeOffset? closeTime, DateTimeOffset sessionEnd)
         {
             bool lret = false;
             DateTimeOffset startTime = connectTime.HasValue ? connectTime.Value : DateTimeOffset.MinValue;
-            DateTimeOffset endTime = closeTime.HasValue ? closeTime.Value : DateTimeOffset.MaxValue;
+            DateTimeOffset endTime = closeTime.HasValue ? closeTime.Value : sessionEnd;
             
             lret = MinMaxConnectionDurationS.IsWithin((endTime - startTime).TotalSeconds);
             return lret;
