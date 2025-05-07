@@ -30,6 +30,11 @@ namespace ETWAnalyzer.TraceProcessorHelpers
         public const int TcpDataTransferSendId = 1332;
 
         /// <summary>
+        /// Fields LocalAddress, RemoteAddress, Status, ProcessId, Compartment, Tcb, ProcessStartKey,
+        /// </summary>
+        public const int TcpShutdownTcb = 1044;
+
+        /// <summary>
         /// Fields: Tcb, SndUna, RexmitCount,SRTT,RTO 
         /// </summary>
         public const int TcpDataTransferRetransmitRound = 1351;
@@ -44,6 +49,10 @@ namespace ETWAnalyzer.TraceProcessorHelpers
         /// </summary>
         public const int TcpTemplateChanged = 1224;
 
+        /// <summary>
+        /// Fields: Tcb, SndUna, SndMax
+        /// </summary>
+        public const int TcpConnectionKeepAlive = 1188;
 
         public enum TCPIP_TEMPLATE_TYPES : UInt32
         {
@@ -82,6 +91,11 @@ namespace ETWAnalyzer.TraceProcessorHelpers
         public const int TcpConnectionSummary = 1477;
 
         /// <summary>
+        /// Fields: LocalAddress, RemoteAddress, Status, ProcessId, Compartment, Tcb, ProcessStartKey
+        /// </summary>
+        public const int TcpConnectTcbFailure = 1034;
+
+        /// <summary>
         /// Fields: Tcb:Pointer,  SndUna:UInt32, SndMax:UInt32, SendAvailable:UInt32, TailProbeSeq:UInt32, TailProbeLast:UInt32, ControlsToSend:UInt32, ThFlags:UInt8 
         /// </summary>
         public const int TcpTailLossProbe = 1385;
@@ -90,6 +104,11 @@ namespace ETWAnalyzer.TraceProcessorHelpers
         /// Fields: Tcb:Pointer, LocalAddress:Binary, RemoteAddress:Binary, State:UInt32, Pid:UInt32, ProcessStartKey 
         /// </summary>
         public const int TcpConnectionRundown = 1300;
+
+        /// <summary>
+        /// Fields: Interface, IpAddrLen, IpAddress DlAddrLen, DLAddress, Old Neighbor State, New Neighbor State, Neighbor  Event, Compartment, 
+        /// </summary>
+        public const int IpNeighborState = 1324;
 
         /// <summary>
         /// Fields: LocalAddress:Binary RemoteAddress:Binary Status:UInt32  ProcessId:UInt32  Compartment:UInt32  Tcb:Pointer 
@@ -137,6 +156,11 @@ namespace ETWAnalyzer.TraceProcessorHelpers
         public const string CompartmentField = "Compartment";
 
         /// <summary>
+        /// Used for process correlation
+        /// </summary>
+        public const string ProcessStartKey = "ProcessStartKey";
+
+        /// <summary>
         /// Process Id
         /// </summary>
         public const string PidField = "Pid";
@@ -161,5 +185,9 @@ namespace ETWAnalyzer.TraceProcessorHelpers
         /// </summary>
         public const string SndUnaField = "SndUna";
 
+        /// <summary>
+        /// Connection NtStatus field
+        /// </summary>
+        public static string StatusField = "Status";
     }
 }

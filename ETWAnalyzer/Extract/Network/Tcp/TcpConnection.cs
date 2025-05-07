@@ -71,23 +71,20 @@ namespace ETWAnalyzer.Extract.Network.Tcp
         /// </summary>
         public ETWProcessIndex ProcessIdx { get; }
 
+        /// <summary>
+        /// Connection specific data
+        /// </summary>
+        public TcpConnectionStatistics Statistics { get; }
 
         /// <summary>
-        /// Time when data was last sent
+        /// Interface implementation
         /// </summary>
-        public DateTimeOffset? LastSent { get; internal set; }
-
-        /// <summary>
-        /// Time when data was last received
-        /// </summary>
-        public DateTimeOffset? LastReceived { get; }
-
+        ITcpConnectionStatistics ITcpConnection.Statistics => Statistics;
 
         /// <summary>
         /// Time when connection was closed due to retransmission timeout
         /// </summary>
         public DateTimeOffset? RetransmitTimeout { get; }
-
 
         /// <summary>
         /// Socket connect/disconnect time format string
@@ -109,13 +106,12 @@ namespace ETWAnalyzer.Extract.Network.Tcp
         /// <param name="datagramsSent"></param>
         /// <param name="datagramsReceived"></param>
         /// <param name="processIdx"></param>
-        /// <param name="lastReceived"></param>
-        /// <param name="lastSent"></param>
         /// <param name="retransmitTimeout"></param>
+        /// <param name="statistics"></param>
         /// <exception cref="ArgumentNullException">When localipandPort or remoteipAndPort are null.</exception>
         public TcpConnection(ulong tcb, SocketConnection localipandPort, SocketConnection remoteipAndPort, DateTimeOffset? timeStampOpen, DateTimeOffset? timeStampClose, string lastTcpTemplate,
             ulong bytesSent, int datagramsSent,
-            ulong bytesReceived, int datagramsReceived, ETWProcessIndex processIdx, DateTimeOffset? retransmitTimeout, DateTimeOffset? lastSent, DateTimeOffset? lastReceived)
+            ulong bytesReceived, int datagramsReceived, ETWProcessIndex processIdx, DateTimeOffset? retransmitTimeout, TcpConnectionStatistics statistics)
         {
             Tcb = tcb;
             LocalIpAndPort = localipandPort ?? throw new ArgumentNullException(nameof(localipandPort));
@@ -129,8 +125,7 @@ namespace ETWAnalyzer.Extract.Network.Tcp
             DatagramsReceived = datagramsReceived;
             ProcessIdx = processIdx;
             RetransmitTimeout = retransmitTimeout;
-            LastSent = lastSent;    
-            LastReceived = lastReceived;  
+            Statistics = statistics;
         }
 
 

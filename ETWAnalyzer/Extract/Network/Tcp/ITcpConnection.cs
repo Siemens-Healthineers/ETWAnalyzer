@@ -66,14 +66,9 @@ namespace ETWAnalyzer.Extract.Network.Tcp
         DateTimeOffset? TimeStampOpen { get; }
 
         /// <summary>
-        /// Time when data was last sent
+        /// Connection specific data
         /// </summary>
-        public DateTimeOffset? LastSent { get; }
-
-        /// <summary>
-        /// Time when data was last received
-        /// </summary>
-        public DateTimeOffset? LastReceived { get; }
+        ITcpConnectionStatistics Statistics { get; }
 
         /// <summary>
         /// Time when connection was closed due to retransmission timeout

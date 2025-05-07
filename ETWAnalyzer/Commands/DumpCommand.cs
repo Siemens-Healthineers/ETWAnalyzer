@@ -11,7 +11,6 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Threading;
 using static ETWAnalyzer.Extract.ETWProcess;
 
 namespace ETWAnalyzer.Commands
@@ -364,9 +363,9 @@ namespace ETWAnalyzer.Commands
         "       -DnsQueryFilter xx        Filter by host name. Multiple filters are separated by ;" + Environment.NewLine;
 
         static readonly string TcpHelpStringHeader =
-        "  Tcp -filedir/fd Extract\\ or xx.json7z [-IpPort xx] [-ShowRetransmits] [-TopN dd nn] [-SortBy ReceivedCount/SentCount/ReceivedSize/SentSize/TotalCount/TotalSize/ConnectTime/DisconnectTime/RetransmissionCount/RetransmissionTime/MaxRetransmissionTime]   " + Environment.NewLine +
+        "  Tcp -filedir/fd Extract\\ or xx.json7z [-IpPort xx] [-ShowRetransmits] [-TopN dd nn] [-SortBy ReceivedCount/SentCount/ReceivedSize/SentSize/TotalCount/TotalSize/ConnectTime/DisconnectTime/RetransmissionCount/RetransmissionTime/MaxRetransmissionTime/LastSentTime/LastReceivedTime/MaxReceiveDelay/MaxReceiveDelay]" + Environment.NewLine +
         "       [-SortRetransmitBy Delay/Time] [-MinMaxRetransDelayMs xx-yy] [-MinMaxRetransBytes xx-yy] [-MinMaxRetransCount xx-yy] [-MinMaxSentBytes xx-yy] [-MinMaxReceivedBytes xx-yy] [-TopNRetrans dd nn] [-OnlyClientRetransmit] [-Details] [-Tcb 0xdddddd] " + Environment.NewLine +
-        "       [-Column xx;yy] [-Reset] [-MinMaxConnect xx yy] [-MinMaxDisconnect xx zz]" + Environment.NewLine +
+        "       [-MinMaxLastReceivedS xx-yy] [-MinMaxLastSentS xx-yy] [-Column xx;yy] [-Reset] [-MinMaxConnect xx yy] [-MinMaxDisconnect xx zz] [-KeepAlive] [-MinMaxReceiveDelayS xx yy] [-MinMaxSendDelayS xx yy]" + Environment.NewLine +
         "       [-TimeFmt s,Local,LocalTime,UTC,UTCTime,Here,HereTime] [-TimeDigits d] [-csv xx.csv] [-NoCSVSeparator] [-NoCmdLine] [-Clip] [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd] [-MinMaxMsTestTimes xx-yy ...] [-ProcessName/pn xx.exe(pid)] " + Environment.NewLine +
         "       [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-CmdLine substring] [-recursive] [-ZeroTime/zt Marker/First/Last/ProcessStart filter] [-ZeroProcessName/zpn filter] [-ShowTotal [File/None]] [-ProcessFmt timefmt] " + Environment.NewLine;
         static readonly string TcpHelpString = TcpHelpStringHeader +
@@ -377,7 +376,7 @@ namespace ETWAnalyzer.Commands
         "       -TopN dd nn                Show top n connection by current sort order" + Environment.NewLine +
         "       -TopNRetrans dd nn         Show top n retransmission events when -ShowRetransmit is used" + Environment.NewLine +
         "       -SortBy [...]              Default sort order is total bytes. Valid sort orders are ReceivedCount/SentCount/ReceivedSize/SentSize/TotalCount/TotalSize/ConnectTime/DisconnectTime/RetransmissionCount/RetransmissionTime/MaxRetransmissionTime" + Environment.NewLine +
-        "                                  Sort applies to totals per connection. RetransmissionTime is the sum of all Delays. MaxRetransmissionTime sorts connections by highest max retransmission delay." + Environment.NewLine +
+        "                                  LastSentTime/LastReceivedTime/MaxReceiveDelay/MaxReceiveDelay. Sort applies to totals per connection. RetransmissionTime is the sum of all Delays. MaxRetransmissionTime sorts connections by highest max retransmission delay." + Environment.NewLine +
         "       -Column xx;yy              Enable specific columns which are printed or exclude them by prepending them with !. Column wildards are supported. E.g. -column !Retrans* will hide all columns which start with Retrans in their name." + Environment.NewLine +
        $"                                  Valid column names are {String.Join(";", DumpTcp.ColumnNames.Take(10))}" + Environment.NewLine +
        $"                                  {String.Join(";", DumpTcp.ColumnNames.Skip(10))}" + Environment.NewLine +
@@ -385,16 +384,22 @@ namespace ETWAnalyzer.Commands
         "       -ShowRetransmit            Show single retransmission events with timing data. Use -timefmt s to convert time to WPA time. Use this or -Details to get all events into a csv file." + Environment.NewLine +
         "       -OnlyClientRetransmit      Only show client retransmissions which are visible by duplicate received packets with a payload > 1 bytes." + Environment.NewLine +
         "       -Reset                     Filter for connections which were reset by us due to connection establishment/send timeouts." + Environment.NewLine +
-        "       -MinMaxConnect    xx yy    Connect time filter in ETW session time in seconds." + Environment.NewLine +
-        "       -MinMaxDisconnect xx yy    Disconnect time filter in ETW session time in seconds." + Environment.NewLine +
+        "       -MinMaxConnect    xx yy    Connect time filter in ETW session time in seconds. Use -MinMaxConnect 0 0 to find connections which have no connect time because they did already exist before tracing started." + Environment.NewLine +
+        "       -MinMaxDisconnect xx yy    Disconnect time filter in ETW session time in seconds. Use -MinMaxDisconnect 0 0 to find connections which are still active. " + Environment.NewLine +
         "       -MinMaxRetransDelayMs xx-yy Filter by retransmission delay in ms. By default all retransmissions are shown." + Environment.NewLine +
         "       -MinMaxRetransBytes xx-yy  Filter every retransmission event by retransmission size (sent/received) in bytes. Default is > 1 bytes because 0 and 1 byte packets are often just ACKs or timer based ping packets." + Environment.NewLine +
         "       -MinMaxRetransCount xx-yy  Show only connections which have at least xx retransmission events" + Environment.NewLine + 
         "       -MinMaxSentBytes xx-yy     Filter connections which have sent at least xx bytes." + Environment.NewLine + 
         "       -MinMaxReceivedBytes xx-yy Filter connections which have received at least xx bytes." + Environment.NewLine +
-        "       -MinMaxConnectionDurationS xx-yy Filter connections which have duration of at least xx-yy seconds." + Environment.NewLine +
-        "       -Details                   Show retransmit Max/Median/Min, connect/disconnect time, used TCP template setting, TCB pointer." + Environment.NewLine +
-        "       -Tcb 0xdddddd              Filter by \"connection\" which is actually the Transfer Control Block pointer. Its value can be reused for new connections."+ Environment.NewLine 
+        "       -MinMaxConnectionDurationS xx yy Filter connections which have duration of at least xx yy seconds." + Environment.NewLine +
+        "       -MinMaxLastReceivedS xx yy Filter connections for last receive time in s. Use -MinMaxLastReceivedS 0 0 to find connections which have received no data." + Environment.NewLine +
+        "       -MinMaxLastSentS xx yy     Filter connections for last sent time in s. Use -MinMaxLastSentS 0 0 to find connections with no send activity." + Environment.NewLine +
+        "       -MinMaxReceiveDelayS xx yy  Filter connections which have a maximum receive delay between two packets of xx yy seconds. Useful to check if some keepalive mechanism is active." + Environment.NewLine +
+        "       -MinMaxSendDelayS xx yy     Filter connections which have a maximum send delay between two packets of xx yy seconds. Useful to check if some keepalive mechanism is active." + Environment.NewLine +
+        "       -KeepAlive                 Filter connections which have TCP keepalive enabled. If the connection lifetime is  too short this might skip connections because no keepalive packet was sent." + Environment.NewLine + 
+        "       -Details                   Show retransmit Max/Median/Min, connect/disconnect time, used TCP template setting, TCB pointer, ..." + Environment.NewLine +
+        "       -ShowStats                 Show connection statistics collected by OS during connection close or at trace start for an existing connection (can go missing due to event loss). This includes transmitted byte/packet counts over connection lifetime." + Environment.NewLine +
+        "       -Tcb 0xdddddd              Filter by \"connection\" which is actually the Transfer Control Block pointer. Its value can be reused for new connections." + Environment.NewLine 
         ;
 
         static readonly string ObjectRefHelpStringHeader =
@@ -750,6 +755,12 @@ namespace ETWAnalyzer.Commands
             RetransmissionCount,
             RetransmissionTime,
             MaxRetransmissionTime,
+            LastReceivedTime,
+            LastSentTime,
+            MaxSendDelay,
+            MaxReceiveDelay,
+
+
 
             // Retransmit Orders
             Delay,
@@ -960,6 +971,11 @@ namespace ETWAnalyzer.Commands
         public MinMaxRange<double> MinMaxDurationS { get; private set; } = new();
 
         public MinMaxRange<double> MinMaxConnectionDurationS { get; private set; } = new();
+        public MinMaxRange<double> MinMaxReceivedS {  get; private set; } = new();
+        public MinMaxRange<double> MinMaxReceiveDelayS { get; private set; } = new();
+        public MinMaxRange<double> MinMaxSendDelayS { get; private set; } = new();
+
+        public MinMaxRange<double> MinMaxSentS { get; private set; } = new();
 
         public int MethodCutStart { get; private set; }
         public int MethodCutLength { get; private set; } = int.MaxValue;
@@ -1054,6 +1070,8 @@ namespace ETWAnalyzer.Commands
         public MinMaxRange<double> MinMaxDisconnect { get; private set; } = new MinMaxRange<double>();
         public MinMaxRange<double> MinMaxConnect { get; private set; } = new MinMaxRange<double>();
         public bool Reset { get; private set; }
+        public bool ShowStats { get; private set; }
+        public bool KeepAliveFilter { get; private set; }
 
         public MinMaxRange<int> MinMaxRetransCount { get; private set; } = new();
 
@@ -1238,6 +1256,9 @@ namespace ETWAnalyzer.Commands
                     case "-showcaller":
                         ShowCaller = true;
                         break;
+                    case "-keepalive":
+                        KeepAliveFilter = true;
+                        break;
                     case "-showretransmit":
                         ShowRetransmit = true;
                         break;
@@ -1408,6 +1429,9 @@ namespace ETWAnalyzer.Commands
                     case "-showprocess":
                         ShowProcess = true;
                         break;
+                    case "-stats":
+                        ShowStats = true;
+                         break;
                     case "-showref":
                         ShowRef = true;
                         break;
@@ -1436,6 +1460,30 @@ namespace ETWAnalyzer.Commands
                         string maxConnectionDurationS = GetNextNonArg("-minmaxconnectiondurations", false);
                         Tuple<double, double> minMaxConnectionDinS = minConnectionDurationS.GetMinMaxDouble(maxConnectionDurationS, SecondUnit);
                         MinMaxConnectionDurationS = new MinMaxRange<double>(minMaxConnectionDinS.Item1, minMaxConnectionDinS.Item2);
+                        break;
+                    case "-minmaxlastreceiveds":
+                        string minlastReceivedS = GetNextNonArg("-minmaxlastreceiveds");
+                        string maxlastReceivedS = GetNextNonArg("-minmaxlastreceiveds", false);
+                        Tuple<double, double> minMaxReceivedS = minlastReceivedS.GetMinMaxDouble(maxlastReceivedS, SecondUnit);
+                        MinMaxReceivedS = new MinMaxRange<double>(minMaxReceivedS.Item1, minMaxReceivedS.Item2);
+                        break;
+                    case "-minmaxreceivedelays":
+                        string minreceiveDelayS = GetNextNonArg("-minmaxreceivedelays");
+                        string maxreceiveDelayS = GetNextNonArg("-minmaxreceivedelays", false);
+                        Tuple<double, double> minMaxReceiveDelayS = minreceiveDelayS.GetMinMaxDouble(maxreceiveDelayS, SecondUnit);
+                        MinMaxReceiveDelayS = new MinMaxRange<double>(minMaxReceiveDelayS.Item1, minMaxReceiveDelayS.Item2);
+                        break;
+                    case "-minmaxsenddelays":
+                        string minsendDelayS = GetNextNonArg("-minmaxsenddelays");
+                        string maxsendDelayS = GetNextNonArg("-minmaxsenddelays", false);
+                        Tuple<double, double> minMaxsendDelayS = minsendDelayS.GetMinMaxDouble(maxsendDelayS, SecondUnit);
+                        MinMaxSendDelayS = new MinMaxRange<double>(minMaxsendDelayS.Item1, minMaxsendDelayS.Item2);
+                        break;
+                    case "-minmaxlastsents":
+                        string minlastSentS = GetNextNonArg("-minmaxlastsents");
+                        string maxlastSentS = GetNextNonArg("-minmaxlastsents", false);
+                        Tuple<double, double> minMaxSentS = minlastSentS.GetMinMaxDouble(maxlastSentS, SecondUnit);
+                        MinMaxSentS = new MinMaxRange<double>(minMaxSentS.Item1, minMaxSentS.Item2);
                         break;
                     case "-minmaxwaitms":
                         string minMaxWaitms = GetNextNonArg("-minmaxwaitms");
@@ -2591,6 +2639,7 @@ namespace ETWAnalyzer.Commands
                             NoCmdLine = NoCmdLine,
                             TopN = TopN,
                             ShowDetails = ShowDetails,
+                            ShowStats = ShowStats,
                             TopNRetrans = TopNRetrans,
                             IpPortFilter = IpPortFilter,
                             SortOrder = SortOrder,
@@ -2605,6 +2654,11 @@ namespace ETWAnalyzer.Commands
                             MinMaxRetransCount = MinMaxRetransCount,
                             MinMaxDisconnect = MinMaxDisconnect,
                             MinMaxConnect = MinMaxConnect,
+                            MinMaxReceivedS = MinMaxReceivedS,
+                            MinMaxSentS = MinMaxSentS,
+                            MinMaxSendDelayS = MinMaxSendDelayS,
+                            MinMaxReceiveDelayS = MinMaxReceiveDelayS,
+                            KeepAliveFilter = KeepAliveFilter,
                             Reset = Reset,
                             TcbFilter = TcbFilter,
                             ZeroTimeMode = ZeroTimeMode,

@@ -34,6 +34,8 @@ namespace ETWAnalyzer.EventDump
             SortOrders.RetransmissionCount,
             SortOrders.RetransmissionTime,
             SortOrders.MaxRetransmissionTime,
+            SortOrders.LastReceivedTime,
+            SortOrders.LastSentTime,
         };
 
         /// <summary>
@@ -52,6 +54,7 @@ namespace ETWAnalyzer.EventDump
         public DumpCommand.SortOrders SortOrder { get; internal set; }
 
         public bool ShowDetails { get; set; }
+        public bool ShowStats { get; set; }
 
         public KeyValuePair<string, Func<string, bool>> IpPortFilter { get; internal set; } = new KeyValuePair<string, Func<string, bool>>(null, x => true);
 
@@ -82,8 +85,14 @@ namespace ETWAnalyzer.EventDump
         };
 
         public bool Reset { get; internal set; }
-        public MinMaxRange<double> MinMaxConnect { get; internal set; }
-        public MinMaxRange<double> MinMaxDisconnect { get; internal set; }
+
+        public MinMaxRange<double> MinMaxConnect { get; internal set; } = new();
+        public MinMaxRange<double> MinMaxDisconnect { get; internal set; } = new();
+        public MinMaxRange<double> MinMaxReceivedS { get; internal set; } = new();
+        public MinMaxRange<double> MinMaxSentS { get; internal set; } = new();
+        public bool KeepAliveFilter { get; internal set; }
+        public MinMaxRange<double> MinMaxSendDelayS { get; internal set; }
+        public MinMaxRange<double> MinMaxReceiveDelayS { get; internal set; }
 
         /// <summary>
         /// Unit testing only. ReadFileData will return this list instead of real data
@@ -98,7 +107,8 @@ namespace ETWAnalyzer.EventDump
                 string[] columms = new string[]
                     {   Col_CSVOptions, "Directory", Col_FileName, Col_Date, Col_TestCase, Col_TestTimeinms, Col_Baseline, Col_Process, Col_ProcessName, "Start Time", "End Time", "Duration in s",
                         "SourceIP","Source Port", "DestinationIP", "Destination Port", "TCB", "ConnectionIdx", "Sent Packets (Total per connection)", "Sent Bytes (Total per connection)", "Received Packets (Total per connection)", "Received Bytes (Total per connection)",
-                        "Retransmitted Packets (Total per connection)", "% Retransmitted Packets (Total per connection)", "TCP Template", "Connection Open Time", "Connection Close Time",
+                        "Retransmitted Packets (Total per connection)", "% Retransmitted Packets (Total per connection)", "TCP Template", "Connection Open Time", "Connection Close Time", 
+                        Col_LastSendTime, Col_LastReceiveTime, Col_KeepAlive, Col_MaxReceiveDelay, Col_MaxSendDelay, Col_StatBytesIn, Col_StatBytesOut, Col_StatSegmentsIn, Col_StatSegmentsOut,
                     };
 
                 string[] additionalColumns = new string[] { Col_CommandLine };
@@ -150,6 +160,16 @@ namespace ETWAnalyzer.EventDump
                                 tcpEvent.Connection.LastTcpTemplate,
                                 GetDateTimeString(tcpEvent.Connection.TimeStampOpen, tcpEvent.Session.AdjustedSessionStart, TimeFormatOption, false),
                                 GetDateTimeString(tcpEvent.Connection.TimeStampClose, tcpEvent.Session.AdjustedSessionStart, TimeFormatOption, false),
+                                GetDateTimeString(tcpEvent.Connection.Statistics.LastSent, tcpEvent.Session.AdjustedSessionStart, TimeFormatOption, false),
+                                GetDateTimeString(tcpEvent.Connection.Statistics.LastReceived, tcpEvent.Session.AdjustedSessionStart, TimeFormatOption, false),
+                                tcpEvent.Connection?.Statistics.KeepAlive == null ? "" : tcpEvent.Connection.Statistics.KeepAlive.Value.ToString(),
+                                tcpEvent.Connection?.Statistics.MaxReceiveDelayS == null ? "" : tcpEvent.Connection?.Statistics.MaxReceiveDelayS.Value.ToString($"F{base.OverridenOrDefaultTimePrecision}"),
+                                tcpEvent.Connection?.Statistics.MaxSendDelayS == null ? "" : tcpEvent.Connection?.Statistics.MaxSendDelayS.Value.ToString($"F{base.OverridenOrDefaultTimePrecision}"),
+                                tcpEvent.Connection?.Statistics.DataBytesIn == null ? 0 : tcpEvent.Connection?.Statistics.DataBytesIn.Value,
+                                tcpEvent.Connection?.Statistics.DataBytesOut == null ? 0 : tcpEvent.Connection?.Statistics.DataBytesOut.Value,
+                                tcpEvent.Connection?.Statistics.SegmentsIn == null ? 0 : tcpEvent.Connection?.Statistics.SegmentsIn.Value,
+                                tcpEvent.Connection?.Statistics.SegmentsOut == null ? 0 : tcpEvent.Connection?.Statistics.SegmentsOut.Value,
+
                                 GetDateTimeString(retrans.RetransmitTime, tcpEvent.Session.AdjustedSessionStart, TimeFormatOption, false),
                                 (int) retrans.RetransmitDiff().TotalMilliseconds,
                                 retrans.NumBytes,
@@ -183,6 +203,16 @@ namespace ETWAnalyzer.EventDump
                        tcpEvent.Connection.LastTcpTemplate,
                        GetDateTimeString(tcpEvent.Connection.TimeStampOpen, tcpEvent.Session.AdjustedSessionStart, TimeFormatOption, false),
                        GetDateTimeString(tcpEvent.Connection.TimeStampClose, tcpEvent.Session.AdjustedSessionStart, TimeFormatOption, false),
+                       GetDateTimeString(tcpEvent.Connection?.Statistics.LastSent, tcpEvent.Session.AdjustedSessionStart, TimeFormatOption, false),
+                       GetDateTimeString(tcpEvent.Connection?.Statistics.LastReceived, tcpEvent.Session.AdjustedSessionStart, TimeFormatOption, false),
+                       tcpEvent.Connection?.Statistics.KeepAlive == null ? "" : tcpEvent.Connection.Statistics.KeepAlive.Value.ToString(),
+                       tcpEvent.Connection?.Statistics.MaxReceiveDelayS == null ? "" : tcpEvent.Connection?.Statistics.MaxReceiveDelayS.Value.ToString($"F{base.OverridenOrDefaultTimePrecision}"),
+                       tcpEvent.Connection?.Statistics.MaxSendDelayS == null ? "" : tcpEvent.Connection?.Statistics.MaxSendDelayS.Value.ToString($"F{base.OverridenOrDefaultTimePrecision}"),
+                       tcpEvent.Connection?.Statistics.DataBytesIn == null ? 0 : tcpEvent.Connection?.Statistics.DataBytesIn.Value,
+                       tcpEvent.Connection?.Statistics.DataBytesOut == null ? 0 : tcpEvent.Connection?.Statistics.DataBytesOut.Value,
+                       tcpEvent.Connection?.Statistics.SegmentsIn == null ? 0 : tcpEvent.Connection?.Statistics.SegmentsIn.Value,
+                       tcpEvent.Connection?.Statistics.SegmentsOut == null ? 0 : tcpEvent.Connection?.Statistics.SegmentsOut.Value,
+
                        NoCmdLine ? "" : tcpEvent.Process.CommandLineNoExe);
                     }
                 }
@@ -214,7 +244,13 @@ namespace ETWAnalyzer.EventDump
         const string Col_LastSendTime = "LastSendTime";
         const string Col_LastReceiveTime = "LastReceiveTime";
         const string Col_TCB = "TCB";
-
+        const string Col_KeepAlive = "KeepAlive";
+        const string Col_MaxSendDelay = "MaxSendDelay";
+        const string Col_MaxReceiveDelay = "MaxReceiveDelay";
+        const string Col_StatBytesIn = "StatBytesIn";
+        const string Col_StatBytesOut = "StatBytesOut";
+        const string Col_StatSegmentsIn = "StatPacketsIn";
+        const string Col_StatSegmentsOut = "StatPacketsOut";
 
         bool GetEnable(string columnName)
         {
@@ -238,6 +274,13 @@ namespace ETWAnalyzer.EventDump
                 Col_ResetTime => GetOverrideFlag(Col_ResetTime, ShowDetails),
                 Col_LastSendTime => GetOverrideFlag(Col_LastSendTime, ShowDetails),
                 Col_LastReceiveTime => GetOverrideFlag(Col_LastReceiveTime, ShowDetails),
+                Col_KeepAlive => GetOverrideFlag(Col_KeepAlive, ShowDetails),
+                Col_MaxReceiveDelay => GetOverrideFlag(Col_MaxReceiveDelay, ShowDetails),
+                Col_MaxSendDelay => GetOverrideFlag(Col_MaxSendDelay, ShowDetails),
+                Col_StatBytesIn => GetOverrideFlag(Col_StatBytesIn, ShowStats),
+                Col_StatBytesOut => GetOverrideFlag(Col_StatBytesOut, ShowStats),
+                Col_StatSegmentsIn => GetOverrideFlag(Col_StatSegmentsIn, ShowStats),
+                Col_StatSegmentsOut => GetOverrideFlag(Col_StatSegmentsOut, ShowStats),
                 Col_TCB => GetOverrideFlag(Col_TCB, ShowDetails),
                 _ => throw new NotSupportedException($"Column {columnName} is not configurable."),
             };
@@ -249,9 +292,11 @@ namespace ETWAnalyzer.EventDump
         /// </summary>
         public static string[] ColumnNames =
         {
-            Col_Connection,Col_ReceivedPackets,Col_ReceivedBytes,Col_SentPackets,Col_SentBytes,Col_Total,Col_RetransmitCount,Col_RetransmitPercent, 
+            Col_Connection,Col_ReceivedPackets,Col_StatSegmentsIn,Col_SentPackets,Col_StatSegmentsOut,Col_ReceivedBytes,Col_StatBytesIn,Col_SentBytes,Col_StatBytesOut,  
+            Col_Total,Col_RetransmitCount,Col_RetransmitPercent, 
             Col_RetransmitDelay,Col_RetransmitMin,Col_RetransmitMedian,Col_RetransmitMax,
-            Col_Template,Col_ConnectTime,Col_DisconnectTime,Col_ResetTime,Col_LastSendTime, Col_LastReceiveTime, Col_TCB
+            Col_Template,Col_ConnectTime,Col_DisconnectTime,Col_ResetTime,Col_LastSendTime, Col_LastReceiveTime,Col_KeepAlive, Col_MaxReceiveDelay, Col_MaxSendDelay,
+            Col_TCB
         };
 
         private void PrintMatches(List<MatchData> data)
@@ -277,6 +322,7 @@ namespace ETWAnalyzer.EventDump
             int timeWidth = GetWidth(TimeFormatOption);
             const int PointerWidth = 16;
             const int TotalColumnWidth = 22;
+            const int KeepAliveWidth = 4; // true or no string 
 
 
             MultiLineFormatter formatter = new(
@@ -296,10 +342,10 @@ namespace ETWAnalyzer.EventDump
                 Color = ConsoleColor.Green,
             }, new()
             {
-                Title = "Received Bytes",
-                Name = Col_ReceivedBytes,
-                Enabled = GetEnable(Col_ReceivedBytes),
-                DataWidth = BytesCountWidth + " Bytes".Length,
+                Title = "Stat PacketsIn",
+                Name = Col_StatSegmentsIn,
+                Enabled = GetEnable(Col_StatSegmentsIn),
+                DataWidth = PacketCountWidth,
                 Color = ConsoleColor.Green,
             }, new()
             {
@@ -310,10 +356,38 @@ namespace ETWAnalyzer.EventDump
                 Color = ConsoleColor.Red,
             }, new()
             {
+                Title = "Stat PacketsOut",
+                Name = Col_StatSegmentsOut,
+                Enabled = GetEnable(Col_StatSegmentsOut),
+                DataWidth = PacketCountWidth,
+                Color = ConsoleColor.Red,
+            }, new()
+            {
+                Title = "Received Bytes",
+                Name = Col_ReceivedBytes,
+                Enabled = GetEnable(Col_ReceivedBytes),
+                DataWidth = BytesCountWidth + " B".Length,
+                Color = ConsoleColor.Green,
+            }, new()
+            {
+                Title = "Stat BytesIn",
+                Name = Col_StatBytesIn,
+                Enabled = GetEnable(Col_StatBytesIn),
+                DataWidth = BytesCountWidth + " B".Length,
+                Color = ConsoleColor.Green,
+            }, new()
+            {
                 Title = "Sent Bytes",
                 Name = Col_SentBytes,
                 Enabled = GetEnable(Col_SentBytes),
-                DataWidth = BytesCountWidth + " Bytes".Length,
+                DataWidth = BytesCountWidth + " B".Length,
+                Color = ConsoleColor.Red,
+            }, new()
+            {
+                Title = "Stat BytesOut",
+                Name = Col_StatBytesOut,
+                Enabled = GetEnable(Col_StatBytesOut),
+                DataWidth = BytesCountWidth + " B".Length,
                 Color = ConsoleColor.Red,
             }, new()
             {
@@ -408,6 +482,27 @@ namespace ETWAnalyzer.EventDump
                 Color = ConsoleColor.Green,
             }, new()
             {
+                Title = "Keep Alive",
+                Name = Col_KeepAlive,
+                Enabled = GetEnable(Col_KeepAlive),
+                DataWidth = KeepAliveWidth + 1,
+                Color = ConsoleColor.Green,
+            }, new()
+            {
+                Title = "MaxSendDelay",
+                Name = Col_MaxSendDelay,
+                Enabled = GetEnable(Col_MaxSendDelay),
+                DataWidth = OverridenOrDefaultTimePrecision + 4 + 1, // 3 digits before . + space 
+                Color = ConsoleColor.Red,
+            }, new()
+            {
+                Title = "MaxReceiveDelay",
+                Name = Col_MaxReceiveDelay,
+                Enabled = GetEnable(Col_MaxReceiveDelay),
+                DataWidth = OverridenOrDefaultTimePrecision + 4 + 1, // 3 digits before . + space 
+                Color = ConsoleColor.Green,
+            }, new()
+            {
                 Title = "TCB",
                 Name = Col_TCB,
                 Enabled = GetEnable(Col_TCB),
@@ -465,9 +560,13 @@ namespace ETWAnalyzer.EventDump
                     {
                         connection,
                         match.Connection.DatagramsReceived.ToString("N0"),
-                        match.Connection.BytesReceived.ToString("N0") + " Bytes",
+                        match.Connection?.Statistics.SegmentsIn == null ? "" : match.Connection?.Statistics.SegmentsIn.Value.ToString("N0"),
                         match.Connection.DatagramsSent.ToString("N0"),
-                        match.Connection.BytesSent.ToString("N0") + " Bytes",
+                        match.Connection?.Statistics.SegmentsOut == null ? "" : match.Connection?.Statistics.SegmentsOut.Value.ToString("N0"),
+                        match.Connection.BytesReceived.ToString("N0") + " B",
+                        match.Connection?.Statistics.DataBytesIn == null ? "" : match.Connection?.Statistics.DataBytesIn.Value.ToString("N0") + " B",
+                        match.Connection.BytesSent.ToString("N0") + " B",
+                        match.Connection?.Statistics.DataBytesOut == null ? "" : match.Connection?.Statistics.DataBytesOut.Value.ToString("N0") + " B",
                         GetTotalString(match, TotalColumnWidth),
                         match.Retransmissions.Count.ToString("N0"),
                         retransPercent,
@@ -479,16 +578,21 @@ namespace ETWAnalyzer.EventDump
                         GetDateTimeString(match.Connection.TimeStampOpen, match.Session.AdjustedSessionStart, TimeFormatOption, false),
                         GetDateTimeString(match.Connection.TimeStampClose, match.Session.AdjustedSessionStart, TimeFormatOption, false),
                         match.Connection.RetransmitTimeout != null ? GetDateTimeString(match.Connection.RetransmitTimeout, match.Session.AdjustedSessionStart, TimeFormatOption, false) : "",
-                        match.Connection.LastSent != null ? GetDateTimeString(match.Connection.LastSent, match.Session.AdjustedSessionStart, TimeFormatOption, false) : "",
-                        match.Connection.LastReceived != null ?  GetDateTimeString(match.Connection.LastReceived, match.Session.AdjustedSessionStart, TimeFormatOption, false) : "",
+                        match.Connection?.Statistics.LastSent != null ? GetDateTimeString(match.Connection.Statistics.LastSent, match.Session.AdjustedSessionStart, TimeFormatOption, false) : "",
+                        match.Connection?.Statistics.LastReceived != null ?  GetDateTimeString(match.Connection.Statistics.LastReceived, match.Session.AdjustedSessionStart, TimeFormatOption, false) : "",
+                        match.Connection?.Statistics.KeepAlive == null ? "" : match.Connection.Statistics.KeepAlive.Value.ToString(),
+                        match.Connection?.Statistics.MaxReceiveDelayS == null ? "" : match.Connection?.Statistics.MaxReceiveDelayS.Value.ToString($"F{base.OverridenOrDefaultTimePrecision}"),
+                        match.Connection?.Statistics.MaxSendDelayS == null ? "" : match.Connection?.Statistics.MaxSendDelayS.Value.ToString($"F{base.OverridenOrDefaultTimePrecision}"),
                         $"0x{"X".WidthFormat(match.Connection.Tcb, PointerWidth)}",
                         match.Process.GetProcessWithId(UsePrettyProcessName),
                         GetProcessTags(match.Process, match.Session.AdjustedSessionStart),
                         NoCmdLine ? "" : match.Process.CommandLineNoExe,
                     };
 
-                    formatter.Print(true, lineData);
-
+                    if (ShowTotal != TotalModes.Total)  // omit connection details in total mode
+                    {
+                        formatter.Print(true, lineData);
+                    }
                     printedFiles++;
 
                     if (ShowRetransmit)
@@ -586,18 +690,47 @@ namespace ETWAnalyzer.EventDump
                             continue;
                         }
 
-                        if( !MinMaxConnect.IsWithin(((connection.TimeStampOpen ?? DateTimeOffset.MaxValue)-file.Extract.SessionStart).TotalSeconds) )
+                        if( KeepAliveFilter )
+                        {
+                            if( connection?.Statistics.KeepAlive != true )
+                            {
+                                continue;
+                            }
+                        }
+
+
+                        if( !MinMaxConnect.IsWithin(((connection.TimeStampOpen ?? file.Extract.SessionStart) - file.Extract.SessionStart).TotalSeconds) )
                         {
                             continue;
                         }
 
-                        if (!MinMaxDisconnect.IsWithin(((connection.TimeStampClose ?? DateTimeOffset.MaxValue) - file.Extract.SessionStart).TotalSeconds))
+                        if ( !MinMaxDisconnect.IsWithin( ((connection.TimeStampClose ?? file.Extract.SessionStart) - file.Extract.SessionStart).TotalSeconds) )
+                        {
+                            continue;
+                        }
+                        
+                        if( !MinMaxReceivedS.IsWithin( ((connection?.Statistics.LastReceived ?? file.Extract.SessionStart) - file.Extract.SessionStart).TotalSeconds) )
+                        {
+                            continue;
+                        }
+
+                        if (!MinMaxSentS.IsWithin( ((connection?.Statistics.LastSent ?? file.Extract.SessionStart) - file.Extract.SessionStart).TotalSeconds) )
+                        {
+                            continue;
+                        }
+
+                        if( !MinMaxSendDelayS.IsWithin(connection?.Statistics.MaxSendDelayS ?? 0.0d))
+                        {
+                            continue;
+                        }
+
+                        if (!MinMaxReceiveDelayS.IsWithin(connection?.Statistics.MaxReceiveDelayS ?? 0.0d))
                         {
                             continue;
                         }
 
                         // filter by connection reset
-                        if( Reset && connection.RetransmitTimeout == null)
+                        if ( Reset && connection.RetransmitTimeout == null)
                         {
                             continue;
                         }
@@ -739,6 +872,10 @@ namespace ETWAnalyzer.EventDump
                 SortOrders.RetransmissionCount => match.Retransmissions.Count,
                 SortOrders.RetransmissionTime => (decimal) match.Retransmissions.Sum(x=>x.RetransmitDiff().TotalSeconds),
                 SortOrders.MaxRetransmissionTime => (decimal) match.RetransMaxms,
+                SortOrders.LastReceivedTime => connection?.Statistics.LastReceived != null ? connection.Statistics.LastReceived.Value.Ticks : 0m,
+                SortOrders.LastSentTime => connection?.Statistics.LastSent != null ? connection.Statistics.LastSent.Value.Ticks : 0m,
+                SortOrders.MaxReceiveDelay => connection?.Statistics.MaxReceiveDelayS != null ? (decimal) connection.Statistics.MaxReceiveDelayS.Value : 0m,
+                SortOrders.MaxSendDelay => connection?.Statistics.MaxSendDelayS != null ? (decimal)connection.Statistics.MaxSendDelayS.Value : 0m,
                 _ => match.Retransmissions.Count,
             };
             return lret;

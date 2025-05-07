@@ -10,7 +10,7 @@ namespace ETWAnalyzer.Extractors.TCP
 {
     /// <summary>
     /// Fired when connection is reset after the maximum number of retransmissions Microsoft-Windows-TCPIP/TcpConnectRestransmit in case of
-    /// connection establishment issues, or TcpDataTransferRetransmitRound after connecion has been established have occurred. 
+    /// connection establishment issues, or TcpDataTransferRetransmitRound after connection has been established have occurred. 
     /// </summary>
     internal class TcpDisconnectTcbRtoTimeout
     {
