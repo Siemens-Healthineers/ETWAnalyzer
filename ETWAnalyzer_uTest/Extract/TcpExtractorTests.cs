@@ -14,6 +14,7 @@ using System.Net;
 using Microsoft.Windows.EventTracing.Processes;
 using System.Security.Cryptography;
 using ETWAnalyzer.Extract.Network.Tcp;
+using System.ComponentModel.DataAnnotations;
 
 namespace ETWAnalyzer_uTest.Extract
 {
@@ -78,9 +79,9 @@ namespace ETWAnalyzer_uTest.Extract
             return connectEv.Object;
         }
 
-        IGenericEvent CreateDisconnect(Time timeStampTicks, Pid pid, TCB tcb)
+        IGenericEvent CreateDisconnect(Time timeStampTicks, Pid pid, TCB tcb, string srcIpPort, string dstIpPort)
         {
-            Mock<IGenericEvent>  disconnectEv = CreateEvent(timeStampTicks, TcpETWConstants.TcpCloseTcbRequest, pid, tcb, out Mock<IGenericEventFieldList> fields);
+            Mock<IGenericEvent>  disconnectEv = CreateEvent(timeStampTicks, TcpETWConstants.TcpCloseTcbRequest, pid, tcb, srcIpPort, dstIpPort, out Mock<IGenericEventFieldList> fields);
             return disconnectEv.Object;
         }
 
@@ -164,7 +165,7 @@ namespace ETWAnalyzer_uTest.Extract
                 CreateRetransmit(Time.T0_4, Pid.OneDrive,     TCB.One, SequenceNr.S_2000),
                 CreateSend(      Time.T0_5, Pid.OneDrive,     TCB.One, SequenceNr.S_2000, 100),
                 CreateRetransmit(Time.T0_5, Pid.OneDrive,     TCB.One, SequenceNr.S_2000),
-                CreateDisconnect(Time.T4_0, Pid.OneDrive,     TCB.One),
+                CreateDisconnect(Time.T4_0, Pid.OneDrive,     TCB.One, SrcIpPort, Remote1),
             };
 
             extractor.ExtractFromGenericEvents(extract, events);
@@ -208,7 +209,7 @@ namespace ETWAnalyzer_uTest.Extract
                 CreateReceive(   Time.T0_2, Pid.OneDrive,     TCB.One, SequenceNr.S_1001, 400),
                 CreateReceive(   Time.T0_2, Pid.OneDrive,     TCB.One, SequenceNr.S_1001, 400),
                 CreateRetransmit(Time.T0_2, Pid.OneDrive,     TCB.One, SequenceNr.S_2000),
-                CreateDisconnect(Time.T0_5, Pid.OneDrive,     TCB.One),
+                CreateDisconnect(Time.T0_5, Pid.OneDrive,     TCB.One, SrcIpPort, Remote1),
 
                 CreateConnect(   Time.T1_0, Pid.OneDrive,     TCB.One, SrcIpPort_1, Remote1),
                 CreateSend(      Time.T1_5, Pid.OneDrive,     TCB.One, SequenceNr.S_1000, 100),
@@ -218,7 +219,7 @@ namespace ETWAnalyzer_uTest.Extract
                 CreateSend(      Time.T3_5, Pid.SettingsHost, TCB.One, SequenceNr.S_2000, 600),
                 CreateSend(      Time.T3_5, Pid.SettingsHost, TCB.One, SequenceNr.S_3000, 600),
                 CreateRetransmit(Time.T3_5, Pid.SettingsHost, TCB.One, SequenceNr.S_3000),
-                CreateDisconnect(Time.T4_0, Pid.SettingsHost, TCB.One),
+                CreateDisconnect(Time.T4_0, Pid.SettingsHost, TCB.One, SrcIpPort_2, Remote1),
             };
 
             extractor.ExtractFromGenericEvents(extract, events);
@@ -253,19 +254,19 @@ namespace ETWAnalyzer_uTest.Extract
                 CreateReceive(   Time.T0_2, Pid.OneDrive,     TCB.One, SequenceNr.S_1001, 400),
                 CreateSend(      Time.T0_3, Pid.OneDrive,     TCB.One, SequenceNr.S_2000, 100),
                 CreateRetransmit(Time.T0_5, Pid.OneDrive,     TCB.One, SequenceNr.S_2000),
-                CreateDisconnect(Time.T0_5, Pid.OneDrive,     TCB.One),
+                CreateDisconnect(Time.T0_5, Pid.OneDrive,     TCB.One, SrcIpPort_1, Remote1),
 
                 CreateConnect(   Time.T1_0, Pid.OneDrive,     TCB.One, SrcIpPort_1, Remote1),
                 CreateSend(      Time.T1_5, Pid.OneDrive,     TCB.One, SequenceNr.S_1000, 500),
                 CreateSend(      Time.T1_5, Pid.OneDrive,     TCB.One, SequenceNr.S_2000, 500),
-                CreateDisconnect(Time.T1_9, Pid.OneDrive,     TCB.One),
+                CreateDisconnect(Time.T1_9, Pid.OneDrive,     TCB.One, SrcIpPort_1, Remote1),
 
                 CreateConnect(   Time.T2_0, Pid.SettingsHost, TCB.One, SrcIpPort_2, Remote1),
                 CreateSend(      Time.T2_5, Pid.SettingsHost, TCB.One, SequenceNr.S_2000, 600),
                 CreateSend(      Time.T2_5, Pid.SettingsHost, TCB.One, SequenceNr.S_3000, 600),
                 CreateSend(      Time.T2_8, Pid.SettingsHost, TCB.One, SequenceNr.S_3000, 600),
                 CreateRetransmit(Time.T2_8, Pid.SettingsHost, TCB.One, SequenceNr.S_3000),
-                CreateDisconnect(Time.T3_0, Pid.SettingsHost, TCB.One),
+                CreateDisconnect(Time.T3_0, Pid.SettingsHost, TCB.One, SrcIpPort_2, Remote1),
             };
 
             extractor.ExtractFromGenericEvents(extract, events);
@@ -333,6 +334,14 @@ namespace ETWAnalyzer_uTest.Extract
             var dstAddressField = new Mock<IGenericEventField>();
             dstAddressField.Setup(x => x.AsSocketAddress).Returns(ParseIPAndPort(dstIpPort));
 
+            var pidField = new Mock<IGenericEventField>();
+            pidField.Setup(x => x.AsUInt32).Returns((uint)pid);
+
+            var compartmentField = new Mock<IGenericEventField>();
+            compartmentField.Setup(x => x.AsUInt32).Returns(0); 
+
+            fields.Setup(x => x[TcpETWConstants.CompartmentField]).Returns(compartmentField.Object);
+            fields.Setup(x => x[TcpETWConstants.ProcessIdField]).Returns(pidField.Object);
             fields.Setup(x => x[TcpETWConstants.LocalAddressField]).Returns(srcAddressField.Object);
             fields.Setup(x => x[TcpETWConstants.RemoteAddressField]).Returns(dstAddressField.Object);
 
@@ -345,7 +354,7 @@ namespace ETWAnalyzer_uTest.Extract
 
             var tcbField = new Mock<IGenericEventField>();
             tcbField.Setup(x => x.AsAddress).Returns(new Address((long)tcb));
-
+           
             fields.Setup(x => x[TcpETWConstants.TcbField]).Returns(tcbField.Object);
 
             return ev;
