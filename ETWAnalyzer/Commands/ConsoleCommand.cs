@@ -33,6 +33,8 @@ namespace ETWAnalyzer.Commands
             public override string Help =>
                 ".cls"+ Environment.NewLine + 
                 "   Clear screen." + Environment.NewLine +
+                ".converttime -time ..." + Environment.NewLine +
+                "   Convert time/datetime string to ETW session time and back." + Environment.NewLine +
                $".dump xxx [ -fd *usecase1* ]" + Environment.NewLine + 
                 "   Query loaded file/s. Options are the same as in -Dump command. e.g. .dump CPU will print CPU metrics." + Environment.NewLine +
                 "     -fd *filter*    Filter loaded files which are queried. Filter is applied to full path file name." + Environment.NewLine +  
