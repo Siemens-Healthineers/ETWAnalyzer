@@ -228,6 +228,11 @@ too much work to track down are now a simple query. If your test is e.g. 3/30 ti
 see if e.g. a running Windows Installer did have an effect to your test execution time or if that did occur in other fast tests as well. 
 
 
+# Utility Commands
+- [Convert](ETWAnalyzer/Documentation/ConvertCommand.md) 
+- [ConvertTime](ETWAnalyzer/Documentation/ConvertTimeCommand.md) 
+- [LoadSymbol](ETWAnalyzer/Documentation/LoadSymbolCommand.md) 
+
 
 <!-- References -->
 [ETWAnalyzerLicense]:                                       <LICENSE>
