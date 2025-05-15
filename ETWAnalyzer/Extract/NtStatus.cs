@@ -609,9 +609,8 @@ namespace ETWAnalyzer.Extract
         /// </summary>
         DBG_TERMINATE_THREAD = 0x40010003,
 
-        /// <summary>
-        /// Debugger terminated the process.
-        /// </summary>
+       
+        // Debugger terminated the process.
         //DBG_TERMINATE_PROCESS = 0x40010004,
 
         /// <summary>
