@@ -612,7 +612,12 @@ namespace ETWAnalyzer.Extract
         /// <summary>
         /// Debugger terminated the process.
         /// </summary>
-        DBG_TERMINATE_PROCESS = 0x40010004,
+        //DBG_TERMINATE_PROCESS = 0x40010004,
+
+        /// <summary>
+        /// Renamed DBG_TERMINATE_PROCESS because that code is used for forced shutdown of processes during Windows Shutdown.
+        /// </summary>
+        Force_Shutdown = 0x40010004,
 
         /// <summary>
         /// Debugger obtained control of C.
@@ -9292,11 +9297,6 @@ namespace ETWAnalyzer.Extract
         /// </summary>
         CPP_EH_Exception = 0xe06d7363,
 
-
-        /// <summary>
-        /// Process was killed by OS forcefully
-        /// </summary>
-        Force_Shutdown = 0x40010004,
 
         /// <summary>
         /// Maximum value

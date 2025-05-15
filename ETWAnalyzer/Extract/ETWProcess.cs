@@ -202,7 +202,7 @@ namespace ETWAnalyzer.Extract
             string lret = "";
             if( value != null )
             {
-                if((value.Value > NtStatus.UNSUCCESSFUL && value.Value <= NtStatus.Max_Value))
+                if((value.Value > NtStatus.SUCCESS && value.Value <= NtStatus.Max_Value))
                 {
                     possibleCrash = true;
                     lret = value.Value.ToString();
