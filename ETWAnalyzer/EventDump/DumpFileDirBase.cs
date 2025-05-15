@@ -687,7 +687,7 @@ namespace ETWAnalyzer.EventDump
         {
             DateTimeOffset lret = test.PerformedAt;
             if ( !test.Files[0].IsValidTest && test.Files[0].JsonExtractFileWhenPresent != null && 
-                Program.myProgram.CurrentCommand?.GetType()?.Name != typeof(ExtractCommand).Name )  // do not load Json files into main extractor instance which could consume GB of data just to sort files by timestamp
+                Program.myProgram?.CurrentCommand?.GetType()?.Name != typeof(ExtractCommand).Name )  // do not load Json files into main extractor instance which could consume GB of data just to sort files by timestamp
             {
                 lret = test.Files[0].Extract.SessionStart;
             }
