@@ -799,9 +799,9 @@ namespace ETWAnalyzer.EventDump
                 var child = extract.Processes.OrderBy(x => x.StartTime).Where(x => x.ParentPid == parent.ProcessID && 
                                                                               x.StartTime > parent.StartTime && 
                                                                               x.StartTime < parent.EndTime &&
-                                                                              x.StartTime > handleduplicate.GetTime(extract.SessionStart)
+                                                                              x.StartTime > handleduplicate.GetTime(extract.BootTime)
                                                                               ).FirstOrDefault();
-                if( child?.StartTime > handleduplicate.GetTime(extract.SessionStart))
+                if( child?.StartTime > handleduplicate.GetTime(extract.BootTime))
                 {
                     lret = child;
                 }
@@ -921,7 +921,7 @@ namespace ETWAnalyzer.EventDump
 
         void PrintEventHeader(IStackEventBase ev, IETWExtract resolver, string name, string beforeProc = null)
         {
-            string timeStr = base.GetTimeString(ev.GetTime(resolver.SessionStart), resolver.SessionStart, this.TimeFormatOption);
+            string timeStr = base.GetTimeString(ev.GetTime(resolver.BootTime), resolver.SessionStart, this.TimeFormatOption);
             ColorConsole.WriteEmbeddedColorLine($"\t{timeStr} [magenta]{GetProcessId(ev.ProcessIdx, resolver),5}[/magenta]/{ev.ThreadId,-5} {name} {beforeProc}[magenta]{GetProcessAndStartStopTags(ev.ProcessIdx, resolver,false)}[/magenta] ", null, true);
         }
 
