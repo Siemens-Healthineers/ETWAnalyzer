@@ -376,6 +376,7 @@ namespace ETWAnalyzer.EventDump
 
             lret = lret.TrimEnd();
             lret = lret.TrimEnd(',');
+            lret = lret.Replace('[', '('); // Do not mess with colors in ColorConsole output
 
             return lret;
         }
