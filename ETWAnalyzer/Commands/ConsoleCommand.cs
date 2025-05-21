@@ -6,6 +6,7 @@ using ETWAnalyzer.Infrastructure;
 using ETWAnalyzer.ProcessTools;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 
@@ -35,6 +36,8 @@ namespace ETWAnalyzer.Commands
                 "   Clear screen." + Environment.NewLine +
                 ".converttime -time ..." + Environment.NewLine +
                 "   Convert time/datetime string to ETW session time and back." + Environment.NewLine +
+                ".dir [-r] [-od] folder" + Environment.NewLine +
+                "   Show files in folder. Use -r for recursive and -od for sorting files by modify time. Default sort order is alphabetic." + Environment.NewLine +
                $".dump xxx [ -fd *usecase1* ]" + Environment.NewLine + 
                 "   Query loaded file/s. Options are the same as in -Dump command. e.g. .dump CPU will print CPU metrics." + Environment.NewLine +
                 "     -fd *filter*    Filter loaded files which are queried. Filter is applied to full path file name." + Environment.NewLine +  
@@ -114,6 +117,7 @@ namespace ETWAnalyzer.Commands
             string[] args = parts.Skip(1).ToArray();
             ICommand command = cmd switch
             {
+                ".dir" => ShowDirectoryContents(args),   
                 ".load" => Load(args, bKeepOldFiles:false),
                 ".load+" => Load(args, bKeepOldFiles:true),
                 ".unload" => Unload(args),
@@ -342,6 +346,103 @@ namespace ETWAnalyzer.Commands
             }
 
             return (filteredArgs.ToArray(),filteredFiles.ToArray());
+        }
+
+        private ICommand ShowDirectoryContents(string[] args)
+        {
+            ICommand cmd = null;
+            string curDir = null;
+            try
+            {
+                bool sortByDate = false;
+                bool bRecursive = false;
+                Func<string, bool> isArg = x => x.StartsWith("/") || x.StartsWith("-");
+                List<string> noSwitches = new List<string>();
+                foreach (var arg in args)
+                {
+                    if (isArg(arg))
+                    {
+                        switch (arg.Substring(1).ToLowerInvariant())
+                        {
+                            case "od":
+                                sortByDate = true;
+                                break;
+                            case "r":
+                            case "rec":
+                            case "recursive":
+                                bRecursive = true;
+                                break;
+                        }
+                    }
+                    else
+                    {
+                        noSwitches.Add(arg);
+                    }
+                }
+
+                if( noSwitches.Count == 0)
+                {
+                    ColorConsole.WriteEmbeddedColorLine($"[red]Error: No directory specified. Use .dir [-r] [-od] <directory>[/red]");
+                    return cmd;
+                }
+
+                curDir = noSwitches[0];
+
+                var data = new TestRunData(curDir, bRecursive ? SearchOption.AllDirectories: SearchOption.TopDirectoryOnly);
+
+                SortOrders order = sortByDate ? SortOrders.ModifyTime : SortOrders.Name;
+
+                List<FileInfo> inputFiles = GetSorted(Directory.GetDirectories(curDir), order);
+
+                foreach (var dir in inputFiles)
+                {
+                    Console.WriteLine($"<DIR> {dir.LastWriteTime,-24} {dir.FullName}");
+                }
+
+                List<FileInfo> jsonFiles = GetSorted(data.AllFiles.Where(x => x.JsonExtractFileWhenPresent != null).Select(x => x.JsonExtractFileWhenPresent), order);
+
+                foreach (var json in jsonFiles) 
+                {
+                    Console.WriteLine($"{json.LastWriteTime,-24} {json.FullName}");
+                }
+            }
+            catch (DirectoryNotFoundException)
+            {
+                ColorConsole.WriteError($"Directory {curDir} was not found.");
+            }
+
+            return cmd;
+        }
+
+
+        enum SortOrders
+        {
+            Name,
+            ModifyTime,
+        }
+
+        
+        List<FileInfo> GetSorted(IEnumerable<FileInfo> files, SortOrders order)
+        {
+            List<FileInfo> result;
+            HashSet<FileInfo> unique = new HashSet<FileInfo>(files, new FileInfoEqualityComparer());
+
+
+            if ( order == SortOrders.Name)
+            {
+                result = unique.OrderBy(x => x.Name).ToList();
+            }
+            else
+            {
+                result = unique.OrderBy(x => x.LastWriteTime).ToList();
+            }
+
+            return result;
+        }
+
+        List<FileInfo> GetSorted(IEnumerable<string> files, SortOrders order)
+        {
+            return GetSorted(files.Select(x=>new FileInfo(x)), order);
         }
 
         /// <summary>
@@ -637,6 +738,38 @@ namespace ETWAnalyzer.Commands
             }
 
             public QuitCommand(string[] args) : base(args) { }
+        }
+
+        // Add the missing FileInfoEqualityComparer class definition to resolve the CS0246 error.  
+        // This implementation assumes that the equality comparison is based on the file name and last write time.  
+        internal class FileInfoEqualityComparer : IEqualityComparer<FileInfo>
+        {
+            public bool Equals(FileInfo x, FileInfo y)
+            {
+                if (x == null || y == null)
+                {
+                    return false;
+                }
+                return x.FullName.Equals(y.FullName, StringComparison.OrdinalIgnoreCase) &&
+                       x.LastWriteTime.Equals(y.LastWriteTime);
+            }
+
+            public int GetHashCode(FileInfo obj)
+            {
+                if (obj == null)
+                {
+                    throw new ArgumentNullException(nameof(obj));
+                }
+
+                // Replace HashCode.Combine with a manual hash code computation
+                unchecked
+                {
+                    int hash = 17;
+                    hash = hash * 23 + obj.FullName.ToLowerInvariant().GetHashCode();
+                    hash = hash * 23 + obj.LastWriteTime.GetHashCode();
+                    return hash;
+                }
+            }
         }
     }
 }
