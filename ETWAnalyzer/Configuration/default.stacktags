@@ -409,6 +409,12 @@
             <Entrypoint Module="csagent.sys" Method="*" />
         </Tag>
     </Tag>
+
+  <Tag Name="Antivirus - Carbon Black" Priority="1">
+    <Tag Name="Driver Parity.sys">
+      <Entrypoint Module="Parity.sys" Method="*" />
+    </Tag>
+  </Tag>
 	
     <Tag Name="Antivirus - CyberArk Security" Priority="1">
         <Tag Name="vfdrv.sys">
@@ -722,9 +728,30 @@
       <Entrypoint Module="perfproc.dll" Method="CollectSysProcessObjectData*"/>
     </Tag>
   </Tag>
+  <Tag Name="libssl">
+    <Tag Name="Read" Priority="1">
+      <Entrypoint Module="libssl-3-x64.dll" Method="SSL_read*"/>
+    </Tag>
+    <Tag Name="Write" Priority="1">
+      <Entrypoint Module="libssl-3-x64.dll" Method="SSL_write*"/>
+    </Tag>
+    <Entrypoint Module="libssl-3-x64.dll" Method="*"/>
+  </Tag>
+
   <Tag Name="zlib de/compression" Priority="1">
     <Entrypoint Module="zlib.dll" />
   </Tag>
+  <Tag Name="ZSTD de/compression" Priority="1">
+    <Entrypoint Module="libzstd.dll" />
+    <Tag Name="Compress" Priority="2">
+      <Entrypoint Module="libzstd.dll"  Method="ZSTD_compress"/>
+    </Tag>
+    <Tag Name="Decompress" Priority="2">
+      <Entrypoint Module="libzstd.dll"  Method="ZSTD_decompress"/>
+    </Tag>
+  </Tag>
+
+  
   <Tag Name="Libjpeg" Priority="1">
     <Entrypoint Module="libjpeg.dll" />
   </Tag>
@@ -818,6 +845,27 @@
       <Entrypoint Module="PresentationCore.ni.dll" Method="*System.Windows.UIElement.Measure*"/>
       <Entrypoint Module="PresentationCore.dll" Method="*System.Windows.UIElement::Measure*"/>
     </Tag>
+    <Tag Name="Grid Arrange">
+      <Entrypoint Module="PresentationFramework.ni.dll" Method="System.Windows.Controls.Grid.ArrangeOverride*"/>
+      <Entrypoint Module="PresentationFramework.dll" Method="System.Windows.Controls.Grid::ArrangeOverride*"/>
+    </Tag>
+    <Tag Name="ContentPresenter ArrangeOverride">
+      <Entrypoint Module="PresentationFramework.ni.dll" Method="System.Windows.Controls.ContentPresenter.ArrangeOverride*"/>
+      <Entrypoint Module="PresentationFramework.dll" Method="System.Windows.Controls.ContentPresenter::ArrangeOverride*"/>
+    </Tag>
+    <Tag Name="UIElement Arrange">
+      <Entrypoint Module="PresentationCore.ni.dll" Method="System.Windows.UIElement.Arrange*"/>
+      <Entrypoint Module="PresentationCore.dll" Method="System.Windows.UIElement::Arrange*"/>
+    </Tag>
+    <Tag Name="FrameworkElement ArrangeCore">
+      <Entrypoint Module="PresentationFramework.ni.dll" Method="System.Windows.FrameworkElement.ArrangeCore*"/>
+      <Entrypoint Module="PresentationFramework.dll" Method="System.Windows.FrameworkElement::ArrangeCore*"/>
+    </Tag>
+    <Tag Name="UIElement Arrange">
+      <Entrypoint Module="PresentationCore.ni.dll" Method="System.Windows.UIElement.Arrange*"/>
+      <Entrypoint Module="PresentationCore.dll" Method="System.Windows.UIElement::Arrange*"/>
+    </Tag>
+
     <Tag Name="XamlServices Transform">
       <Entrypoint Module="System.Xaml.dll" Method="System.Xaml.XamlServices::Transform*"/>
       <Entrypoint Module="System.Xaml.ni.dll" Method="System.Xaml.XamlServices.Transform*"/>
@@ -1386,23 +1434,5 @@
     <Tag Name="COM Cross Apartment Call Wait" Priority="-9">
       <Entrypoint Module="combase.dll" Method="MTAThreadDispatchCrossApartmentCall*"/>
     </Tag>
-
-      <Tag Name="Tracing Overhead">
-        <Tag Name="ETW Stackwalks">
-          <Entrypoint Module="ntoskrnl.exe" Method="EtwpTraceStackWalk*"/>
-          <Entrypoint Module="ntkrnlpa.exe" Method="EtwpTraceStackWalk*"/>
-          <Entrypoint Module="ntoskrnl.exe" Method="EtwpStackTraceDispatcher*"/>
-          <Entrypoint Module="ntkrnlpa.exe" Method="EtwpStackTraceDispatcher*"/>
-          <Entrypoint Module="*clr.dll" Method="EtwCallout*"/>
-        </Tag>
-        <Tag Name="ETW Rundown">
-          <Entrypoint Module="*clr.dll" Method="ETW::EnumerationLog::StartRundown*"/>
-        </Tag>
-        <Tag Name="ETW ProcessShutdown">
-          <Entrypoint Module="*clr.dll" Method="ETW::EnumerationLog::ProcessShutdown*"/>
-        </Tag>
-      </Tag>
-
   </Tag>
-
 </Tag>

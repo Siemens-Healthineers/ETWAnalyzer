@@ -4736,6 +4736,16 @@
       "Category": "FSFILTER ANTI-VIRUS"
     },
     {
+      "ModuleName": "CSDeviceControl.sys",
+      "Company": "CrowdStrike Ltd.",
+      "Category": "FSFILTER ANTI-VIRUS"
+    },
+    {
+      "ModuleName": "CSFirmwareAnalysis.sys",
+      "Company": "CrowdStrike Ltd.",
+      "Category": "FSFILTER ANTI-VIRUS"
+    },
+    {
       "ModuleName": "kmkuflt.sys",
       "Company": "Komoku Inc.",
       "Category": "FSFILTER ANTI-VIRUS"
@@ -8519,6 +8529,12 @@
       "ModuleName": "wrpfv.sys",
       "Company": "Microsoft",
       "Category": "FSFilter Activity Monitor"
+    },
+    {
+      "ModuleName": "Parity.sys",
+      "Company": "BroadCom Carbon Black",
+      "Category": "FSFilter Activity Monitor"
     }
+
   ]
 }
