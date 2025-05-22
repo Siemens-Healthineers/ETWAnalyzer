@@ -1,6 +1,7 @@
 ﻿//// SPDX-FileCopyrightText:  © 2022 Siemens Healthcare GmbH
 //// SPDX-License-Identifier:   MIT
 
+using ETWAnalyzer.Extract;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -31,7 +32,7 @@ namespace ETWAnalyzer.Commands
 
         public void SetDefault(string outputDirectory)
         {
-            OutputDirectory = outputDirectory;
+            OutputDirectory = TestRun.GetDirectorySave(outputDirectory); // Do not store file query like c:\temp\*.etl 
             IsDefault = true;
         }
     }

@@ -413,20 +413,51 @@ namespace ETWAnalyzer.Extract
         {
             GetDirPatternMatcher(directoryfileQuery, out string dir, out Func<string, bool> matcher);
 
-            string[] files = Directory.GetFiles(Path.GetFullPath(dir), "*.*", recursive)
+            string[] files = Directory.GetFiles(GetDirectorySave(Path.GetFullPath(dir)), "*.*", recursive)
                                       .Where(IsValidExtension).ToArray();
 
             string[] filteredFiles = files.Where(matcher).ToArray();
             return new HashSet<string>(filteredFiles);
         }
 
+        /// <summary>
+        /// Get the directory from a file or directory query. If the input is a directory it is returned as is.
+        /// </summary>
+        /// <param name="directoryFileQuery"></param>
+        /// <returns></returns>
+        internal static string GetDirectorySave(string directoryFileQuery)
+        {
+            string lret = directoryFileQuery;
+            if (!Directory.Exists(lret)) // if already directory no need to shave off anything
+            {
+                try
+                {
+                    lret = Path.GetDirectoryName(directoryFileQuery);
+                    if (String.IsNullOrEmpty(lret))
+                    {
+                        lret = directoryFileQuery;
+                    }
+                }
+                catch (IOException)
+                {
+                    int last = directoryFileQuery.LastIndexOf('\\');
+                    if (last > 1)
+                    {
+                        directoryFileQuery = directoryFileQuery.Substring(0, last);
+                    }
+                }
+
+            }
+
+            return lret; 
+        }
+
+
+
+
         static internal void  GetDirPatternMatcher(string directoryFileQuery, out string dir, out Func<string,bool> matcher)
         {
-            dir = Path.GetDirectoryName(directoryFileQuery);
-            if (String.IsNullOrEmpty(dir))
-            {
-                dir = ".";
-            }
+            dir = GetDirectorySave(directoryFileQuery); 
 
             string patternFileName = Path.GetFileName(directoryFileQuery);
 
