@@ -433,10 +433,14 @@ namespace ETWAnalyzer.Extract
                 try
                 {
                     lret = Path.GetDirectoryName(directoryFileQuery);
-                    if (String.IsNullOrEmpty(lret))
+                    if (lret == null)  // when input is root directory keep input folder
                     {
                         lret = directoryFileQuery;
+                    } else if( lret == "") // if no directory information is present assume current directory
+                    {
+                        lret = ".";
                     }
+
                 }
                 catch (IOException)
                 {
