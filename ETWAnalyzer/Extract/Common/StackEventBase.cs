@@ -23,22 +23,20 @@ namespace ETWAnalyzer.Extract.Common
         StackIdx StackIdx { get; }
 
         /// <summary>
-        /// Thread id of logging thrad.
+        /// Thread id of logging thread.
         /// </summary>
         int ThreadId { get; }
 
         /// <summary>
-        /// Event time  since boot in nanoseconds.
+        /// Event time since trace start in nanoseconds.
         /// </summary>
         long TimeNs { get; }
 
         /// <summary>
-        /// Get local time as DateTimeOffset
+        /// Get local time
         /// </summary>
-        /// <param name="bootTime">Trace start time</param>
         /// <returns>local time</returns>
-        DateTimeOffset GetTime(DateTimeOffset bootTime);
-
+        DateTimeOffset GetTime(IETWExtract extract);
     }
 
     /// <summary>
@@ -47,15 +45,16 @@ namespace ETWAnalyzer.Extract.Common
     public class StackEventBase : IStackEventBase
     {
         /// <summary>
-        /// Get time from time since boot and TimeNs
+        /// Get local time
         /// </summary>
-        public DateTimeOffset GetTime(DateTimeOffset bootTime)
+        /// <returns>local time</returns>
+        public DateTimeOffset GetTime(IETWExtract extract)
         {
-            return new DateTimeOffset(TimeNs/100+bootTime.Ticks + bootTime.Offset.Ticks, bootTime.Offset);
+            return extract.SessionStart + TimeSpan.FromTicks(TimeNs/100);
         }
 
         /// <summary>
-        /// Time since boot in nanoseconds.
+        /// Time since trace start in ns
         /// </summary>
         public long TimeNs { get; set; }
 

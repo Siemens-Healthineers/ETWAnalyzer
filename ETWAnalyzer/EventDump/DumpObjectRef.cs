@@ -308,7 +308,7 @@ namespace ETWAnalyzer.EventDump
                         if (Leak)
                         {
                             handle.CheckLeakAndRemoveNonLeakingEvents();
-                            if( handle.HandleCloseEvents.Count == 0 && handle.HandleCreateEvents.Count == 0 && handle.HandleDuplicateEvents.Count == 0 )
+                            if( handle.HandleCloseEvents.Count == 0 && handle.HandleCreateEvents.Count == 0 && handle.HandleDuplicateEvents.Count == 0 && handle.FileMapEvents.Count == 0)
                             {
                                 continue;
                             }
@@ -625,7 +625,9 @@ namespace ETWAnalyzer.EventDump
             public int MapCount { get; internal set; }
             public int UnmapCount { get; internal set; }
             public int RefChangeCount { get; internal set; }
-            
+            public long MapSize { get; private set; }
+            public long UnmapSize { get; private set; } 
+
             Dictionary<ETWProcess,Counter<string>> myNotClosedHandles = new();
             Counter<string> myTotalNotClosedHandles = new();
 
@@ -660,8 +662,10 @@ namespace ETWAnalyzer.EventDump
                 DuplicateCount += trace.HandleDuplicateEvents.Count;
 
                 MapCount += trace.FileMapEvents.Count;
+                MapSize += trace.FileMapEvents.Sum(x => x.ViewSize);
 
                 UnmapCount += trace.FileUnmapEvents.Count;
+                UnmapSize += trace.FileUnmapEvents.Sum(x => x.ViewSize);
 
                 RefChangeCount += trace.RefChanges.Count;
 
@@ -715,7 +719,12 @@ namespace ETWAnalyzer.EventDump
                         break;
                 }
 
-                ColorConsole.WriteEmbeddedColorLine($"Objects Created/Destroyed: {ObjectCreateCount}/{ObjectDestroyCount} Diff: {ObjectCreateCount-ObjectDestroyCount},  Handles Created/Closed/Duplicated: {CreateCount}/{CloseCount}/{DuplicateCount} Diff: {CreateCount+DuplicateCount-CloseCount},  RefChanges: {RefChangeCount}, FileMap/Unmap: {MapCount}/{UnmapCount}", color);
+                ColorConsole.WriteEmbeddedColorLine($"Objects Created/Destroyed: {ObjectCreateCount}/{ObjectDestroyCount} Diff: {ObjectCreateCount-ObjectDestroyCount},  Handles Created/Closed/Duplicated: {CreateCount}/{CloseCount}/{DuplicateCount} Diff: {CreateCount+DuplicateCount-CloseCount},  RefChanges: {RefChangeCount} FileMap/Unmap: {MapCount}/{UnmapCount}", color);
+                if( MapCount > 0)
+                {
+                    ColorConsole.WriteEmbeddedColorLine($"File Map/Unmap Count {MapCount}/{UnmapCount} - {MapCount-UnmapCount} outstanding", color);
+                    ColorConsole.WriteEmbeddedColorLine($"File Map/Unmap Size  {MapSize:N0}/{UnmapSize:N0} - {MapSize-UnmapSize:N0} bytes outstanding", color);
+                }
 
             }
         }
@@ -799,9 +808,9 @@ namespace ETWAnalyzer.EventDump
                 var child = extract.Processes.OrderBy(x => x.StartTime).Where(x => x.ParentPid == parent.ProcessID && 
                                                                               x.StartTime > parent.StartTime && 
                                                                               x.StartTime < parent.EndTime &&
-                                                                              x.StartTime > handleduplicate.GetTime(extract.BootTime)
+                                                                              x.StartTime > handleduplicate.GetTime(extract)
                                                                               ).FirstOrDefault();
-                if( child?.StartTime > handleduplicate.GetTime(extract.BootTime))
+                if( child?.StartTime > handleduplicate.GetTime(extract))
                 {
                     lret = child;
                 }
@@ -909,7 +918,7 @@ namespace ETWAnalyzer.EventDump
             foreach (IFileMapEvent fileMapEvent in ev.ObjTrace.FileMapEvents)
             {
                 PrintEventHeader(fileMapEvent, ev.Extract, "Map");
-                Console.WriteLine($"0x{fileMapEvent.ViewBase:X}-0x{fileMapEvent.ViewBase + fileMapEvent.ViewSize:X} Size: {fileMapEvent.ViewSize} bytes, Offset: {fileMapEvent.ByteOffset} Stack: {GetStack(ev.Stacks, fileMapEvent.StackIdx)}");
+                Console.WriteLine($"0x{fileMapEvent.ViewBase:X}-0x{fileMapEvent.ViewBase + fileMapEvent.ViewSize:X} Size: {fileMapEvent.ViewSize.ToString("N0").WithWidth(13)} bytes, Offset: {fileMapEvent.ByteOffset} Stack: {GetStack(ev.Stacks, fileMapEvent.StackIdx)}");
             }
 
             foreach (IFileMapEvent fileUnmapEvent in ev.ObjTrace.FileUnmapEvents)
@@ -921,7 +930,7 @@ namespace ETWAnalyzer.EventDump
 
         void PrintEventHeader(IStackEventBase ev, IETWExtract resolver, string name, string beforeProc = null)
         {
-            string timeStr = base.GetTimeString(ev.GetTime(resolver.BootTime), resolver.SessionStart, this.TimeFormatOption);
+            string timeStr = base.GetDateTimeString(ev.GetTime(resolver), resolver.SessionStart, this.TimeFormatOption);
             ColorConsole.WriteEmbeddedColorLine($"\t{timeStr} [magenta]{GetProcessId(ev.ProcessIdx, resolver),5}[/magenta]/{ev.ThreadId,-5} {name} {beforeProc}[magenta]{GetProcessAndStartStopTags(ev.ProcessIdx, resolver,false)}[/magenta] ", null, true);
         }
 

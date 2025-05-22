@@ -237,7 +237,7 @@ namespace ETWAnalyzer.Extract.Handle
             FileMapEvents_Backup = FileMapEvents_Backup ?? FileMapEvents;
             FileMapEvents = FileMapEvents_Backup ?? new();
 
-            FileUnmapEvents_Backup = FileUnmapEvents ?? FileUnmapEvents;
+            FileUnmapEvents_Backup = FileUnmapEvents_Backup ?? FileUnmapEvents;
             FileUnmapEvents = FileUnmapEvents_Backup ?? new();
         }
 
@@ -468,6 +468,23 @@ namespace ETWAnalyzer.Extract.Handle
                 {
                     finalRefCount += change.RefCountChange;
                 }
+            } else if(FileMapEvents?.Count > 0)
+            {
+                HashSet<object> closed = new HashSet<object>();
+                foreach (var map in FileMapEvents)
+                {
+                    foreach(var unmap in FileUnmapEvents)
+                    {
+                        if (map.ViewBase == unmap.ViewBase && map.ProcessIdx == unmap.ProcessIdx)
+                        {
+                            closed.Add(map);
+                            closed.Add(unmap);
+                            break;
+                        }
+                    }
+                }
+                FileMapEvents = FileMapEvents.Where(x => !closed.Contains(x)).ToList();
+                FileUnmapEvents = FileUnmapEvents?.Where(x => !closed.Contains(x)).ToList();
             }
         }
 
