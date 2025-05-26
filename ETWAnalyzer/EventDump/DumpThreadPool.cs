@@ -105,7 +105,7 @@ namespace ETWAnalyzer.EventDump
                      
                     if (file.Extract.ThreadPool.ThreadPoolEventCount == null)  // old data
                     {
-                        ColorConsole.WriteWarning($"File {Path.GetFileNameWithoutExtension(file.FileName)} contains no starvation events. Either you had none, or the input ETL was not recorded with .NET ThreadPool events.");
+                        ColorConsole.WriteWarning($"File {GetPrintFileName(file.FileName)} contains no starvation events. Either you had none, or the input ETL was not recorded with .NET ThreadPool events.");
                         continue;
                     }
 
