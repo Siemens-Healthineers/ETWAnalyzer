@@ -364,7 +364,7 @@ namespace ETWAnalyzer.Commands
 
         static readonly string TcpHelpStringHeader =
         "  Tcp -filedir/fd Extract\\ or xx.json7z [-IpPort xx] [-ShowRetransmits] [-TopN dd nn] [-SortBy ReceivedCount/SentCount/ReceivedSize/SentSize/TotalCount/TotalSize/ConnectTime/DisconnectTime/RetransmissionCount/RetransmissionTime/MaxRetransmissionTime/LastSentTime/LastReceivedTime/MaxReceiveDelay/MaxReceiveDelay]" + Environment.NewLine +
-        "       [-SortRetransmitBy Delay/Time] [-MinMaxRetransDelayMs xx-yy] [-MinMaxRetransBytes xx-yy] [-MinMaxRetransCount xx-yy] [-MinMaxSentBytes xx-yy] [-MinMaxReceivedBytes xx-yy] [-TopNRetrans dd nn] [-OnlyClientRetransmit] [-Details] [-Tcb 0xdddddd] " + Environment.NewLine +
+        "       [-SortRetransmitBy Delay/Time] [-MinMaxRetransDelayMs xx-yy] [-MinMaxRetransBytes xx-yy] [-MinMaxRetransCount xx-yy] [-MinMaxSentBytes xx-yy] [-MinMaxReceivedBytes xx-yy] [-TopNRetrans dd nn] [-OnlyClientRetransmit] [-Details] [-Stats] [-Tcb 0xdddddd] " + Environment.NewLine +
         "       [-MinMaxLastReceivedS xx-yy] [-MinMaxLastSentS xx-yy] [-Column xx;yy] [-Reset] [-MinMaxConnect xx yy] [-MinMaxDisconnect xx zz] [-KeepAlive] [-MinMaxReceiveDelayS xx yy] [-MinMaxSendDelayS xx yy]" + Environment.NewLine +
         "       [-TimeFmt s,Local,LocalTime,UTC,UTCTime,Here,HereTime] [-TimeDigits d] [-csv xx.csv] [-NoCSVSeparator] [-NoCmdLine] [-Clip] [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd] [-MinMaxMsTestTimes xx-yy ...] [-ProcessName/pn xx.exe(pid)] " + Environment.NewLine +
         "       [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-CmdLine substring] [-recursive] [-ZeroTime/zt Marker/First/Last/ProcessStart filter] [-ZeroProcessName/zpn filter] [-ShowTotal [File/None]] [-ProcessFmt timefmt] " + Environment.NewLine;
@@ -398,7 +398,7 @@ namespace ETWAnalyzer.Commands
         "       -MinMaxSendDelayS xx yy     Filter connections which have a maximum send delay between two packets of xx yy seconds. Useful to check if some keepalive mechanism is active." + Environment.NewLine +
         "       -KeepAlive                 Filter connections which have TCP keepalive enabled. If the connection lifetime is  too short this might skip connections because no keepalive packet was sent." + Environment.NewLine + 
         "       -Details                   Show retransmit Max/Median/Min, connect/disconnect time, used TCP template setting, TCB pointer, ..." + Environment.NewLine +
-        "       -ShowStats                 Show connection statistics collected by OS during connection close or at trace start for an existing connection (can go missing due to event loss). This includes transmitted byte/packet counts over connection lifetime." + Environment.NewLine +
+        "       -Stats                     Show connection statistics collected by OS during connection close or at trace start for an existing connection (can go missing due to event loss). This includes transmitted byte/packet counts over connection lifetime." + Environment.NewLine +
         "       -Tcb 0xdddddd              Filter by \"connection\" which is actually the Transfer Control Block pointer. Its value can be reused for new connections." + Environment.NewLine 
         ;
 
