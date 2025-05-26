@@ -5,6 +5,7 @@ using ETWAnalyzer.Analyzers.Infrastructure;
 using ETWAnalyzer.Extract;
 using ETWAnalyzer.Extract.ThreadPool;
 using ETWAnalyzer.ProcessTools;
+using ETWAnalyzer.TraceProcessorHelpers;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -98,15 +99,28 @@ namespace ETWAnalyzer.EventDump
                 {
                     if (file.Extract == null || file.Extract.ThreadPool == null)
                     {
-                        ColorConsole.WriteError($"Warning: File {Path.GetFileNameWithoutExtension(file.FileName)} does not contain ThreadPool data");
+                        ColorConsole.WriteError($"Warning: File {GetPrintFileName(file.FileName)} does not contain ThreadPool data");
                         continue;
                     }
-
-                    if( file.Extract.ThreadPool.PerProcessThreadPoolStarvations.Count == 0)
+                     
+                    if (file.Extract.ThreadPool.ThreadPoolEventCount == null)  // old data
                     {
                         ColorConsole.WriteWarning($"File {Path.GetFileNameWithoutExtension(file.FileName)} contains no starvation events. Either you had none, or the input ETL was not recorded with .NET ThreadPool events.");
                         continue;
                     }
+
+                    if (file.Extract.ThreadPool.ThreadPoolEventCount.Value == 0)
+                    {
+                        ColorConsole.WriteWarning($"File {GetPrintFileName(file.FileName)}: The input ETL was not recorded with .NET ThreadPool events. You need to enable {DotNetETWConstants.DotNetRuntimeProviderName} with the keyword 0x{DotNetETWConstants.ThreadingKeyword:X}.");
+                        continue;
+                    }
+
+                    if (file.Extract.ThreadPool.PerProcessThreadPoolStarvations.Count == 0)
+                    {
+                        ColorConsole.WriteWarning($"File {GetPrintFileName(file.FileName)}: No .NET Threadpool starvation detected.");
+                        continue;
+                    }
+
 
                     foreach (KeyValuePair<ProcessKey, IList<ThreadPoolStarvationInfo>> starved in file.Extract.ThreadPool.PerProcessThreadPoolStarvations)
                     {

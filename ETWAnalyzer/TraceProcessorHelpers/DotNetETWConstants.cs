@@ -25,6 +25,11 @@ namespace ETWAnalyzer.TraceProcessorHelpers
         public static readonly Guid DotNetRuntimeGuid = new("e13c0d23-ccbc-4e12-931b-d9cc2eee27e4");
 
         /// <summary>
+        /// .NET Threadpool, especially thread starvation events
+        /// </summary>
+        public const int ThreadingKeyword = 0x10000;
+
+        /// <summary>
         /// Event id for Exception event 
         /// </summary>
         public const int ExceptionEventId = 80;

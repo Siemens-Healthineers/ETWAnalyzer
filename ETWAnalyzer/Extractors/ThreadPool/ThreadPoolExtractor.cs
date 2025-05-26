@@ -37,7 +37,13 @@ namespace ETWAnalyzer.Extractors
                             && x.OpcodeName == "Adjustment"
                             && x.Fields.Dictionary["Reason"].EnumValue == "Starvation"
                             );
-            
+
+            int threadpoolEventCount = myGenericEvents.Result.Events.Where(x => x.ProviderName == DotNetETWConstants.DotNetRuntimeProviderName
+                && (x.Keyword & DotNetETWConstants.ThreadingKeyword) == DotNetETWConstants.ThreadingKeyword).Count();
+
+            results.ThreadPool.ThreadPoolEventCount = threadpoolEventCount;
+
+
             foreach (var ins in starvations)
             {
                 if( ins?.Process?.ImageName == null )

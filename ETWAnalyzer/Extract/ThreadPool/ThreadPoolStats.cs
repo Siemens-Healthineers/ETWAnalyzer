@@ -16,7 +16,11 @@ namespace ETWAnalyzer.Extract.ThreadPool
             get;
         } = new Dictionary<ProcessKey, IList<ThreadPoolStarvationInfo>>();
 
-        
+        /// <summary>
+        /// Total number of thread pool events in the trace.
+        /// </summary>
+        public int? ThreadPoolEventCount { get; set; }
+
         IReadOnlyDictionary<ProcessKey, IList<ThreadPoolStarvationInfo>> IThreadPoolStats.PerProcessThreadPoolStarvations => PerProcessThreadPoolStarvations;
     }
 
