@@ -340,7 +340,7 @@
             <Entrypoint Module="srtsp64.sys" Method="*"/>
         </Tag>
     </Tag>
-    <Tag Name="Antivirus - Palo Alto Endpoint Protection\Intercepts CreateProcess/LoadLibrary which can induce large delays duringprocess start" Priority="1">
+    <Tag Name="Antivirus - Palo Alto Endpoint Protection\Intercepts CreateProcess/LoadLibrary/WriteFile which can induce large delays" Priority="1">
         <Entrypoint Module="cyverak.sys" Method="*"/>
         <Tag Name="File System Filter Driver cyvrfsfd.sys" Priority="1">
             <Entrypoint Module="cyvrfsfd.sys" Method="*"/>
@@ -351,9 +351,9 @@
         <Tag Name="Network Driver cyvrmtgn.sys" Priority="1">
             <Entrypoint Module="cyvrmtgn.sys" Method="*"/>
         </Tag>
-    </Tag>
-    <Tag Name="Antivirus - Palo Alto Networks - FSFilter Activity Monitor cyvrlpc.sys" Priority="1">
-        <Entrypoint Module="cyvrlpc.sys" Method="*"/>
+        <Tag Name="Cortex XDR tedrdrv.sys" Priority="1">
+          <Entrypoint Module="tedrdrv.sys" Method="*"/>
+        </Tag>
     </Tag>
     <Tag Name="Antivirus - ESET NOD32">
         <Tag Name="FSFilter Driver ehdrv.sys">
