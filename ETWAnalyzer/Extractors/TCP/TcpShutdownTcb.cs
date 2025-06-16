@@ -38,7 +38,10 @@ namespace ETWAnalyzer.Extractors.TCP
             RemoteIpAndPort = ev.Fields[TcpETWConstants.RemoteAddressField].GetSocketConnection();
             ProcessId = ev.Fields[TcpETWConstants.ProcessIdField].AsUInt32;
             Compartment = ev.Fields[TcpETWConstants.CompartmentField].AsUInt32;
-            ProcessStartKey = ev.Fields[TcpETWConstants.ProcessStartKey].AsUInt64;
+            if (ev.Fields.ContainsKey(TcpETWConstants.ProcessStartKey))
+            {
+                ProcessStartKey = ev.Fields[TcpETWConstants.ProcessStartKey].AsUInt64;
+            }
             Status = (NtStatus) ev.Fields[TcpETWConstants.StatusField].AsUInt32;
             Timestamp = ev.Timestamp.DateTimeOffset;
         }
