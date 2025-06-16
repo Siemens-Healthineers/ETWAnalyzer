@@ -45,11 +45,6 @@ namespace ETWAnalyzer.Extract.Network.Tcp
                 throw new ArgumentException($"{nameof(address)} is null or empty.");
             }
 
-            if (port == 0)
-            {
-                throw new ArgumentNullException(nameof(port));
-            }
-
             Address = address;
             Port = port;
         }

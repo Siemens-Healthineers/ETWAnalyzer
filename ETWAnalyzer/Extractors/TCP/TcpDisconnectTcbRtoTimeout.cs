@@ -31,8 +31,8 @@ namespace ETWAnalyzer.Extractors.TCP
         {
             Tcb = (ulong)ev.Fields[TcpETWConstants.TcbField].AsAddress.Value;
             Timestamp = ev.Timestamp.DateTimeOffset;
-            LocalIpAndPort = new SocketConnection(ev.Fields[TcpETWConstants.LocalAddressField].AsSocketAddress.ToIPEndPoint());
-            RemoteIpAndPort = new SocketConnection(ev.Fields[TcpETWConstants.RemoteAddressField].AsSocketAddress.ToIPEndPoint());
+            LocalIpAndPort = ev.Fields[TcpETWConstants.LocalAddressField].GetSocketConnection();
+            RemoteIpAndPort = ev.Fields[TcpETWConstants.RemoteAddressField].GetSocketConnection();
         }
     }
 }

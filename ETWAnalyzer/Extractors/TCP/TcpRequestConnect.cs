@@ -28,8 +28,8 @@ namespace ETWAnalyzer.Extractors.TCP
         public TcpConnectionRundown(IGenericEvent ev)
         {
             Tcb = (ulong) ev.Fields[TcpETWConstants.TcbField].AsAddress.Value;
-            LocalIpAndPort = new SocketConnection(ev.Fields[TcpETWConstants.LocalAddressField].AsSocketAddress.ToIPEndPoint());
-            RemoteIpAndPort = new SocketConnection(ev.Fields[TcpETWConstants.RemoteAddressField].AsSocketAddress.ToIPEndPoint());
+            LocalIpAndPort = ev.Fields[TcpETWConstants.LocalAddressField].GetSocketConnection();
+            RemoteIpAndPort = ev.Fields[TcpETWConstants.RemoteAddressField].GetSocketConnection();
             Pid = ev.Fields[TcpETWConstants.PidField].AsUInt32;
             Timestamp = ev.Timestamp.DateTimeOffset;
         }
@@ -119,8 +119,8 @@ namespace ETWAnalyzer.Extractors.TCP
         public TcpRequestConnect(IGenericEvent ev, ETWProcessIndex processIdx )
         {
             Tcb = (ulong) ev.Fields[TcpETWConstants.TcbField].AsAddress.Value;
-            LocalIpAndPort = new SocketConnection( ev.Fields[TcpETWConstants.LocalAddressField].AsSocketAddress.ToIPEndPoint() );
-            RemoteIpAndPort = new SocketConnection( ev.Fields[TcpETWConstants.RemoteAddressField].AsSocketAddress.ToIPEndPoint() );
+            LocalIpAndPort = ev.Fields[TcpETWConstants.LocalAddressField].GetSocketConnection();
+            RemoteIpAndPort = ev.Fields[TcpETWConstants.RemoteAddressField].GetSocketConnection();
             TimeStampOpen = ev.Timestamp.DateTimeOffset;
             ProcessIdx = processIdx;
         }
