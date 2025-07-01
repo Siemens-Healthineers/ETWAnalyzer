@@ -36,12 +36,11 @@ namespace ETWAnalyzer.Commands
                 "   Clear screen." + Environment.NewLine +
                 ".converttime -time ..." + Environment.NewLine +
                 "   Convert time/datetime string to ETW session time and back." + Environment.NewLine +
-                ".dir [-r] [-od] folder" + Environment.NewLine +
-                "   Show files in folder. Use -r for recursive and -od for sorting files by modify time. Default sort order is alphabetic." + Environment.NewLine +
                $".dump xxx [ -fd *usecase1* ]" + Environment.NewLine + 
                 "   Query loaded file/s. Options are the same as in -Dump command. e.g. .dump CPU will print CPU metrics." + Environment.NewLine +
-                "     -fd *filter*    Filter loaded files which are queried. Filter is applied to full path file name." + Environment.NewLine +  
+                "     -fd *filter*    Filter loaded files which are queried. Filter is applied to full path file name." + Environment.NewLine +
                $"   Allowed values are {DumpCommand.AllDumpCommands}" + Environment.NewLine +
+                 HelpDir +
                 ".load [-all] [-r or -rec or -recursive] file1.json file2.json .." + Environment.NewLine + 
                 "     -all    Fully load all json files during load. By default the files are fully loaded during the dump command." + Environment.NewLine +
                 "     -r      Load files recursively." + Environment.NewLine +
@@ -63,6 +62,10 @@ namespace ETWAnalyzer.Commands
                 ".timefmt fmt [precision]" + Environment.NewLine + 
                $"   Set time display format ({String.Join(" ", Enum.GetNames(typeof(EventDump.DumpBase.TimeFormats)).Where(x=>x!="None"))}) and precision (0-6) where default is 3." + Environment.NewLine +
                 "Pressing Ctrl-C will cancel current command, Ctrl-Break will terminate";
+
+            public static readonly string HelpDir = ".dir [-r] [-od] folder" + Environment.NewLine +
+                "   Show files in folder. Use -r for recursive and -od for sorting files by modify time. Default sort order is alphabetic." + Environment.NewLine;
+
 
             public override void Parse()
             {
@@ -372,6 +375,13 @@ namespace ETWAnalyzer.Commands
                             case "recursive":
                                 bRecursive = true;
                                 break;
+                            case "h":
+                                ColorConsole.WriteLine(ConsoleHelpCommand.HelpDir);
+                                return cmd;
+                            default:
+                                ColorConsole.WriteLine(ConsoleHelpCommand.HelpDir);
+                                ColorConsole.WriteError($"Unknown switch {arg}.");
+                                return cmd;
                         }
                     }
                     else
@@ -380,19 +390,21 @@ namespace ETWAnalyzer.Commands
                     }
                 }
 
-                if( noSwitches.Count == 0)
+                if (noSwitches.Count == 0)
                 {
-                    ColorConsole.WriteEmbeddedColorLine($"[red]Error: No directory specified. Use .dir [-r] [-od] <directory>[/red]");
-                    return cmd;
+                    curDir = ".";
                 }
-
-                curDir = noSwitches[0];
+                else
+                {
+                    curDir = noSwitches[0];
+                }
 
                 var data = new TestRunData(curDir, bRecursive ? SearchOption.AllDirectories: SearchOption.TopDirectoryOnly);
 
                 SortOrders order = sortByDate ? SortOrders.ModifyTime : SortOrders.Name;
 
-                List<FileInfo> inputFiles = GetSorted(Directory.GetDirectories(curDir), order);
+                string dirSave = TestRun.GetDirectorySave(Path.GetFullPath(curDir));
+                List<FileInfo> inputFiles = GetSorted(Directory.GetDirectories(dirSave), order);
 
                 foreach (var dir in inputFiles)
                 {

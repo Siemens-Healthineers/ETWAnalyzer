@@ -126,7 +126,7 @@ abstract class ArgParser : ICommand
     protected ArgParser(string[] args)
     {
         myOriginalInputArguments = args;
-        myInputArguments = new Queue<string>(args);
+        myInputArguments = new Queue<string>(args ?? Array.Empty<string>());
     }
 
 
