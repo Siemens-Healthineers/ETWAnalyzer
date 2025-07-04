@@ -67,6 +67,8 @@ namespace ETWAnalyzer.Extractors.TCP
         {
             ConvertTcpEventsFromGenericEvents(results, events);
 
+           
+
             ILookup<ulong, TcpRequestConnect> connectionsByTcb = myConnections.ToLookup(x => x.Tcb);  // Get new connection from connection attempts
 
             AddExistingConnections(results, ref connectionsByTcb); // add already existing connections which are present during trace start
@@ -497,7 +499,7 @@ namespace ETWAnalyzer.Extractors.TCP
         /// <param name="extract"></param>
         private void OnConnect(IGenericEvent ev, ETWExtract extract)
         {
-            ETWProcessIndex idx = GetProcessIndex(extract, ev.Timestamp.DateTimeOffset, ev.Process.Id, ev.ProcessId);
+            ETWProcessIndex idx = GetProcessIndex(extract, ev.Timestamp.DateTimeOffset, ev.Process?.Id, ev.ProcessId);
             TcpRequestConnect conn = new(ev, idx);
             if (TCBFilter(conn.Tcb))
             {
@@ -512,7 +514,7 @@ namespace ETWAnalyzer.Extractors.TCP
         /// <param name="extract"></param>
         private void OnTcpAcceptListenerComplete(IGenericEvent ev, ETWExtract extract)
         {
-            ETWProcessIndex idx = GetProcessIndex(extract, ev.Timestamp.DateTimeOffset, ev.Process.Id, ev.ProcessId);
+            ETWProcessIndex idx = GetProcessIndex(extract, ev.Timestamp.DateTimeOffset, ev.Process?.Id, ev.ProcessId);
             TcpRequestConnect conn = new(ev, idx);
 
             if (TCBFilter(conn.Tcb))
@@ -605,11 +607,11 @@ namespace ETWAnalyzer.Extractors.TCP
             return bFound;
         }
 
-        ETWProcessIndex GetProcessIndex(ETWExtract extract, DateTimeOffset time, int eventProcessId, int etwProcessIdx)
+        ETWProcessIndex GetProcessIndex(ETWExtract extract, DateTimeOffset time, int? eventProcessId, int etwProcessIdx)
         {
-            if (eventProcessId > 0)
+            if (eventProcessId != null && eventProcessId > 0)
             {
-                return extract.GetProcessIndexByPidAtTime(eventProcessId, time);
+                return extract.GetProcessIndexByPidAtTime(eventProcessId.Value, time);
             }
 
             if (etwProcessIdx > 0)
@@ -637,11 +639,11 @@ namespace ETWAnalyzer.Extractors.TCP
         bool TCBFilter(ulong tcb)
         {
 #if DEBUG
-            return true;
+                return true; // debug connection
 #else
             return true;
 #endif
-        }
+            }
 
         private void OnTcpDataTransferSend(IGenericEvent ev)
         {
@@ -654,7 +656,7 @@ namespace ETWAnalyzer.Extractors.TCP
 
         private bool IsValidTcpEvent(IGenericEvent ev)
         {
-            return ev.ProviderId == TcpETWConstants.Guid && ev.Process?.ImageName != null && ev.Fields != null;
+            return ev.ProviderId == TcpETWConstants.Guid && ev.Fields != null;
         }
 
 
