@@ -216,7 +216,7 @@ namespace ETWAnalyzer.Extractors.CPU
             {
                 ContainsAllCPUData = ExtractAllCPUData,
                 HasCPUSamplingData = hasSamplesWithStacks,
-                HasCSwitchData = CanUseCPUCSwitchData,
+                HasCSwitchData = CanUseCPUCSwitchData && myCpuSchedlingData.Result.ThreadActivity.Count > 0,
             };
 
             // speed up time range calculation
