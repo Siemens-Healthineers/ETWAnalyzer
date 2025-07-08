@@ -56,7 +56,7 @@ namespace ETWAnalyzer_uTest.EventDump
 
             dumper.myPreloadedTests = new Lazy<SingleTest>[] { CreateDnsTestData() };
             var printed = dumper.ExecuteInternal();
-            Assert.Equal(1, printed.Count);
+            Assert.Single(printed);
 
         }
 
