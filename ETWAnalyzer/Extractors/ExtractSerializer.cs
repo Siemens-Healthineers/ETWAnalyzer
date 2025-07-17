@@ -8,6 +8,7 @@ using ETWAnalyzer.Extract.CPU.Extended;
 using ETWAnalyzer.Extract.FileIO;
 using ETWAnalyzer.Extract.Handle;
 using ETWAnalyzer.Extract.Modules;
+using ETWAnalyzer.Extract.TraceLogging;
 using ETWAnalyzer.Infrastructure;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
@@ -52,6 +53,11 @@ namespace ETWAnalyzer.Extractors
         /// ObjectRef tracing data is stored in external file with this postfix.
         /// </summary>
         public const string HandlePostFix = "Handle";
+
+        /// <summary>
+        /// TraceLogging data is stored in external file with this postfix.
+        /// </summary>
+        public const string TraceLoggingPostFix = "TraceLogging";
 
 
         /// <summary>
@@ -198,6 +204,12 @@ namespace ETWAnalyzer.Extractors
                     Serialize<StackCollection>(handleStackStream, stacks);
                 }
 
+                if( extract?.TraceLogging != null && extract.TraceLogging.EventsByProvider.Count > 0 )
+                {
+                    using var traceLoggingStream = GetOutputStreamFor(TraceLoggingPostFix, outputFiles);
+                    Serialize<TraceLoggingEventData>(traceLoggingStream, extract.TraceLogging);
+                    extract.TraceLogging = null;  // do not serialize data twice into different files
+                }
 
                 // After all externalized data was removed serialize data to main extract file.
                 using var mainfileStream = GetOutputStreamFor(null, outputFiles);

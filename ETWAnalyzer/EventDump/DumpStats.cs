@@ -5,6 +5,7 @@ using ETWAnalyzer.EventDump;
 using ETWAnalyzer.Extract;
 using ETWAnalyzer.Extract.CPU.Extended;
 using ETWAnalyzer.Extract.Disk;
+using ETWAnalyzer.Extract.Network;
 using ETWAnalyzer.Infrastructure;
 using ETWAnalyzer.ProcessTools;
 using Microsoft.Diagnostics.Tracing;
@@ -62,7 +63,7 @@ namespace ETWAnalyzer
             "IsDomainJoined",
             "MainModuleVersion",
             "Displays",
-
+            "Network",
         };
 
         /// <summary>
@@ -118,7 +119,8 @@ namespace ETWAnalyzer
             { "AdDomain",           m => m.AdDomain },
             { "IsDomainJoined",     m => m.IsDomainJoined },
             { "MainModuleVersion",  m => m.MainModuleVersion },
-            { "Displays",           m => $"Horizontal: {m.DisplaysHorizontalResolution} Vertical: {m.DisplaysVerticalResolution} MemoryMiB: {m.DisplaysMemoryMiB} Name: {m.DisplaysNames}" }
+            { "Displays",           m => $"Horizontal: {m.DisplaysHorizontalResolution} Vertical: {m.DisplaysVerticalResolution} MemoryMiB: {m.DisplaysMemoryMiB} Name: {m.DisplaysNames}" },
+            { "Network",            m => String.Join(Environment.NewLine, m.NetworkInterfaces.Select(x=> $"{x.NicDescription,-50}  {x.PhysicalAddress,-17} Address: {x.IpAddresses,-20} DNS: {x.DnsServerAddresses}")) },
 
         };
 
@@ -224,6 +226,8 @@ namespace ETWAnalyzer
             public bool? CPUHyperThreadingEnabled { get; internal set; }
             public string BaseLine { get; internal set; }
             public IReadOnlyDictionary<CPUNumber, ICPUTopology> Topology { get; internal set; }
+
+            public IReadOnlyList<INetworkInterface> NetworkInterfaces { get; internal set; } = new List<INetworkInterface>();
         }
 
 
@@ -311,6 +315,7 @@ namespace ETWAnalyzer
                                 DisplaysNames = String.Join("~", (file.Extract.Displays ?? Enumerable.Empty<Display>()).Select(x => x.DisplayName.ToString())),
                                 DisplaysMemoryMiB = String.Join("~", (file.Extract.Displays ?? Enumerable.Empty<Display>()).Select(x => x.GraphicsCardMemorySizeMiB.ToString())),
                                 MainModuleVersion = file.Extract.MainModuleVersion?.ToString() ?? "",
+                                NetworkInterfaces = file.Extract.NetworkInterfaces,
                             };
 
                             Write(m);

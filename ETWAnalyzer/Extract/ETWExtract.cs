@@ -10,6 +10,7 @@ using ETWAnalyzer.Extract.Network;
 using ETWAnalyzer.Extract.PMC;
 using ETWAnalyzer.Extract.Power;
 using ETWAnalyzer.Extract.ThreadPool;
+using ETWAnalyzer.Extract.TraceLogging;
 using ETWAnalyzer.Extractors;
 using Newtonsoft.Json;
 using System;
@@ -331,12 +332,23 @@ namespace ETWAnalyzer.Extract
 
         IPMCData IETWExtract.PMC => PMC;
 
+        public TraceLoggingEventData TraceLogging { get; set; } = new();
+
+        ITraceLoggingData IETWExtract.TraceLogging => myTraceLoggingDeserializer.Value;
+
         /// <summary>
         /// Network data
         /// </summary>
         public Extract.Network.Network Network { get; set; } = new();
 
         INetwork IETWExtract.Network => Network;
+
+        /// <summary>
+        /// List of network interfaces which are usually collected during ETW rundown. The event is SystemConfig/NIC
+        /// </summary>
+        public List<NetworkInterface> NetworkInterfaces { get; set; } = new();
+
+        IReadOnlyList<INetworkInterface> IETWExtract.NetworkInterfaces => NetworkInterfaces;
 
         /// <summary>
         /// Contains ObjectReference and Handle Trace Data
@@ -372,6 +384,25 @@ namespace ETWAnalyzer.Extract
             {
                 ExtractSerializer ser = new(DeserializedFileName);
                 lret = ser.Deserialize<HandleObjectData>(ExtractSerializer.HandlePostFix);
+                if (lret != null)
+                {
+                    lret.DeserializedFileName = DeserializedFileName;
+                }
+            }
+
+            return lret;
+        }
+
+
+        private readonly Lazy<TraceLoggingEventData> myTraceLoggingDeserializer;
+		
+        private TraceLoggingEventData ReadTraceLoggingFromExternalFile()
+        {
+            TraceLoggingEventData lret = TraceLogging;
+            if (DeserializedFileName != null)
+            {
+                ExtractSerializer ser = new(DeserializedFileName);
+                lret = ser.Deserialize<TraceLoggingEventData>(ExtractSerializer.TraceLoggingPostFix);
                 if (lret != null)
                 {
                     lret.DeserializedFileName = DeserializedFileName;
@@ -420,7 +451,10 @@ namespace ETWAnalyzer.Extract
             myFileIODeserializer = new Lazy<FileIOData>(ReadFileIOFromExternalFile);
             myModuleDeserializer = new Lazy<ModuleContainer>(ReadModuleInformationFromExternalFile);
             myHandleDeserializer = new Lazy<HandleObjectData>(ReadHandleDataFromExternalFile);
+            myTraceLoggingDeserializer = new Lazy<TraceLoggingEventData>(ReadTraceLoggingFromExternalFile);
         }
+
+
 
         /// <summary>
         /// Convert a trace relative time which is seconds since trace start to an absolue time
