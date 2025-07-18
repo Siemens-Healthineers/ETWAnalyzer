@@ -117,20 +117,24 @@ namespace ETWAnalyzer.Extractors.Power
                     powerData.IdleConfiguration.PromoteThresholdPercent = (PercentValue) idleConfig.PromoteThreshold.Value;
                     powerData.IdleConfiguration.ScalingEnabled = idleConfig.ScalingEnabled;
 
-                    powerData.ProcessorParkingConfiguration.ConcurrencyHeadroomThresholdPercent = (PercentValue) parkingConfig.ConcurrencyHeadroomThreshold.Value;
-                    powerData.ProcessorParkingConfiguration.ConcurrencyThresholdPercent = (PercentValue) parkingConfig.ConcurrencyThreshold.Value;
-                    powerData.ProcessorParkingConfiguration.MaxEfficiencyClass1UnparkedProcessorPercent = (PercentValue) parkingConfig.MaxEfficiencyClass1UnparkedProcessor.Value;
-                    powerData.ProcessorParkingConfiguration.MaxUnparkedProcessorPercent = (PercentValue) parkingConfig.MaxUnparkedProcessor.Value;
-                    powerData.ProcessorParkingConfiguration.MinEfficiencyClass1UnparkedProcessorPercent = (PercentValue) parkingConfig.MinEfficiencyClass1UnparkedProcessor.Value;
-                    powerData.ProcessorParkingConfiguration.MinParkedDuration = parkingConfig.MinParkedDuration;
-                    powerData.ProcessorParkingConfiguration.MinUnparkedDuration = parkingConfig.MinUnparkedDuration;
-                    powerData.ProcessorParkingConfiguration.MinUnparkedProcessorPercent = (PercentValue) parkingConfig.MinUnparkedProcessor.Value;
-                    powerData.ProcessorParkingConfiguration.OverUtilizationThresholdPercent = (PercentValue) parkingConfig.OverUtilizationThreshold.Value;
-                    powerData.ProcessorParkingConfiguration.ParkingPerformanceState = (ParkingPerformanceState) parkingConfig.ParkingPerformanceState;
-                    powerData.ProcessorParkingConfiguration.ParkingPolicy = (ProcessorParkingPolicy) parkingConfig.ParkingPolicy;
-                    powerData.ProcessorParkingConfiguration.UnparkingPolicy = (ProcessorParkingPolicy) parkingConfig.UnparkingPolicy;
-                    powerData.ProcessorParkingConfiguration.UtilityDistributionEnabled = parkingConfig.UtilityDistributionEnabled;
-                    powerData.ProcessorParkingConfiguration.UtilityDistributionThresholdPercent = (PercentValue) parkingConfig.UtilityDistributionThreshold.Value;
+
+                    if (parkingConfig != null)
+                    {
+                        powerData.ProcessorParkingConfiguration.ConcurrencyHeadroomThresholdPercent = (PercentValue)parkingConfig.ConcurrencyHeadroomThreshold.Value;
+                        powerData.ProcessorParkingConfiguration.ConcurrencyThresholdPercent = (PercentValue)parkingConfig.ConcurrencyThreshold.Value;
+                        powerData.ProcessorParkingConfiguration.MaxEfficiencyClass1UnparkedProcessorPercent = (PercentValue)parkingConfig.MaxEfficiencyClass1UnparkedProcessor.Value;
+                        powerData.ProcessorParkingConfiguration.MaxUnparkedProcessorPercent = (PercentValue)parkingConfig.MaxUnparkedProcessor.Value;
+                        powerData.ProcessorParkingConfiguration.MinEfficiencyClass1UnparkedProcessorPercent = (PercentValue)parkingConfig.MinEfficiencyClass1UnparkedProcessor.Value;
+                        powerData.ProcessorParkingConfiguration.MinParkedDuration = parkingConfig.MinParkedDuration;
+                        powerData.ProcessorParkingConfiguration.MinUnparkedDuration = parkingConfig.MinUnparkedDuration;
+                        powerData.ProcessorParkingConfiguration.MinUnparkedProcessorPercent = (PercentValue)parkingConfig.MinUnparkedProcessor.Value;
+                        powerData.ProcessorParkingConfiguration.OverUtilizationThresholdPercent = (PercentValue)parkingConfig.OverUtilizationThreshold.Value;
+                        powerData.ProcessorParkingConfiguration.ParkingPerformanceState = (ParkingPerformanceState)parkingConfig.ParkingPerformanceState;
+                        powerData.ProcessorParkingConfiguration.ParkingPolicy = (ProcessorParkingPolicy)parkingConfig.ParkingPolicy;
+                        powerData.ProcessorParkingConfiguration.UnparkingPolicy = (ProcessorParkingPolicy)parkingConfig.UnparkingPolicy;
+                        powerData.ProcessorParkingConfiguration.UtilityDistributionEnabled = parkingConfig.UtilityDistributionEnabled;
+                        powerData.ProcessorParkingConfiguration.UtilityDistributionThresholdPercent = (PercentValue)parkingConfig.UtilityDistributionThreshold.Value;
+                    }
 
                     // We only save power profile data which is not the same over the duration of the recording.
                     // The default of the wpr Power profile is to record the profile at trace end two times.
