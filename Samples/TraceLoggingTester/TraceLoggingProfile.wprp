@@ -1,0 +1,129 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<WindowsPerformanceRecorder Version="1.0">
+	<Profiles>
+		<!-- Collector for system session. The definition of memory buffer sizes are overridden later by the profile -->
+		<SystemCollector Base="" Id="SystemProfiling_System" Realtime="false" HostGuestCorrelation="false" />
+
+		
+		<EventCollector Id="EventCollector_MyEventSource" Name="TraceLogRecorder">
+			<BufferSize Value="1024" />
+			<Buffers Value="20" />
+		</EventCollector>
+		<EventCollector Id="EventCollector_Rundown" Name="WPR Rundown Event Collector " HostGuestCorrelation="false" />
+		
+		
+		<SystemProvider Base="" Id="SystemProvider_Monitoring" >
+			<Keywords>
+				<!-- To get process we need to enable this Kernel Provider -->
+				<Keyword Value="ProcessThread"/>
+				<Keyword Value="CpuConfig"/>
+				<Keyword Value="Loader"/>
+			</Keywords>
+		</SystemProvider>
+		
+		<!-- Self describing ETW provider which is a replacement for ETWSetMark marker events which is also working inside docker containers -->
+		<EventProvider Id="CSharpTraceLoggingEventSource" Name="*CSharpTraceLoggingEventSource" Stack="true" />
+		
+		
+		
+		<EventProvider CaptureStateOnly="true" Id="MultiProfile_DotNETRuntimeRundown_CaptureState" Level="5" Name="a669021c-c450-4609-a035-5af59af4df18" Stack="false">
+			<!-- Default of .NET provider of wpr is 0x70138
+		c:\PerfTools\BitmaskDecoder.exe  0x70138 c:\Windows\Microsoft.NET\Framework64\v4.0.30319\CLR-ETW.man | findstr /i rundown
+		0x8             LoaderRundownKeyword                                    Microsoft-Windows-DotNETRuntimeRundown
+		0x10            JitRundownKeyword                                       Microsoft-Windows-DotNETRuntimeRundown
+		0x20            NGenRundownKeyword                                      Microsoft-Windows-DotNETRuntimeRundown
+		0x100           EndRundownKeyword                                       Microsoft-Windows-DotNETRuntimeRundown
+		0x10000         ThreadingKeyword                                        Microsoft-Windows-DotNETRuntimeRundown
+		0x20000         JittedMethodILToNativeMapRundownKeyword                 Microsoft-Windows-DotNETRuntimeRundown
+		0x40000         OverrideAndSuppressNGenEventsRundownKeyword             Microsoft-Windows-DotNETRuntimeRundown
+
+		c:\PerfTools\BitmaskDecoder.exe  0x70138 c:\Windows\Microsoft.NET\Framework64\v4.0.30319\CLR-ETW.man | findstr /i /v rundown
+		0x8             LoaderKeyword                                           Microsoft-Windows-DotNETRuntime
+		0x10            JitKeyword                                              Microsoft-Windows-DotNETRuntime
+		0x20            NGenKeyword                                             Microsoft-Windows-DotNETRuntime
+		0x10000         ThreadingKeyword                                        Microsoft-Windows-DotNETRuntime
+		0x20000         JittedMethodILToNativeMapKeyword                        Microsoft-Windows-DotNETRuntime
+		0x40000         OverrideAndSuppressNGenEventsKeyword                    Microsoft-Windows-DotNETRuntime
+		 -->
+			<CaptureStateOnSave>
+				<Keyword Value="0x50138"/>
+			</CaptureStateOnSave>
+			<CaptureStateOnDemand>
+				<Keyword Value="0x50138"/>
+			</CaptureStateOnDemand>
+		</EventProvider>
+
+	 <Profile Id="CSharpTraceLoggingEventSource.Verbose.File" Name="CSharpTraceLoggingEventSource" Description="CSharpTraceLoggingEventSource" LoggingMode="File" DetailLevel="Verbose">
+			<Collectors>
+				<SystemCollectorId Value="SystemProfiling_System">
+							<BufferSize Value="256" />
+					<SystemProviderId Value="SystemProvider_Monitoring"/>
+				</SystemCollectorId>
+
+				<EventCollectorId Value="EventCollector_MyEventSource">
+					<EventProviders>
+						<EventProviderId Value="CSharpTraceLoggingEventSource" />
+					</EventProviders>
+				</EventCollectorId>
+
+				<EventCollectorId Value="EventCollector_Rundown">
+					<BufferSize Value="1024"/>
+					<Buffers Value="100"/>
+					<EventProviders>
+						<EventProviderId Value="MultiProfile_DotNETRuntimeRundown_CaptureState" />
+					</EventProviders>
+				</EventCollectorId>
+				</Collectors>
+     
+		 <!-- When user and kernel session are merged we need especially the ImageId events or we wont get any stack traces -->
+		 <TraceMergeProperties>
+			 <TraceMergeProperty Id="TraceMerge_Default" Name="TraceMerge_Default">
+				 <DeletePreMergedTraceFiles Value="true"/>
+				 <!-- 
+					<SkipMerge Value="true"/>
+					-->
+				 <CustomEvents>
+					 <CustomEvent Value="ImageId"/>
+					 <CustomEvent Value="BuildInfo"/>
+					 <CustomEvent Value="VolumeMapping"/>
+					 <CustomEvent Value="EventMetadata"/>
+					 <CustomEvent Value="PerfTrackMetadata"/>
+					 <CustomEvent Value="WinSAT"/>
+					 <CustomEvent Value="NetworkInterface"/>
+				 </CustomEvents>
+			 </TraceMergeProperty>
+		 </TraceMergeProperties>
+	 </Profile>
+		
+		
+		<Profile Id="CSharpTraceLoggingEventSource.Verbose.Memory" Name="CSharpTraceLoggingEventSource" Description="CSharpTraceLoggingEventSource" Base="CSharpTraceLoggingEventSource.Verbose.File" LoggingMode="Memory" DetailLevel="Verbose">
+			<!-- We need to remove the default collectors which could contain MaximumFileSize clauses which are not compatible with PercentageOfTotalMemory definitions. 
+			 As an alternative we could not inherit from Default.Verbose.File. With inheritance we can reuse Trace Merge and Rundown settings.
+			 The error is: The MaximumFileSize element does not match with the profiles already in the profile collection.
+			-->
+			<Collectors Operation="Remove">
+				<SystemCollectorId Value="SystemProfiling_System" />
+				<EventCollectorId Value="EventCollector_MyEventSource" />
+			</Collectors>
+			
+			<Collectors Operation="Add">
+				<SystemCollectorId Value="SystemProfiling_System">
+					<BufferSize Value="1024"/>
+					<Buffers PercentageOfTotalMemory="true" Value="15" MaximumBufferSpace="4000" />
+					<SystemProviderId Value="SystemProvider_Monitoring"/>
+				</SystemCollectorId>
+
+        <EventCollectorId Value="EventCollector_MyEventSource">
+          <EventProviders>
+            <EventProviderId Value="CSharpTraceLoggingEventSource" />
+          </EventProviders>
+        </EventCollectorId>
+
+        <EventCollectorId Value="EventCollector_Rundown">
+					<Buffers Operation="Set" Value="1000" />
+				</EventCollectorId>
+	 
+			</Collectors>
+		</Profile>
+	</Profiles>
+</WindowsPerformanceRecorder>
