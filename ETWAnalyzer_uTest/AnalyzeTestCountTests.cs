@@ -420,8 +420,7 @@ namespace ETWAnalyzer_uTest
             SimulateTestCountAnalysis(syntheticRunData, testCountAnalyzer, testAnalysisResults);
 
             List<TestAnalysisResult> tempResult = testAnalysisResults.Where(x => x.Issues.Count > 0).ToList();
-            Assert.Empty(tempResult);
-            Assert.Empty(tempResult.Where(x => x.Issues[0].Description == "TestCount difference trend starts"));
+            Assert.DoesNotContain(tempResult, x => x.Issues[0].Description == "TestCount difference trend starts");
         }
 
         [Fact]
@@ -446,8 +445,7 @@ namespace ETWAnalyzer_uTest
             SimulateTestCountAnalysis(syntheticRunData, testCountAnalyzer, testAnalysisResults);
 
             List<TestAnalysisResult> tempResult = testAnalysisResults.Where(x => x.Issues.Count > 0).ToList();
-            Assert.Empty(tempResult);
-            Assert.Empty(tempResult.Where(x => x.Issues[0].Description == "TestCount difference trend starts"));
+            Assert.DoesNotContain(tempResult, x => x.Issues[0].Description == "TestCount difference trend starts");
         }
         [Fact]
         public void Ignore_Outlier_Nested_Trend()
