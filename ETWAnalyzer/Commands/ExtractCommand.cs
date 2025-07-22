@@ -23,9 +23,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using ETWAnalyzer.EventDump;
 using ETWAnalyzer.Extractors.TCP;
-using ETWAnalyzer.Extractors.Memory;
 using ETWAnalyzer.Extractors.Power;
 using ETWAnalyzer.Extractors.Handle;
+using ETWAnalyzer.Extractors.TraceLogging;
 
 namespace ETWAnalyzer.Commands
 {
@@ -34,7 +34,7 @@ namespace ETWAnalyzer.Commands
     /// </summary>
     class ExtractCommand : ArgParser
     {
-        internal const string AllExtractCommands = "All, Default or CPU Disk Dns Exception File Frequency Memory Module ObjectRef PMC Power Stacktag TCP ThreadPool";
+        internal const string AllExtractCommands = "All, Default or CPU Disk Dns Exception File Frequency Memory Module ObjectRef PMC Power Stacktag TCP ThreadPool TraceLog";
 
         internal static readonly string HelpString =
         $"ETWAnalyzer [-extract [{AllExtractCommands}] -filedir/-fd inEtlOrZip [-DryRun] [-symServer NtSymbolPath/MS/Google/syngo] [-keepTemp] [-NoOverwrite] [-pThreads dd] [-nThreads dd]" + Environment.NewLine +
@@ -67,6 +67,7 @@ namespace ETWAnalyzer.Commands
          "  TCP       : Extract TCP statistic per connection. You need to enable the provider Microsoft-Windows-TCPIP." + Environment.NewLine +
          "  ThreadPool: Extract relevant data from .NET Runtime ThreadPool if available. ThreadingKeyword 0x10000 needs to be set for the Microsoft-Windows-DotNETRuntime ETW Provider during recording." + Environment.NewLine +
          "              Json Nodes: ThreadPool-PerProcessThreadPoolStarvations" + Environment.NewLine +
+         "  TraceLog  : Extract Tracelogging events which are non manifest based ETW providers which emit their manifest at runtime to ETW data. These are all C# EventSource derived ETW providers, but you can also generate these events from C++." + Environment.NewLine +
          "The following filters work only if the input files adhere to a specific file naming convention." + Environment.NewLine + 
          "Select files from a testrun (all tests which have a time gap < 1h) to e.g. select only the first, or skip the warmump run or to extract just a sample of test cases." + Environment.NewLine +
          "         TestCaseName_ddddmsMachineName.yyyymmdd-hhmmss.7z/.zip/.etl  e.g. Build_166375msfv-az192-659.20230127-093520"  + Environment.NewLine + 
@@ -182,6 +183,7 @@ namespace ETWAnalyzer.Commands
           //  VirtualAlloc,
             ObjectRef,
             Power,
+            TraceLog,
         }
 
         /// <summary>
@@ -221,6 +223,7 @@ namespace ETWAnalyzer.Commands
             //    { ExtractionOptions.VirtualAlloc,() => new VirtualAllocExtractor() },
             { ExtractionOptions.ObjectRef,   () => new ObjectRefExtractor() },
             { ExtractionOptions.Power       ,() => new PowerExtractor() },
+            { ExtractionOptions.TraceLog    ,() => new TraceLoggingEventExtractor()  },
         };
 
         /// <summary>

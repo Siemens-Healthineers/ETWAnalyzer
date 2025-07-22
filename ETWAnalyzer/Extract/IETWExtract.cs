@@ -225,6 +225,7 @@ namespace ETWAnalyzer.Extract
 
         /// <summary>
         /// Contains TraceLogging (manifest free) ETW provider data which are all C# ETW providers which derive from <see cref="System.Diagnostics.Tracing.EventSource"/>
+        /// One can generate TraceLogging events also in C++ code. 
         /// </summary>
         public ITraceLoggingData TraceLogging { get; }  
 
