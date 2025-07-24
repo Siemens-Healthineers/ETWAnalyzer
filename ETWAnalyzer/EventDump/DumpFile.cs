@@ -1,18 +1,14 @@
 ﻿//// SPDX-FileCopyrightText:  © 2022 Siemens Healthcare GmbH
 //// SPDX-License-Identifier:   MIT
 
-using ETWAnalyzer.Analyzers;
 using ETWAnalyzer.Commands;
 using ETWAnalyzer.Extract;
 using ETWAnalyzer.Extract.FileIO;
 using ETWAnalyzer.Extract.Modules;
 using ETWAnalyzer.Infrastructure;
 using ETWAnalyzer.ProcessTools;
-using Microsoft.Diagnostics.Tracing.StackSources;
-using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using static ETWAnalyzer.Commands.DumpCommand;
@@ -152,7 +148,7 @@ namespace ETWAnalyzer.EventDump
                     string directory = fileIO.FileModule?.ModulePath ?? "";
                     WriteCSVLine(CSVOptions, fileIO.DataFile.PerformedAt, Path.GetDirectoryName(fileIO.DataFile.FileName), Path.GetFileNameWithoutExtension(fileIO.DataFile.FileName), fileIO.DataFile.TestName, fileIO.DataFile.DurationInMs,
                                 fileIO.BaseLine, fileIO.Process.GetProcessName(UsePrettyProcessName), fileIO.Process.GetProcessWithId(UsePrettyProcessName), fileIO.Process.SessionId, fileIO.Process.StartTime, NoCmdLine ? "" : fileIO.Process.CommandLineNoExe,
-                                Path.GetDirectoryName(fileIO.FileName), Path.GetFileName(fileIO.FileName),
+                                DumpDisk.MatchData.GetDirectoryLevel(fileIO.FileName, DirectoryLevel == 0 ? 100 : DirectoryLevel), Path.GetFileName(fileIO.FileName),
                                 stats?.Open?.Count, stats?.Open?.Durationus, String.Join(" ", stats?.Open?.NtStatus?.Select(x => ((NtStatus)x).ToString()) ?? Enumerable.Empty<string>()),
                                 stats?.Close?.Count, stats?.Close?.Durationus,
                                 stats?.Read?.Count, stats?.Read?.Durationus, stats?.Read?.AccessedBytes, stats?.Read?.MaxFilePosition,
