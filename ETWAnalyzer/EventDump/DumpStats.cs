@@ -69,9 +69,9 @@ namespace ETWAnalyzer
         /// <summary>
         /// This is the list of all supported properties on the command line switch -properties of -dump stats
         /// </summary>
-        static internal string AllProperties = String.Join(", ", PropertyNames.Take(10)) + Environment.NewLine +
+        static internal string AllProperties = String.Join(",", PropertyNames.Take(10)) + Environment.NewLine +
                                                "                                                    " +
-                                               String.Join(", ", PropertyNames.Skip(10));
+                                               String.Join(",", PropertyNames.Skip(10));
 
 
         /// <summary>
@@ -246,7 +246,14 @@ namespace ETWAnalyzer
 
         public override List<string> ExecuteInternal()
         {
-            string[] properties =  Properties != null ? Properties.Split(new char[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries) : DumpStats.PropertyNames;
+            string[] properties =  Properties != null ? Properties.Split(new char[] { ',', ' ', ';' }, StringSplitOptions.RemoveEmptyEntries) : DumpStats.PropertyNames;
+
+            if( properties.Any(x=>x.StartsWith("!")) )
+            {
+                List<string> forbidden = properties.Select(x => x.Substring(1)).ToList();
+                properties = DumpStats.PropertyNames.Where(x => !forbidden.Contains(x)).ToArray();
+            }
+
             foreach(var prop in properties)
             {
                 KeyValuePair<string,Func<Match,object>> extractor = myFieldPropertyExtractors.FirstOrDefault(x => String.Compare(x.Key, prop, StringComparison.OrdinalIgnoreCase) == 0);
@@ -336,11 +343,12 @@ namespace ETWAnalyzer
                 {
                     myHeaderWritten = true;
                     OpenCSVWithHeader(Col_CSVOptions, Col_TestCase, "TestDate", Col_TestTimeinms, "SourceFile", Col_Machine, "SourceETLFileName", Col_Baseline, "UsedExtractOptions", "OSName", "OSBuild", "OSVersion", "MemorySizeMB", "NumberOfProcessors", "CPUSpeedMHz", "SessionStart", "SessionEnd", "BootTime", "Model",
-                                      "AdDomain", "IsDomainJoined", "DisplaysHorizontalResolution", "DisplaysVerticalResolution", "DisplayNames", "MainModuleVersion", "DisplaysMemoryMiB");
+                                      "AdDomain", "IsDomainJoined", "DisplaysHorizontalResolution", "DisplaysVerticalResolution", "DisplayNames", "MainModuleVersion", "Network", "DisplaysMemoryMiB");
                 }
 
+                string networkStr = String.Join(Environment.NewLine, m.NetworkInterfaces.Select(n => $"Address: {n.IpAddresses}, Desc: {n.NicDescription}, PhysicalAddress: {n.PhysicalAddress}, DNS: {n.DnsServerAddresses}"));
                 WriteCSVLine(CSVOptions, m.TestCase, m.PerformedAt, m.DurationMs, m.Source, m.Machine, m.SourceETLFileName, m.BaseLine,  m.UsedExtractOptions, m.OSName, m.OSBuild, m.OSVersion, m.MemorySizeMB, m.NumberOfProcessors, m.CPUSpeedMHz, m.SessionStart, m.SessionEnd, m.BootTime, m.Model,
-                             m.AdDomain, m.IsDomainJoined, m.DisplaysHorizontalResolution, m.DisplaysVerticalResolution, m.DisplaysNames, m.MainModuleVersion, m.DisplaysMemoryMiB);
+                             m.AdDomain, m.IsDomainJoined, m.DisplaysHorizontalResolution, m.DisplaysVerticalResolution, m.DisplaysNames, m.MainModuleVersion, networkStr, m.DisplaysMemoryMiB);
             }
             else
             {
