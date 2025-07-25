@@ -32,7 +32,7 @@ namespace ETWAnalyzer.Commands
         "            ETL Only:                  Dump from an ETL file or compressed 7z file which will be uncompressed in-place ETW statistics." + Environment.NewLine +
         "                                       This includes OS version, bitness, trace start/end and a list of all contained events and their counts and sizes of the ETL file." + Environment.NewLine +
         "            Json Only:                 When Json files are dumped some or all extracted data is printed or exported to a CSV file. You can also filter by testcase, machine, ... to extract data of specific files" + Environment.NewLine +
-        "            -Properties xxx           Dump only specific properties of extracted Json to console. Valid property names are " + Environment.NewLine +
+        "            -Properties xxx            Dump only specific properties of extracted Json to console. You can exclude them by adding ! in front of its name. Multiple properties can be separated by space, commma or semicolon. Valid property names are " + Environment.NewLine +
        $"                                       {DumpStats.AllProperties}" + Environment.NewLine +
         "            -OneLine                   Print properties on console on a single line per file" + Environment.NewLine
         ;
@@ -441,7 +441,9 @@ namespace ETWAnalyzer.Commands
         "[green]Dump from ETL file event statistics, session times, ...[/green]" + Environment.NewLine +
         " ETWAnalyzer -dump Stats -filedir/fd xx.etl" + Environment.NewLine +
         "[green]Dump from Extracted Json files Core Count, Memory, OS Version on a single line (CSV export is also supported)[/green]" + Environment.NewLine +
-        " ETWAnalyzer -dump Stats -filedir c:\\MainVersion\\Extract -properties NumberOfProcessors,MemorySizeMB,OSVersion -OneLine" + Environment.NewLine;
+        " ETWAnalyzer -dump Stats -filedir c:\\MainVersion\\Extract -properties NumberOfProcessors,MemorySizeMB,OSVersion -OneLine" + Environment.NewLine+
+        "[green]Dump all properties except network and disk.[/green]" + Environment.NewLine +
+        " ETWAnalyzer -dump Stats -filedir c:\\MainVersion\\Extract -properties !Network;!Disk" + Environment.NewLine;
 
         static readonly string VersionExamples = ExamplesHelpString +
         "[green]Module version of all modules. Module marker files are configured in the Configuration\\DllToBuildMap.json file[/green]" + Environment.NewLine +

@@ -13,7 +13,7 @@ using ETWAnalyzer.Extractors;
 using System.IO;
 using System.Threading;
 
-namespace ETWAnalyzer_uTest
+namespace ETWAnalyzer_uTest.Extractors
 {
 
     /// <summary>

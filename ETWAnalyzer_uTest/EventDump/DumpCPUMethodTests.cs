@@ -1,7 +1,6 @@
 ﻿//// SPDX-FileCopyrightText:  © 2022 Siemens Healthcare GmbH
 //// SPDX-License-Identifier:   MIT
 
-using ETWAnalyzer;
 using ETWAnalyzer.Commands;
 using ETWAnalyzer.EventDump;
 using ETWAnalyzer.Extract;
@@ -10,13 +9,10 @@ using ETWAnalyzer.Helper;
 using ETWAnalyzer.Infrastructure;
 using ETWAnalyzer_uTest.TestInfrastructure;
 using Microsoft.Windows.EventTracing;
-using NuGet.Frameworks;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Xunit;
 using Xunit.Abstractions;
 using static ETWAnalyzer.Commands.DumpCommand;

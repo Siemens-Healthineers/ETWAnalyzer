@@ -22,7 +22,7 @@
     <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
     <PackageProjectUrl>https://github.com/Siemens-Healthineers/ETWAnalyzer</PackageProjectUrl>
     <PackageReadmeFile>ProgramaticAccess.md</PackageReadmeFile>
-    <Version>3.0.0.13</Version>
+    <Version>3.0.0.14</Version>
     <Platforms>x64</Platforms>
     <ServerGarbageCollection>true</ServerGarbageCollection>
     <GarbageCollectionAdaptationMode>1</GarbageCollectionAdaptationMode>
@@ -76,12 +76,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="8.0.0">
+    <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="9.0.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.Diagnostics.Tracing.TraceEvent">
-      <Version>3.1.7</Version>
+      <Version>3.1.23</Version>
     </PackageReference>
     <PackageReference Include="Microsoft.Windows.EventTracing.Processing.All">
       <Version>1.12.10</Version>

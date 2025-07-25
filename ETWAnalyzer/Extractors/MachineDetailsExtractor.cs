@@ -33,7 +33,6 @@ namespace ETWAnalyzer.Extractors
         }
 
 
-
         public override void RegisterParsers(ITraceProcessor processor)
         {
             myProcesses = processor.UseProcesses();
@@ -123,6 +122,8 @@ namespace ETWAnalyzer.Extractors
                     SubVersion = mySpecialEvents.SubVersion,
                     TimerResolution = mySpecialEvents.TimerResolution,
                 };
+
+                results.NetworkInterfaces = mySpecialEvents.NetworkInterfaces;
             }
 
             ExtractDisplayInformation(meta, results);

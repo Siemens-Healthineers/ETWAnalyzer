@@ -10,6 +10,7 @@ using ETWAnalyzer.Extract.Network;
 using ETWAnalyzer.Extract.PMC;
 using ETWAnalyzer.Extract.Power;
 using ETWAnalyzer.Extract.ThreadPool;
+using ETWAnalyzer.Extract.TraceLogging;
 using ETWAnalyzer.Infrastructure;
 using System;
 using System.Collections.Generic;
@@ -84,6 +85,11 @@ namespace ETWAnalyzer.Extract
         /// Get Network data
         /// </summary>
         INetwork Network { get; }
+
+        /// <summary>
+        /// List of network interfaces which are usually collected during ETW rundown. The event is SystemConfig/NIC
+        /// </summary>
+        IReadOnlyList<INetworkInterface> NetworkInterfaces { get; }
 
         /// <summary>
         /// True when machine is joined domain
@@ -218,7 +224,13 @@ namespace ETWAnalyzer.Extract
         public IHandleObjectData HandleData { get; }
 
         /// <summary>
-        /// Convert a trace relative time which is seconds since trace start to an absolue time
+        /// Contains TraceLogging (manifest free) ETW provider data which are all C# ETW providers which derive from <see cref="System.Diagnostics.Tracing.EventSource"/>
+        /// One can generate TraceLogging events also in C++ code. 
+        /// </summary>
+        public ITraceLoggingData TraceLogging { get; }  
+
+        /// <summary>
+        /// Convert a trace relative time which is seconds since trace start to an absolute time
         /// </summary>
         /// <param name="traceSinceStartIns"></param>
         /// <returns></returns>

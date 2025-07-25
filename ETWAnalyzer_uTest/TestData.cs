@@ -178,6 +178,32 @@ namespace ETWAnalyzer_uTest
             }
         }
 
+
+        /// <summary>
+        /// TraceLoggingTester ETL file which is used to test the TraceLoggingExtractor 
+        /// </summary>
+        public static string TraceLoggingTesterEtlFile
+        {
+            get
+            {
+                lock (_Lock)
+                {
+                    const string TraceLoggingTester = "TraceLoggingTester";
+                    string srcPath = GetPath(TraceLoggingTester+".7z");
+                    string unzipedFile = Path.Combine(Path.GetDirectoryName(srcPath), TraceLoggingTester + ".etl");
+                    if (!File.Exists(unzipedFile))
+                    {
+                        // To speed up the tests store only the compressed version and unzip it only once
+                        // the EtlZipCommand will skip decompression if the resulting ETL file exist already in place
+                        EtlZipCommand cmd = new EtlZipCommand();
+                        unzipedFile = cmd.Unzip(srcPath, null, new ETWAnalyzer.Extract.SymbolPaths { SymbolFolder = "C:\\Symbols" });
+                    }
+                    return unzipedFile;
+                }
+
+            }
+        }
+
         public static string ClientZipFileNameNoPath
         {
             get => "CallupAdhocWarmReadingCT_3117msFO9DE01T0162PC.20200717-124447.7z";
@@ -307,7 +333,7 @@ namespace ETWAnalyzer_uTest
                 MaxDegreeOfParallelism = 4,
             }, (file) =>
             {
-                string emptyJsonFile = Path.Combine(temp.Name, Program.ExtractFolder, file.Name.Substring(0, file.Name.Length - 3) + ".json");
+                string emptyJsonFile = Path.Combine(temp.Name, Program.ExtractFolder, file.Name[..^3] + ".json");
                 using (var createdFile = new FileStream(emptyJsonFile, FileMode.Create))
                 {
                 }

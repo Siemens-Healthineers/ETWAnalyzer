@@ -9,7 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Xunit;
 
-namespace ETWAnalyzer_uTest.Extract
+namespace ETWAnalyzer_uTest.Extractors
 {
     public class PMCExtractorTests
     {
@@ -31,7 +31,7 @@ namespace ETWAnalyzer_uTest.Extract
                     CounterName = "SampleCounter",
                     ProcessMap = new Dictionary<ETWProcessIndex, ulong>
                     {
-                        { ( (ETWProcessIndex) 0), 500 },
+                        {   0, 500 },
                     },
                 }
             };
@@ -52,7 +52,7 @@ namespace ETWAnalyzer_uTest.Extract
             Assert.NotNull(deserialized.PMC.Counters);
             Assert.Single(deserialized.PMC.Counters);
             Assert.Equal("SampleCounter", deserialized.PMC.Counters[0].CounterName);
-            Assert.Equal(500u, deserialized.PMC.Counters[0].ProcessMap[(ETWProcessIndex) 0]);
+            Assert.Equal(500u, deserialized.PMC.Counters[0].ProcessMap[ 0]);
         }
     }
 }

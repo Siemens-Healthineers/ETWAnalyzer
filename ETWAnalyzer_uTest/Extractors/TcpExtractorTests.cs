@@ -15,8 +15,9 @@ using Microsoft.Windows.EventTracing.Processes;
 using System.Security.Cryptography;
 using ETWAnalyzer.Extract.Network.Tcp;
 using System.ComponentModel.DataAnnotations;
+using ETWAnalyzer_uTest.Extract;
 
-namespace ETWAnalyzer_uTest.Extract
+namespace ETWAnalyzer_uTest.Extractors
 {
     public class TcpExtractorTests
     {
@@ -170,7 +171,7 @@ namespace ETWAnalyzer_uTest.Extract
 
             extractor.ExtractFromGenericEvents(extract, events);
 
-            IETWExtract iExtract = (IETWExtract)extract;
+            IETWExtract iExtract = extract;
             var tcpData = iExtract.Network.TcpData;
 
             Assert.Single(tcpData.Connections);
@@ -224,7 +225,7 @@ namespace ETWAnalyzer_uTest.Extract
 
             extractor.ExtractFromGenericEvents(extract, events);
 
-            IETWExtract iExtract = (IETWExtract)extract;
+            IETWExtract iExtract = extract;
             Assert.Equal(3, iExtract.Network.TcpData.Connections.Count);
 
             ITcpRetransmission retrans0 = iExtract.Network.TcpData.Retransmissions[0];
@@ -271,7 +272,7 @@ namespace ETWAnalyzer_uTest.Extract
 
             extractor.ExtractFromGenericEvents(extract, events);
 
-            IETWExtract iExtract = (IETWExtract)extract;
+            IETWExtract iExtract = extract;
 
             Assert.Equal(3, iExtract.Network.TcpData.Connections.Count);
 
@@ -380,7 +381,7 @@ namespace ETWAnalyzer_uTest.Extract
         {
             string[] parts = ipAndPort.Split(new char[] { ':' }, StringSplitOptions.RemoveEmptyEntries);
 
-            IPAddress ip = IPAddress.Parse(String.Join(":", parts.Take(parts.Length - 1)));
+            IPAddress ip = IPAddress.Parse(string.Join(":", parts.Take(parts.Length - 1)));
             int port = int.Parse(parts.Last());
 
             var endPoint = new IPEndPoint(ip, port);

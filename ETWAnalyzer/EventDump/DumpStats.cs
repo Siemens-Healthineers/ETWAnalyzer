@@ -5,6 +5,7 @@ using ETWAnalyzer.EventDump;
 using ETWAnalyzer.Extract;
 using ETWAnalyzer.Extract.CPU.Extended;
 using ETWAnalyzer.Extract.Disk;
+using ETWAnalyzer.Extract.Network;
 using ETWAnalyzer.Infrastructure;
 using ETWAnalyzer.ProcessTools;
 using Microsoft.Diagnostics.Tracing;
@@ -62,15 +63,15 @@ namespace ETWAnalyzer
             "IsDomainJoined",
             "MainModuleVersion",
             "Displays",
-
+            "Network",
         };
 
         /// <summary>
         /// This is the list of all supported properties on the command line switch -properties of -dump stats
         /// </summary>
-        static internal string AllProperties = String.Join(", ", PropertyNames.Take(10)) + Environment.NewLine +
+        static internal string AllProperties = String.Join(",", PropertyNames.Take(10)) + Environment.NewLine +
                                                "                                                    " +
-                                               String.Join(", ", PropertyNames.Skip(10));
+                                               String.Join(",", PropertyNames.Skip(10));
 
 
         /// <summary>
@@ -118,7 +119,8 @@ namespace ETWAnalyzer
             { "AdDomain",           m => m.AdDomain },
             { "IsDomainJoined",     m => m.IsDomainJoined },
             { "MainModuleVersion",  m => m.MainModuleVersion },
-            { "Displays",           m => $"Horizontal: {m.DisplaysHorizontalResolution} Vertical: {m.DisplaysVerticalResolution} MemoryMiB: {m.DisplaysMemoryMiB} Name: {m.DisplaysNames}" }
+            { "Displays",           m => $"Horizontal: {m.DisplaysHorizontalResolution} Vertical: {m.DisplaysVerticalResolution} MemoryMiB: {m.DisplaysMemoryMiB} Name: {m.DisplaysNames}" },
+            { "Network",            m => String.Join(Environment.NewLine, m.NetworkInterfaces.Select(x=> $"{x.NicDescription,-50}  {x.PhysicalAddress,-17} Address: {x.IpAddresses,-20} DNS: {x.DnsServerAddresses}")) },
 
         };
 
@@ -224,6 +226,8 @@ namespace ETWAnalyzer
             public bool? CPUHyperThreadingEnabled { get; internal set; }
             public string BaseLine { get; internal set; }
             public IReadOnlyDictionary<CPUNumber, ICPUTopology> Topology { get; internal set; }
+
+            public IReadOnlyList<INetworkInterface> NetworkInterfaces { get; internal set; } = new List<INetworkInterface>();
         }
 
 
@@ -242,7 +246,14 @@ namespace ETWAnalyzer
 
         public override List<string> ExecuteInternal()
         {
-            string[] properties =  Properties != null ? Properties.Split(new char[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries) : DumpStats.PropertyNames;
+            string[] properties =  Properties != null ? Properties.Split(new char[] { ',', ' ', ';' }, StringSplitOptions.RemoveEmptyEntries) : DumpStats.PropertyNames;
+
+            if( properties.Any(x=>x.StartsWith("!")) )
+            {
+                List<string> forbidden = properties.Select(x => x.Substring(1)).ToList();
+                properties = DumpStats.PropertyNames.Where(x => !forbidden.Contains(x)).ToArray();
+            }
+
             foreach(var prop in properties)
             {
                 KeyValuePair<string,Func<Match,object>> extractor = myFieldPropertyExtractors.FirstOrDefault(x => String.Compare(x.Key, prop, StringComparison.OrdinalIgnoreCase) == 0);
@@ -311,6 +322,7 @@ namespace ETWAnalyzer
                                 DisplaysNames = String.Join("~", (file.Extract.Displays ?? Enumerable.Empty<Display>()).Select(x => x.DisplayName.ToString())),
                                 DisplaysMemoryMiB = String.Join("~", (file.Extract.Displays ?? Enumerable.Empty<Display>()).Select(x => x.GraphicsCardMemorySizeMiB.ToString())),
                                 MainModuleVersion = file.Extract.MainModuleVersion?.ToString() ?? "",
+                                NetworkInterfaces = file.Extract.NetworkInterfaces,
                             };
 
                             Write(m);
@@ -331,11 +343,12 @@ namespace ETWAnalyzer
                 {
                     myHeaderWritten = true;
                     OpenCSVWithHeader(Col_CSVOptions, Col_TestCase, "TestDate", Col_TestTimeinms, "SourceFile", Col_Machine, "SourceETLFileName", Col_Baseline, "UsedExtractOptions", "OSName", "OSBuild", "OSVersion", "MemorySizeMB", "NumberOfProcessors", "CPUSpeedMHz", "SessionStart", "SessionEnd", "BootTime", "Model",
-                                      "AdDomain", "IsDomainJoined", "DisplaysHorizontalResolution", "DisplaysVerticalResolution", "DisplayNames", "MainModuleVersion", "DisplaysMemoryMiB");
+                                      "AdDomain", "IsDomainJoined", "DisplaysHorizontalResolution", "DisplaysVerticalResolution", "DisplayNames", "MainModuleVersion", "Network", "DisplaysMemoryMiB");
                 }
 
+                string networkStr = String.Join(Environment.NewLine, m.NetworkInterfaces.Select(n => $"Address: {n.IpAddresses}, Desc: {n.NicDescription}, PhysicalAddress: {n.PhysicalAddress}, DNS: {n.DnsServerAddresses}"));
                 WriteCSVLine(CSVOptions, m.TestCase, m.PerformedAt, m.DurationMs, m.Source, m.Machine, m.SourceETLFileName, m.BaseLine,  m.UsedExtractOptions, m.OSName, m.OSBuild, m.OSVersion, m.MemorySizeMB, m.NumberOfProcessors, m.CPUSpeedMHz, m.SessionStart, m.SessionEnd, m.BootTime, m.Model,
-                             m.AdDomain, m.IsDomainJoined, m.DisplaysHorizontalResolution, m.DisplaysVerticalResolution, m.DisplaysNames, m.MainModuleVersion, m.DisplaysMemoryMiB);
+                             m.AdDomain, m.IsDomainJoined, m.DisplaysHorizontalResolution, m.DisplaysVerticalResolution, m.DisplaysNames, m.MainModuleVersion, networkStr, m.DisplaysMemoryMiB);
             }
             else
             {
