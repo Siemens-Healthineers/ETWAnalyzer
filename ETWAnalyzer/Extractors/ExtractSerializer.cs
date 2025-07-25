@@ -66,6 +66,11 @@ namespace ETWAnalyzer.Extractors
         public const string HandleStackPostFix = "HandleStacks";
 
         /// <summary>
+        /// Stacks for Tracelogging events are stored in external file with this postfix.
+        /// </summary>
+        public const string TraceLogStackPostFix = "TraceLogStacks";    
+
+        /// <summary>
         /// Shared Json Serializer
         /// </summary>
         static volatile JsonSerializer mySerializer;
@@ -206,6 +211,10 @@ namespace ETWAnalyzer.Extractors
 
                 if( extract?.TraceLogging != null && extract.TraceLogging.EventsByProvider.Count > 0 )
                 {
+                    using var stackTraceLogingStream = GetOutputStreamFor(TraceLogStackPostFix, outputFiles);
+                    Serialize<StackCollection>(stackTraceLogingStream, extract.TraceLogging.Stacks);
+                    extract.TraceLogging.Stacks = null; // do not serialize stack data into tracelog file
+
                     using var traceLoggingStream = GetOutputStreamFor(TraceLoggingPostFix, outputFiles);
                     Serialize<TraceLoggingEventData>(traceLoggingStream, extract.TraceLogging);
                     extract.TraceLogging = null;  // do not serialize data twice into different files

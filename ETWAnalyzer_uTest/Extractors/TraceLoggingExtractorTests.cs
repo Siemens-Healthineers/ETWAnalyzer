@@ -10,7 +10,7 @@ using System.Collections.Generic;
 using System.IO;
 using Xunit;
 
-namespace ETWAnalyzer_uTest.Extract
+namespace ETWAnalyzer_uTest.Extractors
 {
     public class TraceLoggingExtractorTests
     {
@@ -56,11 +56,17 @@ namespace ETWAnalyzer_uTest.Extract
             DateTimeOffset KTime = new DateTimeOffset(2000, 1, 1, 1, 1, 1, TimeSpan.Zero);
 
 
+            const string Stack1 = "Stack 1";
+
+            var stackIdx1 = extract.TraceLogging.Stacks.AddStack(Stack1);
+
             extract.TraceLogging.EventsByProvider["TestProvider"].Events.Add(new TraceLoggingEvent
             {
                 EventId = 1,
+                ThreadId = 100,
                 TimeStamp = KTime,
-                Process = (ETWProcessIndex) 0,
+                Process =  0,
+                StackIdx = stackIdx1,
                 Fields = new Dictionary<string, string>
                 {
                     { StringFieldName1, StringValue1 },
@@ -91,13 +97,15 @@ namespace ETWAnalyzer_uTest.Extract
 
             Assert.Single(traceLog.EventsByProvider);
             Assert.Equal(providerId, traceLog.EventsByProvider["TestProvider"].ProviderId);
-            var testProvider = traceLog.EventsByProvider["TestProvider"];
+            ITraceLoggingProvider testProvider = traceLog.EventsByProvider["TestProvider"];
           
             Assert.Single(testProvider.EventDescriptors);
 
-            var descriptor = testProvider.EventDescriptors[1];
+            // Event Descriptor asserts
+            ITraceLoggingEventDescriptor descriptor = testProvider.EventDescriptors[1];
 
             Assert.Equal(1, descriptor.EventId);
+
             Assert.Equal("TestEvent", descriptor.Name);
             Assert.Equal(2, descriptor.FieldNames.Count);
 
@@ -107,17 +115,27 @@ namespace ETWAnalyzer_uTest.Extract
             Assert.Single(descriptor.ListNames);
             Assert.Equal(IntListName, descriptor.ListNames[0]);
 
+            // Event Data asserts
             Assert.Single(testProvider.Events);
-            var traceEv = testProvider.Events[0];
+            ITraceLoggingEvent traceEv = testProvider.Events[0];
 
             Assert.Equal(1, traceEv.EventId);
+            Assert.Equal(100, traceEv.ThreadId);
             Assert.Equal(KTime, traceEv.TimeStamp);
+            Assert.Equal(stackIdx1, traceEv.StackIdx);
             Assert.Equal(1, traceEv.EventId);
             Assert.Equal(0, (int) traceEv.Process);
-            Assert.Equal(StringValue1, traceEv.Fields[StringFieldName1]);
-            Assert.Equal("42", traceEv.Fields[IntFieldName1]);
+            Assert.Equal(StringValue1, traceEv.TryGetField(StringFieldName1));
+            Assert.Equal("42", traceEv.TryGetField(IntFieldName1));
 
-            var intList = traceEv.Lists[IntListName];
+            Assert.Equal("TestEvent", traceEv.TypeInformation.Name);
+
+            ETWAnalyzer.Extract.Common.IStackCollection stacks = traceLog.Stacks;
+            Assert.Equal(Stack1, stacks.GetStack(traceEv.StackIdx));
+
+            
+
+            IReadOnlyList<string> intList = traceEv.TryGetList(IntListName);
 
             Assert.Equal(3, intList.Count);
             Assert.Equal(new List<string> { "1", "2", "3" }, intList);

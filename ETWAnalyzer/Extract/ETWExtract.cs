@@ -410,6 +410,15 @@ namespace ETWAnalyzer.Extract
                 if (lret != null)
                 {
                     lret.DeserializedFileName = DeserializedFileName;
+
+                    // Make object access easier by attaching type information after deserialize to each event
+                    foreach(var kvp in lret.EventsByProvider)
+                    {
+                        foreach (var ev in kvp.Value.Events)
+                        {
+                            ev.TypeInformation = kvp.Value.EventDescriptors[ev.EventId];
+                        }
+                    }
                 }
             }
 

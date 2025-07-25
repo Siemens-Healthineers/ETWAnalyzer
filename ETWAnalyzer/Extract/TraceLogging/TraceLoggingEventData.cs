@@ -3,6 +3,7 @@
 
 
 using ETWAnalyzer.Extract.Common;
+using ETWAnalyzer.Extractors;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -30,7 +31,49 @@ namespace ETWAnalyzer.Extract.TraceLogging
             }
         }
 
+        /// <summary>
+        /// Stack raw data used by events. Only set during extraction later we read data via interface back from an external file upon access.
+        /// </summary>
+        public StackCollection Stacks { get; set; } = new();
+
+        /// <summary>
+        /// Stack trace collection which is linked by StackIdx stored in <see cref="ITraceLoggingProvider.Events"/>
+        /// </summary>
+        IStackCollection ITraceLoggingData.Stacks => myStackReader.Value;
+
+        /// <summary>
+        /// Read stack data from external file upon access
+        /// </summary>
+        readonly Lazy<StackCollection> myStackReader;
+
+        /// <summary>
+        /// Needed by derived classes to deserialize data from further external files.
+        /// </summary>
         internal string DeserializedFileName { get; set; }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TraceLoggingEventData"/> class.
+        /// </summary>
+        public TraceLoggingEventData()
+        {
+            myStackReader = new Lazy<StackCollection>(ReadTraceLogStacksFromExternalFile);
+        }
+
+        /// <summary>
+        /// This is where we deserialize stack data from derived file if it was set in <see cref="DeserializedFileName"/>.
+        /// </summary>
+        /// <returns></returns>
+        StackCollection ReadTraceLogStacksFromExternalFile()
+        {
+            StackCollection lret = Stacks;
+            if (DeserializedFileName != null)
+            {
+                ExtractSerializer ser = new(DeserializedFileName);
+                lret = ser.Deserialize<StackCollection>(ExtractSerializer.TraceLogStackPostFix);
+            }
+
+            return lret;
+        }
     }
 
     /// <summary>
@@ -42,6 +85,11 @@ namespace ETWAnalyzer.Extract.TraceLogging
         /// Dictionary of TraceLogging providers, indexed by provider name.
         /// </summary>
         public IReadOnlyDictionary<string, ITraceLoggingProvider> EventsByProvider { get; }
+
+        /// <summary>
+        /// Stack trace collection which is linked by StackIdx stored in <see cref="ITraceLoggingProvider.Events"/>
+        /// </summary>
+        IStackCollection Stacks { get; }
     }
 
     /// <summary>
@@ -114,6 +162,11 @@ namespace ETWAnalyzer.Extract.TraceLogging
         public int EventId { get; set; }
 
         /// <summary>
+        /// Gets or sets the thread ID associated with the event.
+        /// </summary>
+        public int ThreadId { get; set; }
+
+        /// <summary>
         /// A dictionary of fields, where the key is the field name and the value is the field value.
         /// </summary>
         public Dictionary<string, string> Fields { get; set; } = new Dictionary<string, string>();
@@ -122,6 +175,32 @@ namespace ETWAnalyzer.Extract.TraceLogging
         /// A dictionary of lists, where the key is the list name and the value is a list of strings.
         /// </summary>
         public Dictionary<string, List<string>> Lists { get; set; } = new Dictionary<string, List<string>>();
+
+        /// <summary>
+        /// Try to get a field value by its name. Returns null if the field does not exist, or it was never set.
+        /// </summary>
+        /// <param name="fieldName">Name of field</param>
+        /// <returns></returns>
+        public string TryGetField(string fieldName)
+        {
+            Fields.TryGetValue(fieldName, out string value);
+            return value;
+        }
+
+        /// <summary>
+        /// Try to get a list by its name. If the list does not exist, it returns an empty list.
+        /// </summary>
+        /// <param name="listName">Name of list field.</param>
+        /// <returns></returns>
+        public IReadOnlyList<string> TryGetList(string listName)
+        {
+            if (!Lists.TryGetValue(listName, out List<string> list))
+            {
+                list = new List<string>();
+            }
+
+            return list;
+        }
 
         /// <summary>
         /// Stack Index
@@ -138,20 +217,12 @@ namespace ETWAnalyzer.Extract.TraceLogging
         /// </summary>
         public DateTimeOffset TimeStamp { get; set; } = DateTimeOffset.MinValue;
 
-        IReadOnlyDictionary<string, string> ITraceLoggingEvent.Fields => Fields;
+        /// <summary>
+        /// Set during deserialize
+        /// </summary>
+        internal TraceLoggingEventDescriptor TypeInformation { get; set; }
 
-        IReadOnlyDictionary<string, IReadOnlyList<string>> myLists;
-        IReadOnlyDictionary<string, IReadOnlyList<string>> ITraceLoggingEvent.Lists
-        {
-            get
-            {
-                if (myLists == null)
-                {
-                    myLists = Lists.ToDictionary(kvp => kvp.Key, kvp => (IReadOnlyList<string>)kvp.Value);
-                }
-                return myLists; 
-            }
-        }
+        ITraceLoggingEventDescriptor ITraceLoggingEvent.TypeInformation => TypeInformation;
     }
 
     /// <summary>
@@ -165,14 +236,9 @@ namespace ETWAnalyzer.Extract.TraceLogging
         int EventId { get; }
 
         /// <summary>
-        /// A dictionary of fields, where the key is the field name and the value is the field value.
+        /// Gets the thread ID associated with the event.
         /// </summary>
-        IReadOnlyDictionary<string, string> Fields { get; }
-
-        /// <summary>
-        /// A dictionary of lists, where the key is the list name and the value is a list of strings.
-        /// </summary>
-        IReadOnlyDictionary<string, IReadOnlyList<string>> Lists { get; }
+        public int ThreadId { get; }
 
         /// <summary>
         /// Process Index
@@ -188,6 +254,25 @@ namespace ETWAnalyzer.Extract.TraceLogging
         /// Gets the timestamp of the event.
         /// </summary>
         DateTimeOffset TimeStamp { get; }
+
+        /// <summary>
+        /// Try to get a list by its name. If the list does not exist, it returns an empty list.
+        /// </summary>
+        /// <param name="listName">Name of list field.</param>
+        /// <returns></returns>
+        IReadOnlyList<string> TryGetList(string listName);
+
+        /// <summary>
+        /// Try to get a field value by its name. Returns null if the field does not exist, or it was never set.
+        /// </summary>
+        /// <param name="fieldName">Name of field</param>
+        /// <returns></returns>
+        string TryGetField(string fieldName);
+
+        /// <summary>
+        /// Type descriptor for this event which contains field map and others.
+        /// </summary>
+        ITraceLoggingEventDescriptor TypeInformation { get; } 
     }
 
     /// <summary>

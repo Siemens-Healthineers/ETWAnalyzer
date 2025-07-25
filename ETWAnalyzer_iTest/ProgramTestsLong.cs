@@ -664,45 +664,56 @@ namespace ETWAnalyzer_iTest
                 var timeSpanEv = prov.Value.Events[5];
                 var guidEv = prov.Value.Events[6];
 
-                Assert.Equal("Hello, ETW!", stringEv.Fields["input"]);
+                Assert.Equal("Hello, ETW!", stringEv.TryGetField("input"));
 
-                Assert.Equal("Hello, ETW with number", stringIntEv.Fields["input"]);
-                Assert.Equal("42", stringIntEv.Fields["number1"]);
+                Assert.Equal("Hello, ETW with number", stringIntEv.TryGetField("input"));
+                Assert.Equal("42", stringIntEv.TryGetField("number1"));
 
-                Assert.Equal("True", complexEv.Fields["boolean"]);
-                Assert.Equal("0", complexEv.Fields["b"]);
-                Assert.Equal("A", complexEv.Fields["c"]);
-                Assert.Equal("3.14", complexEv.Fields["d"]);
-                Assert.Equal("-32768", complexEv.Fields["i16"]);
-                Assert.Equal("2147483647", complexEv.Fields["i32"]);
-                Assert.Equal("9223372036854775807", complexEv.Fields["i64"]);
-                Assert.Equal("-128", complexEv.Fields["sb"]);
-                Assert.Equal("65535", complexEv.Fields["u16"]); 
-                Assert.Equal("4294967295", complexEv.Fields["u32"]);
-                Assert.Equal("18446744073709551615", complexEv.Fields["u64"]);
+                Assert.Equal("True", complexEv.TryGetField("boolean"));
+                Assert.Equal("0", complexEv.TryGetField("b"));
+                Assert.Equal("A", complexEv.TryGetField("c"));
+                Assert.Equal("3.14", complexEv.TryGetField("d"));
+                Assert.Equal("-32768", complexEv.TryGetField("i16"));
+                Assert.Equal("2147483647", complexEv.TryGetField("i32"));
+                Assert.Equal("9223372036854775807", complexEv.TryGetField("i64"));
+                Assert.Equal("-128", complexEv.TryGetField("sb"));
+                Assert.Equal("65535", complexEv.TryGetField("u16"));
+                Assert.Equal("4294967295", complexEv.TryGetField("u32"));
+                Assert.Equal("18446744073709551615", complexEv.TryGetField("u64"));
 
-                Assert.Equal(new List<string> { "0", "2", "3", "4" }, listEv.Lists["numbers"]);
-                Assert.Equal("2000-01-01T00:00:00.0000000Z", dateTimeEv.Fields["dateTime"]);
-                Assert.Equal("420000000", timeSpanEv.Fields["timeSpan"]);
-                Assert.Equal("00000000-0000-0000-0000-000000000001", guidEv.Fields["guid"]);
+                Assert.Equal(new List<string> { "0", "2", "3", "4" }, listEv.TryGetList("numbers"));
+                Assert.Equal("2000-01-01T00:00:00.0000000Z", dateTimeEv.TryGetField("dateTime"));
+                Assert.Equal("420000000", timeSpanEv.TryGetField("timeSpan"));
+                Assert.Equal("00000000-0000-0000-0000-000000000001", guidEv.TryGetField("guid"));
 
                 myWriter.WriteLine($"Provider: {prov.Key}");
                 foreach (var evt in prov.Value.Events)
                 {
-                    myWriter.WriteLine($"  Event: {evt.EventId}");
-                    foreach (var field in evt.Fields)
+                    myWriter.WriteLine($"Event: {evt.TypeInformation.Name} ({evt.EventId})");   
+                    // Fix: Use TryGetFields for fields
+                    foreach (var field in evt.TypeInformation.FieldNames)
                     {
-                        myWriter.WriteLine($"    Field: {field.Key} - {field.Value}");
+                        myWriter.WriteLine($"    Field: {field} - {evt.TryGetField(field)}");
                     }
-                    foreach(var list in evt.Lists)
+                    // Fix: Use TryGetLists for lists
+                    foreach (var list in evt.TypeInformation.ListNames)
                     {
-                        myWriter.WriteLine($"    List: {list.Key}");
-                        foreach (var item in list.Value)
+                        myWriter.WriteLine($"    List: {list}");
+                        foreach (var item in evt.TryGetList(list))
                         {
                             myWriter.WriteLine($"      Item: {item}");
                         }
                     }
-                }       
+                    string stackStr = tracelog.Stacks.GetStack(evt.StackIdx);
+                    myWriter.WriteLine("Stack: " + stackStr);
+
+                    // Check if symbol loading for JITed code did work 
+                    // for some strange reason the stack trace for the .NET app does not start at RtlUserThreadStart needs to be checked if stackwalker has issues with .NET Core code. 
+                    if( evt.TypeInformation.Name == "MarkString")
+                    {
+                        Assert.Contains("TraceLoggingTester.dll!TraceLoggingTester.TestSource.MarkString", stackStr);
+                    }
+                }
             }
         }
 

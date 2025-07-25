@@ -16,7 +16,7 @@ using System.Threading.Tasks;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace ETWAnalyzer_uTest.Extract
+namespace ETWAnalyzer_uTest.Extractors
 {
     public class TimelineExtractorTests
     {

@@ -5,13 +5,17 @@ using ETWAnalyzer.Extract;
 using ETWAnalyzer.Extract.Common;
 using ETWAnalyzer.Extract.TraceLogging;
 using ETWAnalyzer.Infrastructure;
+using ETWAnalyzer.TraceProcessorHelpers;
+using Microsoft.Diagnostics.Tracing.Stacks;
 using Microsoft.Windows.EventTracing;
 using Microsoft.Windows.EventTracing.Events;
+using Microsoft.Windows.EventTracing.Symbols;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Net;
+using System.Reflection;
 using System.Security.Principal;
 
 namespace ETWAnalyzer.Extractors.TraceLogging
@@ -110,7 +114,7 @@ namespace ETWAnalyzer.Extractors.TraceLogging
         /// Event data read from ETL file
         /// </summary>
         private IPendingResult<IGenericEventDataSource> myEvents;
-
+        IPendingResult<IStackDataSource> myStackSource;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TraceLoggingEventExtractor"/> class.
@@ -121,12 +125,15 @@ namespace ETWAnalyzer.Extractors.TraceLogging
 
         public override void RegisterParsers(ITraceProcessor processor)
         {
+            NeedsSymbols = true;
             myEvents = processor.UseGenericEvents();
         }
 
         public override void Extract(ITraceProcessor processor, ETWExtract results)
         {
             using var logger = new PerfLogger("Extract TraceLogging Events");
+
+            StackPrinter printer = new StackPrinter(StackFormat.DllAndMethod);
 
             TraceLoggingEventData traceLoggingData = new();
 
@@ -161,10 +168,20 @@ namespace ETWAnalyzer.Extractors.TraceLogging
                         data.EventDescriptors.Add(ev.Id, descriptor);
                     }
 
+                    IStackSnapshot stacktrace = ev.Stack;
+                    StackIdx stackIdx = StackIdx.None;
+                    if( stacktrace != null )
+                    {
+                        string stackStr = "";
+                        stackStr = printer.Print(stacktrace);
+                        stackIdx = traceLoggingData.Stacks.AddStack(stackStr);
+                    }
+
                     var logEv = new TraceLoggingEvent
                     {
                         EventId = ev.Id,
-                        StackIdx = StackIdx.None,
+                        ThreadId = ev.ThreadId,
+                        StackIdx = stackIdx,
                         Process = results.GetProcessIndexByPidAtTime(ev.ProcessId, ev.Timestamp.DateTimeOffset),
                         TimeStamp = ev.Timestamp.DateTimeOffset,
                     };

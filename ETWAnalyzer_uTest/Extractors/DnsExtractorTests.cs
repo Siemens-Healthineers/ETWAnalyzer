@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace ETWAnalyzer_uTest.Extract
+namespace ETWAnalyzer_uTest.Extractors
 {
     public class DnsExtractorTests
     {
@@ -63,7 +63,7 @@ namespace ETWAnalyzer_uTest.Extract
             };
 
             var stream = new MemoryStream();
-            ExtractSerializer.Serialize<ETWExtract>(stream, extract);
+            ExtractSerializer.Serialize(stream, extract);
 
             stream.Position = 0;
 
