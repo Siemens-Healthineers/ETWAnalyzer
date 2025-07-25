@@ -38,7 +38,7 @@ namespace ETWAnalyzer.Extract.Common
     public class StackCollection : IStackCollection
     {
         /// <summary>
-        /// Used during create time to Map the Index to a gien stack
+        /// Used during create time to Map the Index to a given stack
         /// </summary>
         [JsonIgnore]
         Dictionary<StackIdx, string> StackMap { get; } = new();
