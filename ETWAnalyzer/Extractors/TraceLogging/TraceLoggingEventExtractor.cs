@@ -114,7 +114,6 @@ namespace ETWAnalyzer.Extractors.TraceLogging
         /// Event data read from ETL file
         /// </summary>
         private IPendingResult<IGenericEventDataSource> myEvents;
-        IPendingResult<IStackDataSource> myStackSource;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TraceLoggingEventExtractor"/> class.
