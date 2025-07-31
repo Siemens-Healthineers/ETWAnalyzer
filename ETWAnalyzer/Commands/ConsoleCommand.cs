@@ -31,7 +31,14 @@ namespace ETWAnalyzer.Commands
 
         class ConsoleHelpCommand : ArgParser
         {
+            public static readonly string HelpDir = ".dir [-r] [-od] folder" + Environment.NewLine +
+                "   Show files in folder. Use -r for recursive and -od for sorting files by modify time. Default sort order is alphabetic." + Environment.NewLine;
+
+            public static readonly string HelpCd = ".cd folder" + Environment.NewLine +
+                "   Change current directory to folder. If no folder is given current directory is printed." + Environment.NewLine;
+
             public override string Help =>
+                HelpCd +
                 ".cls"+ Environment.NewLine + 
                 "   Clear screen." + Environment.NewLine +
                 ".converttime -time ..." + Environment.NewLine +
@@ -62,10 +69,6 @@ namespace ETWAnalyzer.Commands
                 ".timefmt fmt [precision]" + Environment.NewLine + 
                $"   Set time display format ({String.Join(" ", Enum.GetNames(typeof(EventDump.DumpBase.TimeFormats)).Where(x=>x!="None"))}) and precision (0-6) where default is 3." + Environment.NewLine +
                 "Pressing Ctrl-C will cancel current command, Ctrl-Break will terminate";
-
-            public static readonly string HelpDir = ".dir [-r] [-od] folder" + Environment.NewLine +
-                "   Show files in folder. Use -r for recursive and -od for sorting files by modify time. Default sort order is alphabetic." + Environment.NewLine;
-
 
             public override void Parse()
             {
@@ -120,7 +123,8 @@ namespace ETWAnalyzer.Commands
             string[] args = parts.Skip(1).ToArray();
             ICommand command = cmd switch
             {
-                ".dir" => ShowDirectoryContents(args),   
+                ".dir" => ShowDirectoryContents(args),  
+                ".cd" => ChangeDirectory(args),
                 ".load" => Load(args, bKeepOldFiles:false),
                 ".load+" => Load(args, bKeepOldFiles:true),
                 ".unload" => Unload(args),
@@ -426,6 +430,42 @@ namespace ETWAnalyzer.Commands
             return cmd;
         }
 
+
+        private ICommand ChangeDirectory(string[] args)
+        {
+            ICommand cmd = null;
+
+            if (args.Length == 0)
+            {
+                // print current directory
+                Console.WriteLine($"Current directory is {Directory.GetCurrentDirectory()}");
+            } else if (args.Length == 1)
+            {
+                string dir = args[0];
+                try
+                {
+                    Directory.SetCurrentDirectory(dir);
+                }
+                catch (DirectoryNotFoundException)
+                {
+                    ColorConsole.WriteError($"Directory {dir} was not found.");
+                }
+                catch (UnauthorizedAccessException)
+                {
+                    ColorConsole.WriteError($"You do not have access to directory {dir}.");
+                }
+                catch (Exception ex)
+                {
+                    ColorConsole.WriteError($"Could not change directory to {dir}. Got {ex.GetType().Name}: {ex.Message}");
+                }
+            }
+            else
+            {
+                ColorConsole.WriteError("Change directory command needs one argument with the new directory name.");
+            }
+
+            return cmd;
+        }
 
         enum SortOrders
         {
