@@ -135,7 +135,7 @@ namespace ETWAnalyzer.Extract.Modules
         /// File Version identifier
         /// </summary>
         [JsonIgnore]
-        public Version Fileversion => new(Container.SharedStrings.GetStringByIndex(GetIndices()[5]));
+        public Version Fileversion => new(Container.SharedStrings.GetStringByIndex(GetIndices()[5]) ?? "0.0.0.0");
 
         /// <summary>
         /// Description of module
