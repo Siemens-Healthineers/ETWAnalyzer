@@ -689,7 +689,7 @@ namespace ETWAnalyzer_iTest
                 myWriter.WriteLine($"Provider: {prov.Key}");
                 foreach (var evt in prov.Value.Events)
                 {
-                    myWriter.WriteLine($"Event: {evt.TypeInformation.Name} ({evt.EventId})");   
+                    myWriter.WriteLine($"Event: {evt.TypeInformation.Name} ({evt.EventId}) of process {evt.Process}");   
                     // Fix: Use TryGetFields for fields
                     foreach (var field in evt.TypeInformation.FieldNames)
                     {
@@ -704,8 +704,9 @@ namespace ETWAnalyzer_iTest
                             myWriter.WriteLine($"      Item: {item}");
                         }
                     }
-                    string stackStr = tracelog.Stacks.GetStack(evt.StackIdx);
-                    myWriter.WriteLine("Stack: " + stackStr);
+
+                    string stackStr = evt.Stacktrace;
+                    myWriter.WriteLine("Stack: " + evt.Stacktrace);
 
                     // Check if symbol loading for JITed code did work 
                     // for some strange reason the stack trace for the .NET app does not start at RtlUserThreadStart needs to be checked if stackwalker has issues with .NET Core code. 

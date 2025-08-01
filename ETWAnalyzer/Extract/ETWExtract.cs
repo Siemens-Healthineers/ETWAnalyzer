@@ -417,6 +417,7 @@ namespace ETWAnalyzer.Extract
                         foreach (var ev in kvp.Value.Events)
                         {
                             ev.TypeInformation = kvp.Value.EventDescriptors[ev.EventId];
+                            ev.Extract = this; // set extract to be able to access process information and convert trace relative time to absolute time
                         }
                     }
                 }
