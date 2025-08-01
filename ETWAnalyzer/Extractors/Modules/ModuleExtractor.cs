@@ -67,11 +67,11 @@ namespace ETWAnalyzer.Extractors.Modules
                 {
                     foreach (var dll in process.Images)
                     {
-                        if (dll.FileName == null || dll.FileVersion == null)
+                        if (dll.FileName == null )
                         {
                             continue;
                         }
-
+                        
                         ETWProcessIndex processIdx = results.GetProcessIndexByPID(process.Id == WindowsConstants.IdleProcessId ? WindowsConstants.SystemProcessId : process.Id, createTime);
                         PdbIndex pdbIdx = PdbIndex.Invalid;
                         if (dll.Pdb != null)
@@ -79,7 +79,7 @@ namespace ETWAnalyzer.Extractors.Modules
                             PdbIdentifier pdb = new PdbIdentifier(Path.GetFileName(dll.Pdb.Path), dll.Pdb.Id, dll.Pdb.Age);
                             pdbIdx = GetPdbIndex(results, pdb);
                         }
-                        results.Modules.Add(results, processIdx, pdbIdx, dll.Path, dll.FileVersion, dll.ProductVersion, dll.ProductName, dll.FileVersionNumber, dll.FileDescription);
+                        results.Modules.Add(results, processIdx, pdbIdx, dll.Path, dll.FileVersion ?? "<NoVersion>", dll.ProductVersion, dll.ProductName, dll.FileVersionNumber, dll.FileDescription);
                     }
                 }
             }
