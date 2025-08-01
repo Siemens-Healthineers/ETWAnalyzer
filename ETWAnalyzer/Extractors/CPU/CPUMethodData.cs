@@ -49,7 +49,7 @@ namespace ETWAnalyzer.Extractors.CPU
         /// <summary>
         /// Average CPU frequency from Context Switch/Sampling data grouped by CPU
         /// </summary>
-        internal Dictionary<CPUNumber, List<ProfilingData>> CPUToFrequencyDuration { get; set; } = new();
+        internal Dictionary<CPUNumber, ProfilingData> CPUToFrequencyDuration { get; set; } = new();
 
         /// <summary>
         /// CPU to Ready Duration
@@ -59,7 +59,7 @@ namespace ETWAnalyzer.Extractors.CPU
         class CPUDetails
         {
             public int UsedCores { get; set; }
-            public List<ProfilingData> ProfilingData { get; set; } = new(10);
+            public ProfilingData ProfilingData { get; set; } = new();
         }
 
         /// <summary>
@@ -73,7 +73,7 @@ namespace ETWAnalyzer.Extractors.CPU
 
             Dictionary<EfficiencyClass, CPUDetails> efficiencyClassToFrequency = new();
 #if DEBUG
-            HashSet<string> debugData = new HashSet<string>();
+            string debugData = "";
 #endif
             foreach(var kvp in CPUToFrequencyDuration)
             {
@@ -84,54 +84,29 @@ namespace ETWAnalyzer.Extractors.CPU
                     efficiencyClassToFrequency[effClass] = details;
                 }
 
-                details.ProfilingData.AddRange(kvp.Value);
+                details.ProfilingData.Combine(kvp.Value);
                 details.UsedCores++;
 #if DEBUG
-                debugData = new HashSet<string>(kvp.Value.Select(x => x.DebugData));
+                debugData = kvp.Value.DebugData;
 #endif
             }
 
             List<CPUUsage> lret = new();
-            long enabledCPUs = 0;
             foreach (var kvp in efficiencyClassToFrequency)
             {
-                decimal weightedFrequency=0m;
-                decimal totalTimeS = 0;
-                float firstS = float.MaxValue;
-                float lastS = 0;
-                enabledCPUs = 0;
-
-                foreach (var x in kvp.Value.ProfilingData)
-                {
-                    weightedFrequency += (decimal) x.DurationS * x.FrequencyMHz;
-                    totalTimeS += (decimal) x.DurationS;
-                    enabledCPUs += x.EnabledCPUs;
-                    firstS = Math.Min(firstS, x.StartTimeS);
-                    lastS = Math.Max(lastS, x.StartTimeS+x.DurationS);
-                }
-
-
-                int averageFrequencyMHz = (int) weightedFrequency;
-
-                // Prevent Divide by zero exception if we have no or not enough profiling data
-                if (totalTimeS > 0m)
-                {
-                    averageFrequencyMHz = (int)(weightedFrequency / totalTimeS);
-                }
-
-                lret.Add(new CPUUsage()
-                    {
+                 lret.Add(new CPUUsage()
+                 {
                         EfficiencyClass = kvp.Key,
-                        AverageMHz = averageFrequencyMHz,
-                        CPUMs = (int) Math.Round(totalTimeS*1000, 0, MidpointRounding.AwayFromZero ),
+                        AverageMHz = kvp.Value.ProfilingData.WeightedFrequencyMHz,
+                        CPUMs = (int) Math.Round(kvp.Value.ProfilingData.TotalDurationS*1000, 0, MidpointRounding.AwayFromZero ),
                         UsedCores = kvp.Value.UsedCores,
-                        EnabledCPUsAvg = enabledCPUs / kvp.Value.ProfilingData.Count,
-                        FirstS = (float) Math.Round(firstS, 4, MidpointRounding.AwayFromZero),
-                        LastS = (float) Math.Round(lastS, 4, MidpointRounding.AwayFromZero),
+                        EnabledCPUsAvg = kvp.Value.ProfilingData.EnabledCPUs,
+                        FirstS = (float) Math.Round(kvp.Value.ProfilingData.MinStartTimeS, 4, MidpointRounding.AwayFromZero),
+                        LastS = (float) Math.Round(kvp.Value.ProfilingData.MaxStopTimeS, 4, MidpointRounding.AwayFromZero),
 #if DEBUG
                         Debug = String.Join(" ", debugData),
 #endif
-                    }
+                 }
                 );
             }
 
@@ -285,13 +260,76 @@ namespace ETWAnalyzer.Extractors.CPU
         {
         }
 
-        internal struct ProfilingData
+
+        /// <summary>
+        /// Calculate weighted frequency, min/max first/last seen time, used CPU time (duration) and used core count. 
+        /// </summary>
+        internal class ProfilingData
         {
-            public float DurationS { get; set; }
-            public float StartTimeS { get; set; }
-            public int FrequencyMHz { get; set; }
-            public int ThreadId { get; set; }
-            public long EnabledCPUs { get; set; }
+            /// <summary>
+            /// Add from Context Switch data star/stop time, affinity mask and estimated frequency
+            /// </summary>
+            /// <param name="frequency"></param>
+            /// <param name="startTimeS"></param>
+            /// <param name="stopTimeS"></param>
+            /// <param name="affinityMask"></param>
+            public void Add(int frequency, float startTimeS, float stopTimeS, long affinityMask)
+            {
+                AffinityMask |= affinityMask;
+
+                MinStartTimeS = Math.Min(MinStartTimeS, startTimeS);
+                MaxStopTimeS = Math.Max(MaxStopTimeS, stopTimeS);
+
+                decimal durationS = (decimal)(stopTimeS - startTimeS);
+                TotalDurationS += durationS;
+
+                WeightedFrequency += (decimal)frequency * durationS;
+            }
+
+            internal void Combine(ProfilingData value)
+            {
+                AffinityMask |= value.AffinityMask;
+                MinStartTimeS = Math.Min(MinStartTimeS, value.MinStartTimeS);
+                MaxStopTimeS = Math.Max(MaxStopTimeS, value.MaxStopTimeS);
+                TotalDurationS += value.TotalDurationS;
+                WeightedFrequency += value.WeightedFrequency;
+            }
+
+            public float MinStartTimeS { get; private set; } = float.MaxValue;
+            public float MaxStopTimeS { get; private set; }
+
+            private decimal WeightedFrequency { get; set; }
+            public decimal TotalDurationS { get; private set; }
+
+            public int WeightedFrequencyMHz
+            {
+                get
+                {
+
+                    if (TotalDurationS == 0m)
+                    {
+                        return 0; // no data
+                    }
+                    else
+                    {
+                        return (int)(WeightedFrequency / TotalDurationS);
+                    }
+                }
+            }
+
+
+            public long AffinityMask { get; private set; }
+            public long EnabledCPUs
+            {
+                get
+                {
+#if NET6_0_OR_GREATER
+                    return AffinityMask == 0 ? 0 : (long) (System.Runtime.Intrinsics.X86.Popcnt.X64.PopCount((ulong)AffinityMask));
+#else
+                    return 0;
+#endif
+                }
+            }
 #if DEBUG
             public string DebugData { get; set; }
 #endif
@@ -311,7 +349,7 @@ namespace ETWAnalyzer.Extractors.CPU
         {
             if (cpuStats?.ExtendedCPUMetrics != null)
             {
-                if( !CPUToFrequencyDuration.TryGetValue(cpu, out List<ProfilingData> frequencyDurations) )
+                if( !CPUToFrequencyDuration.TryGetValue(cpu, out ProfilingData frequencyDurations) )
                 {
                     frequencyDurations = new();
                     CPUToFrequencyDuration[cpu] = frequencyDurations;
@@ -330,26 +368,15 @@ namespace ETWAnalyzer.Extractors.CPU
                     }
                 }
 
-                ulong enabledCPUs = 0;
-#if NET6_0_OR_GREATER
-                enabledCPUs = System.Runtime.Intrinsics.X86.Popcnt.X64.PopCount((ulong)cpuAffinityMask);
-#endif
-                frequencyDurations.Add(new ProfilingData
-                {
-                    StartTimeS = start,
-                    DurationS = (end - start),
-                    FrequencyMHz = averageFrequency,
-                    ThreadId = threadId,
-                    EnabledCPUs = (long) enabledCPUs,
+                frequencyDurations.Add(averageFrequency, start, end, cpuAffinityMask);
 #if DEBUG
-                    DebugData = debugData,
+                frequencyDurations.DebugData += debugData;
 #endif
-                });
             }
         }
         
         /// <summary>
-        /// Working structure to collect intermediate data from context switch events. Not serialied to Json
+        /// Working structure to collect intermediate data from context switch events. Not serialized to Json
         /// </summary>
         internal class ReadyEvent
         {
@@ -365,7 +392,8 @@ namespace ETWAnalyzer.Extractors.CPU
         /// Collect extended Ready delays coming from processor deep sleep states and cross thread interference. 
         /// </summary>
         /// <param name="slice">Thread activity which contains context switch events.</param>
-        internal void AddExtendedReadyMetrics(ICpuThreadActivity2 slice)
+        /// <param name="existing">AddExtendedReadyMetrics will be called with the same slice for all frames in a stacktrace. We can reuse the instance to spare memory.</param>
+        internal ReadyEvent AddExtendedReadyMetrics(ICpuThreadActivity2 slice, ReadyEvent existing)
         {
             lock (this)
             {
@@ -381,20 +409,28 @@ namespace ETWAnalyzer.Extractors.CPU
                     slice?.SwitchIn?.ContextSwitch == null || 
                     slice?.ReadyDuration == null )
                 {
-                    return;
+                    return null;
                 }
 
-                // just record data from idle thread to calculate cpu wakup time from sleep and deep sleep states
-                readies.Add(new ReadyEvent
+                ReadyEvent lret = existing;
+                if (lret == null)
                 {
-                    StartTimeNanoS = (slice.SwitchIn.ContextSwitch.Timestamp - slice.ReadyDuration.Value).RelativeTimestamp.Nanoseconds,
-                    DurationNanoS = slice.ReadyDuration.Value.Nanoseconds,
-                    ThreadId = slice.Thread.Id,
-                    // We are interested in the performance impact of deep sleep states which is the processor power up time.
-                    // All other delays are the ready times from shallow sleep states (should be fast) and thread interference from other threads of the same or other processes.
-                    // Windows abstracts shallow sleep states (C1/C1E) as CState = 0 and all deeper sleep states as CState > 0. Usual values are 0, 1, 2
-                    DeepSleepReady = slice.PreviousActivityOnProcessor?.Process?.Id == WindowsConstants.IdleProcessId && slice?.SwitchIn?.ContextSwitch?.PreviousCState > 0,
-                });
+                    lret = new ReadyEvent
+                    {
+                        StartTimeNanoS = (slice.SwitchIn.ContextSwitch.Timestamp - slice.ReadyDuration.Value).RelativeTimestamp.Nanoseconds,
+                        DurationNanoS = slice.ReadyDuration.Value.Nanoseconds,
+                        ThreadId = slice.Thread.Id,
+                        // We are interested in the performance impact of deep sleep states which is the processor power up time.
+                        // All other delays are the ready times from shallow sleep states (should be fast) and thread interference from other threads of the same or other processes.
+                        // Windows abstracts shallow sleep states (C1/C1E) as CState = 0 and all deeper sleep states as CState > 0. Usual values are 0, 1, 2
+                        DeepSleepReady = slice.PreviousActivityOnProcessor?.Process?.Id == WindowsConstants.IdleProcessId && slice?.SwitchIn?.ContextSwitch?.PreviousCState > 0,
+                    };
+                }
+
+                // just record data from idle thread to calculate cpu wakeup time from sleep and deep sleep states
+                readies.Add(lret);
+
+                return lret; // reuse instance and spare some GB of memory
             }
         }
 
