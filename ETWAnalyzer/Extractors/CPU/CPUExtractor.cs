@@ -394,8 +394,9 @@ namespace ETWAnalyzer.Extractors.CPU
             }
 
             HashSet<string> recursionCountGuard = new();
+            CPUMethodData.ReadyEvent readyEv = null;
 
-            for(int i=0;i<frames.Count;i++)
+            for (int i=0;i<frames.Count;i++)
             {
                 Microsoft.Windows.EventTracing.Symbols.StackFrame frame = frames[i];
                 ConcurrentDictionary<string, CPUMethodData> methods = null;
@@ -449,7 +450,7 @@ namespace ETWAnalyzer.Extractors.CPU
                 {
                     TraceTimestamp readyStart = slice.SwitchIn.ContextSwitch.Timestamp - slice.ReadyDuration.Value;
                     stats.ReadyTimeRange.Add(readyStart, slice.ReadyDuration.Value);
-                    stats.AddExtendedReadyMetrics(slice);
+                    readyEv = stats.AddExtendedReadyMetrics(slice, readyEv);
                 }
 
                 decimal time = slice.StopTime.RelativeTimestamp.TotalSeconds;
