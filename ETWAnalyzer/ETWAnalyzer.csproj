@@ -24,8 +24,6 @@
     <PackageReadmeFile>ProgramaticAccess.md</PackageReadmeFile>
     <Version>3.0.0.14</Version>
     <Platforms>x64</Platforms>
-    <ServerGarbageCollection>true</ServerGarbageCollection>
-    <GarbageCollectionAdaptationMode>1</GarbageCollectionAdaptationMode>
   </PropertyGroup>
   <PropertyGroup Condition="'$(TargetFramework)' == 'net8.0-windows'">
     <SuppressTrimAnalysisWarnings>false</SuppressTrimAnalysisWarnings>
@@ -189,4 +187,5 @@
       <DependentUpon>Settings.settings</DependentUpon>
     </Compile>
   </ItemGroup>
+  <ProjectExtensions><VisualStudio><UserProperties runtimeconfig_1template_1json__JsonSchema="https://cdn.jsdelivr.net/npm/liblab@latest/liblab.config.schema.json" /></VisualStudio></ProjectExtensions>
 </Project>
