@@ -31,6 +31,11 @@ namespace ETWAnalyzer.Extract.Modules
         }
 
         /// <summary>
+        /// Used during extraction to prevent huge string reallocation costs to set <see cref="ModuleAndPid"/> only once.
+        /// </summary>
+        HashSet<ETWProcessIndex> myPidSet;
+
+        /// <summary>
         /// Contains Index to unresolved pbd array which could not be loaded during extraction.
         /// </summary>
         public PdbIndex? PdbIdx { get; set; }
@@ -225,13 +230,39 @@ namespace ETWAnalyzer.Extract.Modules
 
         internal void AddPid(ETWProcessIndex processIdx)
         {
-            ModuleAndPid += $" {PidPrefix}{processIdx}";
+            if(myPidSet == null )
+            {
+                myPidSet = new HashSet<ETWProcessIndex>();
+            }
+            myPidSet.Add(processIdx);
+
+            //ModuleAndPid += $" {PidPrefix}{processIdx}";
 
             // if these were set accidentally during debugging we reset them so later
             // we can view the always up to date values
             myIndices = null;
             myProcesses = null;
         }
+
+
+        /// <summary>
+        /// Make object ready for serialization
+        /// </summary>
+        internal void Freeze()
+        {
+            if ( myPidSet != null)
+            {
+                StringBuilder sb = new StringBuilder(ModuleAndPid);
+                foreach (var pid in myPidSet.OrderBy(x=>x))
+                {
+                    sb.Append($" {PidPrefix}{pid}");
+                }
+                ModuleAndPid = sb.ToString();
+            }
+
+            myPidSet = null;
+        }
+
 
         /// <summary>
         /// 
@@ -269,6 +300,12 @@ namespace ETWAnalyzer.Extract.Modules
 
             bool lret = true;
 
+            if( end == -1 && end2 == -1)   // process during extraction is not yet set
+            {
+                lret = ModuleAndPid.Equals(other.ModuleAndPid, StringComparison.Ordinal);
+                return lret;
+            }
+
             if (end != end2)
             {
                 lret = false;
@@ -303,5 +340,7 @@ namespace ETWAnalyzer.Extract.Modules
         {
             return $"{ModuleName} {ModulePath} {ProductName} {ProductVersionStr} {FileVersionStr} {Fileversion} {Description} PdbIndex: {PdbIdx}";
         }
+
+
     }
 }
