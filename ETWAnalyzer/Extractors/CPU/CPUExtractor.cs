@@ -102,12 +102,12 @@ namespace ETWAnalyzer.Extractors.CPU
         /// <summary>
         /// Per process CPU
         /// </summary>
-        readonly ConcurrentDictionary<ProcessKey, Duration> myPerProcessCPU = new();
+        ConcurrentDictionary<ProcessKey, Duration> myPerProcessCPU = new();
 
         /// <summary>
         /// Per Process Priority
         /// </summary>
-        readonly Dictionary<ETWProcessIndex, List<int>> myPerProcessPriority = new();
+        Dictionary<ETWProcessIndex, List<int>> myPerProcessPriority = new();
 
         public CPUExtractor()
         {
@@ -183,7 +183,7 @@ namespace ETWAnalyzer.Extractors.CPU
             }
 
             // When we have context switch data recorded we can also calculate the thread wait time stacktags
-            if( CanUseCPUCSwitchData )
+            if (CanUseCPUCSwitchData)
             {
                 Parallel.ForEach(myCpuSchedlingData.Result.ThreadActivity, concurrency, (ICpuThreadActivity sliceV1) =>
                 {
@@ -224,6 +224,7 @@ namespace ETWAnalyzer.Extractors.CPU
             {
                 foreach (KeyValuePair<string, CPUMethodData> methodCPU in process.Value)
                 {
+                    methodCPU.Value.ReadyTimeRange.Freeze();
                     var tmp = methodCPU.Value.ReadyTimeRange.GetDuration();
                     tmp = methodCPU.Value.WaitTimeRange.GetDuration();
                 }
@@ -284,9 +285,17 @@ namespace ETWAnalyzer.Extractors.CPU
 
             results.CPU = new CPUStats(perProcessSamplesInMs, processPriorities, inclusiveSamplesPerMethod, myTimelineExtractor?.Timeline, results.CPU?.Topology, results.CPU?.ExtendedCPUMetrics);
 
+            ReleaseMemory();
+        }
+
+        private void ReleaseMemory()
+        {
             // Try to release memory as early as possible
             mySamplingData = null;
             myCpuSchedlingData = null;
+            myPerProcessCPU = null;
+            myPerProcessPriority = null;
+            myTimelineExtractor = null;
         }
 
         private void WarmupCSwitchData()

@@ -11,17 +11,24 @@ namespace ETWAnalyzer.Infrastructure
     {
         Stopwatch myStopWatch;
         string myOperationName;
+        long myMemoryAtStartMB;
 
         public PerfLogger(string operationName)
         {
+            using var proc = Process.GetCurrentProcess();
+
             myStopWatch = Stopwatch.StartNew();
             myOperationName = operationName;
-            Logger.Info($"Start {operationName}");
+
+            myMemoryAtStartMB = proc.PrivateMemorySize64 / (1024 * 1024L);
+            Logger.Info($"Start {operationName} Memory: {myMemoryAtStartMB} MB");
         }
 
         public void Dispose()
         {
-            Logger.Info($"End {myOperationName} in {myStopWatch.Elapsed.TotalSeconds:F1} s");
+            using var proc = Process.GetCurrentProcess();
+            long memoryNowMB = proc.PrivateMemorySize64 / (1024 * 1024L);
+            Logger.Info($"End {myOperationName} in {myStopWatch.Elapsed.TotalSeconds:F1} s Memory: {memoryNowMB} MB, Diff: {memoryNowMB-myMemoryAtStartMB} MB");
         }
     }
 }

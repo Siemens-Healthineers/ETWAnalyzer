@@ -61,6 +61,23 @@ namespace ETWAnalyzer.Extractors.TCP
             IGenericEvent[] events = myGenericEvents.Result.Events.Where(IsValidTcpEvent).OrderBy(x => x.Timestamp).ToArray();
             ExtractFromGenericEvents(results, events);
 
+            ReleaseMemory();
+
+        }
+
+        private void ReleaseMemory()
+        {
+            mySendEvents.Clear();
+            myReceiveEvents.Clear();
+            myRetransmits.Clear();
+            myConnections.Clear();
+            myKeepAlives.Clear();
+            myTemplateChangedEvents.Clear();
+            myTcpConnectionRundowns.Clear();
+            myTcpConnectionSummaries.Clear();
+            myTcpConnectTcbFailedRcvdRst.Clear();
+            myTcpDisconnectTcbRtoTimeout.Clear();
+            myGenericEvents = null;
         }
 
         internal void ExtractFromGenericEvents(ETWExtract results, IGenericEvent[] events)

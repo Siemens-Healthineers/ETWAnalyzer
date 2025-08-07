@@ -100,6 +100,7 @@ namespace ETWAnalyzer.Extract
         internal MethodIndex AddMethod(ProcessKey process, string method, CPUMethodData cpuData, int cutOffMs)
         {
             uint cpuDurationMs = (uint)Math.Round(cpuData.CpuInMs.TotalMilliseconds);
+            cpuData.WaitTimeRange.Freeze();
             uint waitDurationMs = (uint)(cpuData.WaitTimeRange.GetDuration().TotalMilliseconds);
 
             if (cpuDurationMs  <= cutOffMs && 
@@ -120,6 +121,7 @@ namespace ETWAnalyzer.Extract
             long averageStackDepths = totalStackDepth / (cpuData.DepthFromBottom.Count > 0 ? cpuData.DepthFromBottom.Count : 1);
 
             MethodIndex methodIdx = GetMethodIndex(method);
+            cpuData.ReadyTimeRange.Freeze();
             var cost = new MethodCost(methodIdx, cpuDurationMs, waitDurationMs, cpuData.FirstOccurrenceSeconds, cpuData.LastOccurrenceSeconds, cpuData.ThreadIds.Count,
                                       (int)averageStackDepths, (uint)cpuData.ReadyTimeRange.GetDuration().TotalMilliseconds, (ulong) cpuData.ReadyTimeRange.GetAverage(), cpuData.ContextSwitchCount)
             {

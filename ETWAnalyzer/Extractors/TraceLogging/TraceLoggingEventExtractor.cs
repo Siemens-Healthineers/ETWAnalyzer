@@ -256,6 +256,12 @@ namespace ETWAnalyzer.Extractors.TraceLogging
 
             results.TraceLogging = traceLoggingData;
 
+            ReleaseMemory();
+        }
+
+        private void ReleaseMemory()
+        {
+            myEvents = null;
         }
 
         /// <summary>
