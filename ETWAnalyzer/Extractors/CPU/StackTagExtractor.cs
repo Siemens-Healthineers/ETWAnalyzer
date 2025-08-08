@@ -10,12 +10,9 @@ using Microsoft.Windows.EventTracing.Cpu;
 using Microsoft.Windows.EventTracing.Processes;
 using Microsoft.Windows.EventTracing.Symbols;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Runtime.CompilerServices;
 
 namespace ETWAnalyzer.Extractors.CPU
 {
@@ -84,6 +81,7 @@ namespace ETWAnalyzer.Extractors.CPU
         bool CanUseCPUCSwitchData {  get => myCpuSchedlingData?.HasResult == true && !NoCSwitch; }
 
 
+
         /// <summary>
         /// GC/JIT Stacktags are thrown away when smaller 10ms
         /// </summary>
@@ -121,20 +119,12 @@ namespace ETWAnalyzer.Extractors.CPU
             var totalStackTagsRaw = new Dictionary<ProcessKey, Dictionary<string, StackTagDuration>>();
             var specialStackTagsRaw = new Dictionary<ProcessKey, Dictionary<string, StackTagDuration>>();
 
-            using (new PerfLogger($"Extract from default stacktag file: {DefaultStackTagFile}"))
-            {
-                ExtractStackTagsFromProfilingAndContextSwitchEvents(gcJitStackTagMapper, gcJitStackTags, addDefaultStackTag: false);
-            }
+            ExtractGCJitStackTags(gcJitStackTagMapper, gcJitStackTags);
 
-            using (new PerfLogger($"Extracting from secondary stacktag file: {SecondaryStackTagFile}"))
-            {
-                ExtractStackTagsFromProfilingAndContextSwitchEvents(defaultStackTagMapper, totalStackTagsRaw, addDefaultStackTag: true);
-            }
+            ExtractDefaultStackTags(defaultStackTagMapper, totalStackTagsRaw);
 
-            using (new PerfLogger($"Extracting from special stacktag file: {SpecialStacktagFile}"))
-            {
-                ExtractStackTagsFromProfilingAndContextSwitchEvents(specialStackTagMapper, specialStackTagsRaw, addDefaultStackTag: false);
-            }
+
+            ExtractSpecialStackTags(specialStackTagMapper, specialStackTagsRaw);
 
             ProcessStackTags totalStackTags = new()
             {
@@ -160,6 +150,49 @@ namespace ETWAnalyzer.Extractors.CPU
             myStackTags = null;
             mySamplingData = null;
             myCpuSchedlingData = null;
+        }
+
+        /// <summary>
+        /// When profiling we want to see allocation overhead for each stack tag file separately in the allocating stacks.
+        /// </summary>
+        /// <param name="specialStackTagMapper"></param>
+        /// <param name="specialStackTagsRaw"></param>
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private void ExtractSpecialStackTags(IStackTagMapper specialStackTagMapper, Dictionary<ProcessKey, Dictionary<string, StackTagDuration>> specialStackTagsRaw)
+        {
+            using (new PerfLogger($"Extracting from special stacktag file: {SpecialStacktagFile}"))
+            {
+                ExtractStackTagsFromProfilingAndContextSwitchEvents(specialStackTagMapper, specialStackTagsRaw, addDefaultStackTag: false);
+            }
+        }
+
+        /// <summary>
+        /// When profiling we want to see allocation overhead for each stack tag file separately in the allocating stacks.
+        /// </summary>
+        /// <param name="defaultStackTagMapper"></param>
+        /// <param name="totalStackTagsRaw"></param>
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private void ExtractDefaultStackTags(IStackTagMapper defaultStackTagMapper, Dictionary<ProcessKey, Dictionary<string, StackTagDuration>> totalStackTagsRaw)
+        {
+            using (new PerfLogger($"Extracting from secondary stacktag file: {SecondaryStackTagFile}"))
+            {
+                ExtractStackTagsFromProfilingAndContextSwitchEvents(defaultStackTagMapper, totalStackTagsRaw, addDefaultStackTag: true);
+            }
+        }
+
+
+        /// <summary>
+        /// When profiling we want to see allocation overhead for each stack tag file separately in the allocating stacks.
+        /// </summary>
+        /// <param name="gcJitStackTagMapper"></param>
+        /// <param name="gcJitStackTags"></param>
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private void ExtractGCJitStackTags(IStackTagMapper gcJitStackTagMapper, Dictionary<ProcessKey, Dictionary<string, StackTagDuration>> gcJitStackTags)
+        {
+            using (new PerfLogger($"Extract from default stacktag file: {DefaultStackTagFile}"))
+            {
+                ExtractStackTagsFromProfilingAndContextSwitchEvents(gcJitStackTagMapper, gcJitStackTags, addDefaultStackTag: false);
+            }
         }
 
         void ExtractStackTagsFromProfilingAndContextSwitchEvents(IStackTagMapper mapper, Dictionary<ProcessKey, Dictionary<string, StackTagDuration>> tags, bool addDefaultStackTag)
