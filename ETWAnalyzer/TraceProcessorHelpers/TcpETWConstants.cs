@@ -25,9 +25,14 @@ namespace ETWAnalyzer.TraceProcessorHelpers
         public const int TcpDataTransferReceive = 1074;
 
         /// <summary>
-        /// Fields Tcb, Cwnd, SndWnd, BytesSent, SeqNo, 
+        /// Fields Tcb, Cwnd, SndWnd, BytesSent, SeqNo
         /// </summary>
         public const int TcpDataTransferSendId = 1332;
+
+        /// <summary>
+        /// Fields Tcb, Injected, NumBytes, SndNxt
+        /// </summary>
+        public const int TcpSendPosted = 1159;
 
         /// <summary>
         /// Fields LocalAddress, RemoteAddress, Status, ProcessId, Compartment, Tcb, ProcessStartKey,
@@ -189,5 +194,15 @@ namespace ETWAnalyzer.TraceProcessorHelpers
         /// Connection NtStatus field
         /// </summary>
         public static string StatusField = "Status";
+
+        /// <summary>
+        /// Send Next field
+        /// </summary>
+        public static string SndNxtField = "SndNxt";
+
+        /// <summary>
+        /// Injected field string.
+        /// </summary>
+        public static string InjectedField = "Injected";
     }
 }
