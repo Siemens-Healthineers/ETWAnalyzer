@@ -231,6 +231,7 @@ namespace ETWAnalyzer.EventDump
                 {
                     ZeroTimeModes.None => 0.0d,
                     ZeroTimeModes.Marker => GetFirstMatchingMarker(extract),
+                 //   ZeroTimeModes.TraceLog => GetFirstMatchingTraceLog(extract),    
                     ZeroTimeModes.First => GetZeroMethodOrStackTag(extract, useFirstOccurrence: true),
                     ZeroTimeModes.Last => GetZeroMethodOrStackTag(extract, useFirstOccurrence: false),
                     ZeroTimeModes.ProcessStart => GetZeroProcessTime(extract),
@@ -247,6 +248,25 @@ namespace ETWAnalyzer.EventDump
 
             return ret;
         }
+
+        //private double GetFirstMatchingTraceLog(IETWExtract extract)
+        //{
+        //    double timeZeoIns = 0.0.d;
+
+        //    int matches = 0;
+        //    StringBuilder sb = new StringBuilder();
+        //    foreach (var prov in extract.TraceLogging.EventsByProvider)
+        //    {
+        //        foreach (var ev in prov.Value.Events)
+        //        {
+        //            sb.
+        //            foreach(var field in ev.TypeInformation.FieldNames)
+        //            {
+        //                sb.
+        //            }
+        //        }
+        //    }
+        //}
 
 
         private double GetZeroProcessTime(IETWExtract extract, bool useProcessEnd= false)

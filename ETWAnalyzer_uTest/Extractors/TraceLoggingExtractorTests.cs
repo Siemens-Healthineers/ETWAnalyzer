@@ -124,7 +124,7 @@ namespace ETWAnalyzer_uTest.Extractors
             Assert.Equal(KTime, traceEv.TimeStamp);
             Assert.Equal(1, traceEv.EventId);
             Assert.Equal("TestProcess", traceEv.Process.ProcessName);
-            Assert.Equal(Stack1, traceEv.Stacktrace);
+            Assert.Equal(Stack1, traceEv.StackTrace);
             Assert.Equal(StringValue1, traceEv.TryGetField(StringFieldName1));
             Assert.Equal("42", traceEv.TryGetField(IntFieldName1));
 

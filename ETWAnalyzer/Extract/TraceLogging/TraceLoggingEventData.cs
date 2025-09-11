@@ -243,7 +243,7 @@ namespace ETWAnalyzer.Extract.TraceLogging
         /// </summary>
         public StackIdx StackIdx { get; set; } = StackIdx.None;
 
-        string ITraceLoggingEvent.Stacktrace
+        string ITraceLoggingEvent.StackTrace
         {
             get
             {
@@ -338,7 +338,12 @@ namespace ETWAnalyzer.Extract.TraceLogging
         /// <summary>
         /// Stack trace string of event when available.
         /// </summary>
-        string Stacktrace { get; }
+        string StackTrace { get; }
+
+        /// <summary>
+        /// Get Stack index of stack trace collection which is unique for all TraceLogging events.
+        /// </summary>
+        StackIdx StackIdx { get; }
 
         /// <summary>
         /// Process object which is associated with this event.

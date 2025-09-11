@@ -705,8 +705,8 @@ namespace ETWAnalyzer_iTest
                         }
                     }
 
-                    string stackStr = evt.Stacktrace;
-                    myWriter.WriteLine("Stack: " + evt.Stacktrace);
+                    string stackStr = evt.StackTrace;
+                    myWriter.WriteLine("Stack: " + evt.StackTrace);
 
                     // Check if symbol loading for JITed code did work 
                     // for some strange reason the stack trace for the .NET app does not start at RtlUserThreadStart needs to be checked if stackwalker has issues with .NET Core code. 
