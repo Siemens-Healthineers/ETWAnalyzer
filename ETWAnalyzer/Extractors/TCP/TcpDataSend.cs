@@ -14,7 +14,7 @@ namespace ETWAnalyzer.Extractors.TCP
 {
 
     /// <summary>
-    /// Fired when data is sent over the wire. Used by WPA to calculate send rate.
+    /// Fired for loopback connections. BytesSent is 0 for remote connections!
     /// </summary>
     internal class TcpDataSend : IGenericTcpEvent
     {
@@ -38,7 +38,6 @@ namespace ETWAnalyzer.Extractors.TCP
 
         public TcpDataSend(IGenericEvent ev)
         {
-            
             Tcb = (ulong)ev.Fields[TcpETWConstants.TcbField].AsAddress.Value;
             BytesSent = (int)ev.Fields[TcpETWConstants.BytesSentField].AsUInt32;
             SequenceNr = ev.Fields[TcpETWConstants.SeqNoField].AsUInt32;

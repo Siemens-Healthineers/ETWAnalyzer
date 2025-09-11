@@ -153,7 +153,13 @@ namespace ETWAnalyzer.Extractors.TraceLogging
 
                 foreach (IGenericEvent ev in group)
                 {
-                    if( data.EventDescriptors.TryGetValue(ev.Id, out TraceLoggingEventDescriptor descriptor) == false)
+                    if( ev.ProcessId <= 0 )
+                    {
+                        // We need a valid process id to map the event to a process
+                        continue;
+                    }
+
+                    if ( data.EventDescriptors.TryGetValue(ev.Id, out TraceLoggingEventDescriptor descriptor) == false)
                     {
                         // Store event type data
                         descriptor = new TraceLoggingEventDescriptor

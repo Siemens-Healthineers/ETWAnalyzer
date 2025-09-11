@@ -24,7 +24,7 @@ namespace ETWAnalyzer.Extractors.TCP
         /// <summary>
         /// Send events
         /// </summary>
-        readonly List<TcpDataSend> mySendEvents = new();
+        readonly List<TcpSendPosted> mySendEvents = new();
 
         /// <summary>
         /// Receive events
@@ -90,7 +90,7 @@ namespace ETWAnalyzer.Extractors.TCP
 
             AddExistingConnections(results, ref connectionsByTcb); // add already existing connections which are present during trace start
 
-            ILookup<TcpRequestConnect, TcpDataSend> sentByConnection = UpdateConnectionForSentPackets(results, ref connectionsByTcb);
+            ILookup<TcpRequestConnect, TcpSendPosted> sentByConnection = UpdateConnectionForSentPackets(results, ref connectionsByTcb);
             ILookup<TcpRequestConnect, TcpDataTransferReceive> receivedByConnection = UpdateConnectionForReceivedPackets(results, ref connectionsByTcb);
             ILookup<TcpRequestConnect, TcpTemplateChanged> byConnectionTemplateChanges = UpdateConnectionForTemplateChangeEvents(results, ref connectionsByTcb); 
 
@@ -108,9 +108,9 @@ namespace ETWAnalyzer.Extractors.TCP
                 ulong bytesReceived = (ulong)receivedByConnection[tcpconnection].Sum(x => (decimal)((TcpDataTransferReceive)x).NumBytes);
                 var lastreceiveTime = receivedByConnection[tcpconnection].LastOrDefault()?.Timestamp;
 
-                ulong bytesSent = (ulong)sentByConnection[tcpconnection].Sum(x => (decimal)((TcpDataSend)x).BytesSent);
+                ulong bytesSent = (ulong)sentByConnection[tcpconnection].Sum(x => (decimal)((TcpSendPosted)x).PostedBytes);
                 int datagramsReceived = receivedByConnection[tcpconnection].Count();
-                int datagramsSent = sentByConnection[tcpconnection].Count();
+                int datagramsSent = sentByConnection[tcpconnection].Where(x=>x.IsPosted).Count();
 
                 TcpConnectionStatistics statistics = new TcpConnectionStatistics(null, lastreceiveTime, null, null, null, null, null, null, null);
 
@@ -150,7 +150,7 @@ namespace ETWAnalyzer.Extractors.TCP
 
                 // Get all sent packets just before the current retransmit event
                 // we need the last sent packet because the first packet often was an ACK with 0 send size
-                List<TcpDataSend> retransmittedSent = sentByConnection[retrans.Connection].Where(x => x.SequenceNr == retrans.SndUna && x.Timestamp <= retrans.Timestamp)
+                List<TcpSendPosted> retransmittedSent = sentByConnection[retrans.Connection].Where(x => x.SequenceNr == retrans.SndUna && x.Timestamp <= retrans.Timestamp)
                                                     .OrderBy(x => x.Timestamp).ToList();
 
                 if (retransmittedSent.Count > 0)
@@ -161,7 +161,7 @@ namespace ETWAnalyzer.Extractors.TCP
                     // store retransmit event with send time of first sent packet. It might be an ACK packet but for now the heuristics should be good enough
                     // to be useful.
                     results.Network.TcpData.Retransmissions.Add(new TcpRetransmission(connect2Idx[retrans.Connection], retrans.Timestamp,
-                        lastSent.Timestamp, lastSent.SequenceNr, lastSent.BytesSent));
+                        lastSent.Timestamp, lastSent.SequenceNr, (int) lastSent.NumBytes));
 
                     // set last send time before retransmissions did start
                     TcpConnection connection = results.Network.TcpData.Connections[(int)connect2Idx[retrans.Connection]];
@@ -198,23 +198,23 @@ namespace ETWAnalyzer.Extractors.TCP
             return myReceiveEvents.ToLookup(x=>x.Connection);
         }
 
-        private ILookup<TcpRequestConnect, TcpDataSend> UpdateConnectionForSentPackets(ETWExtract results,ref ILookup<ulong, TcpRequestConnect> connectionsByTcb)
+        private ILookup<TcpRequestConnect, TcpSendPosted> UpdateConnectionForSentPackets(ETWExtract results,ref ILookup<ulong, TcpRequestConnect> connectionsByTcb)
         {
-            foreach (TcpDataSend send in mySendEvents)
+            foreach (TcpSendPosted send in mySendEvents)
             {
                 send.Connection = LocateConnection(send.Tcb, send.Timestamp, results, ref connectionsByTcb);
             }
 
-            ILookup<TcpRequestConnect, TcpDataSend> lret =  mySendEvents.ToLookup(x => x.Connection);
+            ILookup<TcpRequestConnect, TcpSendPosted> lret =  mySendEvents.Where(x=>x.IsPosted).ToLookup(x => x.Connection);
             return lret;
         }
 
-        private void UpdateLastSentAndMaxSendDelay(ETWExtract results, ILookup<TcpRequestConnect, TcpDataSend> sentByConnection)
+        private void UpdateLastSentAndMaxSendDelay(ETWExtract results, ILookup<TcpRequestConnect, TcpSendPosted> sentByConnection)
         {
             // update last sent time for all connections which are not already covered by retransmits
-            foreach (IGrouping<TcpRequestConnect, TcpDataSend> sent in sentByConnection)
+            foreach (IGrouping<TcpRequestConnect, TcpSendPosted> sent in sentByConnection)
             {
-                TcpDataSend firstSent = sent.First();
+                TcpSendPosted firstSent = sent.First();
                 foreach (var resultConnections in results.Network.TcpData.Connections)
                 {
                     if (resultConnections.Statistics.LastSent == null &&
@@ -358,6 +358,9 @@ namespace ETWAnalyzer.Extractors.TCP
                     case TcpETWConstants.TcpDataTransferSendId:
                         OnTcpDataTransferSend(ev);           
                         break;
+                    case TcpETWConstants.TcpSendPosted:
+                        OnTcpSendPosted(ev);
+                        break;
                     case TcpETWConstants.TcpDataTransferReceive:
                         OnTcpDataTransferReceive(ev);
                         break;
@@ -411,6 +414,7 @@ namespace ETWAnalyzer.Extractors.TCP
                 }
             }
         }
+
 
         readonly List<TcpConnectionKeepAlive> myKeepAlives = new();
 
@@ -656,15 +660,27 @@ namespace ETWAnalyzer.Extractors.TCP
         bool TCBFilter(ulong tcb)
         {
 #if DEBUG
-                return true; // debug connection
+            return true;
 #else
             return true;
 #endif
             }
 
+        /// <summary>
+        /// Only used for Loopback connections. For remote connections BytesSent is always 0. We have currently no use for it. TcpSendPosted gets the send bytes for local and remote connections.
+        /// </summary>
+        /// <param name="ev"></param>
         private void OnTcpDataTransferSend(IGenericEvent ev)
         {
-            TcpDataSend sentPacket = new(ev);
+        }
+
+        /// <summary>
+        /// Local and remote connections are using this event to send data. 
+        /// </summary>
+        /// <param name="ev"></param>
+        private void OnTcpSendPosted(IGenericEvent ev)
+        {
+            TcpSendPosted sentPacket = new(ev);
             if (TCBFilter(sentPacket.Tcb))
             {
                 mySendEvents.Add(sentPacket);
