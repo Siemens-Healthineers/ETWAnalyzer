@@ -128,7 +128,7 @@ if invalid or not reachable hosts were tried to connect to.
 
 ## Recording Hints
 The *Microsoft-Windows-TCPIP* provider traces many events which are internal to how TCP works on Windows. To record data for some minutes you need to filter out the irrelevant events.
-The supplied profile https://github.com/Alois-xx/FileWriter/blob/master/MultiProfile.wprp contains the Network profile which collects CPU sampling data, DNS and filtered network events
+The supplied profile https://raw.githubusercontent.com/Alois-xx/etwcontroller/refs/heads/master/ETWController/ETW/MultiProfile.wprp contains the Network profile which collects CPU sampling data, DNS and filtered network events
 which should provide a good start. 
 ```
 wpr -start MultipProfile.wprp!Network
