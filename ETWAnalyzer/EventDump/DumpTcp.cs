@@ -4,6 +4,7 @@
 using ETWAnalyzer.Commands;
 using ETWAnalyzer.Extract;
 using ETWAnalyzer.Extract.Network.Tcp;
+using ETWAnalyzer.Extract.Network.Tcp.Issues;
 using ETWAnalyzer.Infrastructure;
 using ETWAnalyzer.ProcessTools;
 using System;
@@ -36,6 +37,8 @@ namespace ETWAnalyzer.EventDump
             SortOrders.MaxRetransmissionTime,
             SortOrders.LastReceivedTime,
             SortOrders.LastSentTime,
+            SortOrders.Post,
+            SortOrders.Inject,
         };
 
         /// <summary>
@@ -93,6 +96,10 @@ namespace ETWAnalyzer.EventDump
         public bool KeepAliveFilter { get; internal set; }
         public MinMaxRange<double> MinMaxSendDelayS { get; internal set; }
         public MinMaxRange<double> MinMaxReceiveDelayS { get; internal set; }
+        public static IssueTypes ValidIssueTypes { get; internal set; }
+        public IssueTypes IssueType { get; internal set; }
+        public MinMaxRange<ulong> MinMaxInject { get; internal set; } = new();
+        public MinMaxRange<ulong> MinMaxPost { get; internal set; } = new();
 
         /// <summary>
         /// Unit testing only. ReadFileData will return this list instead of real data
@@ -109,6 +116,7 @@ namespace ETWAnalyzer.EventDump
                         "SourceIP","Source Port", "DestinationIP", "Destination Port", "TCB", "ConnectionIdx", "Sent Packets (Total per connection)", "Sent Bytes (Total per connection)", "Received Packets (Total per connection)", "Received Bytes (Total per connection)",
                         "Retransmitted Packets (Total per connection)", "% Retransmitted Packets (Total per connection)", "TCP Template", "Connection Open Time", "Connection Close Time", 
                         Col_LastSendTime, Col_LastReceiveTime, Col_KeepAlive, Col_MaxReceiveDelay, Col_MaxSendDelay, Col_StatBytesIn, Col_StatBytesOut, Col_StatSegmentsIn, Col_StatSegmentsOut,
+                        "Posted Packets", "Injected Packets",
                     };
 
                 string[] additionalColumns = new string[] { Col_CommandLine };
@@ -169,6 +177,8 @@ namespace ETWAnalyzer.EventDump
                                 tcpEvent.Connection?.Statistics.DataBytesOut == null ? 0 : tcpEvent.Connection?.Statistics.DataBytesOut.Value,
                                 tcpEvent.Connection?.Statistics.SegmentsIn == null ? 0 : tcpEvent.Connection?.Statistics.SegmentsIn.Value,
                                 tcpEvent.Connection?.Statistics.SegmentsOut == null ? 0 : tcpEvent.Connection?.Statistics.SegmentsOut.Value,
+                                tcpEvent.Connection?.Statistics.SendPostedPosted == null ? 0 : tcpEvent.Connection?.Statistics.SendPostedPosted.Value,  
+                                tcpEvent.Connection?.Statistics.SendPostedInjected == null ? 0 : tcpEvent.Connection?.Statistics.SendPostedInjected.Value,
 
                                 GetDateTimeString(retrans.RetransmitTime, tcpEvent.Session.AdjustedSessionStart, TimeFormatOption, false),
                                 (int) retrans.RetransmitDiff().TotalMilliseconds,
@@ -212,6 +222,8 @@ namespace ETWAnalyzer.EventDump
                        tcpEvent.Connection?.Statistics.DataBytesOut == null ? 0 : tcpEvent.Connection?.Statistics.DataBytesOut.Value,
                        tcpEvent.Connection?.Statistics.SegmentsIn == null ? 0 : tcpEvent.Connection?.Statistics.SegmentsIn.Value,
                        tcpEvent.Connection?.Statistics.SegmentsOut == null ? 0 : tcpEvent.Connection?.Statistics.SegmentsOut.Value,
+                       tcpEvent.Connection?.Statistics.SendPostedPosted == null ? 0 : tcpEvent.Connection?.Statistics.SendPostedPosted.Value,
+                       tcpEvent.Connection?.Statistics.SendPostedInjected == null ? 0 : tcpEvent.Connection?.Statistics.SendPostedInjected.Value,
 
                        NoCmdLine ? "" : tcpEvent.Process.CommandLineNoExe);
                     }
@@ -252,6 +264,14 @@ namespace ETWAnalyzer.EventDump
         const string Col_StatSegmentsIn = "StatPacketsIn";
         const string Col_StatSegmentsOut = "StatPacketsOut";
 
+        const string Col_EventTime = "EventTime";
+        const string Col_PostMode = "PostMode";
+        const string Col_SndNext = "SndNext";
+        const string Col_Issue = "Issue";
+
+
+        const int PointerWidth = 16;
+
         bool GetEnable(string columnName)
         {
             bool lret = columnName switch
@@ -281,7 +301,11 @@ namespace ETWAnalyzer.EventDump
                 Col_StatBytesOut => GetOverrideFlag(Col_StatBytesOut, ShowStats),
                 Col_StatSegmentsIn => GetOverrideFlag(Col_StatSegmentsIn, ShowStats),
                 Col_StatSegmentsOut => GetOverrideFlag(Col_StatSegmentsOut, ShowStats),
-                Col_TCB => GetOverrideFlag(Col_TCB, ShowDetails),
+                Col_TCB => GetOverrideFlag(Col_TCB, ShowDetails || IssueType == IssueTypes.Post ? true : false),
+                Col_EventTime => GetOverrideFlag(Col_EventTime,  true),
+                Col_PostMode => GetOverrideFlag(Col_PostMode, ShowStats || IssueType == IssueTypes.Post ? true : false),
+                Col_SndNext => GetOverrideFlag(Col_SndNext, true),
+                Col_Issue => GetOverrideFlag(Col_Issue, true),
                 _ => throw new NotSupportedException($"Column {columnName} is not configurable."),
             };
             return lret;
@@ -296,14 +320,21 @@ namespace ETWAnalyzer.EventDump
             Col_Total,Col_RetransmitCount,Col_RetransmitPercent, 
             Col_RetransmitDelay,Col_RetransmitMin,Col_RetransmitMedian,Col_RetransmitMax,
             Col_Template,Col_ConnectTime,Col_DisconnectTime,Col_ResetTime,Col_LastSendTime, Col_LastReceiveTime,Col_KeepAlive, Col_MaxReceiveDelay, Col_MaxSendDelay,
-            Col_TCB
+            Col_TCB,
+            Col_EventTime,Col_PostMode,Col_SndNext,Col_Issue,
         };
 
         private void PrintMatches(List<MatchData> data)
         {
-
-            if ( data.Count == 0 )
+            if( data.Count == 0 )
             {
+                ColorConsole.WriteEmbeddedColorLine("[yellow]No matching TCP connections found.[/yellow]");
+                return;
+            }
+
+            if( IssueType != IssueTypes.None )
+            {
+                PrintIssues(data);
                 return;
             }
 
@@ -320,7 +351,6 @@ namespace ETWAnalyzer.EventDump
             const int PercentWidth = 4;
             const int RetransMsWidth = 7;
             int timeWidth = GetWidth(TimeFormatOption);
-            const int PointerWidth = 16;
             const int TotalColumnWidth = 22;
             const int KeepAliveWidth = 4; // true or no string 
 
@@ -354,7 +384,22 @@ namespace ETWAnalyzer.EventDump
                 Enabled = GetEnable(Col_SentPackets),
                 DataWidth = PacketCountWidth,
                 Color = ConsoleColor.Red,
+            },  new()
+            {
+                Title = "Posted Packets",
+                Name = Col_PostMode,
+                Enabled = GetEnable(Col_PostMode),
+                DataWidth = PacketCountWidth,
+                Color = ConsoleColor.Yellow,
             }, new()
+            {
+                Title = "Injected Packets",
+                Name = Col_PostMode,
+                Enabled = GetEnable(Col_PostMode),
+                DataWidth = PacketCountWidth,
+                Color = ConsoleColor.Yellow,
+            },
+            new()
             {
                 Title = "Stat PacketsOut",
                 Name = Col_StatSegmentsOut,
@@ -562,6 +607,8 @@ namespace ETWAnalyzer.EventDump
                         match.Connection.DatagramsReceived.ToString("N0"),
                         match.Connection?.Statistics.SegmentsIn == null ? "" : match.Connection?.Statistics.SegmentsIn.Value.ToString("N0"),
                         match.Connection.DatagramsSent.ToString("N0"),
+                        match.Connection?.Statistics.SendPostedPosted == null ? "" : match.Connection?.Statistics.SendPostedPosted.Value.ToString("N0"),
+                        match.Connection?.Statistics.SendPostedInjected == null ? "" : match.Connection?.Statistics.SendPostedInjected.Value.ToString("N0"),
                         match.Connection?.Statistics.SegmentsOut == null ? "" : match.Connection?.Statistics.SegmentsOut.Value.ToString("N0"),
                         match.Connection.BytesReceived.ToString("N0") + " B",
                         match.Connection?.Statistics.DataBytesIn == null ? "" : match.Connection?.Statistics.DataBytesIn.Value.ToString("N0") + " B",
@@ -642,6 +689,151 @@ namespace ETWAnalyzer.EventDump
             }
         }
 
+        private void PrintIssues(List<MatchData> data)
+        {
+            var byFile = data.GroupBy(x => x.Session.FileName).OrderBy(x => x.First().Session.SessionStart);
+            MatchData[] allPrinted = byFile.SelectMany(x => x.SortAscendingGetTopNLast(SortBy, null, null, TopN)).ToArray();
+
+
+            int localIPLen = allPrinted.Max(x => x.Connection.LocalIpAndPort.ToString().Length);
+            int remoteIPLen = allPrinted.Max(x => x.Connection.RemoteIpAndPort.ToString().Length);
+
+            int timeWidth = GetWidth(TimeFormatOption);
+            const int PostModeWidth = 8;
+            const int BytesWidth = 7;
+            const int SndNextWidth = 13;
+
+
+            MultiLineFormatter formatter = new(
+              new()
+              {
+                  Title = "Source IP/Port -> Destination IP/Port",
+                  Name = Col_Connection,
+                  Enabled = GetEnable(Col_Connection),
+                  DataWidth = localIPLen + remoteIPLen + " -> ".Length + 1,
+                  Color = ConsoleColor.Yellow,
+              },
+              new()
+              {
+                  Title = "Connect Time",
+                  Name = Col_ConnectTime,
+                  Enabled = GetEnable(Col_ConnectTime), 
+                  DataWidth = timeWidth
+              },
+              new()
+              {
+                  Title = "Disconnect Time",
+                  Name = Col_DisconnectTime,
+                  Enabled = GetEnable(Col_DisconnectTime),
+                  DataWidth = timeWidth
+              },
+              new()
+              {
+                  Title = "Event Time",
+                  Name = Col_EventTime, 
+                  Enabled = GetEnable(Col_EventTime),
+                  DataWidth = timeWidth
+              },
+              new()
+              {
+                  Title = "PostMode",
+                  Name = Col_PostMode,
+                  Enabled = GetEnable(Col_PostMode),
+                  DataWidth = PostModeWidth
+              },
+              new()
+              {
+                  Title = "Sent Bytes",
+                  Name = Col_SentBytes,
+                  Enabled = GetEnable(Col_SentBytes),
+                  DataWidth = BytesWidth
+              },
+              new()
+              {
+                  Title = "SndNext",
+                  Name = Col_SndNext,
+                  Enabled = GetEnable(Col_SndNext),
+                  DataWidth = SndNextWidth
+              },
+              new()
+              {
+                Title = "TCB",
+                Name = Col_TCB,
+                Enabled = GetEnable(Col_TCB),
+                DataWidth = PointerWidth + 3,
+                Color = ConsoleColor.Green,
+              },
+              new()
+              {
+                  Title = "Issue",
+                  Name = Col_Issue,
+                  Enabled = GetEnable(Col_Issue), 
+                  DataWidth = 53,
+                  Color = ConsoleColor.Red,
+              }
+              );
+
+            formatter.PrintHeader();
+            foreach (var issue in data)
+            {
+                string connection = $"{issue.Connection.LocalIpAndPort.ToString().WithWidth(localIPLen)} -> {issue.Connection.RemoteIpAndPort.ToString().WithWidth(remoteIPLen)}";
+                string[] lineData = new string[]
+                {
+                    connection,
+                    GetDateTimeString(issue.Connection.TimeStampOpen, issue.Session.AdjustedSessionStart, TimeFormatOption, false),
+                    GetDateTimeString(issue.Connection.TimeStampClose, issue.Session.AdjustedSessionStart, TimeFormatOption, false),
+                    GetDateTimeString(issue.Issue.PreviousPosted.Time, issue.Session.AdjustedSessionStart, TimeFormatOption, false),
+                    issue.Issue.PreviousPosted.InjectedReason.ToString(),
+                    $"{"N0".WidthFormat(issue.Issue.PreviousPosted.NumBytes, BytesWidth)}",
+                    $"{"N0".WidthFormat(issue.Issue.PreviousPosted.SndNext, SndNextWidth)}",
+                    $"0x{"X".WidthFormat(issue.Connection.Tcb, PointerWidth)}",
+                    "Captured by Firewall",
+                };
+
+                if (ShowTotal != TotalModes.Total)  // omit connection details in total mode
+                {
+                    formatter.Print(true, lineData);
+                }
+
+
+                lineData = new string[]
+                {
+                    "",
+                    "",
+                    "",
+                    GetDateTimeString(issue.Issue.OutOfOrderPost.Time, issue.Session.AdjustedSessionStart, TimeFormatOption, false),
+                    issue.Issue.OutOfOrderPost.InjectedReason.ToString(),
+                    $"{"N0".WidthFormat(issue.Issue.OutOfOrderPost.NumBytes, BytesWidth)}",
+                    $"{"N0".WidthFormat(issue.Issue.OutOfOrderPost.SndNext, SndNextWidth)}",
+                    "",
+                    $"Posted Packet"
+                };
+
+                if (ShowTotal != TotalModes.Total)  // omit connection details in total mode
+                {
+                    formatter.Print(true, lineData);
+                }
+
+                lineData = new string[]
+                {
+                    "",
+                    "",
+                    "",
+                    GetDateTimeString(issue.Issue.Injected.Time, issue.Session.AdjustedSessionStart, TimeFormatOption, false),
+                    issue.Issue.Injected.InjectedReason.ToString(),
+                    $"{"N0".WidthFormat(issue.Issue.Injected.NumBytes, BytesWidth)}",
+                    $"{"N0".WidthFormat(issue.Issue.Injected.SndNext, SndNextWidth)}",
+                    "",
+                    $"Out of Post Order injection. SequenceNr Diff:  {issue.Issue.Injected.SndNext-issue.Issue.PreviousPosted.SndNext}"
+                };
+
+                if (ShowTotal != TotalModes.Total)  // omit connection details in total mode
+                {
+                    formatter.Print(true, lineData);
+                }
+            }
+        }
+
         private List<MatchData> ReadFileData()
         {
             if (myUTestData != null)
@@ -658,7 +850,7 @@ namespace ETWAnalyzer.EventDump
             {
                 foreach (TestDataFile file in test.Value.Files)
                 {
-                    if (file?.Extract?.Network?.TcpData?.Connections?.Count == null )
+                    if (file?.Extract?.Network?.TcpData?.Connections?.Count == null)
                     {
                         ColorConsole.WriteError($"Warning: File {GetPrintFileName(file.FileName)} does not contain Tcp data.");
                         continue;
@@ -667,165 +859,250 @@ namespace ETWAnalyzer.EventDump
                     var connections = file.Extract.Network.TcpData.Connections;
                     var retransByConnections = file.Extract.Network.TcpData.Retransmissions.ToLookup(x => file.Extract.Network.TcpData.Connections[(int)x.ConnectionIdx]);
 
-                    for(int i=0;i< file.Extract.Network.TcpData.Connections.Count;i++)
+                    if (IssueType == IssueTypes.None)
                     {
-                        ITcpConnection connection = file.Extract.Network.TcpData.Connections[i];
-                        List<ITcpRetransmission> retransmissions = new();
-
-                        var localIPAndPort = connection.LocalIpAndPort;
-                        var remoteIPAndPort = connection.RemoteIpAndPort;
-
-                        if (connection.ProcessIdx != ETWProcessIndex.Invalid)
-                        {
-                            var process = file.Extract.GetProcess(connection.ProcessIdx);
-
-                            if (!base.IsMatchingProcessAndCmdLine(file, process.ToProcessKey()))
-                            {
-                                continue;
-                            }
-                        }
-
-                        if (IpPortFilter.Value?.Invoke( localIPAndPort.ToString() + remoteIPAndPort.ToString() ) == false )
-                        {
-                            continue;
-                        }
-
-                        if( KeepAliveFilter )
-                        {
-                            if( connection?.Statistics.KeepAlive != true )
-                            {
-                                continue;
-                            }
-                        }
-
-
-                        if( !MinMaxConnect.IsWithin(((connection.TimeStampOpen ?? file.Extract.SessionStart) - file.Extract.SessionStart).TotalSeconds) )
-                        {
-                            continue;
-                        }
-
-                        if ( !MinMaxDisconnect.IsWithin( ((connection.TimeStampClose ?? file.Extract.SessionStart) - file.Extract.SessionStart).TotalSeconds) )
-                        {
-                            continue;
-                        }
-                        
-                        if( !MinMaxReceivedS.IsWithin( ((connection?.Statistics.LastReceived ?? file.Extract.SessionStart) - file.Extract.SessionStart).TotalSeconds) )
-                        {
-                            continue;
-                        }
-
-                        if (!MinMaxSentS.IsWithin( ((connection?.Statistics.LastSent ?? file.Extract.SessionStart) - file.Extract.SessionStart).TotalSeconds) )
-                        {
-                            continue;
-                        }
-
-                        if( !MinMaxSendDelayS.IsWithin(connection?.Statistics.MaxSendDelayS ?? 0.0d))
-                        {
-                            continue;
-                        }
-
-                        if (!MinMaxReceiveDelayS.IsWithin(connection?.Statistics.MaxReceiveDelayS ?? 0.0d))
-                        {
-                            continue;
-                        }
-
-                        // filter by connection reset
-                        if ( Reset && connection.RetransmitTimeout == null)
-                        {
-                            continue;
-                        }
-
-
-
-                        if ( TcbFilter.Value?.Invoke("0x"+connection.Tcb.ToString("X")) == false )
-                        {
-                            continue;
-                        }
-
-                        if( !MinMaxReceivedBytes.IsWithin(connection.BytesReceived))
-                        {
-                            continue;
-                        }
-
-                        if( !MinMaxSentBytes.IsWithin(connection.BytesSent))
-                        {
-                            continue;
-                        }
-
-                        if (!MinMaxConnectionDurationFilter(connection.TimeStampOpen, connection.TimeStampClose, file.Extract.SessionEnd))
-                        {
-                            continue;
-                        }
-
-                        var retransmissionsForConnection = retransByConnections[connection];
-
-                        foreach (var retransmission in retransmissionsForConnection)
-                        {
-                            if (!MinMaxRetransDelayMs.IsWithin((int) retransmission.RetransmitDiff().TotalMilliseconds))
-                            {
-                                continue;
-                            }
-
-                            if( !MinMaxRetransBytes.IsWithin( retransmission.NumBytes))
-                            {
-                                continue;
-                            }
-
-                            if( OnlyClientRetransmit ) // only keep client retransmissions
-                            {
-                                if( retransmission.IsClientRetransmission == null || retransmission.IsClientRetransmission.Value == false)
-                                {
-                                    continue;
-                                }
-                            }
-
-                            retransmissions.Add(retransmission);
-                        }
-
-
-                        if (!MinMaxRetransCount.IsWithin(retransmissions.Count))
-                        {
-                            continue;
-                        }
-
-                        List<double> retransMs = retransmissions.Select(x => x.RetransmitDiff().TotalMilliseconds).ToList();
-
-                        double medianMs = retransMs.Count > 0 ? retransMs.Median() : 0.0d;
-                        double minMs =    retransMs.Count > 0 ? retransMs.Min()    : 0.0d;
-                        double maxMs =    retransMs.Count > 0 ? retransMs.Max()    : 0.0d;
-
-                        MatchData data = new()
-                        {
-                            RetransMedianMs = medianMs,
-                            RetransMinMs = minMs,
-                            RetransMaxms = maxMs,
-                            Retransmissions = retransmissions,
-                            Connection = connection,
-                            ConnectionIndex = i + Math.Abs(file.FileName.GetHashCode()),  // make connection idx unique between files to keep % retransmit value in CSV <= 100%
-                            Process = file.Extract.GetProcess(connection.ProcessIdx),
-                            Session = new ETWSession
-                            {
-                                FileName = file.FileName,
-                                TestName = file.TestName,
-                                TestDurationInMs = file.DurationInMs,
-                                SessionStart = file.Extract.SessionStart,
-                                Baseline = file?.Extract?.MainModuleVersion?.ToString() ?? "",
-                                ZeroTimeS = GetZeroTimeInS(file.Extract),
-                            },
-                            InputConnectionCount = 1,
-                        };
-
-                        data.Session.Parent = data;
-
-                        lret.Add(data);
-
+                        ReadConnectionData(lret, file, retransByConnections);
+                    }
+                    else
+                    {
+                        ReadIssueData(lret, file);
                     }
 
- 
                 }
             }
 
             return lret;
+        }
+
+        private void ReadIssueData(List<MatchData> lret, TestDataFile file)
+        {
+            for (int i = 0; i < file.Extract.Network.TcpData.TcpIssues.PostIssues.Count; i++)
+            {
+                ITcpPostIssue postIssue = file.Extract.Network.TcpData.TcpIssues.PostIssues[i];
+                ITcpConnection connection = postIssue.GetConnection(file.Extract);
+
+                var localIPAndPort = connection.LocalIpAndPort;
+                var remoteIPAndPort = connection.RemoteIpAndPort;
+
+                if (connection.ProcessIdx != ETWProcessIndex.Invalid)
+                {
+                    var process = file.Extract.GetProcess(connection.ProcessIdx);
+
+                    if (!base.IsMatchingProcessAndCmdLine(file, process.ToProcessKey()))
+                    {
+                        continue;
+                    }
+                } 
+
+                if (IpPortFilter.Value?.Invoke(localIPAndPort.ToString() + remoteIPAndPort.ToString()) == false)
+                {
+                    continue;
+                }
+
+                if (KeepAliveFilter)
+                {
+                    if (connection?.Statistics.KeepAlive != true)
+                    {
+                        continue;
+                    }
+                }
+
+
+                if (!MinMaxConnect.IsWithin(((connection.TimeStampOpen ?? file.Extract.SessionStart) - file.Extract.SessionStart).TotalSeconds))
+                {
+                    continue;
+                }
+
+                if (!MinMaxDisconnect.IsWithin(((connection.TimeStampClose ?? file.Extract.SessionStart) - file.Extract.SessionStart).TotalSeconds))
+                {
+                    continue;
+                }
+
+                MatchData data = new()
+                {
+                    Connection = connection,
+                    Issue = postIssue,
+
+                    Session = new ETWSession
+                    {
+                        FileName = file.FileName,
+                        TestName = file.TestName,
+                        TestDurationInMs = file.DurationInMs,
+                        SessionStart = file.Extract.SessionStart,
+                        Baseline = file?.Extract?.MainModuleVersion?.ToString() ?? "",
+                        ZeroTimeS = GetZeroTimeInS(file.Extract),
+                    },
+                };
+
+                lret.Add(data);
+            }
+        }
+
+        private void ReadConnectionData(List<MatchData> lret, TestDataFile file, ILookup<ITcpConnection, ITcpRetransmission> retransByConnections)
+        {
+            for (int i = 0; i < file.Extract.Network.TcpData.Connections.Count; i++)
+            {
+                ITcpConnection connection = file.Extract.Network.TcpData.Connections[i];
+                List<ITcpRetransmission> retransmissions = new();
+
+                var localIPAndPort = connection.LocalIpAndPort;
+                var remoteIPAndPort = connection.RemoteIpAndPort;
+
+                if (connection.ProcessIdx != ETWProcessIndex.Invalid)
+                {
+                    var process = file.Extract.GetProcess(connection.ProcessIdx);
+
+                    if (!base.IsMatchingProcessAndCmdLine(file, process.ToProcessKey()))
+                    {
+                        continue;
+                    }
+                }
+
+                if (IpPortFilter.Value?.Invoke(localIPAndPort.ToString() + remoteIPAndPort.ToString()) == false)
+                {
+                    continue;
+                }
+
+                if (KeepAliveFilter)
+                {
+                    if (connection?.Statistics.KeepAlive != true)
+                    {
+                        continue;
+                    }
+                }
+
+
+                if (!MinMaxConnect.IsWithin(((connection.TimeStampOpen ?? file.Extract.SessionStart) - file.Extract.SessionStart).TotalSeconds))
+                {
+                    continue;
+                }
+
+                if (!MinMaxDisconnect.IsWithin(((connection.TimeStampClose ?? file.Extract.SessionStart) - file.Extract.SessionStart).TotalSeconds))
+                {
+                    continue;
+                }
+
+                if (!MinMaxReceivedS.IsWithin(((connection?.Statistics.LastReceived ?? file.Extract.SessionStart) - file.Extract.SessionStart).TotalSeconds))
+                {
+                    continue;
+                }
+
+                if (!MinMaxSentS.IsWithin(((connection?.Statistics.LastSent ?? file.Extract.SessionStart) - file.Extract.SessionStart).TotalSeconds))
+                {
+                    continue;
+                }
+
+                if (!MinMaxSendDelayS.IsWithin(connection?.Statistics.MaxSendDelayS ?? 0.0d))
+                {
+                    continue;
+                }
+
+                if (!MinMaxReceiveDelayS.IsWithin(connection?.Statistics.MaxReceiveDelayS ?? 0.0d))
+                {
+                    continue;
+                }
+
+                // filter by connection reset
+                if (Reset && connection.RetransmitTimeout == null)
+                {
+                    continue;
+                }
+
+
+
+                if (TcbFilter.Value?.Invoke("0x" + connection.Tcb.ToString("X")) == false)
+                {
+                    continue;
+                }
+
+                if( !MinMaxInject.IsWithin(connection?.Statistics.SendPostedInjected ?? 0))
+                {
+                    continue;
+                }
+
+                
+                if (!MinMaxPost.IsWithin(connection?.Statistics.SendPostedPosted ?? 0))
+                {
+                    continue;
+                }
+
+
+                if (!MinMaxReceivedBytes.IsWithin(connection.BytesReceived))
+                {
+                    continue;
+                }
+
+                if (!MinMaxSentBytes.IsWithin(connection.BytesSent))
+                {
+                    continue;
+                }
+
+                if (!MinMaxConnectionDurationFilter(connection.TimeStampOpen, connection.TimeStampClose, file.Extract.SessionEnd))
+                {
+                    continue;
+                }
+
+                var retransmissionsForConnection = retransByConnections[connection];
+
+                foreach (var retransmission in retransmissionsForConnection)
+                {
+                    if (!MinMaxRetransDelayMs.IsWithin((int)retransmission.RetransmitDiff().TotalMilliseconds))
+                    {
+                        continue;
+                    }
+
+                    if (!MinMaxRetransBytes.IsWithin(retransmission.NumBytes))
+                    {
+                        continue;
+                    }
+
+                    if (OnlyClientRetransmit) // only keep client retransmissions
+                    {
+                        if (retransmission.IsClientRetransmission == null || retransmission.IsClientRetransmission.Value == false)
+                        {
+                            continue;
+                        }
+                    }
+
+                    retransmissions.Add(retransmission);
+                }
+
+
+                if (!MinMaxRetransCount.IsWithin(retransmissions.Count))
+                {
+                    continue;
+                }
+
+                List<double> retransMs = retransmissions.Select(x => x.RetransmitDiff().TotalMilliseconds).ToList();
+
+                double medianMs = retransMs.Count > 0 ? retransMs.Median() : 0.0d;
+                double minMs = retransMs.Count > 0 ? retransMs.Min() : 0.0d;
+                double maxMs = retransMs.Count > 0 ? retransMs.Max() : 0.0d;
+
+                MatchData data = new()
+                {
+                    RetransMedianMs = medianMs,
+                    RetransMinMs = minMs,
+                    RetransMaxms = maxMs,
+                    Retransmissions = retransmissions,
+                    Connection = connection,
+                    ConnectionIndex = i + Math.Abs(file.FileName.GetHashCode()),  // make connection idx unique between files to keep % retransmit value in CSV <= 100%
+                    Process = file.Extract.GetProcess(connection.ProcessIdx),
+                    Session = new ETWSession
+                    {
+                        FileName = file.FileName,
+                        TestName = file.TestName,
+                        TestDurationInMs = file.DurationInMs,
+                        SessionStart = file.Extract.SessionStart,
+                        Baseline = file?.Extract?.MainModuleVersion?.ToString() ?? "",
+                        ZeroTimeS = GetZeroTimeInS(file.Extract),
+                    },
+                    InputConnectionCount = 1,
+                };
+
+                lret.Add(data);
+
+            }
         }
 
         /// <summary>
@@ -876,6 +1153,8 @@ namespace ETWAnalyzer.EventDump
                 SortOrders.LastSentTime => connection?.Statistics.LastSent != null ? connection.Statistics.LastSent.Value.Ticks : 0m,
                 SortOrders.MaxReceiveDelay => connection?.Statistics.MaxReceiveDelayS != null ? (decimal) connection.Statistics.MaxReceiveDelayS.Value : 0m,
                 SortOrders.MaxSendDelay => connection?.Statistics.MaxSendDelayS != null ? (decimal)connection.Statistics.MaxSendDelayS.Value : 0m,
+                SortOrders.Post => connection?.Statistics.SendPostedPosted != null ? connection.Statistics.SendPostedPosted.Value : 0m,
+                SortOrders.Inject => connection?.Statistics.SendPostedInjected != null ? connection.Statistics.SendPostedInjected.Value : 0m,
                 _ => match.Retransmissions.Count,
             };
             return lret;
@@ -933,11 +1212,11 @@ namespace ETWAnalyzer.EventDump
             public double RetransMinMs { get; internal set; }
             public double RetransMaxms { get; internal set; }
             public int InputConnectionCount { get; internal set; }
+            public ITcpPostIssue Issue { get; internal set; }
         }
 
         public class ETWSession
         {
-            public MatchData Parent { get; set; }
             public string FileName { get; set; }
             public DateTimeOffset SessionStart { get; set; }
 

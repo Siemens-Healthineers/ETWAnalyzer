@@ -62,6 +62,16 @@ namespace ETWAnalyzer.Extract.Network.Tcp
         public ulong? SegmentsOut { get; internal set; }
 
         /// <summary>
+        /// Send events which were posted to TCP send queue
+        /// </summary>
+        public ulong? SendPostedPosted { get; internal set; }
+
+        /// <summary>
+        /// Send events which were injected by firewall to TCP send queue
+        /// </summary>
+        public ulong? SendPostedInjected {  get; internal set; }
+
+        /// <summary>
         /// Used by Json Serializer to create a new instance of this class.
         /// Each input value name must match the property name case insensitive, or we will get some properties not deserialized. 
         /// </summary>
@@ -74,8 +84,10 @@ namespace ETWAnalyzer.Extract.Network.Tcp
         /// <param name="dataBytesOut"></param>
         /// <param name="segmentsIn"></param>
         /// <param name="segmentsOut"></param>
+        /// <param name="sendPostedInjected"></param>
+        /// <param name="sendPostedPosted"></param>
         public TcpConnectionStatistics(DateTimeOffset? lastSent, DateTimeOffset? lastReceived, bool? keepAlive, double? maxSendDelayS, double? maxReceiveDelayS, 
-              ulong? dataBytesIn, ulong? dataBytesOut, ulong? segmentsIn, ulong? segmentsOut)
+              ulong? dataBytesIn, ulong? dataBytesOut, ulong? segmentsIn, ulong? segmentsOut, ulong? sendPostedPosted, ulong? sendPostedInjected)
         {
             LastSent = lastSent;
             LastReceived = lastReceived;
@@ -86,6 +98,8 @@ namespace ETWAnalyzer.Extract.Network.Tcp
             DataBytesOut = dataBytesOut;
             SegmentsIn = segmentsIn;
             SegmentsOut = segmentsOut;
+            SendPostedPosted = sendPostedPosted;
+            SendPostedInjected = sendPostedInjected;
         }
     }
 }

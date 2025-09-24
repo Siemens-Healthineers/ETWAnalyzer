@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using ETWAnalyzer.Extract.Network.Tcp.Issues;
 
 namespace ETWAnalyzer.Extract.Network.Tcp
 {
@@ -24,6 +25,15 @@ namespace ETWAnalyzer.Extract.Network.Tcp
             /// </summary>
             Invalid = -1,
         }
+
+
+        /// <summary>
+        /// Firewall, or in future other hard to spot network issues 
+        /// </summary>
+        public TcpIssues TcpIssues { get; set; } = new();
+
+        ITcpIssues ITcpStatistics.TcpIssues => TcpIssues;
+
 
         /// <summary>
         /// Connections
@@ -52,5 +62,6 @@ namespace ETWAnalyzer.Extract.Network.Tcp
 
         IReadOnlyList<ITcpConnection> ITcpStatistics.Connections => Connections;
         IReadOnlyList<ITcpRetransmission> ITcpStatistics.Retransmissions => Retransmissions;
+
     }
 }

@@ -35,6 +35,11 @@ namespace ETWAnalyzer.TraceProcessorHelpers
         public const int TcpSendPosted = 1159;
 
         /// <summary>
+        /// Tcb, Injected, NumBztes, SndNxt, 
+        /// </summary>
+        public const int TcpSendTransmitted = 1160;
+
+        /// <summary>
         /// Fields LocalAddress, RemoteAddress, Status, ProcessId, Compartment, Tcb, ProcessStartKey,
         /// </summary>
         public const int TcpShutdownTcb = 1044;

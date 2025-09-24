@@ -33,11 +33,25 @@ namespace ETWAnalyzer.Extractors.TCP
 
         /// <summary>
         /// Application sending data over socket calls send() or WriteFile() which results in a "posted" event.
+        /// Posted packets are preserving the process name which did send the data over the socket via ws2_32.dll!send
         /// </summary>
         const string InjectReasonPost = "posted";
 
         /// <summary>
         /// This is usually done by firewall which will swallow the posted packet and inject a modified one.
+        /// Stack trace of injected events by kernel looks like
+        ///     ntoskrnl.exe!KiStartSystemThread
+        ///     ntoskrnl.exe!PspSystemThreadStartup
+        ///     ntoskrnl.exe!ExpWorkerThread
+        ///     ntoskrnl.exe!IopProcessWorkItem
+        ///     NETIO.SYS!StreamPermitRemoveDataWorkerRoutine
+        ///     NETIO.SYS!StreamPermitDataHelper
+        ///     NETIO.SYS!StreamInjectRequestsToStack
+        ///     tcpip.sys!InetInspectInjectSend
+        ///     tcpip.sys!TcpEnqueueTcbSend
+        ///     tcpip.sys!McTemplateK0pzqq_EtwWriteTransfer
+        ///     tcpip.sys!McGenEventWrite_EtwWriteTransfer
+        ///     ntoskrnl.exe!EtwWriteTransfer
         /// </summary>
         const string InjectReasonInjected = "injected";
 
@@ -60,16 +74,12 @@ namespace ETWAnalyzer.Extractors.TCP
         /// Use this to count packets which were sent by application. 
         /// </summary>
         public bool IsPosted => Injected == InjectReasonPost;
+        public bool IsInjected => Injected == InjectReasonInjected;
 
         /// <summary>
         /// Base sequence number. The actually sent sequence number is SndNext + NumBytes 
         /// </summary>
         public uint SndNext { get; set; }
-
-        /// <summary>
-        /// The sent sequence number is SndNext + NumBytes
-        /// </summary>
-        public uint SequenceNr => SndNext + NumBytes;
 
         /// <summary>
         /// Time of event
@@ -98,6 +108,11 @@ namespace ETWAnalyzer.Extractors.TCP
             SndNext = ev.Fields[TcpETWConstants.SndNxtField].AsUInt32;
             Injected = ev.Fields[TcpETWConstants.InjectedField].AsString;
             Timestamp = ev.Timestamp.DateTimeOffset;
+        }
+
+        public override string ToString()
+        {
+            return $"Tcb:0x{Tcb:X} NumBytes:{NumBytes} SndNext:{SndNext} Injected:{Injected} Time:{Timestamp:HH:mm:ss.fff}";
         }
     }
 }

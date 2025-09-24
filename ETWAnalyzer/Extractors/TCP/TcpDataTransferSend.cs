@@ -1,22 +1,17 @@
 ﻿//// SPDX-FileCopyrightText:  © 2023 Siemens Healthcare GmbH
 //// SPDX-License-Identifier:   MIT
 
-using ETWAnalyzer.Extract;
 using ETWAnalyzer.TraceProcessorHelpers;
 using Microsoft.Windows.EventTracing.Events;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ETWAnalyzer.Extractors.TCP
 {
 
     /// <summary>
-    /// Fired for loopback connections. BytesSent is 0 for remote connections!
+    /// Fired when sending data after posting it to TCP send queue.
     /// </summary>
-    internal class TcpDataSend : IGenericTcpEvent
+    internal class TcpDataTransferSend : IGenericTcpEvent
     {
         public ulong Tcb { get; set; }
 
@@ -27,7 +22,7 @@ namespace ETWAnalyzer.Extractors.TCP
 
         public DateTimeOffset Timestamp { get; set; }
 
-        public TcpDataSend(ulong tcb, int bytesSent, uint sequenceNr, DateTimeOffset timestamp)
+        public TcpDataTransferSend(ulong tcb, int bytesSent, uint sequenceNr, DateTimeOffset timestamp)
         {
             Tcb = tcb;
             BytesSent = bytesSent;
@@ -36,7 +31,7 @@ namespace ETWAnalyzer.Extractors.TCP
         }
 
 
-        public TcpDataSend(IGenericEvent ev)
+        public TcpDataTransferSend(IGenericEvent ev)
         {
             Tcb = (ulong)ev.Fields[TcpETWConstants.TcbField].AsAddress.Value;
             BytesSent = (int)ev.Fields[TcpETWConstants.BytesSentField].AsUInt32;
