@@ -6,11 +6,11 @@ using ETWAnalyzer.Extract.Common;
 using ETWAnalyzer.Extractors;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 
 namespace ETWAnalyzer.Extract.TraceLogging
 {
-
     /// <summary>
     /// Extracted data from manifest free (TraceLogging) events. Contains event values, process and stacks 
     /// </summary>
@@ -26,7 +26,17 @@ namespace ETWAnalyzer.Extract.TraceLogging
         {
             get
             {
-                myEventsByProviderItf ??= EventsByProvider.ToDictionary(kvp => kvp.Key, kvp => (ITraceLoggingProvider)kvp.Value);
+                if (myEventsByProviderItf == null)
+                {
+                    myEventsByProviderItf = EventsByProvider.ToDictionary(kvp => kvp.Key, kvp =>
+                    {
+                        foreach(var desc in kvp.Value.EventDescriptors)
+                        {
+                            desc.Value.Provider = kvp.Value; 
+                        }
+                        return (ITraceLoggingProvider)kvp.Value;
+                    });
+                }
                 return myEventsByProviderItf;
             }
         }
@@ -120,6 +130,21 @@ namespace ETWAnalyzer.Extract.TraceLogging
         public List<string> ListNames { get; set; } = new List<string>();
 
         IReadOnlyList<string> ITraceLoggingEventDescriptor.ListNames => ListNames;
+
+        /// <summary>
+        /// Set during deserialization from an extract file to enable easy access to provider data in object model
+        /// </summary>
+        internal ITraceLoggingProvider Provider { get; set; }
+
+        /// <summary>
+        /// Gets the name of the provider, implemented as explicit interface to ensure that this data is not serialized in the JSON file.
+        /// </summary>
+        string ITraceLoggingEventDescriptor.ProviderName => Provider.ProviderName;
+
+        /// <summary>
+        /// Gets the provider GUID, implemented as explicit interface to ensure that this data is not serialized in the JSON file.
+        /// </summary>
+        Guid ITraceLoggingEventDescriptor.ProviderGuid => Provider.ProviderId;
     }
 
 
@@ -129,24 +154,34 @@ namespace ETWAnalyzer.Extract.TraceLogging
     public interface ITraceLoggingEventDescriptor
     {
         /// <summary>
+        /// Gets the provider name.
+        /// </summary>
+        string ProviderName { get; }
+
+        /// <summary>
+        /// Gets the provider GUID.
+        /// </summary>
+        Guid ProviderGuid { get; }
+
+        /// <summary>
         /// Gets the name of the event.
         /// </summary>
-        public string Name { get; }
+        string Name { get; }
 
         /// <summary>
         /// Gets the event ID.
         /// </summary>
-        public int EventId { get; }
+        int EventId { get; }
 
         /// <summary>
         /// Fields which contain single values
         /// </summary>
-        public IReadOnlyList<string> FieldNames { get; }
+        IReadOnlyList<string> FieldNames { get; }
 
         /// <summary>
         /// Fields which contain lists
         /// </summary>
-        public IReadOnlyList<string> ListNames { get; }
+        IReadOnlyList<string> ListNames { get; }
 
     }
 
@@ -202,15 +237,48 @@ namespace ETWAnalyzer.Extract.TraceLogging
             return list;
         }
 
+
         /// <summary>
         /// Stack Index
         /// </summary>
         public StackIdx StackIdx { get; set; } = StackIdx.None;
 
+        string ITraceLoggingEvent.StackTrace
+        {
+            get
+            {
+                if (Extract == null)
+                {
+                    throw new NotSupportedException("Extract is not set. This field will only be set during deserialization when reading from an extract file.");
+                }
+
+
+                if (StackIdx == StackIdx.None)
+                {
+                    return string.Empty; // No stack trace available
+                }
+                return Extract.TraceLogging.Stacks.GetStack(StackIdx);
+            }
+        }
+
+
         /// <summary>
         /// Process Index
         /// </summary>
-        public ETWProcessIndex Process { get; set; } = ETWProcessIndex.Invalid;
+        public ETWProcessIndex ProcessIdx { get; set; } = ETWProcessIndex.Invalid;
+
+
+        ETWProcess ITraceLoggingEvent.Process
+        {
+            get
+            {
+                if( Extract == null )
+                {
+                    throw new NotSupportedException("Extract is not set. This field will only be set during deserialization when reading from an extract file.");
+                }
+                return Extract.GetProcess(ProcessIdx);
+            }
+        }
 
         /// <summary>
         /// Gets or sets the timestamp of the event.
@@ -223,6 +291,9 @@ namespace ETWAnalyzer.Extract.TraceLogging
         internal TraceLoggingEventDescriptor TypeInformation { get; set; }
 
         ITraceLoggingEventDescriptor ITraceLoggingEvent.TypeInformation => TypeInformation;
+
+        // set during deserialize
+        internal IETWExtract Extract { get; set; }
     }
 
     /// <summary>
@@ -239,16 +310,6 @@ namespace ETWAnalyzer.Extract.TraceLogging
         /// Gets the thread ID associated with the event.
         /// </summary>
         public int ThreadId { get; }
-
-        /// <summary>
-        /// Process Index
-        /// </summary>
-        ETWProcessIndex Process { get; }
-
-        /// <summary>
-        /// Stack Index
-        /// </summary>
-        StackIdx StackIdx { get; }
 
         /// <summary>
         /// Gets the timestamp of the event.
@@ -272,7 +333,23 @@ namespace ETWAnalyzer.Extract.TraceLogging
         /// <summary>
         /// Type descriptor for this event which contains field map and others.
         /// </summary>
-        ITraceLoggingEventDescriptor TypeInformation { get; } 
+        ITraceLoggingEventDescriptor TypeInformation { get; }
+
+        /// <summary>
+        /// Stack trace string of event when available.
+        /// </summary>
+        string StackTrace { get; }
+
+        /// <summary>
+        /// Get Stack index of stack trace collection which is unique for all TraceLogging events.
+        /// </summary>
+        StackIdx StackIdx { get; }
+
+        /// <summary>
+        /// Process object which is associated with this event.
+        /// </summary>
+        ETWProcess Process { get;  }
+        
     }
 
     /// <summary>

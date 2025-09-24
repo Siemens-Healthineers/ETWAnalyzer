@@ -14,6 +14,7 @@ namespace ETWAnalyzer_uTest.Infrastructure
         public void EmptyList()
         {
             TimeRangeCalculator calc = new TimeRangeCalculator();
+            calc.Freeze();
             Assert.Equal(TimeSpan.Zero, calc.GetDuration());
         }
 
@@ -22,6 +23,7 @@ namespace ETWAnalyzer_uTest.Infrastructure
         {
             TimeRangeCalculator calc = new TimeRangeCalculator();
             calc.Add(new Timestamp(1_000_000), new Duration(100));
+            calc.Freeze();
             Assert.Equal(1, calc.GetDuration().Ticks);
         }
 
@@ -62,7 +64,7 @@ namespace ETWAnalyzer_uTest.Infrastructure
             calc.Add(new Timestamp(2_000_000), new Duration(100_000));
             calc.Add(new Timestamp(3_000_000), new Duration(100_000));
 
-
+            calc.Freeze();
             Assert.Equal(4000, calc.GetDuration().Ticks);
             Assert.Equal(0.4d, calc.GetDuration().TotalMilliseconds);
 

@@ -191,6 +191,16 @@ namespace ETWAnalyzer.Extractors
             AddPrevRow();
 
             results.Exceptions = exStats;
+
+            ReleaseMemory();
+        }
+
+        private void ReleaseMemory()
+        {
+            // Null out all members to help GC
+            myGenericEvents = null;
+            myStackSource = null;
+            StackEvents.Clear();
         }
 
         /// <summary>

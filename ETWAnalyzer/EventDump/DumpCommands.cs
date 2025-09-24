@@ -108,5 +108,10 @@ namespace ETWAnalyzer.EventDump
         /// Dump Handle Object Reference Data
         /// </summary>
         ObjectRef,
+
+        /// <summary>
+        /// Dump manifest free TraceLog data
+        /// </summary>
+        TraceLog,
     }
 }

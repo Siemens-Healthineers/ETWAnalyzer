@@ -83,6 +83,15 @@ namespace ETWAnalyzer.Extractors.Modules
                     }
                 }
             }
+
+            results.Modules.Freeze();
+
+            ReleaseMemory();
+        }
+
+        private void ReleaseMemory()
+        {
+            myProcesses = null;
         }
     }
 }

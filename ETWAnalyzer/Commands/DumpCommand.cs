@@ -20,7 +20,7 @@ namespace ETWAnalyzer.Commands
     /// </summary>
     class DumpCommand : ArgParser
     {
-        internal const string AllDumpCommands = "[CPU,Disk,Dns,Exception,File,LBR,Mark,Memory,ObjectRef,PMC,Power,Process,Stats,TestRun,ThreadPool,Version]";
+        internal const string AllDumpCommands = "[CPU,Disk,Dns,Exception,File,LBR,Mark,Memory,ObjectRef,PMC,Power,Process,Stats,TestRun,ThreadPool,Tracelog,Version]";
 
         static readonly string DumpHelpStringPrefix =
         "ETWAnalyzer -Dump "+ AllDumpCommands + " [-nocolor]" + Environment.NewLine;
@@ -437,6 +437,20 @@ namespace ETWAnalyzer.Commands
         "             -Overlapped                  Show objects which are referenced by different handles. E.g. open an already existing named event (CreateEvent last error code returns ALREADY_EXISTS)." + Environment.NewLine 
         ;
 
+        static readonly string TraceLogHelpStringHeader =
+        "  TraceLog -filedir/fd Extract\\ or xx.json7z " + Environment.NewLine +
+        "             [-TimeFmt s,Local,LocalTime,UTC,UTCTime,Here,HereTime] [-TimeDigits d] [-csv xx.csv] [-NoCSVSeparator] [-NoCmdLine] [-Clip] [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd] [-MinMaxMsTestTimes xx-yy ...] [-ProcessName/pn xx.exe(pid)] " + Environment.NewLine +
+        "             [-Provider prov1;guid*]" + Environment.NewLine +
+        "             [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-CmdLine substring]" + Environment.NewLine;
+
+        static readonly string TraceLogHelpString = TraceLogHelpStringHeader +
+        "  By default it prints just the provider summary per provider. To view individual events of a provider use the -Provider filter." + Environment.NewLine + 
+        "             -Provider prov1;guid*       Filter for specific ETW provider by name or Guid. Multiple filters are separated by ; Exclusion filters start with ! Supported wildcards are * and ?." + Environment.NewLine +
+        "             -ProcessName/pn xx.exe(pid) Filter for processes which did create the object." + Environment.NewLine +
+        "  "
+            ;
+
+
         static readonly string ExamplesHelpString =
         "[yellow]Examples[/yellow]" + Environment.NewLine;
 
@@ -668,6 +682,10 @@ namespace ETWAnalyzer.Commands
         "[green]Get a list of top 10 processes with highest handle counts[/green]" + Environment.NewLine +
         " ETWAnalyzer -fd xx.json7z -dump ObjectRef -ShowTotal Process -TopN 10" + Environment.NewLine;
 
+        static readonly string TraceLogExamples = ExamplesHelpString +
+        "[green]Dump all tracelog events[/green]" + Environment.NewLine +
+        " ETWAnalyzer -fd xx.json7z -dump TraceLog";
+
         /// <summary>
         /// Default Helpstring which prints all dump commands
         /// </summary>
@@ -688,7 +706,8 @@ namespace ETWAnalyzer.Commands
             StatsHelpStringHeader + 
             TcpHelpStringHeader + 
             TestRunHelpStringHeader + 
-            ThreadPoolHelpStringHeader + 
+            ThreadPoolHelpStringHeader +
+            TraceLogHelpStringHeader + 
             VersionHelpStringHeader;
 
 
@@ -809,6 +828,11 @@ namespace ETWAnalyzer.Commands
             /// Use marker events as zero timepoint marker
             /// </summary>
             Marker,
+
+            /// <summary>
+            /// Use Tracelog event as zero timepoint marker
+            /// </summary>
+            TraceLog,
 
             /// <summary>
             /// Use FirstOccurrence of method/stacktag since trace start
@@ -1103,6 +1127,10 @@ namespace ETWAnalyzer.Commands
 
         public bool OnlyClientRetransmit { get; private set; }
 
+
+        // Dump Tracelog specific flags
+        public KeyValuePair<string, Func<string, bool>> ProviderFilter { get; private set; } = new KeyValuePair<string, Func<string, bool>>(null, _ => true);
+
         /// <summary>
         /// Do not load data again if in console mode
         /// </summary>
@@ -1356,6 +1384,10 @@ namespace ETWAnalyzer.Commands
                         string dllFilter = GetNextNonArg("-dll");
                         DllFilter = new KeyValuePair<string, Func<string, bool>>(dllFilter, Matcher.CreateMatcher(dllFilter));
                         ModulePrintMode = DumpModuleVersions.PrintMode.Dll;
+                        break;
+                    case "-provider":
+                        string providerFilter = GetNextNonArg("-provider");
+                        ProviderFilter = new KeyValuePair<string, Func<string, bool>>(providerFilter, Matcher.CreateMatcher(providerFilter));
                         break;
                     case "-missingpdb":
                         string pdbFilter = GetNextNonArg("-missingpdb");
@@ -1905,6 +1937,9 @@ namespace ETWAnalyzer.Commands
                     case "objectref":
                         myCommand = DumpCommands.ObjectRef;
                         break;
+                    case "tracelog":
+                        myCommand = DumpCommands.TraceLog;
+                        break;
                     case "-help":
                         delayedThrower = () =>
                         {
@@ -2065,6 +2100,9 @@ namespace ETWAnalyzer.Commands
                         break;
                     case DumpCommands.ObjectRef:
                         lret = ObjectRefExamples + Environment.NewLine + ObjectRefHelpString;
+                        break;
+                    case DumpCommands.TraceLog:
+                        lret = TraceLogExamples + Environment.NewLine + TraceLogHelpString;
                         break;
                 }
                 return lret.TrimEnd(Environment.NewLine.ToCharArray());
@@ -2753,6 +2791,36 @@ namespace ETWAnalyzer.Commands
                             ShowTotal = ShowTotal,
                         };
                         break;
+                    case DumpCommands.TraceLog:
+                        myCurrentDumper = new DumpTraceLog
+                        {
+                            CommandArguments = myConsoleCommandArgs,
+                            FileOrDirectoryQueries = FileOrDirectoryQueries,
+                            ShowFullFileName = ShowFullFileName,
+                            Recursive = mySearchOption,
+                            TestsPerRun = TestsPerRun,
+                            SkipNTests = SkipNTests,
+                            TestRunIndex = TestRunIndex,
+                            TestRunCount = TestRunCount,
+                            LastNDays = LastNDays,
+                            MinMaxMsTestTimes = MinMaxMsTestTimes,
+                            CSVFile = CSVFile,
+                            NoCSVSeparator = NoCSVSeparator,
+                            ProcessNameFilter = ProcessNameFilter,
+                            ProcessNameFilterSet = ProcessNameFilterSet,
+                            ProcessFormatOption = ProcessFormat,
+                            CommandLineFilter = CmdLineFilter,
+                            NewProcessFilter = NewProcess,
+                            UsePrettyProcessName = UsePrettyProcessName,
+                            TimePrecision = TimeDigits,
+                            TimeFormatOption = TimeFormat,
+
+                            ShowTotal = ShowTotal,
+                            ProviderFilter = ProviderFilter,
+                            TopN = TopN,
+                        };
+                        break;
+
                     case DumpCommands.None:
                         throw new NotSupportedException("-dump needs an argument what you want to dump.");
                     case DumpCommands.Allocations:

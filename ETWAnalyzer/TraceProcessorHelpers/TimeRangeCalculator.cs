@@ -23,7 +23,8 @@ namespace ETWAnalyzer.TraceProcessorHelpers
         TimeSpan? myDuration;
 
         /// <summary>
-        /// Add a timepoint with a duration which will be used to calculate the total duration
+        /// Add a timepoint with a duration which will be used to calculate the total duration.
+        /// This method is thread safe and can be called from multiple threads.
         /// </summary>
         /// <param name="startTime"></param>
         /// <param name="duration"></param>
@@ -33,7 +34,24 @@ namespace ETWAnalyzer.TraceProcessorHelpers
         }
 
         /// <summary>
+        /// Freeze collection which reduced memory footprint. Cache average and duration.
+        /// </summary>
+        public void Freeze()
+        {
+            if (myTimeRanges != null)
+            {
+                GetDuration();
+                GetAverage();
+#if NET6_0_OR_GREATER
+                myTimeRanges.Clear();  // clear thread locals
+#endif
+                myTimeRanges = null;  // free memory after calculating the duration and average
+            }
+        }
+
+        /// <summary>
         /// The duration is the sum of all time ranges where overlaps in the time ranges count only once.
+        /// After getting the value the result is cached. Additions will not change the result anymore.
         /// </summary>
         /// <returns>Total duration</returns>
         public TimeSpan GetDuration()
@@ -44,6 +62,7 @@ namespace ETWAnalyzer.TraceProcessorHelpers
                 Timestamp totalDuration = Timestamp.Zero;
 
                 Timestamp previousEndTime = Timestamp.Zero;
+                
 
                 for (int i = 0; i < sorted.Count; i++)
                 {
@@ -75,14 +94,21 @@ namespace ETWAnalyzer.TraceProcessorHelpers
             return myDuration.Value;
         }
 
+        decimal? myAverage;
+
         /// <summary>
         /// Get Average duration.
+        /// After getting the value the result is cached. Additions will not change the result anymore.
         /// </summary>
         /// <returns>Average duration in microseconds</returns>
         public long GetAverage()
         {
-            decimal averageReadyus = myTimeRanges.Count > 0 ? myTimeRanges.Average(x => x.Value.TotalMicroseconds) : 0;
-            return (long) averageReadyus;
+            if (myAverage == null)
+            {
+                myAverage = myTimeRanges.Count > 0 ? myTimeRanges.Average(x => x.Value.TotalMicroseconds) : 0;
+            }
+
+            return (long)myAverage.Value;
         }
     }
 }

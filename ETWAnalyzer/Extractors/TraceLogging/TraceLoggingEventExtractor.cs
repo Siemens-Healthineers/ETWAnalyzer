@@ -182,12 +182,24 @@ namespace ETWAnalyzer.Extractors.TraceLogging
                         stackIdx = traceLoggingData.Stacks.AddStack(stackStr);
                     }
 
+
+                    if (ev.ProcessId == 0) // some events can have 0 as pid which would throw in GetProcessIndexByPidAtTime
+                    {
+                        continue;
+                    }
+                    ETWProcessIndex processIdx = results.GetProcessIndexByPidAtTime(ev.ProcessId, ev.Timestamp.DateTimeOffset);
+
+                    if( processIdx == ETWProcessIndex.Invalid)
+                    {
+                        continue; // skip events for unknown processes
+                    }
+
                     var logEv = new TraceLoggingEvent
                     {
                         EventId = ev.Id,
                         ThreadId = ev.ThreadId,
                         StackIdx = stackIdx,
-                        Process = results.GetProcessIndexByPidAtTime(ev.ProcessId, ev.Timestamp.DateTimeOffset),
+                        ProcessIdx = processIdx,
                         TimeStamp = ev.Timestamp.DateTimeOffset,
                     };
 
@@ -250,6 +262,12 @@ namespace ETWAnalyzer.Extractors.TraceLogging
 
             results.TraceLogging = traceLoggingData;
 
+            ReleaseMemory();
+        }
+
+        private void ReleaseMemory()
+        {
+            myEvents = null;
         }
 
         /// <summary>

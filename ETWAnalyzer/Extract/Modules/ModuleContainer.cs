@@ -137,5 +137,16 @@ namespace ETWAnalyzer.Extract.Modules
 
             return lret;
         }
+
+        /// <summary>
+        /// Make ModuleDefinition objects ready for serialization
+        /// </summary>
+        internal void Freeze()
+        {
+            foreach(ModuleDefinition mod in Modules)
+            {
+                mod.Freeze();
+            }
+        }
     }
 }

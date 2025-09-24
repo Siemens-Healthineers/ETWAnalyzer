@@ -116,6 +116,28 @@ namespace ETWAnalyzer_uTest.Extractors
             return sendEv.Object;
         }
 
+        IGenericEvent CreatePost(Time timeStampTicks, Pid pid, TCB tcb, SequenceNr seq, int bytesPosted)
+        {
+            Mock<IGenericEvent> sendEv = CreateEvent(timeStampTicks, TcpETWConstants.TcpSendPosted, pid, tcb, out Mock<IGenericEventFieldList> fields);
+
+            var bytesSentField = new Mock<IGenericEventField>();
+            bytesSentField.Setup(x => x.AsUInt32).Returns((uint)bytesPosted);
+
+            fields.Setup(x => x[TcpETWConstants.NumBytesField]).Returns(bytesSentField.Object);
+
+
+            var sequenceNrField = new Mock<IGenericEventField>();
+            sequenceNrField.Setup(x => x.AsUInt32).Returns((uint)seq);
+
+            fields.Setup(x => x[TcpETWConstants.SndNxtField]).Returns(sequenceNrField.Object);
+
+            var injectedField = new Mock<IGenericEventField>(); 
+            injectedField.Setup(x => x.AsString).Returns("posted");
+            fields.Setup(x => x[TcpETWConstants.InjectedField]).Returns(injectedField.Object);
+
+            return sendEv.Object;
+        }
+
         IGenericEvent CreateReceive(Time timeStampTicks, Pid pid, TCB tcb, SequenceNr seq, int bytesReceived)
         {
             Mock<IGenericEvent> recEv = CreateEvent(timeStampTicks, TcpETWConstants.TcpDataTransferReceive, pid, tcb, out Mock<IGenericEventFieldList> fields);
@@ -159,11 +181,15 @@ namespace ETWAnalyzer_uTest.Extractors
             IGenericEvent[] events = new IGenericEvent[]
             {
                 CreateConnect(   Time.T0_1, Pid.OneDrive,     TCB.One, SrcIpPort, Remote1),
+                CreatePost(      Time.T0_2, Pid.OneDrive,     TCB.One, SequenceNr.S_1000, 100),
                 CreateSend(      Time.T0_2, Pid.OneDrive,     TCB.One, SequenceNr.S_1000, 100),
+                CreatePost(      Time.T0_3, Pid.OneDrive,     TCB.One, SequenceNr.S_2000, 100),
                 CreateSend(      Time.T0_3, Pid.OneDrive,     TCB.One, SequenceNr.S_2000, 100),
                 CreateRetransmit(Time.T0_3, Pid.OneDrive,     TCB.One, SequenceNr.S_2000),
+                CreatePost(      Time.T0_4, Pid.OneDrive,     TCB.One, SequenceNr.S_2000, 100),
                 CreateSend(      Time.T0_4, Pid.OneDrive,     TCB.One, SequenceNr.S_2000, 100),
                 CreateRetransmit(Time.T0_4, Pid.OneDrive,     TCB.One, SequenceNr.S_2000),
+                CreatePost(      Time.T0_5, Pid.OneDrive,     TCB.One, SequenceNr.S_2000, 100),
                 CreateSend(      Time.T0_5, Pid.OneDrive,     TCB.One, SequenceNr.S_2000, 100),
                 CreateRetransmit(Time.T0_5, Pid.OneDrive,     TCB.One, SequenceNr.S_2000),
                 CreateDisconnect(Time.T4_0, Pid.OneDrive,     TCB.One, SrcIpPort, Remote1),
@@ -249,22 +275,30 @@ namespace ETWAnalyzer_uTest.Extractors
             IGenericEvent[] events = new IGenericEvent[]
             {
                 CreateConnect(   Time.T0_1, Pid.OneDrive,     TCB.One, SrcIpPort, Remote1),
-                CreateSend(      Time.T0_2, Pid.OneDrive,     TCB.One, SequenceNr.S_1000, 100),
+                CreatePost(      Time.T0_2, Pid.OneDrive,     TCB.One, SequenceNr.S_1000, 100),
+                CreateSend(      Time.T0_2, Pid.OneDrive,     TCB.One, SequenceNr.S_2000, 100),
+                CreatePost(      Time.T0_2, Pid.OneDrive,     TCB.One, SequenceNr.S_2000, 100),
                 CreateSend(      Time.T0_2, Pid.OneDrive,     TCB.One, SequenceNr.S_2000, 100),
                 CreateReceive(   Time.T0_2, Pid.OneDrive,     TCB.One, SequenceNr.S_1001, 400),
                 CreateReceive(   Time.T0_2, Pid.OneDrive,     TCB.One, SequenceNr.S_1001, 400),
+                CreatePost(      Time.T0_3, Pid.OneDrive,     TCB.One, SequenceNr.S_2000, 100),
                 CreateSend(      Time.T0_3, Pid.OneDrive,     TCB.One, SequenceNr.S_2000, 100),
                 CreateRetransmit(Time.T0_5, Pid.OneDrive,     TCB.One, SequenceNr.S_2000),
                 CreateDisconnect(Time.T0_5, Pid.OneDrive,     TCB.One, SrcIpPort_1, Remote1),
 
                 CreateConnect(   Time.T1_0, Pid.OneDrive,     TCB.One, SrcIpPort_1, Remote1),
+                CreatePost(      Time.T1_5, Pid.OneDrive,     TCB.One, SequenceNr.S_1000, 500),
                 CreateSend(      Time.T1_5, Pid.OneDrive,     TCB.One, SequenceNr.S_1000, 500),
+                CreatePost(      Time.T1_5, Pid.OneDrive,     TCB.One, SequenceNr.S_2000, 500),
                 CreateSend(      Time.T1_5, Pid.OneDrive,     TCB.One, SequenceNr.S_2000, 500),
                 CreateDisconnect(Time.T1_9, Pid.OneDrive,     TCB.One, SrcIpPort_1, Remote1),
 
                 CreateConnect(   Time.T2_0, Pid.SettingsHost, TCB.One, SrcIpPort_2, Remote1),
+                CreatePost(      Time.T2_5, Pid.SettingsHost, TCB.One, SequenceNr.S_2000, 600),
                 CreateSend(      Time.T2_5, Pid.SettingsHost, TCB.One, SequenceNr.S_2000, 600),
+                CreatePost(      Time.T2_5, Pid.SettingsHost, TCB.One, SequenceNr.S_3000, 600),
                 CreateSend(      Time.T2_5, Pid.SettingsHost, TCB.One, SequenceNr.S_3000, 600),
+                CreatePost(      Time.T2_8, Pid.SettingsHost, TCB.One, SequenceNr.S_3000, 600),
                 CreateSend(      Time.T2_8, Pid.SettingsHost, TCB.One, SequenceNr.S_3000, 600),
                 CreateRetransmit(Time.T2_8, Pid.SettingsHost, TCB.One, SequenceNr.S_3000),
                 CreateDisconnect(Time.T3_0, Pid.SettingsHost, TCB.One, SrcIpPort_2, Remote1),
