@@ -1,8 +1,10 @@
 ﻿//// SPDX-FileCopyrightText:  © 2023 Siemens Healthcare GmbH
 //// SPDX-License-Identifier:   MIT
 
+using ETWAnalyzer.EventDump;
 using ETWAnalyzer.Extract;
 using ETWAnalyzer.Extract.Network.Tcp;
+using ETWAnalyzer.Extract.Network.Tcp.Issues;
 using ETWAnalyzer.Infrastructure;
 using ETWAnalyzer.TraceProcessorHelpers;
 using Microsoft.Windows.EventTracing;
@@ -22,9 +24,14 @@ namespace ETWAnalyzer.Extractors.TCP
         IPendingResult<IGenericEventDataSource> myGenericEvents;
 
         /// <summary>
-        /// Send events
+        /// TCP Post events
         /// </summary>
-        readonly List<TcpSendPosted> mySendEvents = new();
+        readonly List<TcpSendPosted> mySendPostedEvents = new();
+
+        /// <summary>
+        /// TCP Send events
+        /// </summary>
+        readonly List<TcpDataTransferSend> myTcpDataSendEvents = new();
 
         /// <summary>
         /// Receive events
@@ -61,19 +68,34 @@ namespace ETWAnalyzer.Extractors.TCP
             IGenericEvent[] events = myGenericEvents.Result.Events.Where(IsValidTcpEvent).OrderBy(x => x.Timestamp).ToArray();
             ExtractFromGenericEvents(results, events);
 
+            ReleaseMemory();
+
         }
+
+        /// <summary>
+        /// Used for debugging a specific connection
+        /// </summary>
+        /// <param name="tcb"></param>
+        /// <returns></returns>
+        bool TCBFilter(ulong tcb)
+        {
+#if DEBUG
+            return true;
+#else
+            return true;
+#endif
+        }
+
 
         internal void ExtractFromGenericEvents(ETWExtract results, IGenericEvent[] events)
         {
             ConvertTcpEventsFromGenericEvents(results, events);
 
-           
-
             ILookup<ulong, TcpRequestConnect> connectionsByTcb = myConnections.ToLookup(x => x.Tcb);  // Get new connection from connection attempts
 
             AddExistingConnections(results, ref connectionsByTcb); // add already existing connections which are present during trace start
 
-            ILookup<TcpRequestConnect, TcpSendPosted> sentByConnection = UpdateConnectionForSentPackets(results, ref connectionsByTcb);
+            (ILookup<TcpRequestConnect, TcpSendPosted>, ILookup < TcpRequestConnect, TcpDataTransferSend >) sentByConnection = UpdateConnectionForSentAndPostedPackets(results, ref connectionsByTcb);
             ILookup<TcpRequestConnect, TcpDataTransferReceive> receivedByConnection = UpdateConnectionForReceivedPackets(results, ref connectionsByTcb);
             ILookup<TcpRequestConnect, TcpTemplateChanged> byConnectionTemplateChanges = UpdateConnectionForTemplateChangeEvents(results, ref connectionsByTcb); 
 
@@ -91,14 +113,16 @@ namespace ETWAnalyzer.Extractors.TCP
                 ulong bytesReceived = (ulong)receivedByConnection[tcpconnection].Sum(x => (decimal)((TcpDataTransferReceive)x).NumBytes);
                 var lastreceiveTime = receivedByConnection[tcpconnection].LastOrDefault()?.Timestamp;
 
-                ulong bytesSent = (ulong)sentByConnection[tcpconnection].Sum(x => (decimal)((TcpSendPosted)x).PostedBytes);
+                ulong bytesSent = (ulong)sentByConnection.Item1[tcpconnection].Sum(x => (decimal)((TcpSendPosted)x).PostedBytes);
                 int datagramsReceived = receivedByConnection[tcpconnection].Count();
-                int datagramsSent = sentByConnection[tcpconnection].Where(x=>x.IsPosted).Count();
+                int datagramsSent = sentByConnection.Item2[tcpconnection].Count();
+                int datagramsPosted = sentByConnection.Item1[tcpconnection].Where(x=>x.IsPosted).Count();
+                int datagramSentCorrected = Math.Max(datagramsSent, datagramsPosted); // in case of port forwarding we can see way too less send events, in that case use Posted count
 
-                TcpConnectionStatistics statistics = new TcpConnectionStatistics(null, lastreceiveTime, null, null, null, null, null, null, null);
+                TcpConnectionStatistics statistics = new TcpConnectionStatistics(null, lastreceiveTime, null, null, null, null, null, null, null, null, null);
 
                 TcpConnection connection = new(tcpconnection.Tcb, tcpconnection.LocalIpAndPort, tcpconnection.RemoteIpAndPort, tcpconnection.TimeStampOpen, tcpconnection.TimeStampClose,
-                    templates.LastOrDefault(), bytesSent, datagramsSent, bytesReceived, datagramsReceived, tcpconnection.ProcessIdx, tcpconnection.TCPRetansmitTimeout, statistics);
+                    templates.LastOrDefault(), bytesSent, datagramSentCorrected, bytesReceived, datagramsReceived, tcpconnection.ProcessIdx, tcpconnection.TCPRetansmitTimeout, statistics);
                 ConnectionIdx connIdx = results.Network.TcpData.AddConnection(connection);
                 connect2Idx[tcpconnection] = connIdx;
 
@@ -133,7 +157,7 @@ namespace ETWAnalyzer.Extractors.TCP
 
                 // Get all sent packets just before the current retransmit event
                 // we need the last sent packet because the first packet often was an ACK with 0 send size
-                List<TcpSendPosted> retransmittedSent = sentByConnection[retrans.Connection].Where(x => x.SequenceNr == retrans.SndUna && x.Timestamp <= retrans.Timestamp)
+                List<TcpDataTransferSend> retransmittedSent = (sentByConnection.Item2[retrans.Connection]).Where(x => x.SequenceNr == retrans.SndUna && x.Timestamp <= retrans.Timestamp)
                                                     .OrderBy(x => x.Timestamp).ToList();
 
                 if (retransmittedSent.Count > 0)
@@ -144,7 +168,7 @@ namespace ETWAnalyzer.Extractors.TCP
                     // store retransmit event with send time of first sent packet. It might be an ACK packet but for now the heuristics should be good enough
                     // to be useful.
                     results.Network.TcpData.Retransmissions.Add(new TcpRetransmission(connect2Idx[retrans.Connection], retrans.Timestamp,
-                        lastSent.Timestamp, lastSent.SequenceNr, (int) lastSent.NumBytes));
+                        lastSent.Timestamp, lastSent.SequenceNr, (int) lastSent.BytesSent));
 
                     // set last send time before retransmissions did start
                     TcpConnection connection = results.Network.TcpData.Connections[(int)connect2Idx[retrans.Connection]];
@@ -158,10 +182,12 @@ namespace ETWAnalyzer.Extractors.TCP
             UpdateLastSentAndMaxSendDelay(results, sentByConnection);
             UpdateMaxReceiveDelay(results, receivedByConnection);
             UpdateKeepAliveStatistics(results);
+            UpdatePostedStatistics(results, sentByConnection.Item1);
+            DetectSendOrderIssues(results, sentByConnection, connect2Idx);
             AddConnectionStatistics(results);
         }
 
-        private ILookup<TcpRequestConnect, TcpTemplateChanged> UpdateConnectionForTemplateChangeEvents(ETWExtract results, ref ILookup<ulong, TcpRequestConnect> connectionsByTcb)
+         private ILookup<TcpRequestConnect, TcpTemplateChanged> UpdateConnectionForTemplateChangeEvents(ETWExtract results, ref ILookup<ulong, TcpRequestConnect> connectionsByTcb)
         {
             foreach (TcpTemplateChanged templateChange in myTemplateChangedEvents)
             {
@@ -181,23 +207,49 @@ namespace ETWAnalyzer.Extractors.TCP
             return myReceiveEvents.ToLookup(x=>x.Connection);
         }
 
-        private ILookup<TcpRequestConnect, TcpSendPosted> UpdateConnectionForSentPackets(ETWExtract results,ref ILookup<ulong, TcpRequestConnect> connectionsByTcb)
+        private (ILookup<TcpRequestConnect, TcpSendPosted>, ILookup<TcpRequestConnect, TcpDataTransferSend>) UpdateConnectionForSentAndPostedPackets(ETWExtract results,ref ILookup<ulong, TcpRequestConnect> connectionsByTcb)
         {
-            foreach (TcpSendPosted send in mySendEvents)
+            foreach (TcpSendPosted send in mySendPostedEvents)
             {
                 send.Connection = LocateConnection(send.Tcb, send.Timestamp, results, ref connectionsByTcb);
             }
 
-            ILookup<TcpRequestConnect, TcpSendPosted> lret =  mySendEvents.Where(x=>x.IsPosted).ToLookup(x => x.Connection);
-            return lret;
+            foreach(TcpDataTransferSend send in myTcpDataSendEvents)
+            {
+                send.Connection = LocateConnection(send.Tcb, send.Timestamp, results, ref connectionsByTcb);
+            }
+
+            ILookup<TcpRequestConnect, TcpSendPosted> lret =  mySendPostedEvents.Where(x => x.Connection != null).ToLookup(x => x.Connection);
+            ILookup<TcpRequestConnect, TcpDataTransferSend> sends = myTcpDataSendEvents.Where(x=> x.Connection != null).ToLookup(x => x.Connection);
+            return (lret, sends);
         }
 
-        private void UpdateLastSentAndMaxSendDelay(ETWExtract results, ILookup<TcpRequestConnect, TcpSendPosted> sentByConnection)
+        private void UpdatePostedStatistics(ETWExtract results, ILookup<TcpRequestConnect, TcpSendPosted> tcpSendPosted)
+        {
+            foreach (IGrouping<TcpRequestConnect, TcpSendPosted> posted in tcpSendPosted)
+            {
+                TcpSendPosted firstposted = posted.First();
+                foreach (var resultConnection in results.Network.TcpData.Connections)
+                {
+                    if (resultConnection.IsMatching(firstposted.Tcb, firstposted.Timestamp) &&
+                        resultConnection.Statistics.SendPostedInjected == null)
+                    {
+                        int postedCount = posted.Where(x => x.IsPosted).Count();
+                        int injectedCount = posted.Where(x => x.IsInjected).Count();
+
+                        resultConnection.Statistics.SendPostedInjected = (ulong) injectedCount;
+                        resultConnection.Statistics.SendPostedPosted = (ulong) postedCount;
+                    }
+                }
+            }
+        }
+
+        private void UpdateLastSentAndMaxSendDelay(ETWExtract results, (ILookup<TcpRequestConnect, TcpSendPosted>, ILookup<TcpRequestConnect, TcpDataTransferSend>) sentByConnection)
         {
             // update last sent time for all connections which are not already covered by retransmits
-            foreach (IGrouping<TcpRequestConnect, TcpSendPosted> sent in sentByConnection)
+            foreach (IGrouping<TcpRequestConnect, TcpDataTransferSend> sent in sentByConnection.Item2)
             {
-                TcpSendPosted firstSent = sent.First();
+                TcpDataTransferSend firstSent = sent.First();
                 foreach (var resultConnections in results.Network.TcpData.Connections)
                 {
                     if (resultConnections.Statistics.LastSent == null &&
@@ -289,7 +341,9 @@ namespace ETWAnalyzer.Extractors.TCP
         /// <param name="connectionsByTcb"></param>
         private void AddExistingConnections(ETWExtract results, ref ILookup<ulong, TcpRequestConnect> connectionsByTcb)
         {
-            foreach (var rundowndownEvents in myTcpConnectionRundowns.ToLookup(x => x.Tcb))   // add existing connections, but only add it once
+            List<TcpRequestConnect> notyetAdded = new();
+
+            foreach (IGrouping<ulong, TcpConnectionRundown> rundowndownEvents in myTcpConnectionRundowns.ToLookup(x => x.Tcb))   // add existing connections, but only add it once
             {
                 var rundownAtStart = rundowndownEvents.First();
                 bool bFound = false;
@@ -302,17 +356,31 @@ namespace ETWAnalyzer.Extractors.TCP
                     }
                 }
 
+
                 if (!bFound)
                 {
                     ETWProcessIndex pIdx = GetProcessIndex(results, rundownAtStart.Timestamp, (int)rundownAtStart.Pid, 0);
 
+                    var connection = new TcpRequestConnect(rundownAtStart.Tcb, rundownAtStart.LocalIpAndPort, rundownAtStart.RemoteIpAndPort, null, null, pIdx);
+
                     // take for existing localhost connections the remote visible port and not the other tuple which can be present when port forwarding is used.
                     if (rundownAtStart.LocalIpAndPort.Address == rundownAtStart.RemoteIpAndPort.Address && rundownAtStart.LocalIpAndPort.Port > rundownAtStart.RemoteIpAndPort.Port)
                     {
+                        notyetAdded.Add(connection);
                         continue;
                     }
-                    var connection = new TcpRequestConnect(rundownAtStart.Tcb, rundownAtStart.LocalIpAndPort, rundownAtStart.RemoteIpAndPort, null, null, pIdx);
+
                     myConnections.Add(connection);
+                }
+            }
+
+            // if we have omitted localhost connections which are not already present add them now to not skip true localhost connections
+            foreach(var notAdded in notyetAdded)
+            {
+                if( myConnections.Where(x=> (notAdded.LocalIpAndPort == x.LocalIpAndPort && notAdded.RemoteIpAndPort == x.RemoteIpAndPort) ||
+                                            (notAdded.LocalIpAndPort == x.RemoteIpAndPort && notAdded.LocalIpAndPort == x.RemoteIpAndPort)).Count() == 0)
+                {
+                    myConnections.Add(notAdded);
                 }
             }
 
@@ -636,25 +704,16 @@ namespace ETWAnalyzer.Extractors.TCP
         }
 
         /// <summary>
-        /// Used for debugging a specific connection
-        /// </summary>
-        /// <param name="tcb"></param>
-        /// <returns></returns>
-        bool TCBFilter(ulong tcb)
-        {
-#if DEBUG
-            return true;
-#else
-            return true;
-#endif
-            }
-
-        /// <summary>
-        /// Only used for Loopback connections. For remote connections BytesSent is always 0. We have currently no use for it. TcpSendPosted gets the send bytes for local and remote connections.
+        /// For remote connections BytesSent can be 0.
         /// </summary>
         /// <param name="ev"></param>
         private void OnTcpDataTransferSend(IGenericEvent ev)
         {
+            TcpDataTransferSend sentPacket = new(ev);
+            if (TCBFilter(sentPacket.Tcb))
+            {
+                myTcpDataSendEvents.Add(sentPacket);
+            }
         }
 
         /// <summary>
@@ -663,10 +722,10 @@ namespace ETWAnalyzer.Extractors.TCP
         /// <param name="ev"></param>
         private void OnTcpSendPosted(IGenericEvent ev)
         {
-            TcpSendPosted sentPacket = new(ev);
-            if (TCBFilter(sentPacket.Tcb))
+            TcpSendPosted postedPacket = new(ev);
+            if (TCBFilter(postedPacket.Tcb))
             {
-                mySendEvents.Add(sentPacket);
+                mySendPostedEvents.Add(postedPacket);
             }
         }
 
@@ -689,6 +748,162 @@ namespace ETWAnalyzer.Extractors.TCP
             }
 
             return null;
+        }
+
+
+
+
+        /// <summary>
+        /// Detect firewall issues where socket send order is not maintained. The TCP send queue will be altered by the firewall which removes posted packets and injects
+        /// them later again. There are sometimes issues where the firewall stops inspecting packets and the first no longer inspected packet is followed by an injected packet
+        /// leading to e.g. network streams where the payload is sent before the header data leading in the best case to protocol errors. In the worst case this leads
+        /// to silent data corruption.
+        /// This heuristic search works best when network packets with different sizes which are not repeated to often are sent. If size is the same and appears
+        /// multiple times within the search window we cannot detect issues.    
+        /// </summary>
+        /// <param name="results"></param>
+        /// <param name="sentByConnection"></param>
+        /// <param name="connectionMap"></param>
+        private void DetectSendOrderIssues(ETWExtract results, (ILookup<TcpRequestConnect, TcpSendPosted>, ILookup<TcpRequestConnect, TcpDataTransferSend>) sentByConnection, Dictionary<TcpRequestConnect, ConnectionIdx> connectionMap)
+        {
+            // For performance reasons we do only inspect ordering in a fixed window area. 
+            // Based on past data no more than 30 should be needed. 
+            const int WindowSize = 100;
+
+            foreach (IGrouping<TcpRequestConnect, TcpSendPosted> posted in sentByConnection.Item1)
+            {
+
+                TcpSendPosted[] postedEvents = posted.ToArray();
+                HashSet<TcpSendPosted> matched = new();
+
+                // get all matched injected and posted packets and remove them, leaving just the packets 
+                // which have changed sequence number, or no matching injected event does exist. 
+                // The error manifests when an injected event comes after a posted packet for which no inject event exists
+                // pp iippppp is ok because the first two posted packets are injected again and later injection stops
+                // pp ipipppp is not ok because the second injected packet comes after the third posted packet changing the send order
+                // since identity of packets is only based on sequence number (which can change when injected again) and number of bytes we can do only some heuristic search.
+                int injectedIndex = 0;
+                TcpSendPosted injected = null;
+                while ((injected = GetNextInjected(ref injectedIndex, postedEvents.Length, postedEvents)) != null)
+                {
+                    for (int j = injectedIndex - 1; j >= Math.Max(0, injectedIndex - WindowSize); j--)
+                    {
+                        TcpSendPosted postedBefore = postedEvents[j];
+                        if (!postedBefore.IsPosted)
+                        {
+                            continue;
+                        }
+
+                        if (postedBefore.NumBytes == injected.NumBytes && (postedBefore.SndNext == injected.SndNext))
+                        {
+                            matched.Add(postedBefore);
+                            matched.Add(injected);
+                        }
+                    }
+                }
+
+                TcpSendPosted[] unmatched = posted.Where(x => !matched.Contains(x)).ToArray();
+                HashSet<TcpSendPosted> examined = new();
+
+                injectedIndex = 0;
+
+                while ((injected = GetNextInjected(ref injectedIndex, unmatched.Length, unmatched)) != null)
+                {
+                    for (int p = injectedIndex - 1; p >= Math.Max(0, injectedIndex - WindowSize); p--)
+                    {
+                        TcpSendPosted previousPost = unmatched[p];   // [p,...,i]
+
+                        // get previous posted event which matches the injected event by number of bytes
+                        // we do not compare sequence number because it can change when packet is injected again (heuristic!)
+                        if (!previousPost.IsPosted || previousPost.NumBytes != injected.NumBytes)
+                        {
+                            continue;
+                        }
+
+                        // p      i 
+                        //    p       with no injected event following
+                        // 
+                        // we have found a matching posted packet which is most likely the one which was injected later
+                        // When we now find another posted packet which was posted before the injected event but no matching
+                        // injected event is found then we have potentially a send order issue
+                        int nextPostedIndex = p + 1;
+                        TcpSendPosted nextPosted = null;
+                        while ((nextPosted = GetNextPosted(ref nextPostedIndex, injectedIndex, unmatched)) != null)
+                        {
+                            TcpSendPosted matchingInjected = null;
+                            int nextInjectedIndex = nextPostedIndex;
+                            bool bFound = false;
+                            while ((matchingInjected = GetNextInjected(ref nextInjectedIndex, injectedIndex + WindowSize, unmatched)) != null)
+                            {
+                                if (matchingInjected.NumBytes == nextPosted.NumBytes)
+                                {
+                                    bFound = true;
+                                    break;
+                                }
+                            }
+
+                            if (injected.Timestamp - previousPost.Timestamp > TimeSpan.FromMilliseconds(10.0))
+                            {
+                                continue; // if packets are further away it is most likely a misclassification.
+                            }
+
+                            if (!bFound && !examined.Contains(nextPosted))
+                            {
+                                results.Network.TcpData.TcpIssues.PostIssues.Add(new TcpPostIssue(previousPost, injected, nextPosted, connectionMap[previousPost.Connection]));
+                                //Console.WriteLine($"{nextPosted.Timestamp.ToString(DumpBase.DateTimeFormat6)} Found send order issue with connection TCB: {nextPosted.Tcb:X} Posted Message: SndNext: {nextPosted.SndNext} NumBytes: {nextPosted.NumBytes} {nextPosted.Connection}.");
+                                //Console.WriteLine($"    {previousPost.Timestamp.ToString(DumpBase.DateTimeFormat6)} Previous posted: {previousPost.Tcb:X} SndNext: {previousPost.SndNext} NumBytes: {previousPost.NumBytes} {previousPost.Connection}");
+                                //Console.WriteLine($"    {injected.Timestamp.ToString(DumpBase.DateTimeFormat6)    } Injected to    : {injected.Tcb:X} SndNext: {injected.SndNext} NumBytes: {injected.NumBytes} ByteDistance: {injected.SndNext-previousPost.SndNext} bytes {injected.Connection}");
+                            }
+
+                            // do not report packet more than once
+                            examined.Add(nextPosted);
+                        }
+
+                    }
+
+                }
+
+            }
+        }
+
+        TcpSendPosted GetNextInjected(ref int injectIndex, int upperBound, TcpSendPosted[] events)
+        {
+            for (; injectIndex < Math.Min(upperBound, events.Length); injectIndex++)
+            {
+                if (events[injectIndex].IsInjected)
+                {
+                    return events[injectIndex++];
+                }
+            }
+            return null;
+        }
+
+        TcpSendPosted GetNextPosted(ref int postedIndex, int upperBound, TcpSendPosted[] events)
+        {
+            for (; postedIndex < Math.Min(upperBound, events.Length); postedIndex++)
+            {
+                if (events[postedIndex].IsPosted)
+                {
+                    return events[postedIndex++];
+                }
+            }
+            return null;
+        }
+
+        private void ReleaseMemory()
+        {
+            myTcpDataSendEvents.Clear();
+            mySendPostedEvents.Clear();
+            myReceiveEvents.Clear();
+            myRetransmits.Clear();
+            myConnections.Clear();
+            myKeepAlives.Clear();
+            myTemplateChangedEvents.Clear();
+            myTcpConnectionRundowns.Clear();
+            myTcpConnectionSummaries.Clear();
+            myTcpConnectTcbFailedRcvdRst.Clear();
+            myTcpDisconnectTcbRtoTimeout.Clear();
+            myGenericEvents = null;
         }
 
     }

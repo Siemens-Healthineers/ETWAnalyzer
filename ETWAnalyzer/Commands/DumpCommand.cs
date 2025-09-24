@@ -364,14 +364,15 @@ namespace ETWAnalyzer.Commands
 
         static readonly string TcpHelpStringHeader =
         "  Tcp -filedir/fd Extract\\ or xx.json7z [-IpPort xx] [-ShowRetransmits] [-TopN dd nn] [-SortBy ReceivedCount/SentCount/ReceivedSize/SentSize/TotalCount/TotalSize/ConnectTime/DisconnectTime/RetransmissionCount/RetransmissionTime/MaxRetransmissionTime/LastSentTime/LastReceivedTime/MaxReceiveDelay/MaxReceiveDelay]" + Environment.NewLine +
-        "       [-SortRetransmitBy Delay/Time] [-MinMaxRetransDelayMs xx-yy] [-MinMaxRetransBytes xx-yy] [-MinMaxRetransCount xx-yy] [-MinMaxSentBytes xx-yy] [-MinMaxReceivedBytes xx-yy] [-TopNRetrans dd nn] [-OnlyClientRetransmit] [-Details] [-Stats] [-Tcb 0xdddddd] " + Environment.NewLine +
-        "       [-MinMaxLastReceivedS xx-yy] [-MinMaxLastSentS xx-yy] [-Column xx;yy] [-Reset] [-MinMaxConnect xx yy] [-MinMaxDisconnect xx zz] [-KeepAlive] [-MinMaxReceiveDelayS xx yy] [-MinMaxSendDelayS xx yy]" + Environment.NewLine +
+        "       [-SortRetransmitBy Delay/Time] [-Issue [Post]] [-MinMaxRetransDelayMs xx-yy] [-MinMaxRetransBytes xx-yy] [-MinMaxRetransCount xx-yy] [-MinMaxSentBytes xx-yy] [-MinMaxReceivedBytes xx-yy] [-TopNRetrans dd nn] [-OnlyClientRetransmit] [-Details] [-Stats] [-Tcb 0xdddddd] " + Environment.NewLine +
+        "       [-MinMaxLastReceivedS xx-yy] [-MinMaxLastSentS xx-yy] [-Column xx;yy] [-Reset] [-MinMaxConnect xx yy] [-MinMaxDisconnect xx zz] [-KeepAlive] [-MinMaxReceiveDelayS xx yy] [-MinMaxSendDelayS xx yy] [-MinMaxPost xx yy] [-MinMaxInject xx yy]" + Environment.NewLine +
         "       [-TimeFmt s,Local,LocalTime,UTC,UTCTime,Here,HereTime] [-TimeDigits d] [-csv xx.csv] [-NoCSVSeparator] [-NoCmdLine] [-Clip] [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd] [-MinMaxMsTestTimes xx-yy ...] [-ProcessName/pn xx.exe(pid)] " + Environment.NewLine +
         "       [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-CmdLine substring] [-recursive] [-ZeroTime/zt Marker/First/Last/ProcessStart filter] [-ZeroProcessName/zpn filter] [-ShowTotal [File/None]] [-ProcessFmt timefmt] " + Environment.NewLine;
         static readonly string TcpHelpString = TcpHelpStringHeader +
         "       Print TCP summary and retransmit metrics. To see data you need to enable the Microsoft-Windows-TCPIP ETW provider. Data is sorted by retransmission count by default." + Environment.NewLine +
         "       It can detect send retransmissions and duplicate received packets which show up as client retransmission events." + Environment.NewLine + 
-        "       -IpPort xx                Filter for substrings in source/destination IP and port." + Environment.NewLine +
+        "       -IpPort xx                 Filter for substrings in source/destination IP and port." + Environment.NewLine +
+        "       -Issue [Post]              Print detected network issues. Currently only Post is supported which can detect Firewall issues which corrupt network packets by injecting packets not in original send order." + Environment.NewLine +
         "       -ShowTotal [File,None]     Show totals per file. Default is File. None will turn off totals." + Environment.NewLine +
         "       -TopN dd nn                Show top n connection by current sort order" + Environment.NewLine +
         "       -TopNRetrans dd nn         Show top n retransmission events when -ShowRetransmit is used" + Environment.NewLine +
@@ -384,6 +385,8 @@ namespace ETWAnalyzer.Commands
         "       -ShowRetransmit            Show single retransmission events with timing data. Use -timefmt s to convert time to WPA time. Use this or -Details to get all events into a csv file." + Environment.NewLine +
         "       -OnlyClientRetransmit      Only show client retransmissions which are visible by duplicate received packets with a payload > 1 bytes." + Environment.NewLine +
         "       -Reset                     Filter for connections which were reset by us due to connection establishment/send timeouts." + Environment.NewLine +
+        "       -MinMaxPost xx yy          Filter for connections which have posted to TCP send queue (via ws2_32.dll!send) xx-yy send requests" + Environment.NewLine +
+        "       -MinMaxInject xx yy        Filter for connections which have injected xx-yy packets in the TCP send path. This is usually done by Firewall which will remove posted packets and inject them later again." + Environment.NewLine +   
         "       -MinMaxConnect    xx yy    Connect time filter in ETW session time in seconds. Use -MinMaxConnect 0 0 to find connections which have no connect time because they did already exist before tracing started." + Environment.NewLine +
         "       -MinMaxDisconnect xx yy    Disconnect time filter in ETW session time in seconds. Use -MinMaxDisconnect 0 0 to find connections which are still active. " + Environment.NewLine +
         "       -MinMaxRetransDelayMs xx-yy Filter by retransmission delay in ms. By default all retransmissions are shown." + Environment.NewLine +
@@ -761,7 +764,8 @@ namespace ETWAnalyzer.Commands
             LastSentTime,
             MaxSendDelay,
             MaxReceiveDelay,
-
+            Post,
+            Inject,
 
 
             // Retransmit Orders
@@ -771,6 +775,16 @@ namespace ETWAnalyzer.Commands
 
         const string SortRetransmitContext = "-SortRetransmitBy";
         const string SortByContext = "-SortBy";
+        const string IssueContext = "-Issue";
+
+        /// <summary>
+        /// TCP Issue type to dump
+        /// </summary>
+        internal enum IssueTypes
+        {
+            None,
+            Post,
+        }
 
         /// <summary>
         /// Modes how totals are shown
@@ -1069,11 +1083,15 @@ namespace ETWAnalyzer.Commands
         public MinMaxRange<int> MinMaxRetransBytes { get; private set; } = new(2, null);  // by default filter retransmitted packets which are not 0 or 1 bytes which are often just ACKs or keepalive packets.
         public KeyValuePair<string, Func<string, bool>> TcbFilter { get; private set; } = new(null, _ => true);
 
+        
+        public MinMaxRange<ulong> MinMaxInject { get; private set; } = new();
+        public MinMaxRange<ulong> MinMaxPost { get; private set; } = new();
         public MinMaxRange<double> MinMaxDisconnect { get; private set; } = new MinMaxRange<double>();
         public MinMaxRange<double> MinMaxConnect { get; private set; } = new MinMaxRange<double>();
         public bool Reset { get; private set; }
         public bool ShowStats { get; private set; }
         public bool KeepAliveFilter { get; private set; }
+        public IssueTypes IssueType { get; private set; } = IssueTypes.None;
 
         public MinMaxRange<int> MinMaxRetransCount { get; private set; } = new();
 
@@ -1616,7 +1634,18 @@ namespace ETWAnalyzer.Commands
                         Tuple<double, double> minmaxdisconnect = minDisconnect.GetMinMaxDouble(maxDisconnect, SecondUnit);
                         MinMaxDisconnect = new MinMaxRange<double>(minmaxdisconnect.Item1, minmaxdisconnect.Item2);
                         break;
-
+                    case "-minmaxinject":
+                        string minInject = GetNextNonArg("-minmaxinject");
+                        string maxInject = GetNextNonArg("-minmaxinject", false); // optional
+                        Tuple<long, long> minMaxInject = minInject.GetMinMaxLong(maxInject, 1.0m);
+                        MinMaxInject = new MinMaxRange<ulong>((ulong) minMaxInject.Item1, (ulong)minMaxInject.Item2);
+                        break;
+                    case "-minmaxpost":
+                        string minPost = GetNextNonArg("-minmaxpost");
+                        string maxPost = GetNextNonArg("-minmaxpost", false); // optional
+                        Tuple<long, long> minMaxPost = minPost.GetMinMaxLong(maxPost, 1.0m);
+                        MinMaxPost = new MinMaxRange<ulong>((ulong)minMaxPost.Item1, (ulong)minMaxPost.Item2);
+                        break;
                     case "-minmaxlast":
                         string minLast = GetNextNonArg("-minmaxlast");
                         string maxLast = GetNextNonArg("-minmaxlast", false); // optional
@@ -1703,6 +1732,10 @@ namespace ETWAnalyzer.Commands
                     case "-sortby":
                         string sortOrder = GetNextNonArg("-sortby", false);
                         SortOrder = ParseEnum<SortOrders>(SortByContext, sortOrder, GetValidSortOrders(SortByContext));
+                        break;
+                    case "-issue":
+                        string issueType = GetNextNonArg("-issue");
+                        IssueType = ParseEnum<IssueTypes>(IssueContext, issueType);
                         break;
                     case "-sortretransmitby":
                         string retransSortOrder = GetNextNonArg("-sortretransmitby", false);                        
@@ -2660,8 +2693,11 @@ namespace ETWAnalyzer.Commands
                             MinMaxSentS = MinMaxSentS,
                             MinMaxSendDelayS = MinMaxSendDelayS,
                             MinMaxReceiveDelayS = MinMaxReceiveDelayS,
+                            MinMaxInject = MinMaxInject,
+                            MinMaxPost = MinMaxPost,
                             KeepAliveFilter = KeepAliveFilter,
                             Reset = Reset,
+                            IssueType = IssueType,
                             TcbFilter = TcbFilter,
                             ZeroTimeMode = ZeroTimeMode,
                             ZeroTimeFilter = ZeroTimeFilter,
@@ -2738,7 +2774,6 @@ namespace ETWAnalyzer.Commands
             }
 
         }
-
 
         /// <summary>
         /// Return valid sort orders depending on used command and context. 

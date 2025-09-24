@@ -2,6 +2,7 @@
 //// SPDX-License-Identifier:   MIT
 
 
+using ETWAnalyzer.Extract.Network.Tcp.Issues;
 using System.Collections.Generic;
 
 namespace ETWAnalyzer.Extract.Network.Tcp
@@ -20,5 +21,10 @@ namespace ETWAnalyzer.Extract.Network.Tcp
         /// All TCP Retransmission events
         /// </summary>
         IReadOnlyList<ITcpRetransmission> Retransmissions { get;  }
+
+        /// <summary>
+        /// Automatically detected TCP issues like firewall problems, ...
+        /// </summary>
+        ITcpIssues TcpIssues { get; }
     }
 }
