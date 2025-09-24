@@ -40,6 +40,7 @@ namespace ETWAnalyzer_uTest.Extract
             container.Add(extract, (ETWProcessIndex) 1, (PdbIndex) 0, "C:\\Windows\\1.dll", "File Version of 1.dll", "Product Version of 1.dll", "Product Name of 1.dll", new Version(1, 0, 100, 1), "Description of 1.dll");
             container.Add(extract, (ETWProcessIndex) 1, PdbIndex.Invalid, "C:\\Windows\\2.dll", "File Version of 2.dll", "Product Version of 2.dll", "Product Name of 2.dll", new Version(1, 0, 100, 1), "Description of 2.dll");
 
+            container.Freeze();
             extract.Modules = container;
 
             var stream = new MemoryStream();

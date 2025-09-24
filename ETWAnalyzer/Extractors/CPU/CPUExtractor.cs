@@ -293,8 +293,8 @@ namespace ETWAnalyzer.Extractors.CPU
             // Try to release memory as early as possible
             mySamplingData = null;
             myCpuSchedlingData = null;
-            myPerProcessCPU = null;
-            myPerProcessPriority = null;
+            myPerProcessCPU = new();
+            myPerProcessPriority = new();
             myTimelineExtractor = null;
         }
 
