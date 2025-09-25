@@ -46,11 +46,11 @@ namespace AutoQuery
 
 This very simple application gives you already the top 10 CPU consumers of a file or a directory of files:
 
-![](Images/ProgramaticAccess.png "Programatic Access")
+![](https://raw.githubusercontent.com/Alois-xx/ETWAnalyzer/main/ETWAnalyzer/Documentation/Images/ProgramaticAccess.png "Programatic Access")
 
 Below is the class Diagram of IETWExtract
 
-![](Images/IETWExtract.png)
+![Class Diagram of IETWExtract](https://raw.githubusercontent.com/Alois-xx/ETWAnalyzer/main/ETWAnalyzer/Documentation/Images/IETWExtract.png)
 
 ## Scalable Json 
 
@@ -62,7 +62,7 @@ a simple way out was chosen.
 During serialization for potentially large data extracts a different file is used which contains
 the suffix *_Derived_xxxx.json*
 
-![](Images/ExtractedDataFiles.png)
+![](https://raw.githubusercontent.com/Alois-xx/ETWAnalyzer/main/ETWAnalyzer/Documentation/Images/ExtractedDataFiles.png)
 
 These derived files are accessed only when you touch e.g. the FileIO data property. That way
 we can evolve over time many more extractors with different goals without sacrificing query speed for 
