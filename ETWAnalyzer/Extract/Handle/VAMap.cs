@@ -86,7 +86,7 @@ namespace ETWAnalyzer.Extract.Handle
         /// <param name="processIdx"></param>
         /// <param name="threadId"></param>
         /// <param name="stackIdx"></param>
-        public FileMapEvent(TraceTimestamp time, long viewBase, long fileObject, long miscInfo, long viewSize, long byteOffset, ETWProcessIndex processIdx, int threadId, StackIdx stackIdx)
+        public FileMapEvent(Timestamp time, long viewBase, long fileObject, long miscInfo, long viewSize, long byteOffset, ETWProcessIndex processIdx, uint threadId, StackIdx stackIdx)
             : base(time, processIdx, threadId, stackIdx)
         {
             ViewBase = viewBase;
@@ -99,7 +99,7 @@ namespace ETWAnalyzer.Extract.Handle
         /// <summary>
         /// Empty file map object needed for deserialization.
         /// </summary>
-        public FileMapEvent() : this(default(TraceTimestamp), 0, 0, 0, 0, 0, ETWProcessIndex.Invalid, 0, StackIdx.None)
+        public FileMapEvent() : this(default(Timestamp), 0, 0, 0, 0, 0, ETWProcessIndex.Invalid, 0, StackIdx.None)
         { }
     }
 
@@ -121,7 +121,7 @@ namespace ETWAnalyzer.Extract.Handle
         /// <param name="processIdx"></param>
         /// <param name="threadId"></param>
         /// <param name="stackIdx"></param>
-        public FileUnmapEvent(TraceTimestamp time, long viewBase, long fileObject, long miscInfo, long viewSize, long byteOffset, ETWProcessIndex processIdx, int threadId, StackIdx stackIdx)
+        public FileUnmapEvent(Timestamp time, long viewBase, long fileObject, long miscInfo, long viewSize, long byteOffset, ETWProcessIndex processIdx, uint threadId, StackIdx stackIdx)
         : base(time, viewBase, fileObject, miscInfo, viewSize, byteOffset, processIdx, threadId, stackIdx)
         {
         }
@@ -130,7 +130,7 @@ namespace ETWAnalyzer.Extract.Handle
         /// <summary>
         /// Empty file unmap event needed for deserialization.
         /// </summary>
-        public FileUnmapEvent() : this(default(TraceTimestamp), 0, 0, 0, 0, 0, ETWProcessIndex.Invalid, 0, StackIdx.None)
+        public FileUnmapEvent() : this(default(Timestamp), 0, 0, 0, 0, 0, ETWProcessIndex.Invalid, 0, StackIdx.None)
         { }
     }
 }

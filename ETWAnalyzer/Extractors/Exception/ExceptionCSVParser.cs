@@ -50,7 +50,7 @@ namespace ETWAnalyzer.Extractors
         public string ProcessNameAndPid { get; set; }
         public string ExceptionType { get; set; }
         public string ExceptionMessage { get; set; }
-        public int ThreadId { get; set; }
+        public uint ThreadId { get; set; }
         public DateTimeOffset TimeInSec { get; set; }
         public string Stack { get; set; }
     }

@@ -20,7 +20,7 @@ namespace ETWAnalyzer.Extract
         /// <summary>
         /// Process Id
         /// </summary>
-        public int ProcessID { get; set; }
+        public uint ProcessID { get; set; }
 
         /// <summary>
         /// Process name with exe suffix
@@ -242,7 +242,7 @@ namespace ETWAnalyzer.Extract
         /// <returns></returns>
         public override int GetHashCode()
         {
-            return 17 * 31 + ProcessID;
+            return 17 * 31 + (int) ProcessID;
         }
 
         /// <summary>
@@ -389,7 +389,7 @@ namespace ETWAnalyzer.Extract
             {
                 // To combine hash codes from different fields see
                 // https://stackoverflow.com/questions/1646807/quick-and-simple-hash-code-combinations
-                int hash = 17 * 31 + obj.ProcessID;
+                int hash = 17 * 31 + (int) obj.ProcessID;
                 hash = hash * 31 + (obj.CmdLine ?? "").GetHashCode();
                 hash = hash * 31 + obj.ProcessName.GetHashCode();
                 return hash;

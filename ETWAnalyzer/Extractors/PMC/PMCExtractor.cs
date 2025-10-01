@@ -130,7 +130,7 @@ namespace ETWAnalyzer.Extractors.PMC
 
                     if( AreDifferentMethods(sFrom, sTo, out string mFrom, out string mTo) )
                     {
-                        ETWProcessIndex processIdx = results.GetProcessIndexByPID(process.Id, process.CreateTime.HasValue ? process.CreateTime.Value.DateTimeOffset : default);
+                        ETWProcessIndex processIdx = results.GetProcessIndexByPID(process.Id, process.CreateTime.HasValue ? process.CreateTime.Value.ConvertToTime() : default);
                         if( !counts.TryGetValue(processIdx, out Dictionary < string, Counter<string>> from2MethodCount) )
                         {
                             from2MethodCount = new Dictionary<string, Counter<string>>();
@@ -210,7 +210,7 @@ namespace ETWAnalyzer.Extractors.PMC
                 }
 
 
-                ETWProcessIndex processIdx = results.GetProcessIndexByPID(diff.Process.Id, diff.Process.CreateTime.HasValue ? diff.Process.CreateTime.Value.DateTimeOffset : default);
+                ETWProcessIndex processIdx = results.GetProcessIndexByPID(diff.Process.Id, diff.Process.CreateTime.HasValue ? diff.Process.CreateTime.Value.ConvertToTime() : default);
 
                 foreach (var rawDelta in diff.RawCounterDeltas)
                 {

@@ -52,7 +52,7 @@ namespace ETWAnalyzer.Extractors.CPU
 
                     if (cpu.AverageFrequency.Value.TotalMegahertz > 0.0m)  // sometimes we get 0 readings which are spurious events which are arriving also sometimes even if we did not record Frequency data
                     {
-                        frequencyData.AddFrequencyDuration((CPUNumber)cpu.Processor, (float)cpu.StartTime.RelativeTimestamp.TotalSeconds, (float)cpu.StopTime.RelativeTimestamp.TotalSeconds, (int)cpu.AverageFrequency.Value.TotalMegahertz);
+                        frequencyData.AddFrequencyDuration((CPUNumber)cpu.Processor, (float)cpu.StartTime.TotalSeconds, (float)cpu.StopTime.TotalSeconds, (int)cpu.AverageFrequency.Value.TotalMegahertz);
                     }
                 }
 

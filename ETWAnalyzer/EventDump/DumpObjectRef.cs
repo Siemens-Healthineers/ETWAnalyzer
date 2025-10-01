@@ -984,7 +984,7 @@ namespace ETWAnalyzer.EventDump
             return resolver.GetProcess(procIdx).GetProcessName(UsePrettyProcessName);
         }
 
-        int GetProcessId(ETWProcessIndex procIdx, IProcessExtract resolver)
+        uint GetProcessId(ETWProcessIndex procIdx, IProcessExtract resolver)
         {
             return resolver.GetProcess(procIdx).ProcessID;
         }

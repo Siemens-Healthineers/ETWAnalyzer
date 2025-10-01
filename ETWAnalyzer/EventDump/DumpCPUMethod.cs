@@ -258,7 +258,7 @@ namespace ETWAnalyzer.EventDump
             public bool? HasCPUSamplingData { get; internal set; }
             public bool? HasCSwitchData { get; internal set; }
             public ProcessKey ProcessKey { get; internal set; }
-            public int SessionId { get; set; }
+            public uint SessionId { get; set; }
             public ICPUUsage[] CPUUsage { get; internal set; }
             public IReadOnlyDictionary<CPUNumber, ICPUTopology> Topology { get; internal set; }
             public IReadyTimes ReadyDetails { get; internal set; }
@@ -384,7 +384,7 @@ namespace ETWAnalyzer.EventDump
                             FirstLastCallDurationS = (float)stacktag.FirstLastOccurenceDuration.TotalSeconds,
                             SessionStart = file.Extract.SessionStart,
                             Process = process,
-                            SessionId = process.SessionId,
+                            SessionId = (uint) process.SessionId,
                             ExeModule = exeModule,
                             ZeroTimeS = zeroTimeS,
                         });
@@ -493,7 +493,7 @@ namespace ETWAnalyzer.EventDump
                             SessionStart = file.Extract.SessionStart,
                             StackDepth = methodCost.DepthFromBottom,
                             Process = process,
-                            SessionId = process.SessionId,
+                            SessionId = (uint) process.SessionId,
                             Module = module,
                             ExeModule = exeModule,
                             Driver = driver,
@@ -615,7 +615,7 @@ namespace ETWAnalyzer.EventDump
                     ProcessKey = process,
                     SourceFile = file.JsonExtractFileWhenPresent,
                     Process = process,
-                    SessionId = process.SessionId,
+                    SessionId = (uint) process.SessionId,
                     Module = module,
 
                 };

@@ -72,7 +72,7 @@ namespace ETWAnalyzer.LoadSymbol
             }
 
             // will download pdb from symbol server if configured correctly
-            string localPdbPath = myReader.FindSymbolFilePath(pdbId.Name, pdbId.Id, pdbId.Age);
+            string localPdbPath = myReader.FindSymbolFilePath(pdbId.Name, pdbId.Id, (int) pdbId.Age);
             if (localPdbPath != null)
             {
                 if (!myLoadedPdbs.TryGetValue(localPdbPath, out SymbolModule module))

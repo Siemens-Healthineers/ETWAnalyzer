@@ -187,7 +187,7 @@ namespace ETWAnalyzer.Extractors.TraceLogging
                     {
                         continue;
                     }
-                    ETWProcessIndex processIdx = results.GetProcessIndexByPidAtTime(ev.ProcessId, ev.Timestamp.DateTimeOffset);
+                    ETWProcessIndex processIdx = results.GetProcessIndexByPidAtTime(ev.ProcessId, ev.Timestamp.ConvertToTime());
 
                     if( processIdx == ETWProcessIndex.Invalid)
                     {
@@ -200,7 +200,7 @@ namespace ETWAnalyzer.Extractors.TraceLogging
                         ThreadId = ev.ThreadId,
                         StackIdx = stackIdx,
                         ProcessIdx = processIdx,
-                        TimeStamp = ev.Timestamp.DateTimeOffset,
+                        TimeStamp = ev.Timestamp.ConvertToTime(),
                     };
 
                     foreach (var field in ev.Fields)

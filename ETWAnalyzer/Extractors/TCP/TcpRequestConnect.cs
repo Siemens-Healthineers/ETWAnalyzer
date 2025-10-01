@@ -31,7 +31,7 @@ namespace ETWAnalyzer.Extractors.TCP
             LocalIpAndPort = ev.Fields[TcpETWConstants.LocalAddressField].GetSocketConnection();
             RemoteIpAndPort = ev.Fields[TcpETWConstants.RemoteAddressField].GetSocketConnection();
             Pid = ev.Fields[TcpETWConstants.PidField].AsUInt32;
-            Timestamp = ev.Timestamp.DateTimeOffset;
+            Timestamp = ev.Timestamp.ConvertToTime();
         }
 
         /// <summary>
@@ -94,7 +94,7 @@ namespace ETWAnalyzer.Extractors.TCP
             BytesRetrans = ev.Fields["BytesRetrans"].AsUInt32;
             Timeouts = ev.Fields["Timeouts"].AsUInt32;
             FastRetransmissions = ev.Fields["FastRetran"].AsUInt32;
-            Timestamp = ev.Timestamp.DateTimeOffset;
+            Timestamp = ev.Timestamp.ConvertToTime();
         }
 
     }
@@ -121,7 +121,7 @@ namespace ETWAnalyzer.Extractors.TCP
             Tcb = (ulong) ev.Fields[TcpETWConstants.TcbField].AsAddress.Value;
             LocalIpAndPort = ev.Fields[TcpETWConstants.LocalAddressField].GetSocketConnection();
             RemoteIpAndPort = ev.Fields[TcpETWConstants.RemoteAddressField].GetSocketConnection();
-            TimeStampOpen = ev.Timestamp.DateTimeOffset;
+            TimeStampOpen = ev.Timestamp.ConvertToTime();
             ProcessIdx = processIdx;
         }
 

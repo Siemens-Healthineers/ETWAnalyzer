@@ -42,10 +42,10 @@ namespace ETWAnalyzer.Extract.Exceptions
         /// <summary>
         /// Thread on which the exception did occur
         /// </summary>
-        public List<int> Threads
+        public List<uint> Threads
         {
             get; set;
-        } = new List<int>();
+        } = new List<uint>();
 
         /// <summary>
         /// Time on which the exception did occur
@@ -80,7 +80,7 @@ namespace ETWAnalyzer.Extract.Exceptions
             return other.Message.Equals(Message, StringComparison.Ordinal);
         }
 
-        internal void AddProcessTimeThread(ETWProcessIndex processIndex, int threadId, DateTimeOffset localTime)
+        internal void AddProcessTimeThread(ETWProcessIndex processIndex, uint threadId, DateTimeOffset localTime)
         {
             Processes.Add(processIndex);
             Threads.Add(threadId);

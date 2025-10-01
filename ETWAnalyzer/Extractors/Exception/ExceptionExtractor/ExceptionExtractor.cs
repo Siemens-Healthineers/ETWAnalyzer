@@ -6,6 +6,7 @@ using ETWAnalyzer.Infrastructure;
 using ETWAnalyzer.TraceProcessorHelpers;
 using Microsoft.Windows.EventTracing;
 using Microsoft.Windows.EventTracing.Events;
+using Microsoft.Windows.EventTracing.Streaming;
 using Microsoft.Windows.EventTracing.Symbols;
 using System;
 using System.Collections.Generic;
@@ -17,7 +18,7 @@ using System.Xml.Serialization;
 
 namespace ETWAnalyzer.Extractors
 {
-    class ExceptionExtractor : ExtractorBase
+    class ExceptionExtractor : ExtractorBase, IUnparsedEventConsumer
     {
         /// <summary>
         /// Disable Exception filter to extract all exceptions
@@ -74,8 +75,8 @@ namespace ETWAnalyzer.Extractors
             NeedsSymbols = true;
             myGenericEvents = processor.UseGenericEvents();
             // as long as https://stackoverflow.com/questions/63464266/missing-stack-frames-from-clrstackwalk-event is not solved
+            processor.UseUnparsedEvents(this, new Guid[] { DotNetETWConstants.DotNetRuntimeGuid });
             // we need to parse the raw events
-            processor.Use(ProcessRawEvents);
             myStackSource = processor.UseStacks();
         }
 
@@ -83,7 +84,7 @@ namespace ETWAnalyzer.Extractors
 
         class StackEvent
         {
-            public TraceTimestamp TimeStamp;
+            public Timestamp TimeStamp;
             public IReadOnlyList<Address> Stack;
         }
 
@@ -181,7 +182,7 @@ namespace ETWAnalyzer.Extractors
                             ExceptionType = ev.Fields[0].AsString,
                             Stack = callstack,
                             ThreadId = ev.ThreadId,
-                            TimeInSec = ev.Timestamp.DateTimeOffset,
+                            TimeInSec = ev.Timestamp.ConvertToTime(),
                             ProcessNameAndPid = $"{ev?.Process?.ImageName} ({ev.ProcessId})",
                         };
                     }
@@ -207,11 +208,9 @@ namespace ETWAnalyzer.Extractors
         /// Copyright by Alois Kraus 2020
         /// https://stackoverflow.com/questions/63464266/missing-stack-frames-from-clrstackwalk-event/63625162#comment112605938_63625162
         /// </summary>
-        /// <param name="eventContext"></param>
-        void ProcessRawEvents(EventContext eventContext)
+        /// <param name="ev"></param>
+        public void Process(TraceEvent ev)
         {
-            TraceEvent ev = eventContext.Event;
-
             if (ev.ProviderId == DotNetETWConstants.DotNetRuntimeGuid)
             {
                 if (ev.Id == DotNetETWConstants.ExceptionEventId)
@@ -255,6 +254,11 @@ namespace ETWAnalyzer.Extractors
                 }
             }
 
+        }
+
+        public void ProcessFailure(FailureInfo failureInfo)
+        {
+            failureInfo.ThrowAndLogParseFailure();
         }
     }
 }

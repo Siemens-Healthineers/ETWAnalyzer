@@ -32,7 +32,7 @@ namespace ETWAnalyzer.Extract.Handle
         /// <summary>
         /// Needed for de/serialization 
         /// </summary>
-        public HandleCloseEvent() : this(default(TraceTimestamp), 0, ETWProcessIndex.Invalid, 0, StackIdx.None)
+        public HandleCloseEvent() : this(default(Timestamp), 0, ETWProcessIndex.Invalid, 0, StackIdx.None)
         { }
 
         /// <summary>
@@ -43,7 +43,7 @@ namespace ETWAnalyzer.Extract.Handle
         /// <param name="processIdx"></param>
         /// <param name="threadId"></param>
         /// <param name="stackIdx"></param>
-        public HandleCloseEvent(TraceTimestamp time, ulong handleValue, ETWProcessIndex processIdx, int threadId, StackIdx stackIdx)
+        public HandleCloseEvent(Timestamp time, ulong handleValue, ETWProcessIndex processIdx, uint threadId, StackIdx stackIdx)
             : base(time, processIdx, threadId, stackIdx)
         {
             HandleValue = handleValue;

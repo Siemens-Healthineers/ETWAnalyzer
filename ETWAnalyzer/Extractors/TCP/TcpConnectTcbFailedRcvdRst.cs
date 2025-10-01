@@ -29,7 +29,7 @@ namespace ETWAnalyzer.Extractors.TCP
         public TcpConnectTcbFailedRcvdRst(IGenericEvent ev)
         {
             Tcb = (ulong)ev.Fields[TcpETWConstants.TcbField].AsAddress.Value;
-            Timestamp = ev.Timestamp.DateTimeOffset;
+            Timestamp = ev.Timestamp.ConvertToTime();
             NewState = ev.Fields[TcpETWConstants.NewStateField].AsUInt32;
             LocalIpAndPort = ev.Fields[TcpETWConstants.LocalAddressField].GetSocketConnection();
             RemoteIpAndPort = ev.Fields[TcpETWConstants.RemoteAddressField].GetSocketConnection();

@@ -1,6 +1,7 @@
 ﻿//// SPDX-FileCopyrightText:  © 2022 Siemens Healthcare GmbH
 //// SPDX-License-Identifier:   MIT
 
+using ETWAnalyzer.TraceProcessorHelpers;
 using Microsoft.Windows.EventTracing;
 using Microsoft.Windows.EventTracing.Disk;
 using Microsoft.Windows.EventTracing.Processes;
@@ -166,7 +167,7 @@ namespace ETWAnalyzer.Extract.Disk
             }
         }
 
-        DiskNrOrDrive GetDiskKey(string fullFileName, int diskId)
+        DiskNrOrDrive GetDiskKey(string fullFileName, uint diskId)
         {
             if (fullFileName?.Length > 0)
             {
@@ -229,8 +230,8 @@ namespace ETWAnalyzer.Extract.Disk
                 activity[(DiskIOTypes)diskActivity.IOType] = localDiskData;
             }
 
-            int threadId = 0;
-            int processId = 0;
+            uint threadId = 0;
+            uint processId = 0;
             DateTimeOffset startTime = DateTimeOffset.MinValue;
             if (diskActivity.IssuingThread != null)
             {
@@ -241,7 +242,7 @@ namespace ETWAnalyzer.Extract.Disk
                 processId = diskActivity.IssuingProcess.Id;
                 if (diskActivity.IssuingProcess.CreateTime.HasValue)
                 {
-                    startTime = diskActivity.IssuingProcess.CreateTime.Value.DateTimeOffset;
+                    startTime = diskActivity.IssuingProcess.CreateTime.Value.ConvertToTime();
                 }
             }
 

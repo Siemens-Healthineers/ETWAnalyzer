@@ -72,12 +72,12 @@ namespace ETWAnalyzer.Extract.Disk
         /// <summary>
         /// Threads which did access this file
         /// </summary>
-        public HashSet<int> ThreadIDs { get; } = new HashSet<int>();
+        public HashSet<uint> ThreadIDs { get; } = new HashSet<uint>();
 
         /// <summary>
         /// Processes which did issue disk IO requests
         /// </summary>
-        public HashSet<KeyValuePair<int,DateTimeOffset>> Processes { get; } = new HashSet<KeyValuePair<int, DateTimeOffset>>();
+        public HashSet<KeyValuePair<uint,DateTimeOffset>> Processes { get; } = new HashSet<KeyValuePair<uint, DateTimeOffset>>();
 
         /// <summary>
         /// Bitmask with which IO priorities the file was accessed. Normally it should be only one prio Normal
@@ -103,10 +103,10 @@ namespace ETWAnalyzer.Extract.Disk
         /// <param name="priority"></param>
         /// <param name="diskServiceDuration"></param>
         /// <param name="sizeInBytes"></param>
-        public void Add(int pid, DateTimeOffset startTime, int threadId, DiskIOPriorities priority, Duration diskServiceDuration, ulong sizeInBytes)
+        public void Add(uint pid, DateTimeOffset startTime, uint threadId, DiskIOPriorities priority, Duration diskServiceDuration, ulong sizeInBytes)
         {
             ThreadIDs.Add( threadId );
-            Processes.Add( new KeyValuePair<int,DateTimeOffset>(pid, startTime) );
+            Processes.Add( new KeyValuePair<uint,DateTimeOffset>(pid, startTime) );
             DiskServiceTimeInus += (ulong)diskServiceDuration.TotalMicroseconds;
             Priorities |= priority;
             SizeInBytes += (ulong)sizeInBytes;

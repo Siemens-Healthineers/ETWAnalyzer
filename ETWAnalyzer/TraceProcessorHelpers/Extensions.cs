@@ -4,9 +4,12 @@
 
 using ETWAnalyzer.Extract;
 using ETWAnalyzer.Extract.Network.Tcp;
+using ETWAnalyzer.Extractors;
 using Microsoft.Windows.EventTracing;
 using Microsoft.Windows.EventTracing.Events;
+using Microsoft.Windows.EventTracing.Metadata;
 using Microsoft.Windows.EventTracing.Processes;
+using Microsoft.Windows.EventTracing.Streaming;
 using Microsoft.Windows.EventTracing.Symbols;
 using System;
 using System.Collections.Generic;
@@ -22,11 +25,23 @@ namespace ETWAnalyzer.TraceProcessorHelpers
 {
     static class Extensions
     {
-        static public DateTimeOffset ConvertToTime(this TraceTimestamp ?time)
+        static public DateTimeOffset ConvertToTime(this Timestamp ?time)
         {
-
-            return time == null ? DateTimeOffset.MinValue : time.Value.DateTimeOffset;
+            return time == null ? DateTimeOffset.MinValue : ConvertToTime(time.Value);
         }
+
+        static public DateTimeOffset ConvertToTime(this Timestamp time)
+        {
+            return time.GetDateTimeOffset(StaticTraceProcessorContext.MetaData);
+        }
+
+        static public void ThrowAndLogParseFailure(this FailureInfo failure)
+        {
+            var msg = $"Event Parse error encountered: {failure.FailureReason}";
+            Logger.Error(msg);
+            throw new InvalidOperationException(msg);
+        }
+
 
         public static string GetToolkitPath()
         {
@@ -143,7 +158,7 @@ namespace ETWAnalyzer.TraceProcessorHelpers
         public static ETWProcessIndex GetProcessIndex(this IGenericEvent ev, IETWExtract extract)
         {
 
-            return extract.GetProcessIndexByPID(ev.Process.Id, ev.Process.CreateTime != null ? ev.Process.CreateTime.Value.DateTimeOffset : DateTimeOffset.MinValue);
+            return extract.GetProcessIndexByPID(ev.Process.Id, ev.Process.CreateTime != null ? ev.Process.CreateTime.Value.ConvertToTime() : DateTimeOffset.MinValue);
         }
 
         /// <summary>

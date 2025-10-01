@@ -109,7 +109,7 @@ namespace ETWAnalyzer.EventDump
             /// </summary>
             public ModuleDefinition Module { get; internal set; }
 
-            public int SessionId { get; set; }
+            public uint SessionId { get; set; }
 
             public MatchData Clone()
             {
@@ -227,7 +227,7 @@ namespace ETWAnalyzer.EventDump
                     Message = ex.Message,
                     Type = ex.Type,
                     Process = ex.Process,
-                    SessionId = ex.Process.SessionId,
+                    SessionId = (uint) ex.Process.SessionId,
                     TimeStamp = ex.Time.AddSeconds(-1.0d*zeroTimeS),
                     Stack = ex.Stack,
                     SourceFile = file.JsonExtractFileWhenPresent,

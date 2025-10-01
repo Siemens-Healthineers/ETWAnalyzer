@@ -45,7 +45,7 @@ namespace ETWAnalyzer.Extract.Handle
                     if (IsFileMap && FileMapEvents?.Count > 0)
                     {
                         var firstMap = FileMapEvents.OrderBy(x => x.TimeNs).First();
-                        first = new RefCountChangeEvent(default(TraceTimestamp), 1, firstMap.ProcessIdx, firstMap.ThreadId, firstMap.StackIdx)
+                        first = new RefCountChangeEvent(default(Timestamp), 1, firstMap.ProcessIdx, firstMap.ThreadId, firstMap.StackIdx)
                         {
                             TimeNs = firstMap.TimeNs
                         };
@@ -53,7 +53,7 @@ namespace ETWAnalyzer.Extract.Handle
                     else if (HandleCreateEvents?.Count > 0)
                     {
                         var firstHandleCreate = HandleCreateEvents.OrderBy(x => x.TimeNs).First();
-                        first = new RefCountChangeEvent(default(TraceTimestamp), 1, firstHandleCreate.ProcessIdx, firstHandleCreate.ThreadId, firstHandleCreate.StackIdx)
+                        first = new RefCountChangeEvent(default(Timestamp), 1, firstHandleCreate.ProcessIdx, firstHandleCreate.ThreadId, firstHandleCreate.StackIdx)
                         {
                             TimeNs = firstHandleCreate.TimeNs
                         };
@@ -88,14 +88,14 @@ namespace ETWAnalyzer.Extract.Handle
                     if (IsFileMap && FileUnmapEvents.Count > 0)
                     {
                         var lastUnmap = FileUnmapEvents.OrderBy(x => x.TimeNs).Last();
-                        last = new RefCountChangeEvent(default(TraceTimestamp), -1, lastUnmap.ProcessIdx, lastUnmap.ThreadId, lastUnmap.StackIdx)
+                        last = new RefCountChangeEvent(default(Timestamp), -1, lastUnmap.ProcessIdx, lastUnmap.ThreadId, lastUnmap.StackIdx)
                         {
                             TimeNs = lastUnmap.TimeNs
                         };
                     } else if (HandleCloseEvents.Count > 0 && (HandleCreateEvents.Count - (HandleCloseEvents.Count + HandleDuplicateEvents.Count) == 0))
                     {
                         var lastClose = HandleCloseEvents.Last();
-                        last = new RefCountChangeEvent(default(TraceTimestamp), -1, lastClose.ProcessIdx, lastClose.ThreadId, lastClose.StackIdx)
+                        last = new RefCountChangeEvent(default(Timestamp), -1, lastClose.ProcessIdx, lastClose.ThreadId, lastClose.StackIdx)
                         {
                             TimeNs = lastClose.TimeNs,
                         };
@@ -488,24 +488,24 @@ namespace ETWAnalyzer.Extract.Handle
             }
         }
 
-        internal void AddRefChange(TraceTimestamp time, int refCountChange, ETWProcessIndex process, int threadId, StackIdx idx)
+        internal void AddRefChange(Timestamp time, int refCountChange, ETWProcessIndex process, uint threadId, StackIdx idx)
         {
             RefChanges.Add(new RefCountChangeEvent(time, refCountChange, process, threadId, idx));
         }
 
-        internal void AddHandlCreate(TraceTimestamp time, ulong handleValue, ETWProcessIndex processIdx, int threadId, StackIdx stackIdx)
+        internal void AddHandlCreate(Timestamp time, ulong handleValue, ETWProcessIndex processIdx, uint threadId, StackIdx stackIdx)
         {
             var created = new HandleCreateEvent(time, handleValue, processIdx, threadId, stackIdx);
             HandleCreateEvents.Add(created);
         }
 
-        internal void AddHandleDuplicate(TraceTimestamp time, uint sourceHandle, uint targetHandle, ETWProcessIndex processIdx, ETWProcessIndex sourceProcessIndex, int threadId, StackIdx stackIndex)
+        internal void AddHandleDuplicate(Timestamp time, uint sourceHandle, uint targetHandle, ETWProcessIndex processIdx, ETWProcessIndex sourceProcessIndex, uint threadId, StackIdx stackIndex)
         {
             var duplicate = new HandleDuplicateEvent(time, targetHandle, sourceHandle, processIdx, sourceProcessIndex, threadId, stackIndex);
             HandleDuplicateEvents.Add(duplicate);
         }
 
-        internal bool AddHandleClose(TraceTimestamp time, ulong handleValue, string handleName, ETWProcessIndex processIdx, int threadId, StackIdx stackIdx)
+        internal bool AddHandleClose(Timestamp time, ulong handleValue, string handleName, ETWProcessIndex processIdx, uint threadId, StackIdx stackIdx)
         {
             if (Name != null && Name != handleName && Name != "")
             {
@@ -528,7 +528,7 @@ namespace ETWAnalyzer.Extract.Handle
             return false;
         }
 
-        internal void AddFileMap(TraceTimestamp time, long viewBase, long viewSize, long fileObject, long byteOffset, ETWProcessIndex processIdx, int threadId, StackIdx stackIdx)
+        internal void AddFileMap(Timestamp time, long viewBase, long viewSize, long fileObject, long byteOffset, ETWProcessIndex processIdx, uint threadId, StackIdx stackIdx)
         {
             FileMapEvents.Add(new FileMapEvent
             {
@@ -543,7 +543,7 @@ namespace ETWAnalyzer.Extract.Handle
             });
         }
 
-        internal void AddFileUnMap(TraceTimestamp time, long viewBase, long viewSize, long fileObject, long byteOffset, ETWProcessIndex processIdx, int threadId, StackIdx stackIdx)
+        internal void AddFileUnMap(Timestamp time, long viewBase, long viewSize, long fileObject, long byteOffset, ETWProcessIndex processIdx, uint threadId, StackIdx stackIdx)
         {
             FileUnmapEvents.Add(new FileUnmapEvent
             {

@@ -60,7 +60,7 @@ namespace ETWAnalyzer.Extract.Handle
         /// <param name="sourceProcessIdx"></param>
         /// <param name="threadId"></param>
         /// <param name="stackIdx"></param>
-        public HandleDuplicateEvent(TraceTimestamp time, ulong handleValue, ulong sourceHandleValue, ETWProcessIndex processIdx, ETWProcessIndex sourceProcessIdx, int threadId, StackIdx stackIdx)
+        public HandleDuplicateEvent(Timestamp time, ulong handleValue, ulong sourceHandleValue, ETWProcessIndex processIdx, ETWProcessIndex sourceProcessIdx, uint threadId, StackIdx stackIdx)
             : base(time, processIdx, threadId, stackIdx)
         {
             HandleValue = handleValue;
@@ -72,7 +72,7 @@ namespace ETWAnalyzer.Extract.Handle
         /// <summary>
         /// 
         /// </summary>
-        public HandleDuplicateEvent() : this(default(TraceTimestamp), 0, 0, ETWProcessIndex.Invalid, ETWProcessIndex.Invalid, 0, StackIdx.None)
+        public HandleDuplicateEvent() : this(default(Timestamp), 0, 0, ETWProcessIndex.Invalid, ETWProcessIndex.Invalid, 0, StackIdx.None)
         { }
     }
 }

@@ -359,7 +359,7 @@ namespace ETWAnalyzer.Extractors.TCP
 
                 if (!bFound)
                 {
-                    ETWProcessIndex pIdx = GetProcessIndex(results, rundownAtStart.Timestamp, (int)rundownAtStart.Pid, 0);
+                    ETWProcessIndex pIdx = GetProcessIndex(results, rundownAtStart.Timestamp, rundownAtStart.Pid, 0);
 
                     var connection = new TcpRequestConnect(rundownAtStart.Tcb, rundownAtStart.LocalIpAndPort, rundownAtStart.RemoteIpAndPort, null, null, pIdx);
 
@@ -571,7 +571,7 @@ namespace ETWAnalyzer.Extractors.TCP
         /// <param name="extract"></param>
         private void OnConnect(IGenericEvent ev, ETWExtract extract)
         {
-            ETWProcessIndex idx = GetProcessIndex(extract, ev.Timestamp.DateTimeOffset, ev.Process?.Id, ev.ProcessId);
+            ETWProcessIndex idx = GetProcessIndex(extract, ev.Timestamp.ConvertToTime(), ev.Process?.Id, ev.ProcessId);
             TcpRequestConnect conn = new(ev, idx);
             if (TCBFilter(conn.Tcb))
             {
@@ -586,7 +586,7 @@ namespace ETWAnalyzer.Extractors.TCP
         /// <param name="extract"></param>
         private void OnTcpAcceptListenerComplete(IGenericEvent ev, ETWExtract extract)
         {
-            ETWProcessIndex idx = GetProcessIndex(extract, ev.Timestamp.DateTimeOffset, ev.Process?.Id, ev.ProcessId);
+            ETWProcessIndex idx = GetProcessIndex(extract, ev.Timestamp.ConvertToTime(), ev.Process?.Id, ev.ProcessId);
             TcpRequestConnect conn = new(ev, idx);
 
             if (TCBFilter(conn.Tcb))
@@ -637,7 +637,7 @@ namespace ETWAnalyzer.Extractors.TCP
 
                 if ( !bFound)  // connections which are closed, but were not opened during the trace need to add a synthetic connection
                 {
-                    ETWProcessIndex processIdx = GetProcessIndex(extract, close.Timestamp, (int) close.ProcessId, ev.ProcessId);
+                    ETWProcessIndex processIdx = GetProcessIndex(extract, close.Timestamp, close.ProcessId, ev.ProcessId);
                     // normally close is issued by Idle which is not a real process. Use invalid here.
                     myConnections.Add( new TcpRequestConnect(close.Tcb, close.LocalIpAndPort, close.RemoteIpAndPort, null, close.Timestamp, processIdx));
                 }
@@ -655,7 +655,7 @@ namespace ETWAnalyzer.Extractors.TCP
 
                 if (!bFound)  // connections which are closed, but were not opened during the trace need to add a synthetic connection
                 {
-                    ETWProcessIndex processIdx = GetProcessIndex(extract, shutdown.Timestamp, (int)shutdown.ProcessId, ev.ProcessId );
+                    ETWProcessIndex processIdx = GetProcessIndex(extract, shutdown.Timestamp, shutdown.ProcessId, ev.ProcessId );
                     // normally close is issued by Idle which is not a real process. Use invalid here.
                     myConnections.Add(new TcpRequestConnect(shutdown.Tcb, shutdown.LocalIpAndPort, shutdown.RemoteIpAndPort, null, shutdown.Timestamp, processIdx));
                 }
@@ -679,9 +679,9 @@ namespace ETWAnalyzer.Extractors.TCP
             return bFound;
         }
 
-        ETWProcessIndex GetProcessIndex(ETWExtract extract, DateTimeOffset time, int? eventProcessId, int etwProcessIdx)
+        ETWProcessIndex GetProcessIndex(ETWExtract extract, DateTimeOffset time, uint? eventProcessId, uint etwProcessIdx)
         {
-            if (eventProcessId != null && eventProcessId > 0)
+            if (eventProcessId != null && eventProcessId > 0 && eventProcessId != uint.MaxValue)
             {
                 return extract.GetProcessIndexByPidAtTime(eventProcessId.Value, time);
             }

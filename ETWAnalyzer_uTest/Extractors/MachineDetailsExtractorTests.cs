@@ -41,10 +41,10 @@ namespace ETWAnalyzer_uTest.Extractors
                 if (myInteralExtract == null)
                 {
                     var tmp = new ETWExtract();
-                    using ITraceProcessor processor = TraceProcessor.Create(TestData.ClientEtlFile, new TraceProcessorSettings
+                    using ITraceProcessor processor = new TraceProcessorBuilder().WithSettings(new TraceProcessorSettings
                     {
                         AllowLostEvents = true,
-                    });
+                    }).Build(TestData.ClientEtlFile);
                     MachineDetailsExtractor extractor = new();
                     extractor.RegisterParsers(processor);
                     processor.Process();

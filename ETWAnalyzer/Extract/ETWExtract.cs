@@ -489,7 +489,7 @@ namespace ETWAnalyzer.Extract
         /// <exception cref="KeyNotFoundException">When process was not found</exception>
         /// <exception cref="InvalidOperationException">When pid was negative</exception>
         /// <exception cref="ArgumentNullException">Pid was 0</exception>
-        public ETWProcess GetProcessByPID(int pid, DateTimeOffset startTime)
+        public ETWProcess GetProcessByPID(uint pid, DateTimeOffset startTime)
         {
             ETWProcess process = TryGetProcessByPID(pid, startTime);
 
@@ -509,7 +509,7 @@ namespace ETWAnalyzer.Extract
         /// <returns>Found process instance or null</returns>
         /// <exception cref="ArgumentNullException">Pid is zero</exception>
         /// <exception cref="InvalidOperationException">Pid is negative.</exception>
-        public ETWProcess TryGetProcessByPID(int pid, DateTimeOffset startTime)
+        public ETWProcess TryGetProcessByPID(uint pid, DateTimeOffset startTime)
         {
             foreach (ETWProcess process in Processes)
             {
@@ -529,9 +529,9 @@ namespace ETWAnalyzer.Extract
         /// <param name="timeWhenProcessDidExist">Time when process was running.</param>
         /// <returns>EtwProcessIndex.Invalid or a valid index on success. It does not throw if nothing could be found.</returns>
         /// <exception cref="ArgumentException">When pid is 0 or smaller.</exception>
-        public ETWProcessIndex GetProcessIndexByPidAtTime(int pid, DateTimeOffset timeWhenProcessDidExist)
+        public ETWProcessIndex GetProcessIndexByPidAtTime(uint pid, DateTimeOffset timeWhenProcessDidExist)
         {
-            if (pid <= 0)
+            if (pid == 0 || pid == uint.MaxValue)
             {
                 throw new ArgumentException($"Pid {pid} was not valid!");
             }
@@ -557,9 +557,9 @@ namespace ETWAnalyzer.Extract
         /// <param name="startTime">Process start time</param>
         /// <returns>ETWProcessIndex on success, otherwise a KeyNotFoundException is thrown.</returns>
         /// <exception cref="ArgumentNullException">When pid is 0 which is invalid</exception>
-        public ETWProcessIndex GetProcessIndexByPID(int pid, DateTimeOffset startTime)
+        public ETWProcessIndex GetProcessIndexByPID(uint pid, DateTimeOffset startTime)
         {
-            if( pid <= 0 )
+            if( pid == 0 || pid == uint.MaxValue )
             {
                 throw new ArgumentException($"Pid {pid} was not valid!");
             }

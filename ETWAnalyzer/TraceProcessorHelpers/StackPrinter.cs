@@ -106,12 +106,12 @@ namespace ETWAnalyzer.TraceProcessorHelpers
         }
 
 
-        Dictionary<KeyValuePair<int, List<Address>>, string> myFrameAddressMap = new(new StackComparer());
+        Dictionary<KeyValuePair<uint, List<Address>>, string> myFrameAddressMap = new(new StackComparer());
 
-        class StackComparer : IEqualityComparer<KeyValuePair<int, List<Address>>>
+        class StackComparer : IEqualityComparer<KeyValuePair<uint, List<Address>>>
         {
             public StackComparer() { }
-            public bool Equals(KeyValuePair<int, List<Address>> x, KeyValuePair<int, List<Address>> y)
+            public bool Equals(KeyValuePair<uint, List<Address>> x, KeyValuePair<uint, List<Address>> y)
             {
                 if (x.Key != y.Key)
                 {
@@ -134,9 +134,9 @@ namespace ETWAnalyzer.TraceProcessorHelpers
                 return true;
             }
 
-            public int GetHashCode(KeyValuePair<int, List<Address>> obj)
+            public int GetHashCode(KeyValuePair<uint, List<Address>> obj)
             {
-                int hash = 17*31 + obj.Key;
+                int hash = 17*31 + (int) obj.Key;
                 for(int i=0;i<obj.Value.Count;i++)
                 {
                     hash = hash * 31 + (obj.Value[i]).GetHashCode();
@@ -168,7 +168,7 @@ namespace ETWAnalyzer.TraceProcessorHelpers
                 {
                     myStackList.Add(stack.Frames[i].Address);
                 }
-                var key = new KeyValuePair<int, List<Address>>(stack.ProcessId, myStackList);
+                var key = new KeyValuePair<uint, List<Address>>(stack.ProcessId, myStackList);
                 if (myFrameAddressMap.TryGetValue(key, out string stackTrace) )
                 {
                     return stackTrace;
@@ -182,7 +182,7 @@ namespace ETWAnalyzer.TraceProcessorHelpers
                         lret.AppendLine(UnknownMethod);
                     }
 
-                    var frameKey = new KeyValuePair<int, Address>(stack.ProcessId, frame.RelativeVirtualAddress);
+                    var frameKey = new KeyValuePair<uint, Address>(stack.ProcessId, frame.RelativeVirtualAddress);
                
 
                     if( frame.Symbol != null)
@@ -198,7 +198,7 @@ namespace ETWAnalyzer.TraceProcessorHelpers
                 }
 
                 string retStr = lret.ToString();
-                myFrameAddressMap[new KeyValuePair<int, List<Address>>(key.Key, new List<Address>(myStackList))] = retStr;
+                myFrameAddressMap[new KeyValuePair<uint, List<Address>>(key.Key, new List<Address>(myStackList))] = retStr;
 
                 return lret.ToString();
             }

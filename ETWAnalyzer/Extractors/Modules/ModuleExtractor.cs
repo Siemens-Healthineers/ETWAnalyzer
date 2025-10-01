@@ -60,7 +60,7 @@ namespace ETWAnalyzer.Extractors.Modules
 
                 if( process.CreateTime != null)
                 {
-                    createTime = process.CreateTime.Value.DateTimeOffset;
+                    createTime = process.CreateTime.Value.ConvertToTime();
                 }
 
                 if (process.Images != null)

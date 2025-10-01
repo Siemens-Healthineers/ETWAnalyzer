@@ -45,10 +45,10 @@ namespace ETWAnalyzer_uTest
                 if (myInteralExtract == null)
                 {
                     var tmp = new ETWExtract();
-                    using ITraceProcessor processor = TraceProcessor.Create(TestData.ServerEtlFile, new TraceProcessorSettings
+                    using ITraceProcessor processor = new TraceProcessorBuilder().WithSettings(new TraceProcessorSettings
                     {
                         AllowLostEvents = true,
-                    });
+                    }).Build(TestData.ServerEtlFile);
 
                     MachineDetailsExtractor extractor = new();
                     FileExtractor fileExtractor = new();

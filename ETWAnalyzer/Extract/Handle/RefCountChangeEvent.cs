@@ -36,7 +36,7 @@ namespace ETWAnalyzer.Extract.Handle
         /// <param name="processIdx"></param>
         /// <param name="threadId"></param>
         /// <param name="stackIdx"></param>
-        public RefCountChangeEvent(TraceTimestamp time, int refCountChange, ETWProcessIndex processIdx, int threadId, StackIdx stackIdx)
+        public RefCountChangeEvent(Timestamp time, int refCountChange, ETWProcessIndex processIdx, uint threadId, StackIdx stackIdx)
             : base(time, processIdx, threadId, stackIdx)
         {
             RefCountChange = refCountChange;
@@ -49,14 +49,14 @@ namespace ETWAnalyzer.Extract.Handle
         /// <param name="refCountChange"></param>
         /// <param name="process"></param>
         /// <param name="threadId"></param>
-        public RefCountChangeEvent(TraceTimestamp time, int refCountChange, ETWProcessIndex process, int threadId)
+        public RefCountChangeEvent(Timestamp time, int refCountChange, ETWProcessIndex process, uint threadId)
             : this(time, refCountChange, process, threadId, StackIdx.None)
         { }
 
         /// <summary>
         /// 
         /// </summary>
-        public RefCountChangeEvent() : this(default(TraceTimestamp), 0, ETWProcessIndex.Invalid, 0)
+        public RefCountChangeEvent() : this(default(Timestamp), 0, ETWProcessIndex.Invalid, 0)
         { }
     }
 }

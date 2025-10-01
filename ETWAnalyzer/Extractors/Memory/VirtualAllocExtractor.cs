@@ -1,15 +1,18 @@
 ﻿using ETWAnalyzer.Extract;
 using ETWAnalyzer.Infrastructure;
+using ETWAnalyzer.TraceProcessorHelpers;
 using Microsoft.Windows.EventTracing;
 using Microsoft.Windows.EventTracing.Processes;
+using Microsoft.Windows.EventTracing.Streaming;
 using Microsoft.Windows.EventTracing.Symbols;
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using TraceReloggerLib;
 
 namespace ETWAnalyzer.Extractors.Memory
 {
-    internal class VirtualAllocExtractor : ExtractorBase
+    internal class VirtualAllocExtractor : ExtractorBase, IUnparsedEventConsumer
     {
         Guid PageFaultV2Guid = new Guid("3d6fa8d3-fe05-11d0-9dda-00c04fd7ba7c");
         IPendingResult<IStackDataSource> myStackSource;
@@ -29,10 +32,18 @@ namespace ETWAnalyzer.Extractors.Memory
             myStackSource = processor.UseStacks();
             myProcessesSource = processor.UseProcesses();
             mySymbolDataSource = processor.UseSymbols();
+            processor.UseStreaming().UseUnparsedEvents(this, new Guid[] { PageFaultV2Guid });
+        }
 
-            TraceEventCallback handleKernelMemoryEvent = (EventContext eventContext) =>
-            {
-                ClassicEvent classicEvent = eventContext.Event.AsClassicEvent;
+        public override void Extract(ITraceProcessor processor, ETWExtract results)
+        {
+            using var logger = new PerfLogger("Extract VirtualAlloc");
+            Console.WriteLine($"Total virtual alloc/free events: {myVirtualAllocOrFreeEvents.Count}");
+        }
+
+        public void Process(TraceEvent eventContext)
+        {
+                ClassicEvent classicEvent = eventContext.AsClassicEvent;
 
                 if (classicEvent.Version < 2)
                 {
@@ -77,22 +88,17 @@ namespace ETWAnalyzer.Extractors.Memory
 
                 AddressRange addressRange = new AddressRange(new Address(eventData.Base),
                     unchecked((long)eventData.Size));
-                int processId = unchecked((int)eventData.ProcessId);
+                uint processId = eventData.ProcessId;
                 VirtualAllocFlags flags = eventData.Flags;
-                TraceTimestamp timestamp = classicEvent.Timestamp;
-                int threadId = classicEvent.ThreadId.Value;
+                Timestamp timestamp = classicEvent.Timestamp;
+                uint threadId = classicEvent.ThreadId.Value;
                 myVirtualAllocOrFreeEvents.Add(new VirtualAllocOrFreeEvent(addressRange, processId, flags, timestamp,
                     threadId, myProcessesSource, myStackSource));
-            };
-
-            processor.Use(new Guid[] { PageFaultV2Guid }, handleKernelMemoryEvent);
-            
         }
 
-        public override void Extract(ITraceProcessor processor, ETWExtract results)
+        public void ProcessFailure(FailureInfo failureInfo)
         {
-            using var logger = new PerfLogger("Extract VirtualAlloc");
-            Console.WriteLine($"Total virtual alloc/free events: {myVirtualAllocOrFreeEvents.Count}");
+            failureInfo.ThrowAndLogParseFailure();
         }
 
         struct VirtualAlloc64EventData
@@ -137,10 +143,10 @@ namespace ETWAnalyzer.Extractors.Memory
         {
             readonly IPendingResult<IProcessDataSource> pendingProcessDataSource;
             readonly IPendingResult<IStackDataSource> pendingStackDataSource;
-            readonly int threadId;
+            readonly uint threadId;
 
-            public VirtualAllocOrFreeEvent(AddressRange addressRange, int processId, VirtualAllocFlags flags,
-                TraceTimestamp timestamp, int threadId, IPendingResult<IProcessDataSource> pendingProcessDataSource,
+            public VirtualAllocOrFreeEvent(AddressRange addressRange, uint processId, VirtualAllocFlags flags,
+                Timestamp timestamp, uint threadId, IPendingResult<IProcessDataSource> pendingProcessDataSource,
                 IPendingResult<IStackDataSource> pendingStackDataSource)
             {
                 this.pendingProcessDataSource = pendingProcessDataSource;
@@ -154,9 +160,9 @@ namespace ETWAnalyzer.Extractors.Memory
             }
 
             public AddressRange AddressRange { get; }
-            public int ProcessId { get; }
+            public uint ProcessId { get; }
             public VirtualAllocFlags Flags { get; }
-            public TraceTimestamp Timestamp { get; }
+            public Timestamp Timestamp { get; }
 
             public IStackSnapshot Stack => pendingStackDataSource.Result.GetStack(Timestamp, threadId);
 

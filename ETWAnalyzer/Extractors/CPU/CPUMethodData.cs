@@ -221,10 +221,10 @@ namespace ETWAnalyzer.Extractors.CPU
         /// <summary>
         /// Unique thread Ids this method was running on
         /// </summary>
-        public HashSet<int> ThreadIds
+        public HashSet<uint> ThreadIds
         {
             get;
-        } = new HashSet<int>();
+        } = new HashSet<uint>();
 
         /// <summary>
         /// Get for each sample the call stack depth from the bottom frame
@@ -345,7 +345,7 @@ namespace ETWAnalyzer.Extractors.CPU
         /// <param name="threadId"></param>
         /// <param name="cpuAffinityMask"></param>
         /// <param name="debugData"></param>
-        public void AddForExtendedMetrics(CPUStats cpuStats, CPUNumber cpu, float start, float end, int threadId, long cpuAffinityMask, string debugData)
+        public void AddForExtendedMetrics(CPUStats cpuStats, CPUNumber cpu, float start, float end, uint threadId, long cpuAffinityMask, string debugData)
         {
             if (cpuStats?.ExtendedCPUMetrics != null)
             {
@@ -383,7 +383,7 @@ namespace ETWAnalyzer.Extractors.CPU
             public long StartTimeNanoS { get; set; }
 
             public long DurationNanoS { get; set; }
-            public int ThreadId { get; set; }
+            public uint ThreadId { get; set; }
             public bool DeepSleepReady { get; set; }
         }
 
@@ -393,7 +393,7 @@ namespace ETWAnalyzer.Extractors.CPU
         /// </summary>
         /// <param name="slice">Thread activity which contains context switch events.</param>
         /// <param name="existing">AddExtendedReadyMetrics will be called with the same slice for all frames in a stacktrace. We can reuse the instance to spare memory.</param>
-        internal ReadyEvent AddExtendedReadyMetrics(ICpuThreadActivity2 slice, ReadyEvent existing)
+        internal ReadyEvent AddExtendedReadyMetrics(ICpuThreadActivity slice, ReadyEvent existing)
         {
             lock (this)
             {
@@ -417,7 +417,7 @@ namespace ETWAnalyzer.Extractors.CPU
                 {
                     lret = new ReadyEvent
                     {
-                        StartTimeNanoS = (slice.SwitchIn.ContextSwitch.Timestamp - slice.ReadyDuration.Value).RelativeTimestamp.Nanoseconds,
+                        StartTimeNanoS = (slice.SwitchIn.ContextSwitch.Timestamp - slice.ReadyDuration.Value).Nanoseconds,
                         DurationNanoS = slice.ReadyDuration.Value.Nanoseconds,
                         ThreadId = slice.Thread.Id,
                         // We are interested in the performance impact of deep sleep states which is the processor power up time.
@@ -449,7 +449,7 @@ namespace ETWAnalyzer.Extractors.CPU
             WaitTimeRange.Add(Timestamp.Zero, waitMs);
             FirstOccurrenceSeconds = firstOccurrence;
             LastOccurrenceSeconds = lastOccurrence;
-            for (int i = 1; i <= threadCount; i++)
+            for (uint i = 1; i <= threadCount; i++)
             {
                 ThreadIds.Add(i);
             }

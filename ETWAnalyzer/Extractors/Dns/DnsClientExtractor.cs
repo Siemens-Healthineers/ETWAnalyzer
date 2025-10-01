@@ -101,7 +101,7 @@ namespace ETWAnalyzer.Extractors.Dns
             DnsQueryKey key = new DnsQueryKey(ev.Fields[PropertyQueryName].AsString, idx);
             myQueryState[key] = new QueryState
             {
-                Start = ev.Timestamp.DateTimeOffset,
+                Start = ev.Timestamp.ConvertToTime(),
                 ProcessIndex = idx,
             };
         }
@@ -117,7 +117,7 @@ namespace ETWAnalyzer.Extractors.Dns
             DnsQueryKey key = new DnsQueryKey(ev.Fields[PropertyQueryName].AsString, idx);
             if (myQueryState.TryGetValue(key, out QueryState state))
             {
-                state.Duration = ev.Timestamp.DateTimeOffset - state.Start;
+                state.Duration = ev.Timestamp.ConvertToTime() - state.Start;
 
                 var dns = new DnsEvent()
                 {

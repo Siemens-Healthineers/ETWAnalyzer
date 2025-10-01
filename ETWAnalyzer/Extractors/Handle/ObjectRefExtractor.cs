@@ -8,12 +8,14 @@ using ETWAnalyzer.Infrastructure;
 using ETWAnalyzer.TraceProcessorHelpers;
 using Microsoft.Windows.EventTracing;
 using Microsoft.Windows.EventTracing.Processes;
+using Microsoft.Windows.EventTracing.Streaming;
 using Microsoft.Windows.EventTracing.Symbols;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
+using TraceReloggerLib;
 
 namespace ETWAnalyzer.Extractors.Handle
 {
@@ -21,7 +23,7 @@ namespace ETWAnalyzer.Extractors.Handle
     /// <summary>
     /// Object Reference Extractor
     /// </summary>
-    internal class ObjectRefExtractor : ExtractorBase
+    internal class ObjectRefExtractor : ExtractorBase, IUnparsedEventConsumer
     {
         /// <summary>
         /// Guid for Object Tracing which contains the events for Handle and ObjectRef tracing
@@ -118,36 +120,10 @@ namespace ETWAnalyzer.Extractors.Handle
             myStackSource = processor.UseStacks();
             myProcessesSource = processor.UseProcesses();
             mySymbolDataSource = processor.UseSymbols();
-
-            TraceEventCallback handleKernelMemoryEvent = (EventContext eventContext) =>
-            {
-                ClassicEvent classicEvent = eventContext.Event.AsClassicEvent;
-
-                int eventId = classicEvent.Id;
-                int processId = 4;
-                if (classicEvent.ProcessId != null) // assign unknown processes to System 
-                {
-                    processId = unchecked((int)classicEvent.ProcessId.Value);
-                }
-                TraceTimestamp timestamp = classicEvent.Timestamp;
-                int threadId = classicEvent.ThreadId.GetValueOrDefault();
-
-                if( classicEvent.ProviderId == ObTraceGuid)
-                {
-                    ParseObjectProviderEvent(classicEvent, eventId, processId, timestamp, threadId);
-                }
-                else if( classicEvent.ProviderId == MapTraceGuid)
-                {
-                    ParseVAMapEvent(classicEvent, eventId, processId, timestamp, threadId);
-                }
-
-            };
-           
-            processor.Use(new Guid[] { ObTraceGuid, MapTraceGuid }, handleKernelMemoryEvent);
-
+            processor.UseStreaming().UseUnparsedEvents(this, new Guid[] { ObTraceGuid, MapTraceGuid });
         }
 
-        private unsafe void ParseVAMapEvent(ClassicEvent classicEvent, int eventId, int processId, TraceTimestamp timestamp, int threadId)
+        private unsafe void ParseVAMapEvent(ClassicEvent classicEvent, int eventId, uint processId, Timestamp timestamp, uint threadId)
         {
             switch (eventId)
             {
@@ -194,7 +170,7 @@ namespace ETWAnalyzer.Extractors.Handle
             }
         }
 
-        private unsafe void ParseObjectProviderEvent(ClassicEvent classicEvent, int eventId, int processId, TraceTimestamp timestamp, int threadId)
+        private unsafe void ParseObjectProviderEvent(ClassicEvent classicEvent, int eventId, uint processId, Timestamp timestamp, uint threadId)
         {
             switch (eventId)
             {
@@ -281,7 +257,7 @@ namespace ETWAnalyzer.Extractors.Handle
                     myObjectTraceEvents.Add(new HandleDCEndEvent
                     {
                         TimeStamp = timestamp,
-                        ProcessId = (int) handleDCEnd.ProcessId,
+                        ProcessId = handleDCEnd.ProcessId,
                         ThreadId = threadId,
 
                         ObjectPtr = handleDCEnd.ObjectPtr,
@@ -432,15 +408,16 @@ namespace ETWAnalyzer.Extractors.Handle
                     continue;
                 }
 
-                var processIdx = results.GetProcessIndexByPidAtTime(ev.ProcessId, ev.TimeStamp.DateTimeOffset);
+                DateTimeOffset evTime = ev.TimeStamp.ConvertToTime();
+                var processIdx = results.GetProcessIndexByPidAtTime(ev.ProcessId, evTime);
                 if (processIdx == ETWProcessIndex.Invalid)
                 {
                     // some events are logged only after process exit while cleaning up the handle table. Since we do not know how long the process did run we might subtract too much so we 
                     // do a few reasonable times here. 
-                    processIdx = results.GetProcessIndexByPidAtTime(ev.ProcessId, ev.TimeStamp.DateTimeOffset-TimeSpan.FromMilliseconds(2));
+                    processIdx = results.GetProcessIndexByPidAtTime(ev.ProcessId, evTime - TimeSpan.FromMilliseconds(2));
                     if (processIdx == ETWProcessIndex.Invalid)
                     {
-                        processIdx = results.GetProcessIndexByPidAtTime(WindowsConstants.SystemProcessId, ev.TimeStamp.DateTimeOffset);  //otherwise assign it to System 
+                        processIdx = results.GetProcessIndexByPidAtTime(WindowsConstants.SystemProcessId, evTime);  //otherwise assign it to System 
                         if (processIdx == ETWProcessIndex.Invalid)
                         {     
                             if (processIdx == ETWProcessIndex.Invalid)
@@ -527,7 +504,7 @@ namespace ETWAnalyzer.Extractors.Handle
 
                         break;
                     case DuplicateObjectEvent duplicateObjectEvent:
-                        var sourceProcessIndex = results.GetProcessIndexByPidAtTime(duplicateObjectEvent.SourceProcessId, ev.TimeStamp.DateTimeOffset);
+                        var sourceProcessIndex = results.GetProcessIndexByPidAtTime(duplicateObjectEvent.SourceProcessId, ev.TimeStamp.ConvertToTime());
                         if (processIdx == ETWProcessIndex.Invalid)
                         {
                             continue;
@@ -648,6 +625,35 @@ namespace ETWAnalyzer.Extractors.Handle
                     clean.HandleCreateEvents = null;
                 }
             }
+        }
+
+        public void Process(TraceEvent eventData)
+        {
+            ClassicEvent classicEvent = eventData.AsClassicEvent;
+
+            int eventId = classicEvent.Id;
+            uint processId = 4;
+            if (classicEvent.ProcessId != null) // assign unknown processes to System 
+            {
+                processId = classicEvent.ProcessId.Value;
+            }
+            Timestamp timestamp = classicEvent.Timestamp;
+            uint threadId = classicEvent.ThreadId.GetValueOrDefault();
+
+            if (classicEvent.ProviderId == ObTraceGuid)
+            {
+                ParseObjectProviderEvent(classicEvent, eventId, processId, timestamp, threadId);
+            }
+            else if (classicEvent.ProviderId == MapTraceGuid)
+            {
+                ParseVAMapEvent(classicEvent, eventId, processId, timestamp, threadId);
+            }
+        }
+
+
+        public void ProcessFailure(FailureInfo failureInfo)
+        {
+            failureInfo.ThrowAndLogParseFailure();
         }
     }
 }

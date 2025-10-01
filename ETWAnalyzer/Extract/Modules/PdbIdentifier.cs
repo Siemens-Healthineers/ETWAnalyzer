@@ -28,14 +28,14 @@ namespace ETWAnalyzer.Extract.Modules
         /// Number of PDB recompilations since PDB was created or completely rebuilt
         /// </summary>
         [JsonIgnore]
-        public int Age { get => DeserializeProperties().myAge; } 
+        public uint Age { get => DeserializeProperties().myAge; } 
 
         /// <summary>
         /// Used during de/serialization to get a more compact serialized format
         /// </summary>
         public string Pdb { get; set; }
 
-        int myAge;
+        uint myAge;
         Guid myId;
         string myName;
 
@@ -52,7 +52,7 @@ namespace ETWAnalyzer.Extract.Modules
                 }
 
                 myId = Guid.Parse(parts[0]);
-                myAge = int.Parse(parts[1]);
+                myAge = uint.Parse(parts[1]);
                 myName = String.Join(" ", parts.Skip(2));
             }
 
@@ -110,7 +110,7 @@ namespace ETWAnalyzer.Extract.Modules
         /// <param name="name"></param>
         /// <param name="id"></param>
         /// <param name="age"></param>
-        public PdbIdentifier(string name, Guid id, int age)
+        public PdbIdentifier(string name, Guid id, uint age)
         {
             if( name == null )
             {

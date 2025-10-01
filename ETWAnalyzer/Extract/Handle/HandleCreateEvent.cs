@@ -35,7 +35,7 @@ namespace ETWAnalyzer.Extract.Handle
         /// <param name="processIdx"></param>
         /// <param name="threadId"></param>
         /// <param name="stackIdx"></param>
-        public HandleCreateEvent(TraceTimestamp time, ulong handleValue, ETWProcessIndex processIdx, int threadId, StackIdx stackIdx)
+        public HandleCreateEvent(Timestamp time, ulong handleValue, ETWProcessIndex processIdx, uint threadId, StackIdx stackIdx)
             : base(time, processIdx, threadId, stackIdx)
         {
             HandleValue = handleValue;
@@ -44,7 +44,7 @@ namespace ETWAnalyzer.Extract.Handle
         /// <summary>
         /// 
         /// </summary>
-        public HandleCreateEvent() : this(default(TraceTimestamp), 0, ETWProcessIndex.Invalid, 0, StackIdx.None)
+        public HandleCreateEvent() : this(default(Timestamp), 0, ETWProcessIndex.Invalid, 0, StackIdx.None)
         { }
 
     }

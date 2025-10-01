@@ -61,7 +61,7 @@ namespace ETWAnalyzer.Extract
         /// <returns>Found process object or a KeyNotFoundException is thrown</returns>
         /// <exception cref="ArgumentNullException">When pid is 0 which is invalid</exception>
         /// <exception cref="KeyNotFoundException">Process could not be found with given <paramref name="pid"/> and <paramref name="startTime"/></exception>
-        ETWProcess GetProcessByPID(int pid, DateTimeOffset startTime);
+        ETWProcess GetProcessByPID(uint pid, DateTimeOffset startTime);
 
 
         /// <summary>
@@ -72,7 +72,7 @@ namespace ETWAnalyzer.Extract
         /// <returns>ETWProcessIndex on success, otherwise a KeyNotFoundException is thrown.</returns>
         /// <exception cref="ArgumentNullException">When pid is 0 which is invalid</exception>
         /// <exception cref="KeyNotFoundException">Process could not be found with given <paramref name="pid"/> and <paramref name="startTime"/></exception>
-        ETWProcessIndex GetProcessIndexByPID(int pid, DateTimeOffset startTime);
+        ETWProcessIndex GetProcessIndexByPID(uint pid, DateTimeOffset startTime);
 
 
         /// <summary>
@@ -82,7 +82,7 @@ namespace ETWAnalyzer.Extract
         /// <param name="timeWhenProcessDidExist">Time when process was running.</param>
         /// <returns>EtwProcessIndex.Invalid or a valid index on success. It does not throw if nothing could be found.</returns>
         /// <exception cref="ArgumentException">When pid is 0 or smaller.</exception>
-        public ETWProcessIndex GetProcessIndexByPidAtTime(int pid, DateTimeOffset timeWhenProcessDidExist);
+        public ETWProcessIndex GetProcessIndexByPidAtTime(uint pid, DateTimeOffset timeWhenProcessDidExist);
 
         /// <summary>
         /// Non throwing version
@@ -92,6 +92,6 @@ namespace ETWAnalyzer.Extract
         /// <returns>Found process instance or null</returns>
         /// <exception cref="ArgumentNullException">Pid is zero</exception>
         /// <exception cref="InvalidOperationException">Pid is negative.</exception>
-        ETWProcess TryGetProcessByPID(int pid, DateTimeOffset startTime);
+        ETWProcess TryGetProcessByPID(uint pid, DateTimeOffset startTime);
     }
 }

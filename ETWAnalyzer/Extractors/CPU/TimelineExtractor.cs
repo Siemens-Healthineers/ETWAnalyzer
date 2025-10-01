@@ -1,5 +1,6 @@
 ﻿using ETWAnalyzer.Extract;
 using ETWAnalyzer.Extract.CPU;
+using ETWAnalyzer.TraceProcessorHelpers;
 using Microsoft.Windows.EventTracing.Cpu;
 using System;
 using System.Collections.Generic;
@@ -57,7 +58,7 @@ namespace ETWAnalyzer.Extractors.CPU
         /// <param name="sample">CPU sample ETW event</param>
         public void AddSample(ProcessKey process, ICpuSample sample)
         {
-            DateTimeOffset sampleTime = sample.Timestamp.DateTimeOffset;
+            DateTimeOffset sampleTime = sample.Timestamp.ConvertToTime();
 
             lock (myLock)
             {

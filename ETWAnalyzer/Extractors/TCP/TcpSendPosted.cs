@@ -107,7 +107,7 @@ namespace ETWAnalyzer.Extractors.TCP
             NumBytes = ev.Fields[TcpETWConstants.NumBytesField].AsUInt32;
             SndNext = ev.Fields[TcpETWConstants.SndNxtField].AsUInt32;
             Injected = ev.Fields[TcpETWConstants.InjectedField].AsString;
-            Timestamp = ev.Timestamp.DateTimeOffset;
+            Timestamp = ev.Timestamp.ConvertToTime();
         }
 
         public override string ToString()

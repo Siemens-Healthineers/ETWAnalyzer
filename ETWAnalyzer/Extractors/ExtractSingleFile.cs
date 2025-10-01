@@ -169,13 +169,13 @@ namespace ETWAnalyzer.Extractors
             List<string> outputFiles = new();
             try
             {
-
-                using ITraceProcessor processor = TraceProcessor.Create(myEtlFile, new TraceProcessorSettings
+                TraceProcessorBuilder builder = new TraceProcessorBuilder().WithSettings(new TraceProcessorSettings
                 {
                     AllowLostEvents = true,
                     AllowTimeInversion = true,
-                    ToolkitPath = ETWAnalyzer.TraceProcessorHelpers.Extensions.GetToolkitPath()
                 });
+
+                using ITraceProcessor processor = builder.Build(myEtlFile);
 
                 bool needSymbols = false;
                 foreach (ExtractorBase preParse in myExtractors)

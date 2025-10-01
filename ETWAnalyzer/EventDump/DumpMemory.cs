@@ -94,7 +94,7 @@ namespace ETWAnalyzer.EventDump
             public string Baseline;
             public ModuleDefinition Module { get; internal set; }
             public DateTimeOffset SessionStart { get; internal set; }
-            public int SessionId { get; set; }
+            public uint SessionId { get; set; }
 
         }
 
@@ -243,7 +243,7 @@ namespace ETWAnalyzer.EventDump
                                 SharedCommitInMiB = mem2.SharedCommitSizeInMiB,
                                 SessionEnd = file.Extract.SessionEnd,
                                 Process = process,
-                                SessionId = process.SessionId,
+                                SessionId = (uint) process.SessionId,
                                 ProcessName = process.GetProcessName(UsePrettyProcessName),
                                 WorkingSetMiB = mem2.WorkingSetInMiB,
                                 WorkingsetPrivateMiB = mem2.WorkingsetPrivateInMiB,
@@ -290,7 +290,7 @@ namespace ETWAnalyzer.EventDump
                         SharedCommitInMiB = mem2.SharedCommitSizeInMiB,
                         SessionEnd = file.Extract.SessionEnd,
                         Process = process,
-                        SessionId = process.SessionId,
+                        SessionId = (uint) process.SessionId,
                         ProcessName = process.GetProcessName(UsePrettyProcessName),
                         WorkingSetMiB = mem2.WorkingSetInMiB,
                         WorkingsetPrivateMiB = mem2.WorkingsetPrivateInMiB,

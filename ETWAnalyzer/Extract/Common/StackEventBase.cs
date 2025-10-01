@@ -25,7 +25,7 @@ namespace ETWAnalyzer.Extract.Common
         /// <summary>
         /// Thread id of logging thread.
         /// </summary>
-        int ThreadId { get; }
+        uint ThreadId { get; }
 
         /// <summary>
         /// Event time since trace start in nanoseconds.
@@ -71,7 +71,7 @@ namespace ETWAnalyzer.Extract.Common
         /// <summary>
         /// Thread Id
         /// </summary>
-        public int ThreadId { get; set; }
+        public uint ThreadId { get; set; }
 
         /// <summary>
         /// Used by serializer to construct a valid instance
@@ -80,12 +80,9 @@ namespace ETWAnalyzer.Extract.Common
         /// <param name="processIdx"></param>
         /// <param name="threadId"></param>
         /// <param name="stackIdx"></param>
-        public StackEventBase(TraceTimestamp time, ETWProcessIndex processIdx, int threadId, StackIdx stackIdx)
+        public StackEventBase(Timestamp time, ETWProcessIndex processIdx, uint threadId, StackIdx stackIdx)
         {
-            if (time.HasValue)
-            {
-                TimeNs = time.Nanoseconds;
-            }
+            TimeNs = time.Nanoseconds;
             StackIdx = stackIdx;
             ProcessIdx = processIdx;
             ThreadId = threadId;

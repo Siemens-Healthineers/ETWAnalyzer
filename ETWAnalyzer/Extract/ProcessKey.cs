@@ -28,7 +28,7 @@ namespace ETWAnalyzer.Extract
         /// <summary>
         /// Setters are needed to deserialize data with Json.NET!
         /// </summary>
-        public int Pid { get; set; }
+        public uint Pid { get; set; }
 
 
         /// <summary>
@@ -43,7 +43,7 @@ namespace ETWAnalyzer.Extract
         /// <param name="processName">Name of process (including exe)</param>
         /// <param name="pid">Process id</param>
         /// <param name="startTime">Process Start time</param>
-        public ProcessKey(string processName, int pid, DateTimeOffset startTime)
+        public ProcessKey(string processName, uint pid, DateTimeOffset startTime)
         {
             Name = processName ?? throw new ArgumentNullException(nameof(processName));
             Pid = pid;
@@ -79,7 +79,7 @@ namespace ETWAnalyzer.Extract
 
             Name = serialized.Substring(0, startPid);
             string strInt = serialized.Substring(startPid+1, stopPid - startPid - 1);
-            Pid = int.Parse(strInt, CultureInfo.InvariantCulture);
+            Pid = uint.Parse(strInt, CultureInfo.InvariantCulture);
             string time = null;
             if( stopPid < serialized.Length-1) // we have a time string
             {
@@ -163,7 +163,7 @@ namespace ETWAnalyzer.Extract
         {
             int hash = 17 * 31 + Name.GetHashCode();
             hash = hash * 31 + StartTime.GetHashCode();
-            hash = hash * 31 + Pid;
+            hash = hash * 31 + (int) Pid;
             return hash;
         }
 

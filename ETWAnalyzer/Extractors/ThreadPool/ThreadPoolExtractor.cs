@@ -51,13 +51,13 @@ namespace ETWAnalyzer.Extractors
                     continue;
                 }
 
-                var pk = new ProcessKey(ins.Process.ImageName, ins.Process.Id, ins.Process.CreateTime.HasValue ? ins.Process.CreateTime.Value.DateTimeOffset : default(DateTimeOffset));
+                var pk = new ProcessKey(ins.Process.ImageName, ins.Process.Id, ins.Process.CreateTime.HasValue ? ins.Process.CreateTime.Value.ConvertToTime() : default(DateTimeOffset));
 
                 IList<ThreadPoolStarvationInfo> value;
                 ThreadPoolStarvationInfo info = new ThreadPoolStarvationInfo()
                 {
                     NewWorkerThreadCount = ins.Fields.Dictionary["NewWorkerThreadCount"].AsUInt32,
-                    DateTime = ins.Timestamp.DateTimeOffset,
+                    DateTime = ins.Timestamp.ConvertToTime(),
                     TotalSeconds = ins.Timestamp.TotalSeconds
                 };
                 if (results.ThreadPool.PerProcessThreadPoolStarvations.TryGetValue(pk, out value))

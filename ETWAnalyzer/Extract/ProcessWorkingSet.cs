@@ -1,6 +1,7 @@
 ﻿//// SPDX-FileCopyrightText:  © 2022 Siemens Healthcare GmbH
 //// SPDX-License-Identifier:   MIT
 
+using ETWAnalyzer.TraceProcessorHelpers;
 using Microsoft.Windows.EventTracing;
 using Microsoft.Windows.EventTracing.Processes;
 using System;
@@ -76,7 +77,7 @@ namespace ETWAnalyzer.Extract
             DateTimeOffset createTime = default;
             if (process.CreateTime.HasValue)
             {
-                createTime = process.CreateTime.Value.DateTimeOffset;
+                createTime = process.CreateTime.Value.ConvertToTime();
             }
             ProcessKey key = new ProcessKey(process.ImageName, process.Id, createTime);
             return key;

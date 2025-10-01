@@ -4,6 +4,7 @@
 using ETWAnalyzer.Analyzers.Infrastructure;
 using ETWAnalyzer.Commands;
 using ETWAnalyzer.Extract;
+using ETWAnalyzer.Extractors;
 using ETWAnalyzer.Infrastructure;
 using ETWAnalyzer.ProcessTools;
 using ETWAnalyzer.TraceProcessorHelpers;
@@ -636,8 +637,8 @@ namespace ETWAnalyzer.EventDump
                         PerformedAt = json.PerformedAt,
                         TestCase = json.TestName,
                         ReturnCode = process.ReturnCode,
-                        ParentProcessId = process.ParentPid,
-                        SessionId = process.SessionId,
+                        ParentProcessId = (uint) process.ParentPid,
+                        SessionId = (uint) process.SessionId,
                         User = process.Identity ?? "",
                         SourceFile = json.FileName,
                         StartTime = process.StartTime == DateTimeOffset.MinValue ? (DateTimeOffset?)null : process.StartTime.AddSeconds((-1.0d) * zeroS),
@@ -662,14 +663,17 @@ namespace ETWAnalyzer.EventDump
         protected override List<MatchData> DumpETL(string etlFile)
         {
             List<MatchData> lret = new();
-            using ITraceProcessor processor = TraceProcessor.Create(etlFile, new TraceProcessorSettings
+            var builder = new TraceProcessorBuilder().WithSettings(new TraceProcessorSettings()
             {
                 AllowLostEvents = true,
-                ToolkitPath = ETWAnalyzer.TraceProcessorHelpers.Extensions.GetToolkitPath()
+                AllowTimeInversion = true,
             });
+
+            using ITraceProcessor processor = builder.Build(etlFile);
 
             IPendingResult<IProcessDataSource> processes = processor.UseProcesses();
             ITraceMetadata meta = processor.UseMetadata();
+            StaticTraceProcessorContext.MetaData = meta;
             processor.Process();
 
             ETWExtract extract = new();
@@ -683,16 +687,16 @@ namespace ETWAnalyzer.EventDump
                     CmdLine = String.IsNullOrEmpty(process.CommandLine) ? process.ImageName : process.CommandLine,
                     ProcessID = process.Id,
                     ProcessName = String.Intern(process.ImageName),
-                    ParentPid = process.ParentId,
+                    ParentPid = (int) process.ParentId,
                     IsNew = process.CreateTime.HasValue,
                     HasEnded = process.ExitTime.HasValue,
                     ReturnCode = process.ExitCode,
 #pragma warning disable CA1416
                     Identity = process.User.Value ?? "",
 #pragma warning restore CA1416
-                    SessionId = process.SessionId,
-                    StartTime = process.CreateTime.HasValue ? process.CreateTime.Value.DateTimeOffset : DateTimeOffset.MinValue,
-                    EndTime = process.ExitTime.HasValue ? process.ExitTime.Value.DateTimeOffset : DateTimeOffset.MaxValue,
+                    SessionId = (int) process.SessionId,
+                    StartTime = process.CreateTime.HasValue ? process.CreateTime.Value.ConvertToTime() : DateTimeOffset.MinValue,
+                    EndTime = process.ExitTime.HasValue ? process.ExitTime.Value.ConvertToTime() : DateTimeOffset.MaxValue,
                 }).ToList(),
             };
 
@@ -921,17 +925,17 @@ namespace ETWAnalyzer.EventDump
             /// <summary>
             /// Parent process id
             /// </summary>
-            public int ParentProcessId { get; set; }
+            public uint ParentProcessId { get; set; }
 
             /// <summary>
             /// Windows Session Id
             /// </summary>
-            public int SessionId { get; set; }
+            public uint SessionId { get; set; }
 
             /// <summary>
             /// Process Id
             /// </summary>
-            internal int ProcessId { get; set; }
+            internal uint ProcessId { get; set; }
 
             /// <summary>
             /// User SID or translated SID when extraction was done on generating machine or it was a well known SID.
@@ -1084,8 +1088,8 @@ namespace ETWAnalyzer.EventDump
                 hash = hash * 31 + LifeTime.GetValueOrDefault().GetHashCode();
                 hash = hash * 31 + (CmdLine ?? "").GetHashCode();
                 hash = hash * 31 + ProcessWithPid.GetHashCode();
-                hash = hash * 31 + ParentProcessId;
-                hash = hash * 31 + SessionId;
+                hash = hash * 31 + (int) ParentProcessId;
+                hash = hash * 31 + (int) SessionId;
                 return hash;
             }
 
@@ -1123,12 +1127,12 @@ namespace ETWAnalyzer.EventDump
             public int ExitedProcessCount { get; private set; }
             public int PermanentProcessCount { get; private set; }
             public IEnumerable<ETWProcess> AllProcessIds => allProcessIds;
-            public IEnumerable<int> AllSessionIds => allSessionIds;
+            public IEnumerable<uint> AllSessionIds => allSessionIds;
             public IEnumerable<string> AllUsers => allUsers;
             public IEnumerable<string> AllFiles => allFiles;
 
             private readonly HashSet<ETWProcess> allProcessIds = [];
-            private readonly HashSet<int> allSessionIds = [];
+            private readonly HashSet<uint> allSessionIds = [];
             private readonly HashSet<string> allUsers   = [];
             private readonly HashSet<string> allFiles   = [];
 

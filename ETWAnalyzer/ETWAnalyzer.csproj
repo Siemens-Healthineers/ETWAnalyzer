@@ -3,7 +3,7 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
-    <TargetFrameworks>net48;net8.0-windows</TargetFrameworks>
+    <TargetFrameworks>net8.0-windows</TargetFrameworks>
     <RootNamespace>ETWAnalyzer</RootNamespace>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <PackageId>ETWAnalyzer</PackageId>
@@ -81,8 +81,8 @@
     <PackageReference Include="Microsoft.Diagnostics.Tracing.TraceEvent">
       <Version>3.1.23</Version>
     </PackageReference>
-    <PackageReference Include="Microsoft.Windows.EventTracing.Processing.All">
-      <Version>1.12.10</Version>
+    <PackageReference Include="Microsoft.Windows.EventTracing">
+      <Version>2.0.711-preview</Version>
     </PackageReference>
     <PackageReference Include="Newtonsoft.Json">
       <Version>13.0.3</Version>

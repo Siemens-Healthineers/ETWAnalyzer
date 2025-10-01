@@ -205,7 +205,7 @@ namespace ETWAnalyzer.Extractors.CPU
                     DateTimeOffset createTime = DateTimeOffset.MinValue;
                     if ((sample?.Process?.CreateTime).HasValue)
                     {
-                        createTime = sample.Process.CreateTime.Value.DateTimeOffset;
+                        createTime = sample.Process.CreateTime.Value.ConvertToTime();
                     }
 
                     string imageName = sample?.Process?.ImageName;
@@ -240,7 +240,7 @@ namespace ETWAnalyzer.Extractors.CPU
 
                     if ((process?.CreateTime).HasValue)
                     {
-                        createTime = process.CreateTime.Value.DateTimeOffset;
+                        createTime = process.CreateTime.Value.ConvertToTime();
                     }
 
                     string imageName = process?.ImageName;
@@ -267,7 +267,7 @@ namespace ETWAnalyzer.Extractors.CPU
                     {
                         duration.WaitDurationInMsInternal += (double)slice.WaitingDuration.Value.TotalMilliseconds;
 
-                        DateTimeOffset sampleTime = slice.StartTime.DateTimeOffset;
+                        DateTimeOffset sampleTime = slice.StartTime.ConvertToTime();
                         duration.FirstOccurence = duration.FirstOccurence > sampleTime ? sampleTime : duration.FirstOccurence;
                         duration.FirstLastOccurenceDuration = sampleTime - duration.FirstOccurence;
                     }
@@ -334,7 +334,7 @@ namespace ETWAnalyzer.Extractors.CPU
                 stacktagDurations.Add(stackTag, duration);
             }
 
-            DateTimeOffset sampleTime = sample.Timestamp.DateTimeOffset;
+            DateTimeOffset sampleTime = sample.Timestamp.ConvertToTime();
 
             duration.FirstOccurence = duration.FirstOccurence > sampleTime ? sampleTime : duration.FirstOccurence;
             duration.FirstLastOccurenceDuration = sampleTime - duration.FirstOccurence;

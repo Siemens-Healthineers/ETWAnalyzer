@@ -199,7 +199,7 @@ namespace ETWAnalyzer.Extract.TraceLogging
         /// <summary>
         /// Gets or sets the thread ID associated with the event.
         /// </summary>
-        public int ThreadId { get; set; }
+        public uint ThreadId { get; set; }
 
         /// <summary>
         /// A dictionary of fields, where the key is the field name and the value is the field value.
@@ -309,7 +309,7 @@ namespace ETWAnalyzer.Extract.TraceLogging
         /// <summary>
         /// Gets the thread ID associated with the event.
         /// </summary>
-        public int ThreadId { get; }
+        public uint ThreadId { get; }
 
         /// <summary>
         /// Gets the timestamp of the event.

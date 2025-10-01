@@ -6,6 +6,7 @@ using ETWAnalyzer.Extract;
 using ETWAnalyzer.Extract.Network;
 using ETWAnalyzer.TraceProcessorHelpers;
 using Microsoft.Windows.EventTracing;
+using Microsoft.Windows.EventTracing.Streaming;
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
@@ -16,7 +17,7 @@ namespace ETWAnalyzer.Extractors
     /// <summary>
     /// Parses various key events like boot time, NIC information, etc. from ETL files that are not directly exposed by the TraceProcessing library.
     /// </summary>
-    internal class SpecialEventsParser
+    internal class SpecialEventsParser : IUnparsedEventConsumer
     {
         public DateTime? BootTimeUTC { get; private set; }
         public uint BufferSize { get; private set; }
@@ -88,16 +89,7 @@ namespace ETWAnalyzer.Extractors
         {
             // Get Boot Time data. Code by https://stackoverflow.com/questions/61996791/expose-boottime-in-traceprocessor
             // We cannot use IGenericEvent because these are logged classic events 
-            processor.Use(new[] { myEventTraceEventGuid, mySystemConfigGuid }, e =>
-            {
-                if (e.Event.ProviderId == myEventTraceEventGuid)
-                {
-                    ParseTraceEventHeader(e.Event);
-                }else if( e.Event.ProviderId == mySystemConfigGuid)
-                {
-                    ParseSystemConfig(e.Event);
-                }
-            });
+            processor.UseStreaming().UseUnparsedEvents(this, new[] { myEventTraceEventGuid, mySystemConfigGuid });
         }
 
         /// <summary>
@@ -253,5 +245,20 @@ namespace ETWAnalyzer.Extractors
             BootTimeUTC = epoch.AddTicks(rawBootTime);
         }
 
+        public void Process(TraceEvent eventData)
+        {
+            if (eventData.ProviderId == myEventTraceEventGuid)
+            {
+                ParseTraceEventHeader(eventData);
+            }else if(eventData.ProviderId == mySystemConfigGuid)
+            {
+                ParseSystemConfig(eventData);
+            }
+        }
+
+        public void ProcessFailure(FailureInfo failureInfo)
+        {
+            failureInfo.ThrowAndLogParseFailure();
+        }
     }
 }

@@ -41,10 +41,10 @@ namespace ETWAnalyzer_uTest
                 if (myInteralExtract == null)
                 {
                     var tmp = new ETWExtract();
-                    using ITraceProcessor processor = TraceProcessor.Create(TestData.ServerEtlFile, new TraceProcessorSettings
+                    using ITraceProcessor processor = new TraceProcessorBuilder().WithSettings(new TraceProcessorSettings
                     {
                         AllowLostEvents = true,
-                    });
+                    }).Build(TestData.ServerEtlFile);
 
                     MachineDetailsExtractor extractor = new();
                     DiskExtractor diskExtractor = new();
@@ -93,9 +93,9 @@ namespace ETWAnalyzer_uTest
             DiskActivity diskActivity = cDriveSingleFile[DiskIOTypes.Read];
             Assert.Equal(DiskIOPriorities.Normal, diskActivity.Priorities);
             Assert.Single(diskActivity.Processes);
-            Assert.Equal(new KeyValuePair<int,DateTimeOffset>(5616, DateTimeOffset.MinValue), diskActivity.Processes.First()) ;
+            Assert.Equal(new KeyValuePair<uint,DateTimeOffset>(5616, DateTimeOffset.MinValue), diskActivity.Processes.First()) ;
             Assert.Equal(6, diskActivity.ThreadIDs.Count);
-            Assert.Equal(7104, diskActivity.ThreadIDs.First());
+            Assert.Equal(7104u, diskActivity.ThreadIDs.First());
         }
 
         [Fact]

@@ -171,7 +171,7 @@ namespace ETWAnalyzer.Extractors.CPU
                         hasSamplesWithStacks = sample.Stack != null;
                     }
 
-                    var process = new ProcessKey(sample.Process.ImageName, sample.Process.Id, sample.Process.CreateTime.HasValue ? sample.Process.CreateTime.Value.DateTimeOffset : default(DateTimeOffset));
+                    var process = new ProcessKey(sample.Process.ImageName, sample.Process.Id, sample.Process.CreateTime.HasValue ? sample.Process.CreateTime.Value.ConvertToTime() : default(DateTimeOffset));
 
                     AddTotalCPUAndPriority(process, indexCache, sample, myPerProcessCPU, myPerProcessPriority);
                     AddPerMethodAndProcessCPU(results, process, sample, methodSamplesPerProcess, printer);
@@ -185,9 +185,8 @@ namespace ETWAnalyzer.Extractors.CPU
             // When we have context switch data recorded we can also calculate the thread wait time stacktags
             if (CanUseCPUCSwitchData)
             {
-                Parallel.ForEach(myCpuSchedlingData.Result.ThreadActivity, concurrency, (ICpuThreadActivity sliceV1) =>
+                Parallel.ForEach(myCpuSchedlingData.Result.ThreadActivity, concurrency, (ICpuThreadActivity slice) =>
                 {
-                    ICpuThreadActivity2 slice = sliceV1.AsCpuThreadActivity2();
                     if (slice?.Process?.ImageName == null)
                     {
                         return;
@@ -198,7 +197,7 @@ namespace ETWAnalyzer.Extractors.CPU
                         return;
                     }
 
-                    var process = new ProcessKey(slice.Process.ImageName, slice.Process.Id, slice.Process.CreateTime.HasValue ? slice.Process.CreateTime.Value.DateTimeOffset : default(DateTimeOffset));
+                    var process = new ProcessKey(slice.Process.ImageName, slice.Process.Id, slice.Process.CreateTime.HasValue ? slice.Process.CreateTime.Value.ConvertToTime() : default(DateTimeOffset));
                     AddPerMethodAndProcessWaits(results, process, slice, methodSamplesPerProcess, printer, hasSamplesWithStacks);
                     AddProcessPriority(results, process, slice, processKeyPrioritiesFromSwitch);
                 });
@@ -307,13 +306,13 @@ namespace ETWAnalyzer.Extractors.CPU
             }
         }
 
-        private void AddProcessPriority(ETWExtract results, ProcessKey process, ICpuThreadActivity2 slice, ConcurrentDictionary<ProcessKey, List<KeyValuePair<int, TimeSpan>>> processKeyPrioritiesFromSwitch)
+        private void AddProcessPriority(ETWExtract results, ProcessKey process, ICpuThreadActivity slice, ConcurrentDictionary<ProcessKey, List<KeyValuePair<int, TimeSpan>>> processKeyPrioritiesFromSwitch)
         {
             if( slice.SwitchIn.Priority != null)
             {
                 int prio = slice.SwitchIn.Priority.Value;
                 List<KeyValuePair<int, TimeSpan>> list = processKeyPrioritiesFromSwitch.GetOrAdd(process, (key) => new List<KeyValuePair<int, TimeSpan>>());
-                TraceDuration runDuration = slice.SwitchOut.ContextSwitch.Timestamp -  slice.SwitchIn.ContextSwitch.Timestamp;
+                Duration runDuration = slice.SwitchOut.ContextSwitch.Timestamp -  slice.SwitchIn.ContextSwitch.Timestamp;
                 lock (list)
                 {
                     list.Add(new KeyValuePair<int, TimeSpan>(prio, runDuration.TimeSpan));
@@ -384,7 +383,7 @@ namespace ETWAnalyzer.Extractors.CPU
             return lret;
         }
 
-        private void AddPerMethodAndProcessWaits(ETWExtract extract, ProcessKey process, ICpuThreadActivity2 slice, ConcurrentDictionary<ProcessKey, ConcurrentDictionary<string, CPUMethodData>> methodSamplesPerProcess, StackPrinter printer, bool hasCpuSampleData)
+        private void AddPerMethodAndProcessWaits(ETWExtract extract, ProcessKey process, ICpuThreadActivity slice, ConcurrentDictionary<ProcessKey, ConcurrentDictionary<string, CPUMethodData>> methodSamplesPerProcess, StackPrinter printer, bool hasCpuSampleData)
         {
             if (slice?.Process?.ImageName == null)  // Image Name can be null sometimes
             {
@@ -450,19 +449,19 @@ namespace ETWAnalyzer.Extractors.CPU
                 {
                     // we do not use the CSwitch timestamp because the wait times will not match with the sum in 
                     // a single threaded case which is wrong. Instead we subtract the wait time from the switch in event which solves the issue
-                    TraceTimestamp waitStart = slice.SwitchIn.ContextSwitch.Timestamp - slice.WaitingDuration.Value;
+                    Timestamp waitStart = slice.SwitchIn.ContextSwitch.Timestamp - slice.WaitingDuration.Value;
                     stats.WaitTimeRange.Add(waitStart, slice.WaitingDuration.Value);
                     Interlocked.Increment(ref stats.WaitMsCount);
                 }
 
                 if( slice.ReadyDuration.HasValue && slice?.SwitchIn?.ContextSwitch != null)
                 {
-                    TraceTimestamp readyStart = slice.SwitchIn.ContextSwitch.Timestamp - slice.ReadyDuration.Value;
+                    Timestamp readyStart = slice.SwitchIn.ContextSwitch.Timestamp - slice.ReadyDuration.Value;
                     stats.ReadyTimeRange.Add(readyStart, slice.ReadyDuration.Value);
                     readyEv = stats.AddExtendedReadyMetrics(slice, readyEv);
                 }
 
-                decimal time = slice.StopTime.RelativeTimestamp.TotalSeconds;
+                decimal time = slice.StopTime.TotalSeconds;
                 stats.DepthFromBottom.Add((ushort)i);
 
                 lock (myLock)
@@ -475,7 +474,7 @@ namespace ETWAnalyzer.Extractors.CPU
 #if DEBUG
                         debugData = $"CSwitch {process} {method} ";
 #endif
-                        stats.AddForExtendedMetrics(extract.CPU, (CPUNumber) slice.Processor, (float) slice.StartTime.RelativeTimestamp.TotalSeconds, (float) slice.StopTime.RelativeTimestamp.TotalSeconds, slice.Thread.Id, slice.Thread.ProcessorAffinity, debugData);
+                        stats.AddForExtendedMetrics(extract.CPU, (CPUNumber) slice.Processor, (float) slice.StartTime.TotalSeconds, (float) slice.StopTime.TotalSeconds, slice.Thread.Id, slice.Thread.ProcessorAffinity, debugData);
                         stats.CpuInMs += slice.Duration;
                     }
 
@@ -532,7 +531,7 @@ namespace ETWAnalyzer.Extractors.CPU
                 }
 
                 Interlocked.Increment(ref stats.CpuInMsCount);
-                decimal time = sample.Timestamp.RelativeTimestamp.TotalSeconds;
+                decimal time = sample.Timestamp.TotalSeconds;
                 lock (myLock)
                 {
                     stats.CpuInMs += sample.Weight;
@@ -543,13 +542,13 @@ namespace ETWAnalyzer.Extractors.CPU
                     debugData = $"Profiling: {process} {rvaMethod}";
 #endif
 
-                    stats.AddForExtendedMetrics(extract.CPU, (CPUNumber) sample.Processor, (float) sample.Timestamp.RelativeTimestamp.TotalSeconds, ((float) sample.Timestamp.RelativeTimestamp.TotalSeconds)+(float) sample.Weight.Duration.TotalSeconds, sample.Thread.Id, sample.Thread.ProcessorAffinity, debugData);
+                    stats.AddForExtendedMetrics(extract.CPU, (CPUNumber) sample.Processor, (float) sample.Timestamp.TotalSeconds, ((float) sample.Timestamp.TotalSeconds)+(float) sample.Weight.TotalSeconds, sample.Thread.Id, sample.Thread.ProcessorAffinity, debugData);
                     UpdateMethodTimingAndThreadId(stats, time, sample.Thread.Id);
                 }
             }
         }
 
-        private static void UpdateMethodTimingAndThreadId(CPUMethodData stats, decimal time, int threadId)
+        private static void UpdateMethodTimingAndThreadId(CPUMethodData stats, decimal time, uint threadId)
         {
             stats.FirstOccurrenceSeconds = Math.Min(stats.FirstOccurrenceSeconds, time);
             stats.LastOccurrenceSeconds = Math.Max(stats.LastOccurrenceSeconds, time);

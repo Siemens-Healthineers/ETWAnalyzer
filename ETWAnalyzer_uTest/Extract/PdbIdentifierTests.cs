@@ -20,7 +20,7 @@ namespace ETWAnalyzer_uTest.Extract
             Guid pdbGuid = new Guid("39e2c995-82fe-4437-9c23-50af818eae5e");
 
             PdbIdentifier pdb = new PdbIdentifier(pdbName, pdbGuid, 15);
-            Assert.Equal(15, pdb.Age);
+            Assert.Equal(15u, pdb.Age);
             Assert.Equal(pdbGuid, pdb.Id);
             Assert.Equal(pdbName, pdb.Name);
         }

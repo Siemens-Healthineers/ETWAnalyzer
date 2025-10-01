@@ -55,7 +55,7 @@ namespace ETWAnalyzer.Extract.FileIO
         /// <param name="pid">Process Id of process which did perform File IO</param>
         /// <param name="startTime">Process start time of pid</param>
         /// <param name="stat">Additional file IO statistics data which is added/merged to existing summary data.</param>
-        public void Add(IProcessExtract extract, int pid, DateTimeOffset startTime, string fileName , FileIOStatistics stat)
+        public void Add(IProcessExtract extract, uint pid, DateTimeOffset startTime, string fileName , FileIOStatistics stat)
         {
             if (extract == null)
             {
