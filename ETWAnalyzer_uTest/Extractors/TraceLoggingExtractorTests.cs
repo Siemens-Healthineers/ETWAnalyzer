@@ -5,6 +5,7 @@ using ETWAnalyzer.Extract;
 using ETWAnalyzer.Extract.TraceLogging;
 using ETWAnalyzer.Extractors;
 using ETWAnalyzer.Helper;
+using ETWAnalyzer.Infrastructure;
 using System;
 using System.Collections.Generic;
 using System.IO;

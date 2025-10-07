@@ -2125,7 +2125,7 @@ namespace ETWAnalyzer.Commands
                 }
                 else
                 {
-                    myEtlFileOrZip = ArgParser.CheckIfFileOrDirectoryExistsAndExtension(myEtlFileOrZip, EtlExtension, ZipExtension, SevenZipExtension);
+                    myEtlFileOrZip = ArgParser.CheckIfFileOrDirectoryExistsAndExtension(myEtlFileOrZip, TestDataFile.EtlExtension, ZipExtension, SevenZipExtension);
                     decompressedETL = ETWAnalyzer.Extractors.ExtractSingleFile.ExtractETLIfZipped(myEtlFileOrZip, Path.GetDirectoryName(myEtlFileOrZip), Symbols, out bool bWasExtracted);
                 }
             }

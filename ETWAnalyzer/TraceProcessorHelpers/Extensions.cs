@@ -7,18 +7,13 @@ using ETWAnalyzer.Extract.Network.Tcp;
 using ETWAnalyzer.Extractors;
 using Microsoft.Windows.EventTracing;
 using Microsoft.Windows.EventTracing.Events;
-using Microsoft.Windows.EventTracing.Metadata;
 using Microsoft.Windows.EventTracing.Processes;
 using Microsoft.Windows.EventTracing.Streaming;
 using Microsoft.Windows.EventTracing.Symbols;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Net;
-using System.Text;
-using System.Threading.Tasks;
 using static ETWAnalyzer.Extract.ETWProcess;
 
 namespace ETWAnalyzer.TraceProcessorHelpers

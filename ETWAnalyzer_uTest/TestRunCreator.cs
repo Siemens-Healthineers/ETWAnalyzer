@@ -1,17 +1,13 @@
 ﻿//// SPDX-FileCopyrightText:  © 2022 Siemens Healthcare GmbH
 //// SPDX-License-Identifier:   MIT
 
-using ETWAnalyzer;
-using ETWAnalyzer.Commands;
 using ETWAnalyzer.Extract;
 using ETWAnalyzer.Helper;
+using ETWAnalyzer.Infrastructure;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ETWAnalyzer_uTest
 {
@@ -126,7 +122,7 @@ namespace ETWAnalyzer_uTest
 
             //=====================TestRun - Creating completed=======================
 
-            string jsonPath = Path.Combine(tmp.Name, Program.ExtractFolder);
+            string jsonPath = Path.Combine(tmp.Name, ExtractSerializer.ExtractFolder);
             Directory.CreateDirectory(jsonPath);
 
             return new TestRunData(syntheticTestRuns.ToArray(), new OutDir { OutputDirectory = tmp.Name });

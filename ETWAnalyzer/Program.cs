@@ -14,11 +14,6 @@ namespace ETWAnalyzer
     class Program
     {
         /// <summary>
-        /// Subfolder name of output (-outdir) directory where the extracted Json files are extracted to
-        /// </summary>
-        public const string ExtractFolder = "Extract";
-
-        /// <summary>
         /// Property to store debug flag
         /// </summary>
         public static bool DebugOutput { get; set; }

@@ -4,6 +4,7 @@
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 
 [assembly: AssemblyTitle("ETWAnalyzer_iTest")]
 [assembly: AssemblyDescription("")]
@@ -15,6 +16,11 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyCulture("")]
 
 [assembly: ComVisible(false)]
+
+#if NET8_0_OR_GREATER
+[assembly: SupportedOSPlatform("windows")]
+#endif 
+
 
 [assembly: Guid("b7a9f2ab-bed5-4485-9c10-734a87a97080")]
 

@@ -9,6 +9,7 @@ using ETWAnalyzer.Extract.Modules;
 using ETWAnalyzer.Extract.TraceLogging;
 using ETWAnalyzer.Extractors;
 using ETWAnalyzer.Helper;
+using ETWAnalyzer.Infrastructure;
 using ETWAnalyzer_iTest;
 using ETWAnalyzer_uTest;
 using ETWAnalyzer_uTest.TestInfrastructure;

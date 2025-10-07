@@ -2,6 +2,7 @@
 using ETWAnalyzer.Extract.CPU;
 using ETWAnalyzer.Extractors;
 using ETWAnalyzer.Extractors.CPU;
+using ETWAnalyzer.Infrastructure;
 using ETWAnalyzer_uTest.TestInfrastructure;
 using Microsoft.Windows.EventTracing;
 using Microsoft.Windows.EventTracing.Cpu;

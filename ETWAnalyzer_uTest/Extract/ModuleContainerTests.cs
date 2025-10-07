@@ -4,6 +4,7 @@
 using ETWAnalyzer.Extract;
 using ETWAnalyzer.Extract.Modules;
 using ETWAnalyzer.Extractors;
+using ETWAnalyzer.Infrastructure;
 using ETWAnalyzer_uTest.TestInfrastructure;
 using System;
 using System.Collections.Generic;

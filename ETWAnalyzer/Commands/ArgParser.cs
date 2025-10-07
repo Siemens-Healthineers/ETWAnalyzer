@@ -4,6 +4,7 @@
 using ETWAnalyzer;
 using ETWAnalyzer.Commands;
 using ETWAnalyzer.Extract;
+using ETWAnalyzer.Reader.ProcessTools;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -51,7 +52,6 @@ abstract class ArgParser : ICommand
     /// <summary>
     /// Supported file extensions
     /// </summary>
-    internal const string EtlExtension = ".etl";
     internal const string ZipExtension = ".zip";
     internal const string SevenZipExtension = ".7z";
     internal const string JsonExtension = ".json";

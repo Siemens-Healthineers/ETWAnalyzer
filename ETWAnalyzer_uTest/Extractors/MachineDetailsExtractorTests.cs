@@ -12,6 +12,7 @@ using System.Linq;
 using ETWAnalyzer.Extractors;
 using System.IO;
 using System.Threading;
+using ETWAnalyzer.Infrastructure;
 
 namespace ETWAnalyzer_uTest.Extractors
 {

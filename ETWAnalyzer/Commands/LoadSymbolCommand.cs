@@ -4,7 +4,7 @@
 
 using ETWAnalyzer.Configuration;
 using ETWAnalyzer.Extract;
-using ETWAnalyzer.Extractors;
+using ETWAnalyzer.Infrastructure;
 using ETWAnalyzer.LoadSymbol;
 using ETWAnalyzer.ProcessTools;
 using System;
@@ -28,7 +28,7 @@ namespace ETWAnalyzer.Commands
          "                      must have been successfully loaded during extraction. Otherwise a warning is printed due to symbol loading errors." + Environment.NewLine +
          " -Indent              Write Json file indented to save space. Default is non indented." + Environment.NewLine +   
          " -NoOverwrite         By default the input json files will be overwritten." + Environment.NewLine +
-        $" -OutDir xxxx         When -NoverWrite is used the extracted data will be put into the folder \"{Program.ExtractFolder}\" besides the input file. You can override the output folder with that switch." + Environment.NewLine +
+        $" -OutDir xxxx         When -NoverWrite is used the extracted data will be put into the folder \"{ExtractSerializer.ExtractFolder}\" besides the input file. You can override the output folder with that switch." + Environment.NewLine +
          " -debug               Print a lot diagnostics messages during symbol lookup to console" + Environment.NewLine + 
          "[yellow]Examples[/yellow]" + Environment.NewLine +
         $"[green]Resolve missing symbols from a json file. The input file/s will be overwritten.[/green]" + Environment.NewLine +
@@ -144,7 +144,7 @@ namespace ETWAnalyzer.Commands
                 TestDataFile jsonFile = myInputJsonFiles[i];
                 ColorConsole.WriteEmbeddedColorLine($"Processing file {i+1}/{myInputJsonFiles.Length} {jsonFile.JsonExtractFileWhenPresent}");
                 loader.LoadSymbols(jsonFile.Extract);
-                string outdir = OutDir.OutputDirectory ?? Path.Combine(Path.GetDirectoryName(jsonFile.JsonExtractFileWhenPresent), Program.ExtractFolder);
+                string outdir = OutDir.OutputDirectory ?? Path.Combine(Path.GetDirectoryName(jsonFile.JsonExtractFileWhenPresent), ExtractSerializer.ExtractFolder);
                 Directory.CreateDirectory(outdir);
 
                 string outputFile = jsonFile.JsonExtractFileWhenPresent;

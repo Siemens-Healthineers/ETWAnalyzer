@@ -1,26 +1,20 @@
 ﻿//// SPDX-FileCopyrightText:  © 2022 Siemens Healthcare GmbH
 //// SPDX-License-Identifier:   MIT
 
-using ETWAnalyzer.Analyzers;
-using ETWAnalyzer.Infrastructure;
 using ETWAnalyzer.Commands;
 using ETWAnalyzer.Configuration;
 using ETWAnalyzer.Extract;
+using ETWAnalyzer.Extract.CPU.Extended;
 using ETWAnalyzer.Extract.Modules;
+using ETWAnalyzer.Infrastructure;
 using ETWAnalyzer.ProcessTools;
+using ETWAnalyzer.Reader.Extensions;
+using ETWAnalyzer.TraceProcessorHelpers;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using static ETWAnalyzer.Commands.DumpCommand;
-using ETWAnalyzer.TraceProcessorHelpers;
-using System.Text.RegularExpressions;
-using System.Diagnostics;
-using ETWAnalyzer.Extract.CPU;
-using ETWAnalyzer.Extract.CPU.Extended;
-using ETWAnalyzer.Extractors.CPU;
-using static ETWAnalyzer.EventDump.DumpMemory;
-using System.Security.Claims;
 
 namespace ETWAnalyzer.EventDump
 {
@@ -528,7 +522,7 @@ namespace ETWAnalyzer.EventDump
 
                 if (lret)
                 {
-                    ETWProcess process = ProcessExtensions.FindProcessByKey(file, procCPU.Key);
+                    ETWProcess process = file.FindProcessByKey(procCPU.Key);
                     if (process == null)
                     {
                         lret = false;
@@ -561,7 +555,7 @@ namespace ETWAnalyzer.EventDump
             {
                 if (!lookupCache.TryGetValue(key, out ETWProcess process))
                 {
-                    process = ProcessExtensions.FindProcessByKey(file, key);
+                    process = file.FindProcessByKey(key);
                     lookupCache[key] = process;
                 }
 

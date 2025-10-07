@@ -7,6 +7,7 @@ using ETWAnalyzer.Extract;
 using ETWAnalyzer.Extract.FileIO;
 using ETWAnalyzer.Extractors;
 using ETWAnalyzer.Extractors.FileIO;
+using ETWAnalyzer.Infrastructure;
 using ETWAnalyzer_uTest.TestInfrastructure;
 using Microsoft.Windows.EventTracing;
 using System;

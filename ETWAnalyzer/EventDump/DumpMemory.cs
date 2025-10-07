@@ -1,24 +1,17 @@
 ﻿//// SPDX-FileCopyrightText:  © 2022 Siemens Healthcare GmbH
 //// SPDX-License-Identifier:   MIT
 
-using ETWAnalyzer.Analyzers.Infrastructure;
+using ETWAnalyzer.Commands;
 using ETWAnalyzer.Extract;
+using ETWAnalyzer.Extract.Modules;
+using ETWAnalyzer.Infrastructure;
+using ETWAnalyzer.ProcessTools;
+using ETWAnalyzer.Reader.Extensions;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using ETWAnalyzer.Analyzers;
 using System.IO;
-using ETWAnalyzer.ProcessTools;
-using ETWAnalyzer.Infrastructure;
-using ETWAnalyzer.Commands;
+using System.Linq;
 using static ETWAnalyzer.Commands.DumpCommand;
-using ETWAnalyzer.Extract.Modules;
-using System.Collections;
-using System.Reflection;
-using System.Text.RegularExpressions;
-using static ETWAnalyzer.EventDump.DumpMemory;
 
 namespace ETWAnalyzer.EventDump
 {

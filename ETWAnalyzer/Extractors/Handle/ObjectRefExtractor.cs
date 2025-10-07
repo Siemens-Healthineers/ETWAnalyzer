@@ -444,7 +444,7 @@ namespace ETWAnalyzer.Extractors.Handle
                         {
                             ObjectPtr = create.ObjectPtr,
                             ObjectType = create.ObjectType,
-                            CreateEvent = new RefCountChangeEvent(create.TimeStamp, 1, processIdx, create.ThreadId, stackIndex),
+                            CreateEvent = new RefCountChangeEvent(create.TimeStamp.Nanoseconds, 1, processIdx, create.ThreadId, stackIndex),
                         };
 
                         if (OpenHandles.ContainsKey(trace.ObjectPtr))  // should not happen but the same object pointer can have a create without a delete event. Perhaps some events have gone missing
@@ -459,7 +459,7 @@ namespace ETWAnalyzer.Extractors.Handle
                     case CreateHandleEvent createHandle:
                         if(OpenHandles.TryGetValue(createHandle.ObjectPtr, out ObjectRefTrace hTrace) )
                         {
-                            hTrace.AddHandlCreate(createHandle.TimeStamp, createHandle.HandleValue, processIdx, createHandle.ThreadId,  stackIndex);
+                            hTrace.AddHandlCreate(createHandle.TimeStamp.Nanoseconds, createHandle.HandleValue, processIdx, createHandle.ThreadId,  stackIndex);
                         }
                         else // ObjectRef Traces are missing
                         {
@@ -468,7 +468,7 @@ namespace ETWAnalyzer.Extractors.Handle
                                 ObjectPtr = createHandle.ObjectPtr,
                                 ObjectType = createHandle.ObjectType,
                             };
-                            trace.AddHandlCreate(createHandle.TimeStamp, createHandle.HandleValue, processIdx, createHandle.ThreadId, stackIndex);
+                            trace.AddHandlCreate(createHandle.TimeStamp.Nanoseconds, createHandle.HandleValue, processIdx, createHandle.ThreadId, stackIndex);
                             OpenHandles.Add(trace.ObjectPtr, trace);
                         }
                         break;
@@ -519,12 +519,12 @@ namespace ETWAnalyzer.Extractors.Handle
                             };
                             OpenHandles.Add(hTrace.ObjectPtr, hTrace);
                         }
-                        hTrace.AddHandleDuplicate(duplicateObjectEvent.TimeStamp, duplicateObjectEvent.SourceHandle, duplicateObjectEvent.TargetHandle, processIdx, sourceProcessIndex, duplicateObjectEvent.ThreadId, stackIndex);
+                        hTrace.AddHandleDuplicate(duplicateObjectEvent.TimeStamp.Nanoseconds, duplicateObjectEvent.SourceHandle, duplicateObjectEvent.TargetHandle, processIdx, sourceProcessIndex, duplicateObjectEvent.ThreadId, stackIndex);
                         break;
                     case CloseHandleEvent closeHandle:
                         if (OpenHandles.TryGetValue(closeHandle.ObjectPtr, out hTrace)) // handle is still known deleteobject is missing or was not enabled
                         {
-                            if (hTrace.AddHandleClose(closeHandle.TimeStamp, closeHandle.HandleValue, closeHandle.Name, processIdx, closeHandle.ThreadId, stackIndex))
+                            if (hTrace.AddHandleClose(closeHandle.TimeStamp.Nanoseconds, closeHandle.HandleValue, closeHandle.Name, processIdx, closeHandle.ThreadId, stackIndex))
                             {
                                 // final close reached
                                 results.HandleData.ObjectReferences.Add(hTrace);
@@ -540,7 +540,7 @@ namespace ETWAnalyzer.Extractors.Handle
                                 var objectTrace = results.HandleData.ObjectReferences[k];
                                 if (objectTrace.ObjectPtr == closeHandle.ObjectPtr)
                                 {
-                                    objectTrace.AddHandleClose(closeHandle.TimeStamp, closeHandle.HandleValue, closeHandle.Name, processIdx, closeHandle.ThreadId, stackIndex);
+                                    objectTrace.AddHandleClose(closeHandle.TimeStamp.Nanoseconds, closeHandle.HandleValue, closeHandle.Name, processIdx, closeHandle.ThreadId, stackIndex);
                                     break;
                                 }
                             }
@@ -549,7 +549,7 @@ namespace ETWAnalyzer.Extractors.Handle
                     case DeleteObjectEvent del:
                         if (OpenHandles.TryGetValue(del.ObjectPtr, out trace))
                         {
-                            trace.DestroyEvent = new RefCountChangeEvent(del.TimeStamp, -1, processIdx, del.ThreadId, stackIndex);
+                            trace.DestroyEvent = new RefCountChangeEvent(del.TimeStamp.Nanoseconds, -1, processIdx, del.ThreadId, stackIndex);
                             results.HandleData.ObjectReferences.Add(trace);
                             OpenHandles.Remove(del.ObjectPtr);  
                         }
@@ -557,19 +557,19 @@ namespace ETWAnalyzer.Extractors.Handle
                     case IncreaseRefCount inc:
                         if (OpenHandles.TryGetValue(inc.ObjectPtr, out trace))
                         {
-                            trace.AddRefChange(inc.TimeStamp, (int) inc.RefCount, processIdx, inc.ThreadId, stackIndex);
+                            trace.AddRefChange(inc.TimeStamp.Nanoseconds, (int) inc.RefCount, processIdx, inc.ThreadId, stackIndex);
                         }
                         break;
                     case DecreaseRefCount dec:
                         if (OpenHandles.TryGetValue(dec.ObjectPtr, out trace))
                         {
-                            trace.AddRefChange(dec.TimeStamp, (int)dec.RefCount, processIdx, dec.ThreadId, stackIndex);
+                            trace.AddRefChange(dec.TimeStamp.Nanoseconds, (int)dec.RefCount, processIdx, dec.ThreadId, stackIndex);
                         }
                         break;
                     case UnMapFileEvent unmapFile:
                         if (OpenHandles.TryGetValue(unmapFile.ObjectPtr, out trace))
                         {
-                            trace.AddFileUnMap(unmapFile.TimeStamp, unmapFile.ViewBase, unmapFile.ViewSize, unmapFile.FileObject, unmapFile.ByteOffset, processIdx, unmapFile.ThreadId, stackIndex);
+                            trace.AddFileUnMap(unmapFile.TimeStamp.Nanoseconds, unmapFile.ViewBase, unmapFile.ViewSize, unmapFile.FileObject, unmapFile.ByteOffset, processIdx, unmapFile.ThreadId, stackIndex);
                             results.HandleData.ObjectReferences.Add(trace);
                             OpenHandles.Remove(unmapFile.ObjectPtr);
                         }
@@ -584,7 +584,7 @@ namespace ETWAnalyzer.Extractors.Handle
                             };
                             OpenHandles.Add(mapFile.ObjectPtr, trace);
                         }
-                        trace.AddFileMap(mapFile.TimeStamp, mapFile.ViewBase, mapFile.ViewSize, mapFile.FileObject, mapFile.ByteOffset, processIdx, mapFile.ThreadId, stackIndex);
+                        trace.AddFileMap(mapFile.TimeStamp.Nanoseconds, mapFile.ViewBase, mapFile.ViewSize, mapFile.FileObject, mapFile.ByteOffset, processIdx, mapFile.ThreadId, stackIndex);
                         break;
                     case HandleTypeEvent typeEvent:
                         results.HandleData.ObjectTypeMap.Add(typeEvent.ObjectType, typeEvent.Name);

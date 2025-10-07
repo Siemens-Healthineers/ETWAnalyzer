@@ -7,6 +7,7 @@ using System.IO;
 using System.Xml.Serialization;
 using ETWAnalyzer.Analyzers;
 using ETWAnalyzer.Extractors;
+using ETWAnalyzer.Extractors.Exceptions;
 
 namespace ETWAnalyzer_uTest
 {

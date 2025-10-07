@@ -1,6 +1,7 @@
 ﻿//// SPDX-FileCopyrightText:  © 2022 Siemens Healthcare GmbH
 //// SPDX-License-Identifier:   MIT
 
+using ETWAnalyzer.Extractors;
 using Microsoft.Windows.EventTracing;
 using System;
 using System.Collections.Concurrent;
@@ -9,6 +10,8 @@ using System.Linq;
 
 namespace ETWAnalyzer.TraceProcessorHelpers
 {
+
+
     /// <summary>
     /// Helper class to calculate from multiple threads the overlapping time durations. 
     /// This is not the sum as WPA is doing it but count overlapping durations only once.
@@ -17,7 +20,7 @@ namespace ETWAnalyzer.TraceProcessorHelpers
     /// we count [x-z] as the total duration which resembles to measured wall clock times much better.
     /// The times can therefore never be greater than the wall clock time the threads were active (or waiting).
     /// </summary>
-    internal class TimeRangeCalculator
+    internal class TimeRangeCalculator : ITimeRangeCalculator
     {
         ConcurrentBag<KeyValuePair<Timestamp, Duration>> myTimeRanges = new();
         TimeSpan? myDuration;
@@ -62,7 +65,7 @@ namespace ETWAnalyzer.TraceProcessorHelpers
                 Timestamp totalDuration = Timestamp.Zero;
 
                 Timestamp previousEndTime = Timestamp.Zero;
-                
+
 
                 for (int i = 0; i < sorted.Count; i++)
                 {

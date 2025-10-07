@@ -7,6 +7,8 @@ using ETWAnalyzer.Configuration;
 using ETWAnalyzer.Extract;
 using ETWAnalyzer.Extract.Modules;
 using ETWAnalyzer.Helper;
+using ETWAnalyzer.Infrastructure;
+using ETWAnalyzer.Reader.ProcessTools;
 using ETWAnalyzer.TraceProcessorHelpers;
 using Microsoft.Windows.EventTracing;
 using Microsoft.Windows.EventTracing.Symbols;
@@ -215,7 +217,7 @@ namespace ETWAnalyzer.Extractors
                 Logger.Info(perfMsg);
                 if (outputDirectory.IsDefault)
                 {
-                    outputJsonFile = Path.Combine(outputDirectory.OutputDirectory, Program.ExtractFolder, Path.GetFileNameWithoutExtension(myEtlFile) + Extension);
+                    outputJsonFile = Path.Combine(outputDirectory.OutputDirectory, ExtractSerializer.ExtractFolder, Path.GetFileNameWithoutExtension(myEtlFile) + Extension);
                 }
                 else
                 {

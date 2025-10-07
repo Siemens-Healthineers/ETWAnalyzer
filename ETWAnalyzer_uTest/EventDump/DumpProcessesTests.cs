@@ -5,7 +5,6 @@ using ETWAnalyzer.EventDump;
 using ETWAnalyzer.Extract;
 using ETWAnalyzer.Infrastructure;
 using ETWAnalyzer_uTest.TestInfrastructure;
-using Microsoft.Diagnostics.Tracing.Parsers.FrameworkEventSource;
 using System;
 using System.Collections.Generic;
 using System.Linq;
