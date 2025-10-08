@@ -107,6 +107,31 @@ namespace ETWAnalyzer.ProcessTools
             }
         }
 
+        static readonly char[] myNewLineChars = Environment.NewLine.ToCharArray();
+
+        static void WriteLineClipped(string text, bool lineFeed)
+        {
+            int startIdx = 0;
+            int prevIdx = 0;
+            while( (startIdx = text.IndexOf(Environment.NewLine, prevIdx)) > -1 )
+            {
+                var line = text.Substring(prevIdx, startIdx - prevIdx + Environment.NewLine.Length);
+                prevIdx = startIdx + Environment.NewLine.Length;
+
+                Console.Write(ClipToConsole(line));
+            }
+
+            if (prevIdx == 0 )  // single line is printed
+            {
+                Console.Write(ClipToConsole(text));
+            }
+
+            if( lineFeed) // multi line with final line feed
+            {
+                Console.WriteLine();
+            }
+        }
+
         /// <summary>
         /// WriteLine with color
         /// </summary>
@@ -120,17 +145,17 @@ namespace ETWAnalyzer.ProcessTools
                 var oldColor = System.Console.ForegroundColor;
                 if (color == oldColor)
                 {
-                    Console.WriteLine(ClipToConsole(text));
+                    WriteLineClipped(text, true);
                 }
                 else
                 {
                     Console.ForegroundColor = color.Value;
-                    Console.WriteLine(ClipToConsole(text));
+                    WriteLineClipped(text, true);
                     Console.ForegroundColor = oldColor;
                 }
             }
             else
-                Console.WriteLine(ClipToConsole(text));
+                WriteLineClipped(text, true);
         }
 
         /// <summary>
@@ -170,18 +195,18 @@ namespace ETWAnalyzer.ProcessTools
                 var oldColor = System.Console.ForegroundColor;
                 if (color == oldColor)
                 {
-                    Console.Write(ClipToConsole(text));
+                    WriteLineClipped(text, false);
                 }
                 else
                 {
                     Console.ForegroundColor = color.Value;
-                    Console.Write(ClipToConsole(text));
+                    WriteLineClipped(text, false);
                     Console.ForegroundColor = oldColor;
                 }
             }
             else
             {
-                Console.Write(ClipToConsole(text));
+                WriteLineClipped(text, false);
             }
         }
 
@@ -263,7 +288,13 @@ namespace ETWAnalyzer.ProcessTools
                 }
                 else
                 {
+                    string origText = text;
                     text = SubstringWithTabCount(text, len) + "...";
+                    // if newline was intended do not clip it away, but add it again
+                    if(origText.EndsWith(Environment.NewLine) && !text.Contains(Environment.NewLine))
+                    {
+                        text+=Environment.NewLine;
+                    }
                 }
             }
 
@@ -359,11 +390,11 @@ namespace ETWAnalyzer.ProcessTools
             {
                 if (skipLineFeed)
                 {
-                    Write(ClipToConsole(text), baseTextColor);
+                    Write(text, baseTextColor);
                 }
                 else
                 {
-                    WriteLine(ClipToConsole(text), baseTextColor);
+                    WriteLine(text, baseTextColor);
                 }
                 return;
             }
@@ -373,20 +404,18 @@ namespace ETWAnalyzer.ProcessTools
                 var match = colorBlockRegEx.Value.Match(text);
                 if (match.Length < 1)
                 {
-                    Write(ClipToConsole(text), baseTextColor);
+                    Write(text, baseTextColor);
                     break;
                 }
 
                 // write up to expression
                 string upToExpression = text.Substring(0, match.Index);
-                upToExpression = ClipToConsole(upToExpression);
                 Write(upToExpression, baseTextColor);
 
                 // strip out the expression
                 string highlightText = match.Groups["text"].Value;
                 string colorVal = match.Groups["color"].Value;
 
-                highlightText = ClipToConsole(highlightText);
                 Write(highlightText, colorVal);
 
                 // remainder of string

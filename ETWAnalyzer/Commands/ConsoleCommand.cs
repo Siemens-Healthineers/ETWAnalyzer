@@ -41,6 +41,8 @@ namespace ETWAnalyzer.Commands
                 HelpCd +
                 ".cls"+ Environment.NewLine + 
                 "   Clear screen." + Environment.NewLine +
+                ".clip [0/1 or true/false]"+ Environment.NewLine +
+                "   Enable/disable output clipping to console width. If no argument is given current setting is printed." + Environment.NewLine +
                 ".converttime -time ..." + Environment.NewLine +
                 "   Convert time/datetime string to ETW session time and back." + Environment.NewLine +
                $".dump xxx [ -fd *usecase1* ]" + Environment.NewLine + 
@@ -129,6 +131,7 @@ namespace ETWAnalyzer.Commands
                 ".load+" => Load(args, bKeepOldFiles:true),
                 ".unload" => Unload(args),
                 ".cls" => Cls(args),
+                ".clip" => Clip(args),
                 ".dump" => CreateDumpCommand(args),
                 ".converttime" => CreateConvertTimeCommand(args),
                 ".exit" => new QuitCommand(args),
@@ -175,6 +178,38 @@ namespace ETWAnalyzer.Commands
 
             return bCancel;
         }
+
+        private ICommand Clip(string[] args)
+        {
+            if( args.Length == 0)
+            {
+                Console.WriteLine($"Output clipping is set to {ColorConsole.ClipToConsoleWidth}. To Change use .Clip 0/1");
+            }
+            else
+            {
+                string flag = args[0];
+                bool bFlag = false;
+
+                if (int.TryParse(flag, out int flagValue))
+                {
+                    bFlag = flagValue == 1;
+                }
+                else if (bool.TryParse(flag, out bool flagBool))
+                {
+                    bFlag = flagBool;
+                }
+                else
+                {
+                    ColorConsole.WriteError($"Error: Could not parse {flag} as 0/1 or true/false.");
+                    return null;
+                }
+
+                ColorConsole.WriteLine("Set output clipping to " + bFlag);  
+                ColorConsole.ClipToConsoleWidth = bFlag;
+            }
+            return null;
+        }
+
 
         private ICommand Cls(string[] args)
         {
