@@ -80,7 +80,7 @@ namespace ETWAnalyzer.Extractors.CPU
         /// <summary>
         /// Some locking is needed
         /// </summary>
-        object myLock = new object();
+        readonly object myLock = new object();
 
 
         /// <summary>

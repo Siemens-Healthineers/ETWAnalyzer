@@ -18,7 +18,11 @@ namespace ETWAnalyzer.Commands
     /// <summary>
     /// Processes all -dump xxx commands. Constructed by <see cref="CommandFactory"/> if the arguments contain -dump.
     /// </summary>
-    class DumpCommand : ArgParser
+    /// <remarks>
+    /// Ctor
+    /// </remarks>
+    /// <param name="args"></param>
+    class DumpCommand(string[] args) : ArgParser(args)
     {
         internal const string AllDumpCommands = "[CPU,Disk,Dns,Exception,File,LBR,Mark,Memory,ObjectRef,PMC,Power,Process,Stats,TestRun,ThreadPool,Tracelog,Version]";
 
@@ -1139,16 +1143,7 @@ namespace ETWAnalyzer.Commands
         /// <summary>
         /// Current command arguments passed by console or command start 
         /// </summary>
-        string myConsoleCommandArgs = Environment.CommandLine;
-
-
-        /// <summary>
-        /// Ctor
-        /// </summary>
-        /// <param name="args"></param>
-        public DumpCommand(string[] args) : base(args)
-        {
-        }
+        readonly string myConsoleCommandArgs = Environment.CommandLine;
 
         /// <summary>
         /// 
@@ -1979,7 +1974,7 @@ namespace ETWAnalyzer.Commands
             string[] columns = cols.Split(mySpaceAndSemicolon, StringSplitOptions.RemoveEmptyEntries);
             foreach (string col in columns) 
             {
-                if( col.StartsWith("!") ) // exclude column, set enable flag to false
+                if( col.StartsWith('!') ) // exclude column, set enable flag to false
                 {
                     if( col.Length > 1 )
                     {
@@ -2015,7 +2010,7 @@ namespace ETWAnalyzer.Commands
         {
             List<string> toRemove = new();
 
-            foreach (var configcolumn in configuredColumns.Where(x => x.Key.Contains("*")).ToArray())
+            foreach (var configcolumn in configuredColumns.Where(x => x.Key.Contains('*')).ToArray())
             {
                 toRemove.Add(configcolumn.Key);
                 Func<string, bool> wildCardColumn = Matcher.CreateMatcher(configcolumn.Key);
@@ -2111,7 +2106,7 @@ namespace ETWAnalyzer.Commands
 
 
         internal DumpBase myCurrentDumper = null;
-        internal static readonly char[] mySpaceAndSemicolon = new char[] {' ',';' };
+        internal static readonly char[] mySpaceAndSemicolon = [' ',';'];
 
         public override void Run()
         {
@@ -2905,7 +2900,7 @@ namespace ETWAnalyzer.Commands
             }
             foreach(var query in fileOrDirectoryQueries)
             {
-                if (!query.Contains("?") && !query.Contains("*"))
+                if (!query.Contains('?') && !query.Contains('*'))
                 {
                     if (!Directory.Exists(query) && !File.Exists(query) && !File.Exists(query + TestRun.ExtractExtension))
                     {

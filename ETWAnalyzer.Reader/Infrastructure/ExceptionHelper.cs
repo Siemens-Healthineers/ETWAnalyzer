@@ -18,8 +18,8 @@ namespace ETWAnalyzer
         {
             get
             {
-#pragma warning disable CS0618 // Type or member is obsolete
                 return Marshal.GetExceptionPointers() == IntPtr.Zero &&
+#pragma warning disable CS0618 // Type or member is obsolete
                        Marshal.GetExceptionCode() == 0 ? false : true;
 #pragma warning restore CS0618 // Type or member is obsolete
             }

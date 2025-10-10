@@ -22,11 +22,6 @@ namespace ETWAnalyzer.Extract.Disk
         VeryLow = 0,
 
         /// <summary>
-        /// Default value
-        /// </summary>
-        None  = 0,
-
-        /// <summary>
         /// Used by indexing service
         /// </summary>
         Low = 2,

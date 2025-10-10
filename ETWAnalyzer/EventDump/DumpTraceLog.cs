@@ -204,7 +204,7 @@ namespace ETWAnalyzer.EventDump
             }
         }
 
-        Dictionary<StackIdx, string> myPrintedStacks = new();
+        readonly Dictionary<StackIdx, string> myPrintedStacks = new();
 
         string GetStackOnce(StackIdx idx, string stackTrace)
         {

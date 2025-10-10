@@ -29,7 +29,7 @@ namespace ETWAnalyzer.Commands
         /// </summary>
         Lazy<SingleTest>[] myInputFiles;
 
-        class ConsoleHelpCommand : ArgParser
+        class ConsoleHelpCommand(string[] args) : ArgParser(args)
         {
             public static readonly string HelpDir = ".dir [-r] [-od] folder" + Environment.NewLine +
                 "   Show files in folder. Use -r for recursive and -od for sorting files by modify time. Default sort order is alphabetic." + Environment.NewLine;
@@ -80,9 +80,6 @@ namespace ETWAnalyzer.Commands
             {
                 ColorConsole.WriteLine(Help, ConsoleColor.Yellow);
             }
-
-            public ConsoleHelpCommand(string[] args) : base(args)
-            { }
         }
 
 
@@ -398,7 +395,7 @@ namespace ETWAnalyzer.Commands
             {
                 bool sortByDate = false;
                 bool bRecursive = false;
-                Func<string, bool> isArg = x => x.StartsWith("/") || x.StartsWith("-");
+                Func<string, bool> isArg = x => x.StartsWith('/') || x.StartsWith('-');
                 List<string> noSwitches = new List<string>();
                 foreach (var arg in args)
                 {
@@ -724,10 +721,7 @@ namespace ETWAnalyzer.Commands
         /// <returns></returns>
         static string[] SplitQuotedString(string str, char splitChar=' ', char quoteChar='"')
         {
-            if (str == null)
-            {
-                throw new ArgumentNullException(nameof(str));
-            }
+            ArgumentNullException.ThrowIfNull(str);
 
             char prevChar = '\0';
             char nextChar = '\0';
@@ -790,7 +784,7 @@ namespace ETWAnalyzer.Commands
         /// <summary>
         /// Prints error when not recognized command is entered.
         /// </summary>
-        class InvalidCommandCommand : ArgParser
+        class InvalidCommandCommand(string[] args) : ArgParser(args)
         {
             public override string Help => throw new NotImplementedException();
 
@@ -802,15 +796,12 @@ namespace ETWAnalyzer.Commands
             {
                 ColorConsole.WriteLine($"Command: {String.Join(" ", myInputArguments)} is not a recognized command. Enter .help to get list of valid commands.", ConsoleColor.Red);
             }
-
-            public InvalidCommandCommand(string[] args) : base(args)
-            { }
         }
 
         /// <summary>
         /// When we want to quite we throw a <see cref="NotImplementedException"/>
         /// </summary>
-        class QuitCommand : ArgParser
+        class QuitCommand(string[] args) : ArgParser(args)
         {
             public override string Help => throw new NotImplementedException();
 
@@ -823,8 +814,6 @@ namespace ETWAnalyzer.Commands
             {
                 throw new OperationCanceledException();
             }
-
-            public QuitCommand(string[] args) : base(args) { }
         }
 
         // Add the missing FileInfoEqualityComparer class definition to resolve the CS0246 error.  
@@ -843,10 +832,7 @@ namespace ETWAnalyzer.Commands
 
             public int GetHashCode(FileInfo obj)
             {
-                if (obj == null)
-                {
-                    throw new ArgumentNullException(nameof(obj));
-                }
+                ArgumentNullException.ThrowIfNull(obj);
 
                 // Replace HashCode.Combine with a manual hash code computation
                 unchecked

@@ -53,7 +53,7 @@ namespace ETWAnalyzer.Extract.Modules
         /// </summary>
         IReadOnlyList<ModuleDefinition> IModuleContainer.Modules => Modules;
 
-        Dictionary<ModuleDefinition, ModuleDefinition> myAddedModules = new();
+        readonly Dictionary<ModuleDefinition, ModuleDefinition> myAddedModules = new();
 
         /// <summary>
         /// Cache 
@@ -68,7 +68,7 @@ namespace ETWAnalyzer.Extract.Modules
         /// <summary>
         /// Resolved modules for a process
         /// </summary>
-        Dictionary<Tuple<ETWProcess,string>, ModuleDefinition> myModuleCache = new();
+        readonly Dictionary<Tuple<ETWProcess,string>, ModuleDefinition> myModuleCache = new();
 
         /// <summary>
         /// Add a module to the container

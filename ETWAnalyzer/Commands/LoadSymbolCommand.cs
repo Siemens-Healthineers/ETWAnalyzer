@@ -14,7 +14,7 @@ using System.Linq;
 
 namespace ETWAnalyzer.Commands
 {
-    internal class LoadSymbolCommand : ArgParser
+    internal class LoadSymbolCommand(string[] args) : ArgParser(args)
     {
         internal static readonly string HelpString =
            "ETWAnalyzer -LoadSymbol -filedir/-fd  xxx.json [-SymServer NtSymbolPath, MS, Google or syngo] [-SymFolder xxxx] [-NoOverwrite] [-Indent] [-OutDir xxxx] [-debug]" + Environment.NewLine +
@@ -54,9 +54,6 @@ namespace ETWAnalyzer.Commands
         TestDataFile[] myInputJsonFiles;
 
         public OutDir OutDir { get; private set; } = new OutDir();
-
-        public LoadSymbolCommand(string[] args): base(args) 
-        { }
 
         public override string Help => HelpString;
 

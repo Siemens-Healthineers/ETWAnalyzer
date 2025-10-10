@@ -68,10 +68,7 @@ namespace ETWAnalyzer.Extract.Disk
         {
             get
             {
-                if (myCachedEvents == null)
-                {
-                    myCachedEvents = CreateDiskIOEvents();
-                }
+                myCachedEvents ??= CreateDiskIOEvents();
 
                 return myCachedEvents;
             }
@@ -91,7 +88,7 @@ namespace ETWAnalyzer.Extract.Disk
                     ulong flushus = 0;
                     ulong readSizeInBytes = 0;
                     ulong writeSizeInBytes = 0;
-                    DiskIOPriorities prios = DiskIOPriorities.None;
+                    DiskIOPriorities prios = DiskIOPriorities.VeryLow;
                     HashSet<ProcessKey> processes = new HashSet<ProcessKey>();
 
                     foreach (var diskIOActivity in path2Events.Value)
