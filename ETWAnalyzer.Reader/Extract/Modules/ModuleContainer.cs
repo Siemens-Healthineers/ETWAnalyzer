@@ -112,10 +112,7 @@ namespace ETWAnalyzer.Extract.Modules
             if (!myModuleCache.TryGetValue(key, out lret))
             {
 
-                if (myModuleLookup == null)
-                {
-                    myModuleLookup = Modules.ToLookup(x => x.ModuleName);
-                }
+                myModuleLookup ??= Modules.ToLookup(x => x.ModuleName);
 
                 IEnumerable<ModuleDefinition> candidates = myModuleLookup[moduleName];
                 foreach (ModuleDefinition candidate in candidates)

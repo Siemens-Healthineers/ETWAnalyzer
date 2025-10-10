@@ -38,7 +38,7 @@ namespace ETWAnalyzer.EventDump
 
         public MinMaxRange<decimal> MinMaxWorkingSetMiB { get; internal set; } = new();
         public MinMaxRange<decimal> MinMaxCommitMiB { get; internal set; } = new();
-        public MinMaxRange<decimal> MinMaxWorkingsetPrivateMiB { get; internal set; } = new();
+        public MinMaxRange<decimal> MinMaxWorkingSetPrivateMiB { get; internal set; } = new();
         public MinMaxRange<decimal> MinMaxSharedCommitMiB { get; internal set; } = new();
 
         public DumpCommand.SortOrders SortOrder { get; internal set; }
@@ -174,7 +174,7 @@ namespace ETWAnalyzer.EventDump
         {
             return MinMaxWorkingSetMiB.IsWithin( set.WorkingSetInMiB ) &&
                    MinMaxCommitMiB.IsWithin( set.CommitInMiB ) &&
-                   MinMaxWorkingsetPrivateMiB.IsWithin( set.WorkingsetPrivateInMiB ) &&
+                   MinMaxWorkingSetPrivateMiB.IsWithin( set.WorkingsetPrivateInMiB ) &&
                    MinMaxSharedCommitMiB.IsWithin( set.SharedCommitSizeInMiB);
         }
 

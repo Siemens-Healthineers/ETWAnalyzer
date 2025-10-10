@@ -1,8 +1,6 @@
-﻿using ETWAnalyzer.Extract.Network.Tcp;
-using ETWAnalyzer.Extract;
+﻿using ETWAnalyzer.Extract;
+using ETWAnalyzer.Extract.Network.Tcp;
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace ETWAnalyzer.Extractor.Tcp
 {

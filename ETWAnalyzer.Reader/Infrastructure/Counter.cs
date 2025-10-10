@@ -14,7 +14,7 @@ namespace ETWAnalyzer.Infrastructure
     /// A keyed counter which can increment a value by key.
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public class Counter<T>
+    internal class Counter<T>
     {
         /// <summary>
         /// Underlying backing store which contains the counts

@@ -6,7 +6,7 @@ using System.Collections.Generic;
 
 namespace ETWAnalyzer.Extractors.CPU
 {
-    public interface IExtractorCPUMethodData
+    internal interface IExtractorCPUMethodData
     {
         decimal CpuInMs { get; }
         decimal FirstOccurrenceSeconds { get; set; }

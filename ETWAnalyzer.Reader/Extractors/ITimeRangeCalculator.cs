@@ -2,7 +2,7 @@
 
 namespace ETWAnalyzer.Extractors
 {
-    public interface ITimeRangeCalculator
+    internal interface ITimeRangeCalculator
     {
         void Freeze();
         long GetAverage();

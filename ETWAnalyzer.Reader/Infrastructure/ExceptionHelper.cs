@@ -9,7 +9,7 @@ namespace ETWAnalyzer
     /// <summary>
     /// Helper methods to find e.g. if you are in an exception unwind scenario.
     /// </summary>
-    public static class ExceptionHelper
+    internal static class ExceptionHelper
     {
         /// <summary>
         /// Check if we are in a exception unwind scenario or not.

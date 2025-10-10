@@ -1038,7 +1038,7 @@ namespace ETWAnalyzer.Commands
         public MinMaxRange<decimal> MinMaxWorkingSetMiB { get; private set; } = new();
         public MinMaxRange<decimal> MinMaxCommitMiB { get; private set; } = new();
         public MinMaxRange<decimal> MinMaxSharedCommitMiB { get; private set; } = new();
-        public MinMaxRange<decimal> MinMaxWorkingsetPrivateMiB { get; private set; } = new();
+        public MinMaxRange<decimal> MinMaxWorkingSetPrivateMiB { get; private set; } = new();
         public int MinDiffMB { get; private set; } 
         public int GlobalDiffMB { get; private set; }
 
@@ -1640,7 +1640,7 @@ namespace ETWAnalyzer.Commands
                     case "-minmaxworkingsetprivatemib":
                         string minmaxworkingsetprivateMiBStr = GetNextNonArg("-minmaxworkingsetprivatemib");
                         KeyValuePair<decimal, decimal> minmaxworkingsetprivate = minmaxworkingsetprivateMiBStr.GetMinMaxDecimal(MiBUnit);
-                        MinMaxWorkingsetPrivateMiB = new MinMaxRange<decimal>(minmaxworkingsetprivate.Key / MiBUnit, minmaxworkingsetprivate.Value / MiBUnit);
+                        MinMaxWorkingSetPrivateMiB = new MinMaxRange<decimal>(minmaxworkingsetprivate.Key / MiBUnit, minmaxworkingsetprivate.Value / MiBUnit);
                         break;
                     case "-minmaxid":
                         string minId = GetNextNonArg("-minmaxid");
@@ -1976,7 +1976,7 @@ namespace ETWAnalyzer.Commands
                 _ => throw new NotSupportedException($"The command {myCommand} does not support explicit column configuration (yet).")
             };
 
-            string[] columns = cols.Split(new char[] {' ',';' }, StringSplitOptions.RemoveEmptyEntries);
+            string[] columns = cols.Split(mySpaceAndSemicolon, StringSplitOptions.RemoveEmptyEntries);
             foreach (string col in columns) 
             {
                 if( col.StartsWith("!") ) // exclude column, set enable flag to false
@@ -2111,7 +2111,7 @@ namespace ETWAnalyzer.Commands
 
 
         internal DumpBase myCurrentDumper = null;
-
+        internal static readonly char[] mySpaceAndSemicolon = new char[] {' ',';' };
 
         public override void Run()
         {
@@ -2500,7 +2500,7 @@ namespace ETWAnalyzer.Commands
                             MinMaxWorkingSetMiB = MinMaxWorkingSetMiB,
                             MinMaxCommitMiB = MinMaxCommitMiB,
                             MinMaxSharedCommitMiB = MinMaxSharedCommitMiB,
-                            MinMaxWorkingsetPrivateMiB = MinMaxWorkingsetPrivateMiB,
+                            MinMaxWorkingSetPrivateMiB = MinMaxWorkingSetPrivateMiB,
                             NoCmdLine = NoCmdLine,
                             ShowDetails = ShowDetails,
                            

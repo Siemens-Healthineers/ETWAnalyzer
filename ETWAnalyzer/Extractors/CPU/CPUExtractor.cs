@@ -175,10 +175,7 @@ namespace ETWAnalyzer.Extractors.CPU
 
                     AddTotalCPUAndPriority(process, indexCache, sample, myPerProcessCPU, myPerProcessPriority);
                     AddPerMethodAndProcessCPU(results, process, sample, methodSamplesPerProcess, printer);
-                    if (myTimelineExtractor != null)
-                    {
-                        myTimelineExtractor.AddSample(process, sample);
-                    }
+                    myTimelineExtractor?.AddSample(process, sample);
                 });
             }
 

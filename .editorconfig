@@ -40,3 +40,12 @@ dotnet_diagnostic.CA1707.severity = silent
 dotnet_diagnostic.CA1028.severity = silent
 
 dotnet_diagnostic.CA5369.severity = silent
+
+# IDE0090: Use 'new(...)'
+dotnet_diagnostic.IDE0090.severity = silent
+
+# IDE0028: Simplify collection initialization
+dotnet_diagnostic.IDE0028.severity = silent
+
+# IDE0305: Collection initialization can be simplified
+dotnet_diagnostic.IDE0305.severity = silent

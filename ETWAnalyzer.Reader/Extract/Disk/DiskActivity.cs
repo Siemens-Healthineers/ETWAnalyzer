@@ -100,7 +100,7 @@ namespace ETWAnalyzer.Extract.Disk
         /// <param name="startTime"></param>
         /// <param name="threadId"></param>
         /// <param name="priority"></param>
-        /// <param name="diskServiceDuration">Duration in microseconds</param>
+        /// <param name="diskServiceDurationUs">Duration in microseconds</param>
         /// <param name="sizeInBytes"></param>
         public void Add(uint pid, DateTimeOffset startTime, uint threadId, DiskIOPriorities priority, ulong diskServiceDurationUs, ulong sizeInBytes)
         {

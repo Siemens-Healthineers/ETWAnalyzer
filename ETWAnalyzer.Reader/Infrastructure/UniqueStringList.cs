@@ -65,10 +65,7 @@ namespace ETWAnalyzer.Infrastructure
         /// <returns>Index to string in list</returns>
         public int GetIndexForString(string str)
         {
-            if( myIndicies == null )
-            {
-                myIndicies = new Dictionary<string, int>();
-            }
+            myIndicies ??= new Dictionary<string, int>();
 
             if( str == null )
             {

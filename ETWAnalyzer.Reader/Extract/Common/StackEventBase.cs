@@ -1,6 +1,7 @@
 ﻿//// SPDX-FileCopyrightText:  © 2024 Siemens Healthcare GmbH
 //// SPDX-License-Identifier:   MIT
 
+using ETWAnalyzer.Extract;
 using Newtonsoft.Json;
 using System;
 
@@ -75,7 +76,7 @@ namespace ETWAnalyzer.Extract.Common
         /// <summary>
         /// Used by serializer to construct a valid instance
         /// </summary>
-        /// <param name="time"></param>
+        /// <param name="nanoSeconds"></param>
         /// <param name="processIdx"></param>
         /// <param name="threadId"></param>
         /// <param name="stackIdx"></param>
