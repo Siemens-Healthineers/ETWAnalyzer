@@ -807,6 +807,12 @@ namespace ETWAnalyzer.EventDump
                 }
             }
 
+            // if parent process is no longer running return process if parent filter matches parent pid
+            if ( lret == false )
+            {
+                lret = Parent($"({process.ParentPid.ToString(CultureInfo.InvariantCulture)})");
+            }
+
             return lret;
         }
 
