@@ -688,8 +688,22 @@ namespace ETWAnalyzer.EventDump
                 }
             }
         }
+        
 
-        private void PrintIssues(List<MatchData> data)
+        void PrintIssues(List<MatchData> data)
+        {
+            switch(IssueType)
+            {
+                case IssueTypes.Post:
+                    PrintPostIssues(data);
+                    break;
+                default:
+                    throw new NotSupportedException($"Issue type {IssueType} is not supported.");
+            }   
+        }
+
+
+        private void PrintPostIssues(List<MatchData> data)
         {
             var byFile = data.GroupBy(x => x.Session.FileName).OrderBy(x => x.First().Session.SessionStart);
             MatchData[] allPrinted = byFile.SelectMany(x => x.SortAscendingGetTopNLast(SortBy, null, null, TopN)).ToArray();
@@ -774,62 +788,68 @@ namespace ETWAnalyzer.EventDump
               );
 
             formatter.PrintHeader();
-            foreach (var issue in data)
+
+            foreach (var oneFile in byFile)
             {
-                string connection = $"{issue.Connection.LocalIpAndPort.ToString().WithWidth(localIPLen)} -> {issue.Connection.RemoteIpAndPort.ToString().WithWidth(remoteIPLen)}";
-                string[] lineData = new string[]
-                {
-                    connection,
-                    GetDateTimeString(issue.Connection.TimeStampOpen, issue.Session.AdjustedSessionStart, TimeFormatOption, false),
-                    GetDateTimeString(issue.Connection.TimeStampClose, issue.Session.AdjustedSessionStart, TimeFormatOption, false),
-                    GetDateTimeString(issue.Issue.PreviousPosted.Time, issue.Session.AdjustedSessionStart, TimeFormatOption, false),
-                    issue.Issue.PreviousPosted.InjectedReason.ToString(),
-                    $"{"N0".WidthFormat(issue.Issue.PreviousPosted.NumBytes, BytesWidth)}",
-                    $"{"N0".WidthFormat(issue.Issue.PreviousPosted.SndNext, SndNextWidth)}",
-                    $"0x{"X".WidthFormat(issue.Connection.Tcb, PointerWidth)}",
-                    "Captured by Firewall",
-                };
+                ColorConsole.WriteEmbeddedColorLine($"{oneFile.First().Session.SessionStart,-22} {GetPrintFileName(oneFile.Key)} {oneFile.First().Session.Baseline}", ConsoleColor.Cyan);
 
-                if (ShowTotal != TotalModes.Total)  // omit connection details in total mode
+                foreach (var issue in oneFile.SortAscendingGetTopNLast(SortBy, null, null, TopN))
                 {
-                    formatter.Print(true, lineData);
-                }
+                    string connection = $"{issue.Connection.LocalIpAndPort.ToString().WithWidth(localIPLen)} -> {issue.Connection.RemoteIpAndPort.ToString().WithWidth(remoteIPLen)}";
+                    string[] lineData = new string[]
+                    {
+                        connection,
+                        GetDateTimeString(issue.Connection.TimeStampOpen, issue.Session.AdjustedSessionStart, TimeFormatOption, false),
+                        GetDateTimeString(issue.Connection.TimeStampClose, issue.Session.AdjustedSessionStart, TimeFormatOption, false),
+                        GetDateTimeString(issue.Issue.PreviousPosted.Time, issue.Session.AdjustedSessionStart, TimeFormatOption, false),
+                        issue.Issue.PreviousPosted.InjectedReason.ToString(),
+                        $"{"N0".WidthFormat(issue.Issue.PreviousPosted.NumBytes, BytesWidth)}",
+                        $"{"N0".WidthFormat(issue.Issue.PreviousPosted.SndNext, SndNextWidth)}",
+                        $"0x{"X".WidthFormat(issue.Connection.Tcb, PointerWidth)}",
+                        "Captured by Firewall",
+                    };
+
+                    if (ShowTotal != TotalModes.Total)  // omit connection details in total mode
+                    {
+                        formatter.Print(true, lineData);
+                    }
 
 
-                lineData = new string[]
-                {
-                    "",
-                    "",
-                    "",
-                    GetDateTimeString(issue.Issue.OutOfOrderPost.Time, issue.Session.AdjustedSessionStart, TimeFormatOption, false),
-                    issue.Issue.OutOfOrderPost.InjectedReason.ToString(),
-                    $"{"N0".WidthFormat(issue.Issue.OutOfOrderPost.NumBytes, BytesWidth)}",
-                    $"{"N0".WidthFormat(issue.Issue.OutOfOrderPost.SndNext, SndNextWidth)}",
-                    "",
-                    $"Posted Packet"
-                };
+                    lineData = new string[]
+                    {
+                        "",
+                        "",
+                        "",
+                        GetDateTimeString(issue.Issue.OutOfOrderPost.Time, issue.Session.AdjustedSessionStart, TimeFormatOption, false),
+                        issue.Issue.OutOfOrderPost.InjectedReason.ToString(),
+                        $"{"N0".WidthFormat(issue.Issue.OutOfOrderPost.NumBytes, BytesWidth)}",
+                        $"{"N0".WidthFormat(issue.Issue.OutOfOrderPost.SndNext, SndNextWidth)}",
+                        "",
+                        $"Posted Packet"
+                    };
 
-                if (ShowTotal != TotalModes.Total)  // omit connection details in total mode
-                {
-                    formatter.Print(true, lineData);
-                }
+                    if (ShowTotal != TotalModes.Total)  // omit connection details in total mode
+                    {
+                        formatter.Print(true, lineData);
+                    }
 
-                lineData = new string[]
-                {
-                    "",
-                    "",
-                    "",
-                    GetDateTimeString(issue.Issue.Injected.Time, issue.Session.AdjustedSessionStart, TimeFormatOption, false),
-                    issue.Issue.Injected.InjectedReason.ToString(),
-                    $"{"N0".WidthFormat(issue.Issue.Injected.NumBytes, BytesWidth)}",
-                    $"{"N0".WidthFormat(issue.Issue.Injected.SndNext, SndNextWidth)}",
-                    "",
-                    $"Out of Post Order injection. SequenceNr Diff:  {issue.Issue.Injected.SndNext-issue.Issue.PreviousPosted.SndNext}"
-                };
+                    lineData = new string[]
+                    {
+                        "",
+                        "",
+                        "",
+                        GetDateTimeString(issue.Issue.Injected.Time, issue.Session.AdjustedSessionStart, TimeFormatOption, false),
+                        issue.Issue.Injected.InjectedReason.ToString(),
+                        $"{"N0".WidthFormat(issue.Issue.Injected.NumBytes, BytesWidth)}",
+                        $"{"N0".WidthFormat(issue.Issue.Injected.SndNext, SndNextWidth)}",
+                        "",
+                        $"Out of Post Order injection. SequenceNr Diff:  {issue.Issue.Injected.SndNext-issue.Issue.PreviousPosted.SndNext}"
+                    };
 
-                if (ShowTotal != TotalModes.Total)  // omit connection details in total mode
-                {
-                    formatter.Print(true, lineData);
+                    if (ShowTotal != TotalModes.Total)  // omit connection details in total mode
+                    {
+                        formatter.Print(true, lineData);
+                    }
                 }
             }
         }
