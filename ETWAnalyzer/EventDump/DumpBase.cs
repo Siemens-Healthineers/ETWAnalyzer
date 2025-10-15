@@ -435,13 +435,27 @@ namespace ETWAnalyzer.EventDump
                     }
                     if (process.IsNew && process.HasEnded) // print process duration as timespan
                     {
-                        lret += $" {process.EndTime - process.StartTime}";
+                        lret += $" {FormatTimeSpan(process.EndTime - process.StartTime, OverridenOrDefaultTimePrecision)}";
                     }
                 }
                 return lret;
             }
 
         }
+
+        string FormatTimeSpan(TimeSpan span, int precision)
+        {
+            if (precision == 0)
+            {
+                return $"{span.TotalSeconds.ToString("F0", CultureInfo.InvariantCulture)} s";
+            }
+            else
+            { 
+                string digits = new string('f', precision);
+                return span.ToString($@"d\.hh\:mm\:ss\.{digits}");
+            }
+        }
+
 
         /// <summary>
         /// Get maximum string length for column width calculation.
