@@ -169,5 +169,4 @@
     <Folder Include="Analyzers\Exception\" />
     <Folder Include="ProcessTools\" />
   </ItemGroup>
-  <ProjectExtensions><VisualStudio><UserProperties runtimeconfig_1template_1json__JsonSchema="https://cdn.jsdelivr.net/npm/liblab@latest/liblab.config.schema.json" /></VisualStudio></ProjectExtensions>
 </Project>
