@@ -192,11 +192,54 @@ namespace ETWAnalyzer.Infrastructure
         /// <param name="input"></param>
         /// <param name="multiplier"></param>
         /// <returns></returns>
-        public static int ConvertToInt(this decimal input, decimal multiplier)
+        public static int? MultiplyToInt(this decimal ?input, decimal multiplier)
         {
-            return input == decimal.MaxValue ? int.MaxValue : (int)(input * multiplier);
+            if( input == null )
+            {
+                return null;
+            }   
+
+            return input.Value == decimal.MaxValue ? int.MaxValue : (int)(input.Value * multiplier);
         }
 
+        /// <summary>
+        /// Multiply a nullable decimal value which can have decimal.MaxValue.
+        /// </summary>
+        /// <param name="input"></param>
+        /// <param name="multiplier"></param>
+        /// <returns></returns>
+        public static decimal? Multiply(this decimal ?input, decimal multiplier)
+        {
+            if( input == null )
+            {
+                return null;
+            }
+            return input.Value == decimal.MaxValue ? decimal.MaxValue : (input.Value * multiplier);
+        }
+
+        /// <summary>
+        /// Multiply a nullable decimal value which can have decimal.MaxValue.
+        /// </summary>
+        /// <param name="input"></param>
+        /// <param name="multiplier"></param>
+        /// <returns></returns>
+        public static double? Multiply(this double? input, decimal multiplier)
+        {
+            if (input == null)
+            {
+                return null;
+            }
+            return input.Value == double.MaxValue ? double.MaxValue : (double) ((decimal) input.Value * multiplier);
+        }
+
+        /// <summary>
+        /// Get from a min-max string the decimal min and max values with unit default unit multiplier applied.
+        /// If units are part of the input string they override the default unit.
+        /// Supported units are Bytes, Byte, KB, KiB, MB, MiB, GB, GiB, TB, TiB, B, ms, us, ns, second, seconds, s.
+        /// </summary>
+        /// <param name="minMaxStr"></param>
+        /// <param name="defaultUnit">default unit multiplier</param>
+        /// <returns>Parsed and multiplied value.</returns>
         public static KeyValuePair<decimal,decimal> GetMinMaxDecimal(this string minMaxStr, decimal defaultUnit)
         {
             string[] minmax = minMaxStr.Split(new char[] { '-' }, StringSplitOptions.RemoveEmptyEntries);
@@ -258,6 +301,65 @@ namespace ETWAnalyzer.Infrastructure
 
             return Tuple.Create(min, max);
         }
+
+        /// <summary>
+        /// Get from a minStr maxStr string the decimal min and max values with unit default unit multiplier applied.
+        /// If units are part of the input string they override the default unit.
+        /// Supported units are Bytes, Byte, KB, KiB, MB, MiB, GB, GiB, TB, TiB, B, ms, us, ns, second, seconds, s.
+        /// </summary>
+        /// <param name="minStr">Minimum value string.</param>
+        /// <param name="maxStr">Optional maximum value string</param>
+        /// <param name="defaultUnit">default unit multiplier</param>
+        /// <returns>Parsed and multiplied value.</returns>
+        public static Tuple<int, int> GetMinMaxInt(this string minStr, string maxStr, decimal defaultUnit)
+        {
+            string minNumber = GetUnit(minStr, out decimal? multiplierMin);
+            int min = (int)((decimal)int.Parse(minNumber) * (multiplierMin ?? defaultUnit));
+
+            int max = int.MaxValue;
+            if (!String.IsNullOrEmpty(maxStr))
+            {
+                string maxNumberStr = GetUnit(maxStr, out decimal? multiplierMax);
+                max = (int) ((decimal)int.Parse(maxNumberStr) * (multiplierMax ?? defaultUnit));
+            }
+
+            return Tuple.Create(min, max);
+        }
+
+        /// <summary>
+        /// Get from a minStr maxStr string the decimal min and max values with unit default unit multiplier applied.
+        /// If units are part of the input string they override the default unit.
+        /// Supported units are Bytes, Byte, KB, KiB, MB, MiB, GB, GiB, TB, TiB, B, ms, us, ns, second, seconds, s.
+        /// </summary>
+        /// <param name="minStr">Minimum value string.</param>
+        /// <param name="maxStr">Optional maximum value string</param>
+        /// <param name="defaultUnit">default unit multiplier</param>
+        /// <returns>Parsed and multiplied value.</returns>
+
+        public static Tuple<decimal, decimal> GetMinMaxDecimal(this string minStr, string maxStr, decimal defaultUnit)
+        {
+            string minNumber = GetUnit(minStr, out decimal? multiplierMin);
+            decimal min = decimal.Parse(minNumber) * (multiplierMin ?? defaultUnit);
+
+            decimal max = decimal.MaxValue;
+            if (!String.IsNullOrEmpty(maxStr))
+            {
+                string maxNumberStr = GetUnit(maxStr, out decimal? multiplierMax);
+                max = decimal.Parse(maxNumberStr) * (multiplierMax ?? defaultUnit);
+            }
+
+            return Tuple.Create(min, max);
+        }
+
+        /// <summary>
+        /// Get from a minStr maxStr string the decimal min and max values with unit default unit multiplier applied.
+        /// If units are part of the input string they override the default unit.
+        /// Supported units are Bytes, Byte, KB, KiB, MB, MiB, GB, GiB, TB, TiB, B, ms, us, ns, second, seconds, s.
+        /// </summary>
+        /// <param name="minStr">Minimum value string.</param>
+        /// <param name="maxStr">Optional maximum value string</param>
+        /// <param name="defaultUnit">default unit multiplier</param>
+        /// <returns>Parsed and multiplied value.</returns>
 
         public static Tuple<double,double> GetMinMaxDouble(this string minStr, string maxStr, decimal defaultUnit)
         {

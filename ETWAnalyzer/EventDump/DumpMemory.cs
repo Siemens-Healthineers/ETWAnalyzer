@@ -7,6 +7,8 @@ using ETWAnalyzer.Extract.Modules;
 using ETWAnalyzer.Infrastructure;
 using ETWAnalyzer.ProcessTools;
 using ETWAnalyzer.Reader.Extensions;
+using ETWAnalyzer.TraceProcessorHelpers;
+using Microsoft.Performance.SDK;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -36,10 +38,10 @@ namespace ETWAnalyzer.EventDump
         public long GlobalDiffMB { get; internal set; }
         public bool TotalMemory { get; internal set; }
 
-        public MinMaxRange<decimal> MinMaxWorkingSetMiB { get; internal set; } = new();
-        public MinMaxRange<decimal> MinMaxCommitMiB { get; internal set; } = new();
-        public MinMaxRange<decimal> MinMaxWorkingSetPrivateMiB { get; internal set; } = new();
-        public MinMaxRange<decimal> MinMaxSharedCommitMiB { get; internal set; } = new();
+        public MinMaxRange<decimal> MinMaxWorkingSetBytes { get; internal set; } = new();
+        public MinMaxRange<decimal> MinMaxCommitBytes { get; internal set; } = new();
+        public MinMaxRange<decimal> MinMaxWorkingSetPrivateBytes { get; internal set; } = new();
+        public MinMaxRange<decimal> MinMaxSharedCommitBytes { get; internal set; } = new();
 
         public DumpCommand.SortOrders SortOrder { get; internal set; }
         public bool NoCmdLine { get; internal set; }
@@ -172,10 +174,10 @@ namespace ETWAnalyzer.EventDump
 
         bool MemoryFilter(IProcessWorkingSet set)
         {
-            return MinMaxWorkingSetMiB.IsWithin( set.WorkingSetInMiB ) &&
-                   MinMaxCommitMiB.IsWithin( set.CommitInMiB ) &&
-                   MinMaxWorkingSetPrivateMiB.IsWithin( set.WorkingsetPrivateInMiB ) &&
-                   MinMaxSharedCommitMiB.IsWithin( set.SharedCommitSizeInMiB);
+            return MinMaxWorkingSetBytes.IsWithin( set.WorkingSetInMiB * (1/Units.MiBUnit) ) &&
+                   MinMaxCommitBytes.IsWithin( set.CommitInMiB * (1 / Units.MiBUnit)) &&
+                   MinMaxWorkingSetPrivateBytes.IsWithin( set.WorkingsetPrivateInMiB * (1 / Units.MiBUnit)) &&
+                   MinMaxSharedCommitBytes.IsWithin( set.SharedCommitSizeInMiB * (1 / Units.MiBUnit));
         }
 
         /// <summary>

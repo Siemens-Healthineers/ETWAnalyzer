@@ -582,9 +582,9 @@ namespace ETWAnalyzer_uTest.EventDump
             new KeyValuePair<string, MinMaxRange<int>>("1", new MinMaxRange<int>(1, int.MaxValue)),
             new KeyValuePair<string, MinMaxRange<int>>("1ms", new MinMaxRange<int>(1, int.MaxValue)),
             new KeyValuePair<string, MinMaxRange<int>>("0.5s", new MinMaxRange<int>(500, int.MaxValue)),
-            new KeyValuePair<string, MinMaxRange<int>>("1s-2s", new MinMaxRange<int>(1000, 2000)),
-            new KeyValuePair<string, MinMaxRange<int>>("1ms-5000", new MinMaxRange<int>(1, 5000)),
-            new KeyValuePair<string, MinMaxRange<int>>("500-1000", new MinMaxRange<int>(500, 1000)),
+            new KeyValuePair<string, MinMaxRange<int>>("1s 2s", new MinMaxRange<int>(1000, 2000)),
+            new KeyValuePair<string, MinMaxRange<int>>("1ms 5000", new MinMaxRange<int>(1, 5000)),
+            new KeyValuePair<string, MinMaxRange<int>>("500 1000", new MinMaxRange<int>(500, 1000)),
         };
 
 
@@ -593,7 +593,7 @@ namespace ETWAnalyzer_uTest.EventDump
         {
             foreach (var input in RangeValues)
             {
-                var args = new string[] { "-dump", "cpu", "-MinMaxCPUms",input.Key };
+                var args = CreateCmdLine(new string[] { "-dump", "cpu", "-MinMaxCPUms" }, input.Key );
                 DumpCommand dump = (DumpCommand)CommandFactory.CreateCommand(args);
                 dump.Parse();
                 dump.Run();
@@ -650,7 +650,7 @@ namespace ETWAnalyzer_uTest.EventDump
 
             foreach (var input in RangeValues)
             {
-                var args = new string[] { "-dump", "cpu", "-MinMaxWaitms", input.Key };
+                var args = CreateCmdLine( new string[] { "-dump", "cpu", "-MinMaxWaitms" }, input.Key );
                 DumpCommand dump = (DumpCommand)CommandFactory.CreateCommand(args);
                 dump.Parse();
                 dump.Run();
@@ -662,13 +662,25 @@ namespace ETWAnalyzer_uTest.EventDump
         }
 
 
+        /// <summary>
+        /// Append all values splitted by space to values array
+        /// </summary>
+        /// <param name="values"></param>
+        /// <param name="key"></param>
+        /// <returns></returns>
+        internal static string[] CreateCmdLine(string[] values, string additionalValues)
+        {
+            List<string> lret = new List<string>(values);
+            lret.AddRange(additionalValues.Split(' '));
+            return lret.ToArray();
+        }
+
         [Fact]
         public void ReadyMs_Filter()
         {
-
             foreach (var input in RangeValues)
             {
-                var args = new string[] { "-dump", "cpu", "-MinMaxReadyMS", input.Key };
+                var args = CreateCmdLine(new string[] { "-dump", "cpu", "-MinMaxReadyMS" }, input.Key );
                 DumpCommand dump = (DumpCommand)CommandFactory.CreateCommand(args);
                 dump.Parse();
                 dump.Run();
@@ -686,12 +698,12 @@ namespace ETWAnalyzer_uTest.EventDump
             {
                 new KeyValuePair<string, MinMaxRange<int>>("1", new MinMaxRange<int>(1, int.MaxValue)),
                 new KeyValuePair<string, MinMaxRange<int>>("1ms", new MinMaxRange<int>(1000, int.MaxValue)),
-                new KeyValuePair<string, MinMaxRange<int>>("1-5", new MinMaxRange<int>(1, 5)),
+                new KeyValuePair<string, MinMaxRange<int>>("1 5", new MinMaxRange<int>(1, 5)),
             };
 
             foreach (var input in readyRanges)
             {
-                var args = new string[] { "-dump", "cpu", "-MinMaxReadyAvgus", input.Key };
+                var args = CreateCmdLine( new string[] { "-dump", "cpu", "-MinMaxReadyAvgus" }, input.Key );
                 DumpCommand dump = (DumpCommand)CommandFactory.CreateCommand(args);
                 dump.Parse();
                 dump.Run();
@@ -710,12 +722,12 @@ namespace ETWAnalyzer_uTest.EventDump
             {
                 new KeyValuePair<string, MinMaxRange<int>>("1", new MinMaxRange<int>(1, int.MaxValue)),
                 new KeyValuePair<string, MinMaxRange<int>>("0", new MinMaxRange<int>(0, int.MaxValue)),
-                new KeyValuePair<string, MinMaxRange<int>>("1-5", new MinMaxRange<int>(1, 5)),
+                new KeyValuePair<string, MinMaxRange<int>>("1 5", new MinMaxRange<int>(1, 5)),
             };
 
             foreach (var input in readyRanges)
             {
-                var args = new string[] { "-dump", "cpu", "-MinMaxCSwitchCount", input.Key };
+                var args = CreateCmdLine( new string[] { "-dump", "cpu", "-MinMaxCSwitchCount" }, input.Key );
                 DumpCommand dump = (DumpCommand)CommandFactory.CreateCommand(args);
                 dump.Parse();
                 dump.Run();

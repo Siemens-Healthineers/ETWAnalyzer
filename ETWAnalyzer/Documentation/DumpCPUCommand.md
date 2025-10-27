@@ -177,7 +177,7 @@ slowdown and we can trust this number.
 
 To identify the region where Defender did intercept our calls we can use WPA, or we can interleave method names and Stacktags in one common output. 
 ```
-EtwAnalyzer -dump CPU -pn SerializerTests -stacktags *virus* -methods * -minmaxWaitMs 500-900 -SortBy wait
+EtwAnalyzer -dump CPU -pn SerializerTests -stacktags *virus* -methods * -minmaxWaitMs 500 900 -SortBy wait
 ```
 ![](Images/DumpCPUAV_SortByWait.png "Dump AV Sort By Wait")
 
@@ -188,7 +188,7 @@ but there is a list of pretty much all Filter Driver altitudes published by Micr
 of the Who’s Who of AV device drivers. ETWAnalyzer can use that to our advantage and print module infos for well known
 driver names:
 ```
-EtwAnalyzer -dump CPU -pn SerializerTests -stacktags *virus* -methods * -MinMaxWaitMs 500-900 -SortBy Wait -id -smi -clip -NoReady
+EtwAnalyzer -dump CPU -pn SerializerTests -stacktags *virus* -methods * -MinMaxWaitMs 500 900 -SortBy Wait -id -smi -clip -NoReady
 ```
 ![alt text](Images/WindowsDefender_SMI.png)
 

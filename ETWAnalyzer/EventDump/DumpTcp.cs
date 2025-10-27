@@ -64,7 +64,7 @@ namespace ETWAnalyzer.EventDump
         /// <summary>
         /// Filter for every Tcp Retransmission time
         /// </summary>
-        public MinMaxRange<int> MinMaxRetransDelayMs { get; internal set; }
+        public MinMaxRange<double> MinMaxRetransDelayS { get; internal set; }
         public MinMaxRange<int> MinMaxRetransBytes { get; internal set; }
         public MinMaxRange<double> MinMaxConnectionDurationS { get; internal set; } = new();
         public bool ShowRetransmit { get; internal set; }
@@ -100,6 +100,10 @@ namespace ETWAnalyzer.EventDump
         public IssueTypes IssueType { get; internal set; }
         public MinMaxRange<ulong> MinMaxInject { get; internal set; } = new();
         public MinMaxRange<ulong> MinMaxPost { get; internal set; } = new();
+        public MinMaxRange<ulong> MinMaxBytes { get; internal set; } = new();
+        public MinMaxRange<ulong> MinMaxReceivedPackets { get; internal set; } = new();
+        public MinMaxRange<ulong> MinMaxSentPackets { get; internal set; } = new();
+        public MinMaxRange<ulong> MinMaxPackets { get; internal set; } = new();
 
         /// <summary>
         /// Unit testing only. ReadFileData will return this list instead of real data
@@ -1052,6 +1056,27 @@ namespace ETWAnalyzer.EventDump
                     continue;
                 }
 
+                if( !MinMaxBytes.IsWithin(connection.BytesReceived + connection.BytesSent))
+                {
+                    continue;
+                }
+
+                if ( !MinMaxReceivedPackets.IsWithin((ulong) connection.DatagramsReceived))
+                {
+                    continue;
+                }
+
+                if( !MinMaxSentPackets.IsWithin((ulong) connection.DatagramsSent))
+                {
+                    continue;
+                }
+
+                if( !MinMaxPackets.IsWithin((ulong)(connection.DatagramsReceived + connection.DatagramsSent)))
+                {
+                    continue;
+                }
+
+
                 if (!MinMaxSentBytes.IsWithin(connection.BytesSent))
                 {
                     continue;
@@ -1066,7 +1091,7 @@ namespace ETWAnalyzer.EventDump
 
                 foreach (var retransmission in retransmissionsForConnection)
                 {
-                    if (!MinMaxRetransDelayMs.IsWithin((int)retransmission.RetransmitDiff().TotalMilliseconds))
+                    if (!MinMaxRetransDelayS.IsWithin(retransmission.RetransmitDiff().TotalSeconds))
                     {
                         continue;
                     }

@@ -443,7 +443,13 @@ namespace ETWAnalyzer.EventDump
 
         }
 
-        string FormatTimeSpan(TimeSpan span, int precision)
+        /// <summary>
+        /// Common method to format a TimeSpan into a string with variable precision
+        /// </summary>
+        /// <param name="span"></param>
+        /// <param name="precision"></param>
+        /// <returns>string representation</returns>
+        protected string FormatTimeSpan(TimeSpan span, int precision)
         {
             if (precision == 0)
             {

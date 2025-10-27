@@ -50,7 +50,7 @@ namespace ETWAnalyzer_uTest.EventDump
 
             var dumper = new DumpDns()
             {
-                MinMaxTimeMs = new ETWAnalyzer.Infrastructure.MinMaxRange<double>(1, null),
+                MinMaxTimeS = new ETWAnalyzer.Infrastructure.MinMaxRange<double>(1, null),
                 ShowDetails = true,
             };
 
@@ -67,7 +67,7 @@ namespace ETWAnalyzer_uTest.EventDump
 
             var dumper = new DumpDns()
             {
-                MinMaxTotalTimeMs = new ETWAnalyzer.Infrastructure.MinMaxRange<double>(2, null),
+                MinMaxTotalTimeS = new ETWAnalyzer.Infrastructure.MinMaxRange<decimal>(2, null),
                 ShowDetails = true,
             };
 

@@ -61,12 +61,12 @@ namespace ETWAnalyzer.Extract.Network.Tcp
         public ulong? SegmentsOut { get; }
 
         /// <summary>
-        /// Send events which were posted to TCP send queue
+        /// Count of send events which were posted to TCP send queue
         /// </summary>
         public ulong? SendPostedPosted { get;  }
 
         /// <summary>
-        /// Send events which were injected by firewall to TCP send queue
+        /// Count of send events which were injected by firewall to TCP send queue
         /// </summary>
         public ulong? SendPostedInjected { get;  }
     }
