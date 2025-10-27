@@ -141,6 +141,12 @@ namespace ETWAnalyzer.EventDump
             SortOrders.Default,
         };
 
+
+        Func<MatchData,string> GetDurationFormatter()
+        {
+            return m => m.LifeTime == null ? "" : base.FormatTimeSpan(m.LifeTime.Value, OverridenOrDefaultTimePrecision);
+        }
+
         /// <summary>
         /// Get column enabled status
         /// </summary>
@@ -219,14 +225,12 @@ namespace ETWAnalyzer.EventDump
                 return;
             }
 
-            string timeSpanFormat = "hh\\:mm\\:ss\\." + new string('f', OverridenOrDefaultTimePrecision);
-
 
             // column data extractors
             Func<MatchData, string> getpid = m => m.ProcessId.ToString().WithWidth(PidWidth);
             Func<MatchData, string> getStartTime = m => m.StartTime != null ? GetDateTimeString(m.StartTime.Value, m.SessionStart, TimeFormatOption) : "";
             Func<MatchData, string> getStopTime = m => m.EndTime != null ? GetDateTimeString(m.EndTime.Value, m.SessionStart, TimeFormatOption) : "";
-            Func<MatchData, string> getDuration = m => (TimePrecision == null || m.LifeTime == null) ? m.LifeTimeString : m.LifeTime.Value.ToString(timeSpanFormat);
+            Func<MatchData, string> getDuration = GetDurationFormatter();
             Func<MatchData, string> getReturnCode = m => m.ReturnCodeString;
             Func<MatchData, string> getParent = m => m.ParentProcessId.ToString().WithWidth(PidWidth);  
             Func<MatchData, string> getSessionId = m => m.SessionId.ToString();
@@ -403,8 +407,9 @@ namespace ETWAnalyzer.EventDump
         {
             string indention = new string(' ', 2 * level); // 2 spaces per level
 
+            var durationFormatter = GetDurationFormatter();
             int userWidth = root.Childs.Count == 0 ? 0 : root.Childs.Max(x => x.User.Length);
-            int lifeTimeWidth = root.Childs.Count == 0 ? 0 : root.Childs.Max(x => x.LifeTimeString.Length);
+            int lifeTimeWidth = root.Childs.Count == 0 ? 0 : root.Childs.Max(x => durationFormatter(x).Length);
             int startTimeWidth = root.Childs.Count == 0 ? 0 : root.Childs.Max(x => x.StartTime.HasValue ? GetDateTimeString(x.StartTime.Value, x.SessionStart, TimeFormatOption).Length : 0);
             int stopTimeWidth = root.Childs.Count == 0 ? 0 : root.Childs.Max(x => x.EndTime.HasValue ? GetDateTimeString(x.EndTime.Value, x.SessionStart, TimeFormatOption).Length : 0);
             int returnCodeWidth = root.Childs.Count == 0 ? 0 : root.Childs.Max(x => (x.ReturnCodeString?.Length).GetValueOrDefault());

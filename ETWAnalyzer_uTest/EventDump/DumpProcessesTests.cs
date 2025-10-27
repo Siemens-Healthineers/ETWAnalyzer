@@ -124,10 +124,10 @@ namespace ETWAnalyzer_uTest.EventDump
                 "5000     ImmortalParent.exe ",
                 "  |- 5001     ImmortalChild.exe ",
                 "500      ImmortalRoot.exe ",
-                "1234    +10.000 - 20.000 00:00:10  Parent.exe hi ",
+                "1234    +10.000 - 20.000 0.00:00:10.000  Parent.exe hi ",
                 "  |- 10      +12.000  cmd.exe /StartOnly ",
-                "  |- 12345   +15.000 - 25.000 00:00:10  cmd.exe /TransientChild ",
-                "1234    +-0.000 - 9.990 00:00:09.9900000  ParentWrong.exe hi ",
+                "  |- 12345   +15.000 - 25.000 0.00:00:10.000  cmd.exe /TransientChild ",
+                "1234    +-0.000 - 9.990 0.00:00:09.990  ParentWrong.exe hi ",
             };
 
             var lines = testOutput.GetSingleLines();
