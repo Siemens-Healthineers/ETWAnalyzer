@@ -94,7 +94,7 @@ namespace ETWAnalyzer.EventDump
         public MinMaxRange<double> MinMaxReceivedS { get; internal set; } = new();
         public MinMaxRange<double> MinMaxSentS { get; internal set; } = new();
         public bool KeepAliveFilter { get; internal set; }
-        public MinMaxRange<double> MinMaxSendDelayS { get; internal set; }
+        public MinMaxRange<double> MinMaxSentDelayS { get; internal set; }
         public MinMaxRange<double> MinMaxReceiveDelayS { get; internal set; }
         public static IssueTypes ValidIssueTypes { get; internal set; }
         public IssueTypes IssueType { get; internal set; }
@@ -104,6 +104,14 @@ namespace ETWAnalyzer.EventDump
         public MinMaxRange<ulong> MinMaxReceivedPackets { get; internal set; } = new();
         public MinMaxRange<ulong> MinMaxSentPackets { get; internal set; } = new();
         public MinMaxRange<ulong> MinMaxPackets { get; internal set; } = new();
+
+        // statistics filter ranges can be null because if any of them is set the connection must have been closed to have valid statistics
+        public MinMaxRange<ulong> MinMaxStatPacketsOut { get; internal set; }
+        public MinMaxRange<ulong> MinMaxStatPacketsIn { get; internal set; }
+        public MinMaxRange<ulong> MinMaxStatBytesIn { get; internal set; }
+        public MinMaxRange<ulong> MinMaxStatBytesOut { get; internal set; }
+        public MinMaxRange<ulong> MinMaxStatBytes { get; internal set; }
+        public MinMaxRange<ulong> MinMaxStatPackets { get; internal set; }
 
         /// <summary>
         /// Unit testing only. ReadFileData will return this list instead of real data
@@ -1016,7 +1024,7 @@ namespace ETWAnalyzer.EventDump
                     continue;
                 }
 
-                if (!MinMaxSendDelayS.IsWithin(connection?.Statistics.MaxSendDelayS ?? 0.0d))
+                if (!MinMaxSentDelayS.IsWithin(connection?.Statistics.MaxSendDelayS ?? 0.0d))
                 {
                     continue;
                 }
@@ -1076,6 +1084,35 @@ namespace ETWAnalyzer.EventDump
                     continue;
                 }
 
+                // when a Statistics filter is active, make sure statistics are present which is only true for closed connections or already existing
+                // ones where at trace start/end a TCP Rundown was performed.
+                if (MinMaxStatPacketsOut != null || 
+                    MinMaxStatBytesOut != null ||
+                    MinMaxStatBytes != null ||
+                    MinMaxStatPacketsIn != null || 
+                    MinMaxStatPacketsOut != null ||
+                    MinMaxStatPackets != null
+                    )
+                {
+                    if( connection.Statistics.DataBytesIn == null ||
+                        connection.Statistics.DataBytesOut == null ||
+                        connection.Statistics.SegmentsIn == null ||
+                        connection.Statistics.SegmentsOut == null)
+                    {
+                        continue;
+                    }
+                }
+
+                // connection statiscs filters. When active they apply to closed connections or tcp connection rundown data when trace was stopped.
+                if ( MinMaxStatBytesIn?.IsWithin( connection.Statistics.DataBytesIn.Value) == false ||
+                    MinMaxStatBytesOut?.IsWithin( connection.Statistics.DataBytesOut.Value) == false ||
+                    MinMaxStatBytes?.IsWithin( connection.Statistics.DataBytesIn.Value + connection.Statistics.DataBytesOut.Value) == false ||
+                    MinMaxStatPacketsIn?.IsWithin( connection.Statistics.SegmentsIn.Value) == false ||
+                    MinMaxStatPacketsOut?.IsWithin( connection.Statistics.SegmentsOut.Value) == false ||
+                    MinMaxStatPackets?.IsWithin( connection.Statistics.SegmentsIn.Value + connection.Statistics.SegmentsOut.Value) == false )
+                {
+                    continue;
+                }
 
                 if (!MinMaxSentBytes.IsWithin(connection.BytesSent))
                 {

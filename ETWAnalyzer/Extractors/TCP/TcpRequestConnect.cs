@@ -46,7 +46,7 @@ namespace ETWAnalyzer.Extractors.TCP
     }
 
     /// <summary>
-    /// It is written when a connection is closed.
+    /// It is written when a connection is closed or when a TCP rundown was performed.
     /// </summary>
     internal class TcpConnectionSummary
     {

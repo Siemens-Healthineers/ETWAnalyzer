@@ -369,14 +369,18 @@ namespace ETWAnalyzer.Commands
         static readonly string TcpHelpStringHeader =
         "  Tcp -filedir/fd Extract\\ or xx.json7z [-IpPort xx] [-ShowRetransmits] [-TopN dd nn] [-SortBy ReceivedCount/SentCount/ReceivedSize/SentSize/TotalCount/TotalSize/ConnectTime/DisconnectTime/RetransmissionCount/RetransmissionTime/MaxRetransmissionTime/LastSentTime/LastReceivedTime/MaxReceiveDelay/MaxReceiveDelay]" + Environment.NewLine +
         "       [-SortRetransmitBy Delay/Time] [-Issue [Post]] [-MinMaxRetransDelayMs xx-yy] [-MinMaxRetransBytes xx-yy] [-MinMaxRetransCount xx-yy] [-MinMaxSentBytes xx-yy] [-MinMaxReceivedBytes xx-yy] [-TopNRetrans dd nn] [-OnlyClientRetransmit] [-Details] [-Stats] [-Tcb 0xdddddd] " + Environment.NewLine +
-        "       [-MinMaxLastReceivedS xx yy] [-MinMaxLastSentS xx yy] [-Column xx;yy] [-Reset] [-MinMaxConnect xx yy] [-MinMaxDisconnect xx zz] [-KeepAlive] [-MinMaxReceiveDelayS xx yy] [-MinMaxSendDelayS xx yy] [-MinMaxPost xx yy] [-MinMaxInject xx yy]" + Environment.NewLine +
+        "       [-MinMaxLastReceivedS xx yy] [-MinMaxLastSentS xx yy] [-Column xx;yy] [-Reset] [-MinMaxConnect xx yy] [-MinMaxDisconnect xx zz] [-KeepAlive] [-MinMaxReceiveDelayS xx yy] [-MinMaxSentDelayS xx yy] [-MinMaxStatBytes/In/Out xx yy] [-MinMaxStatPackets/In/Out xx yy]  [-MinMaxPost xx yy] [-MinMaxInject xx yy]" + Environment.NewLine +
         "       [-TimeFmt s,Local,LocalTime,UTC,UTCTime,Here,HereTime] [-TimeDigits d] [-csv xx.csv] [-NoCSVSeparator] [-NoCmdLine] [-Clip] [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd] [-MinMaxMsTestTimes xx-yy ...] [-ProcessName/pn xx.exe(pid)] " + Environment.NewLine +
         "       [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-CmdLine substring] [-recursive] [-ZeroTime/zt Marker/First/Last/ProcessStart filter] [-ZeroProcessName/zpn filter] [-ShowTotal [File/None]] [-ProcessFmt timefmt] " + Environment.NewLine;
         static readonly string TcpHelpString = TcpHelpStringHeader +
         "       Print TCP summary and retransmit metrics. To see data you need to enable the Microsoft-Windows-TCPIP ETW provider. Data is sorted by retransmission count by default." + Environment.NewLine +
         "       It can detect send retransmissions and duplicate received packets which show up as client retransmission events." + Environment.NewLine + 
-        "       -IpPort xx                 Filter for substrings in source/destination IP and port." + Environment.NewLine +
+		"  Issue specific filters" + Environment.NewLine +
         "       -Issue [Post]              Print detected network issues. Currently only Post is supported which can detect Firewall issues which corrupt network packets by injecting packets not in original send order." + Environment.NewLine +
+        "       -MinMaxPost xx yy          Filter for connections which have posted to TCP send queue (via ws2_32.dll!send) xx-yy send requests" + Environment.NewLine +
+        "       -MinMaxInject xx yy        Filter for connections which have injected xx-yy packets in the TCP send path. This is usually done by Firewall which will remove posted packets and inject them later again." + Environment.NewLine +   
+		"  Generic filters" + Environment.NewLine + 		
+        "       -IpPort xx                 Filter for substrings in source/destination IP and port." + Environment.NewLine +		
         "       -ShowTotal [File,None]     Show totals per file. Default is File. None will turn off totals." + Environment.NewLine +
         "       -TopN dd nn                Show top n connection by current sort order" + Environment.NewLine +
         "       -TopNRetrans dd nn         Show top n retransmission events when -ShowRetransmit is used" + Environment.NewLine +
@@ -389,24 +393,15 @@ namespace ETWAnalyzer.Commands
         "       -ShowRetransmit            Show single retransmission events with timing data. Use -timefmt s to convert time to WPA time. Use this or -Details to get all events into a csv file." + Environment.NewLine +
         "       -OnlyClientRetransmit      Only show client retransmissions which are visible by duplicate received packets with a payload > 1 bytes." + Environment.NewLine +
         "       -Reset                     Filter for connections which were reset by us due to connection establishment/send timeouts." + Environment.NewLine +
-        "       -MinMaxPost xx yy          Filter for connections which have posted to TCP send queue (via ws2_32.dll!send) xx-yy send requests" + Environment.NewLine +
-        "       -MinMaxInject xx yy        Filter for connections which have injected xx-yy packets in the TCP send path. This is usually done by Firewall which will remove posted packets and inject them later again." + Environment.NewLine +   
-        "       -MinMaxConnect    xx yy    Connect time filter in ETW session time in seconds. Use -MinMaxConnect 0 0 to find connections which have no connect time because they did already exist before tracing started." + Environment.NewLine +
-        "       -MinMaxDisconnect xx yy    Disconnect time filter in ETW session time in seconds. Use -MinMaxDisconnect 0 0 to find connections which are still active. " + Environment.NewLine +
-        "       -MinMaxRetransDelayMs xx yy Filter by retransmission delay in ms. By default all retransmissions are shown." + Environment.NewLine +
-        "       -MinMaxRetransBytes xx yy  Filter every retransmission event by retransmission size (sent/received) in bytes. Default is > 1 bytes because 0 and 1 byte packets are often just ACKs or timer based ping packets." + Environment.NewLine +
-        "       -MinMaxRetransCount xx yy  Show only connections which have at least xx retransmission events" + Environment.NewLine + 
-        "       -MinMaxSentBytes xx yy     Filter connections which have sent at least xx bytes." + Environment.NewLine + 
-        "       -MinMaxReceivedBytes xx yy Filter connections which have received at least xx bytes." + Environment.NewLine +
-        "       -MinMaxBytes xx yy         Filter connections which have in total (send+receive) at least xx bytes." + Environment.NewLine +
-        "       -MinMaxSentPackets xx yy   Filter connections which have sent at least xx packets." + Environment.NewLine +
-        "       -MinmaxReceivedPackets xx yy Filter connections which have sent at least xx packets." + Environment.NewLine +
-        "       -MinMaxPackets xx yy       Filter connections which have int total (send+receive) at least xx packets." + Environment.NewLine +
-        "       -MinMaxConnectionDurationS xx yy Filter connections which have duration of at least xx yy seconds." + Environment.NewLine +
-        "       -MinMaxLastReceivedS xx yy Filter connections for last receive time in s. Use -MinMaxLastReceivedS 0 0 to find connections which have received no data." + Environment.NewLine +
-        "       -MinMaxLastSentS xx yy     Filter connections for last sent time in s. Use -MinMaxLastSentS 0 0 to find connections with no send activity." + Environment.NewLine +
-        "       -MinMaxReceiveDelayS xx yy  Filter connections which have a maximum receive delay between two packets of xx yy seconds. Useful to check if some keepalive mechanism is active." + Environment.NewLine +
-        "       -MinMaxSendDelayS xx yy     Filter connections which have a maximum send delay between two packets of xx yy seconds. Useful to check if some keepalive mechanism is active." + Environment.NewLine +
+        "       -MinMaxStatBytes/In/Out xx yy  Filter OS statistics for received (-MinMaxStatBytesIn)/sent (-MinMaxStatBytesOut)/sent+received (-MinMaxStatBytes) bytes over connection lifetime (=closed), or when TCP Rundown data was collected when connection is still active." + Environment.NewLine +
+        "       -MinMaxStatPackets/In/Out xx yy Filter OS statistics for total received (-MinMaxStatPacketsIn)/sent (-MinMaxStatPacketsOut)/sent+received (-MinMaxStatPackets) packets over connection lifetime (=closed), or when TCP Rundown data was collected when connection is still active." + Environment.NewLine +
+        "       -MinMax/SentBytes/Received/Bytes xx yy Filter connections which have sent (-MinMaxSentBytes)/received (-MinMaxReivedBytes)/sent+received (-MinMaxBytes) at least xx bytes during trace session." + Environment.NewLine +
+        "       -MinMax/Sent/Received/Packets xx yy  Filter sent (-MinMaxSentPackets), received (-MinMaxReceivedPackets) and send+receive (-MinMaxPackets) packet counts during trace session." + Environment.NewLine +
+        "       -MinMaxRetransDelayMs/RetransBytes/RetransCount xx yy Filter for connections by retransmission delay/retransmitted bytes or retransmission count." + Environment.NewLine +
+        "       -MinMaxConnect/Disconnect xx yy Connect/Disconnect time filter in ETW session time in seconds. Use -MinMaxDisconnect 0 0 to find connections which are still active. Use -MinMaxConnect 0 0 to find connections which were already established when tracing was started." + Environment.NewLine +
+        "       -MinMaxConnectionDurationS xx yy Filter connections which have a duration of at least xx yy seconds." + Environment.NewLine +
+        "       -MinMaxLast/Sent/ReceivedS xx yy Filter connections for last send (-MinMaxLastSent)/receive (-MinMaxReceivedS) time in s. Use -MinMaxLastReceivedS 0 0 to find connections which have received no data. Use -MinMaxLastSentS 0 0 to find connections with no send activity." + Environment.NewLine +
+        "       -MinMaxSent/Receive/DelayS xx yy Filter connections which have a send (-MinMaxSentDelayS)/receive (-MinMaxReceiveDelayS) delay between two packets of xx yy seconds. Useful to check if some keepalive mechanism is active." + Environment.NewLine +
         "       -KeepAlive                 Filter connections which have TCP keepalive enabled. If the connection lifetime is  too short this might skip connections because no keepalive packet was sent." + Environment.NewLine + 
         "       -Details                   Show retransmit Max/Median/Min, connect/disconnect time, used TCP template setting, TCB pointer, ..." + Environment.NewLine +
         "       -Stats                     Show connection statistics collected by OS during connection close or at trace start for an existing connection (can go missing due to event loss). This includes transmitted byte/packet counts over connection lifetime." + Environment.NewLine +
@@ -1015,7 +1010,7 @@ namespace ETWAnalyzer.Commands
         public MinMaxRange<double> MinMaxConnectionDurationS { get; private set; } = new();
         public MinMaxRange<double> MinMaxReceivedS {  get; private set; } = new();
         public MinMaxRange<double> MinMaxReceiveDelayS { get; private set; } = new();
-        public MinMaxRange<double> MinMaxSendDelayS { get; private set; } = new();
+        public MinMaxRange<double> MinMaxSentDelayS { get; private set; } = new();
 
         public MinMaxRange<double> MinMaxSentS { get; private set; } = new();
 
@@ -1125,6 +1120,15 @@ namespace ETWAnalyzer.Commands
         public SkipTakeRange TopNRetrans { get; private set; } = new();
         public MinMaxRange<ulong> MinMaxSentBytes { get; private set; } = new();
         public MinMaxRange<ulong> MinMaxReceivedBytes { get; private set; } = new();
+
+        public MinMaxRange<ulong> MinMaxStatBytesIn { get; private set; } = null;  // Stat filters can be null because we need to differentiate if these are set or not
+        public MinMaxRange<ulong> MinMaxStatBytesOut { get; private set; } = null;
+        public MinMaxRange<ulong> MinMaxStatBytes { get; private set; } = null;
+        public MinMaxRange<ulong> MinMaxStatPacketsIn { get; private set; } = null;
+        public MinMaxRange<ulong> MinMaxStatPacketsOut { get; private set; } = null;
+        public MinMaxRange<ulong> MinMaxStatPackets { get; private set; } = null;
+        
+
         public MinMaxRange<ulong> MinMaxBytes { get; private set; } = new();
 
         public MinMaxRange<ulong> MinMaxReceivedPackets { get; private set; } = new();
@@ -1513,8 +1517,8 @@ namespace ETWAnalyzer.Commands
                     case "-minmaxreceivedelays":
                         MinMaxReceiveDelayS = GetDoubleRange("-minmaxreceivedelays", Units.SameUnit);
                         break;
-                    case "-minmaxsenddelays":
-                        MinMaxSendDelayS = GetDoubleRange("-minmaxsenddelays", Units.SameUnit); 
+                    case "-minmaxsentdelays":
+                        MinMaxSentDelayS = GetDoubleRange("-minmaxsentdelays", Units.SameUnit); 
                         break;
                     case "-minmaxlastsents":
                         MinMaxSentS = GetDoubleRange("-minmaxlastsents", Units.SameUnit);
@@ -1553,6 +1557,24 @@ namespace ETWAnalyzer.Commands
                         break;
                     case "-minmaxreceivedbytes":
                         MinMaxReceivedBytes = GetULongRange("-minmaxreceivedbytes", Units.SameUnit);
+                        break;
+                    case "-minmaxstatbytesin":
+                        MinMaxStatBytesIn = GetULongRange("-minmaxstatbytesin", Units.SameUnit);
+                        break;
+                    case "-minmaxstatbytes":
+                        MinMaxStatBytes = GetULongRange("-minmaxstatbytes", Units.SameUnit);
+                        break;
+                    case "-minmaxstatbytesout":
+                        MinMaxStatBytesOut = GetULongRange("-minmaxstatbytesout", Units.SameUnit);
+                        break;
+                    case "-minmaxstatpacketsin":
+                        MinMaxStatPacketsIn = GetULongRange("-minmaxstatpacketsin", Units.SameUnit);
+                        break;
+                    case "-minmaxstatpacketsout":
+                        MinMaxStatPacketsOut = GetULongRange("-minmaxstatpacketsout", Units.SameUnit);
+                        break;
+                    case "-minmaxstatpackets":
+                        MinMaxStatPackets = GetULongRange("-minmaxstatpackets", Units.SameUnit);
                         break;
                     case "-minmaxbytes":
                         MinMaxBytes = GetULongRange("-minmaxbytes", Units.SameUnit);
@@ -2631,6 +2653,12 @@ namespace ETWAnalyzer.Commands
                             MinMaxSentBytes = MinMaxSentBytes,
                             MinMaxReceivedBytes = MinMaxReceivedBytes,
                             MinMaxBytes = MinMaxBytes,
+                            MinMaxStatPacketsOut = MinMaxStatPacketsOut,
+                            MinMaxStatPacketsIn = MinMaxStatPacketsIn,
+                            MinMaxStatPackets = MinMaxStatPackets,
+                            MinMaxStatBytesIn = MinMaxStatBytesIn,
+                            MinMaxStatBytesOut = MinMaxStatBytesOut,
+                            MinMaxStatBytes = MinMaxStatBytes,
                             MinMaxReceivedPackets = MinMaxReceivedPackets,
                             MinMaxSentPackets = MinMaxSentPackets,
                             MinMaxPackets = MinMaxPackets,
@@ -2642,7 +2670,7 @@ namespace ETWAnalyzer.Commands
                             MinMaxConnect = MinMaxConnect,
                             MinMaxReceivedS = MinMaxReceivedS,
                             MinMaxSentS = MinMaxSentS,
-                            MinMaxSendDelayS = MinMaxSendDelayS,
+                            MinMaxSentDelayS = MinMaxSentDelayS,
                             MinMaxReceiveDelayS = MinMaxReceiveDelayS,
                             MinMaxInject = MinMaxInject,
                             MinMaxPost = MinMaxPost,
