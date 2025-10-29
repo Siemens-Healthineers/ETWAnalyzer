@@ -139,7 +139,7 @@ namespace ETWAnalyzer.Commands
         static readonly string CPUHelpStringHeader =
         "  CPU -filedir/fd Extract\\ or xx.json7z [-recursive] [-csv xx.csv] [-NoCSVSeparator] [-ProcessFmt timefmt] [-Methods method1;method2...] [-FirstLastDuration/fld [firsttimefmt] [lasttimefmt]] [-MinMaxCSwitchCount xx yy] [-MinMaxReadyAvgus xx yy]" + Environment.NewLine +
         "       [-ThreadCount] [-SortBy [CPU/Wait/CPUWait/CPUWaitReady/ReadyAvg/CSwitchCount/StackDepth/First/Last/TestTime/StartTime] [-StackTags tag1;tag2] [-CutMethod xx-yy] [-ShowOnMethod] [-ShowModuleInfo [Driver] or [filter]] [-NoCmdLine] [-Clip]" + Environment.NewLine +
-        "       [-Details [-NoFrequency] [-Normalize]] [-NoReady] [-ShowTotal Total, Process, Method] [-topn dd nn] [-topNMethods dd nn] [-ZeroTime/zt Marker/First/Last/ProcessStart filter] [-ZeroProcessName/zpn filter] " + Environment.NewLine +
+        "       [-Details [-NoFrequency] [-Normalize]] [-NoReady] [-NoCoreUsage] [-ShowCoreNumber] [-ShowTotal Total, Process, Method] [-topn dd nn] [-topNMethods dd nn] [-ZeroTime/zt Marker/First/Last/ProcessStart filter] [-ZeroProcessName/zpn filter] " + Environment.NewLine +
         "       [-includeDll] [-includeArgs] [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd] [-MinMaxMsTestTimes xx-yy ...] [-ProcessName/pn xx.exe(pid)] [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-CmdLine substring]" + Environment.NewLine +
         "       [-ShowFullFileName/-sffn]" + Environment.NewLine;
         static readonly string CPUHelpString = CPUHelpStringHeader + 
@@ -193,6 +193,8 @@ namespace ETWAnalyzer.Commands
         "         -NoFrequency             When -Details is present do not print P/E core CPU usage and average frequency." + Environment.NewLine +
         "       -NoPriority                Omit process Priority in total cpu mode and when methods are printed in -Details mode." + Environment.NewLine +   
         "       -NoReady                   Do not print Ready time, average or percentiles (when -Details is used) per method." + Environment.NewLine +
+        "       -NoCoreUsage               Hide Number of used cores in CPU summary." + Environment.NewLine +
+        "       -ShowCoreNumber            Show in CPU summary the list of used cores for each process." + Environment.NewLine +
         "       -Session dd;yy             Filter processes by Windows session id. Multiple filters are separated by ;" + Environment.NewLine +
         "                                  E.g. dd;dd2 will filter for all dd instances and dd2. The wildcards * and ? are supported for all filter strings." + Environment.NewLine +
         "       For other options [-recursive] [-csv] [-NoCSVSeparator] [-TimeFmt] [-TestsPerRun] [-SkipNTests] [-TestRunIndex] [-TestRunCount] [-MinMaxMsTestTimes] [-ProcessName/pn] [-NewProcess] [-CmdLine]" + Environment.NewLine +
@@ -997,6 +999,10 @@ namespace ETWAnalyzer.Commands
         public MinMaxRange<int> MinMaxReadyAverageUs { get; private set; } = new();
         public MinMaxRange<int> MinMaxCSwitch { get; private set; } = new();
         public bool NoReadyDetails { get; private set; }
+
+        public bool ShowCoreNumber { get; private set; }
+        public bool NoCoreUsage { get; private set; } 
+
         public bool NoFrequencyDetails { get; private set; }
         public bool NoPriorityDetails { get; private set; }
         
@@ -1720,6 +1726,12 @@ namespace ETWAnalyzer.Commands
                     case "-threadcount":
                         ThreadCount = true;
                         break;
+                    case "-showcorenumber":
+                        ShowCoreNumber = true;
+                        break;
+                    case "-nocoreusage":
+                        NoCoreUsage = true;
+                        break;
                     case "-noready":
                         NoReadyDetails = true;
                         break;
@@ -2210,6 +2222,7 @@ namespace ETWAnalyzer.Commands
                             MinMaxWaitMs = MinMaxWaitMs,
                             MinMaxReadyMs = MinMaxReadyMs,
                             NoReadyDetails = NoReadyDetails,
+                            NoCoreUsage = NoCoreUsage,
                             NoFrequencyDetails = NoFrequencyDetails,
                             NoPriorityDetails = NoPriorityDetails,
                             Normalize = Normalize,
@@ -2225,6 +2238,7 @@ namespace ETWAnalyzer.Commands
                             LastTimeFormat = LastTimeFormat,
                             SortOrder = SortOrder,
                             ShowTotal = ShowTotal,
+                            ShowCoreNumber = ShowCoreNumber,
                             ShowDetails = ShowDetails,
                             ShowDetailsOnMethodLine = ShowDetailsOnMethodLine,
                             ShowModuleInfo = ShowModuleInfo,
