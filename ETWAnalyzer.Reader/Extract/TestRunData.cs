@@ -114,7 +114,7 @@ namespace ETWAnalyzer.Extract
         {
             if(inputFileOrDirectories == null || inputFileOrDirectories.Count == 0)
             {
-                throw new ArgumentException($"{nameof(inputFileOrDirectories)} was null or empty");
+                throw new ArgumentException($"You must enter a file query to select files. E.g. -fd *.etl for extraction or -fd *.json7z for dumping extracted data.");
             }
 
             List<TestRun> runs = new List<TestRun>();
