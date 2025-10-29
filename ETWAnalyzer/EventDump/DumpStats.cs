@@ -282,7 +282,7 @@ namespace ETWAnalyzer
                     {
                         foreach (TestDataFile file in test.Value.Files.Where(TestFileFilter))
                         {
-                            if( file.Extract.SessionStart == DateTimeOffset.MinValue) // we got some random json file which is not an ETWExtract ignore it
+                            if( file.Extract == null || file.Extract.SessionStart == DateTimeOffset.MinValue) // we got some random json file which is not an ETWExtract ignore it
                             {
                                 continue;
                             }
