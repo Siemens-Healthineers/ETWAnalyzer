@@ -17,6 +17,7 @@ using System.Collections.Concurrent;
 using ETWAnalyzer.Extract.CPU;
 using ETWAnalyzer.Extract.CPU.Extended;
 using System.Diagnostics;
+using XPerfCustomDataSource.Utility;
 
 namespace ETWAnalyzer.Extractors.CPU
 {
@@ -428,6 +429,30 @@ namespace ETWAnalyzer.Extractors.CPU
             return lret;
         }
 
+        ConcurrentSet<string> myLoggedProblemSymbols = new();
+
+        /// <summary>
+        /// Get function name from stack frame with exception handling and logging where pdb resolution errors are only logged once per image name.
+        /// </summary>
+        /// <param name="frame"></param>
+        /// <returns>Resolved method name or empty string.</returns>
+        string GetFunctionName(Microsoft.Windows.EventTracing.Symbols.StackFrame frame)
+        {
+            string functionName = "";
+            try
+            {
+                functionName = frame.Symbol?.FunctionName ?? "";
+            }
+            catch (NotImplementedException ex)
+            {
+                if (myLoggedProblemSymbols.Add(frame.Image?.FileName ?? "UnknownImage"))
+                {
+                    Logger.Warn($"Symbol load did throw an exception for image {frame.Image?.FileName}. Exception: {ex}");
+                }
+            }
+            return functionName;
+        }
+
         private void AddPerMethodAndProcessWaits(ETWExtract extract, ProcessKey process, ICpuThreadActivity slice, ConcurrentDictionary<ProcessKey, ConcurrentDictionary<string, ExtractorCPUMethodData>> methodSamplesPerProcess, StackPrinter printer, bool hasCpuSampleData)
         {
             if (slice?.Process?.ImageName == null)  // Image Name can be null sometimes
@@ -465,7 +490,7 @@ namespace ETWAnalyzer.Extractors.CPU
                     }
                 }
 
-                string method = printer.GetPrettyMethod(frame.Symbol?.FunctionName, frame);
+                string method = printer.GetPrettyMethod(GetFunctionName(frame), frame);
                 string methodWithRva = StackPrinter.AddRva(method, frame.RelativeVirtualAddress);
 
                 if (recursionCountGuard.Add(methodWithRva) == false)
@@ -555,17 +580,7 @@ namespace ETWAnalyzer.Extractors.CPU
                     }
                 }
 
-                string functionName = "";    
-                try
-                {
-                    functionName = frame.Symbol?.FunctionName;
-                }
-                catch(NotImplementedException ex)
-                {
-                    Logger.Warn($"Symbol load did throw an exception for image {frame.Image?.FileName}. Exception: {ex}");
-                }
-
-                string method = printer.GetPrettyMethod(functionName, frame);
+                string method = printer.GetPrettyMethod(GetFunctionName(frame), frame);
                 string rvaMethod = StackPrinter.AddRva(method, frame.RelativeVirtualAddress);
 
                 if (recursionCountGuard.Add(rvaMethod) == false)
