@@ -125,8 +125,13 @@ namespace ETWAnalyzer.ProcessTools
             {
                 Console.Write(ClipToConsole(text));
             }
+            else if( prevIdx > 0 && prevIdx < text.Length ) // remainder after last newline
+            {
+                var line = text.Substring( prevIdx, text.Length - prevIdx);
+                Console.Write(ClipToConsole(line));
+            }
 
-            if( lineFeed) // multi line with final line feed
+            if (lineFeed) // multi line with final line feed
             {
                 Console.WriteLine();
             }
