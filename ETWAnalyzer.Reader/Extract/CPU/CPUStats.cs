@@ -37,8 +37,33 @@ namespace ETWAnalyzer.Extract
         {
             get;
         } = new();
-
+                       
         IReadOnlyDictionary<ETWProcessIndex, float> ICPUStats.PerProcessAvgCPUPriority => PerProcessAvgCPUPriority;
+
+        /// <summary>
+        /// List of used CPU cores by this process. If a process uses not all cores this can be hint that a CPU affinity mask was set.
+        /// </summary>
+        public Dictionary<ETWProcessIndex, List<uint>> PerProcessCoreUsage { get; private set; } = new();
+
+        IReadOnlyDictionary<ETWProcessIndex, IReadOnlyList<uint>> myPerProcessCoreUsageReadOnly = null;
+        IReadOnlyDictionary<ETWProcessIndex, IReadOnlyList<uint>> ICPUStats.PerProcessCoreUsage
+        {
+            get
+            {
+                if (myPerProcessCoreUsageReadOnly == null)
+                {
+                    var local  = new Dictionary<ETWProcessIndex, IReadOnlyList<uint>>();
+
+                    foreach (var kvp in PerProcessCoreUsage)
+                    {
+                        local[kvp.Key] = kvp.Value.AsReadOnly();
+                    }
+                    myPerProcessCoreUsageReadOnly = local;
+                }
+
+                return myPerProcessCoreUsageReadOnly;
+            }
+        }
 
         /// <summary>
         /// Contains methods which have CPU/Wait > 10ms (default) 
@@ -132,14 +157,16 @@ namespace ETWAnalyzer.Extract
         /// </summary>
         /// <param name="perProcessCPUConsumptionInMs"></param>
         /// <param name="perProcessAvgCPUPriority"></param>
+        /// <param name="perProcessCoreUsage"></param>
         /// <param name="perProcessMethodCostsInclusive"></param>
         /// <param name="timeLine"></param>
         /// <param name="cpuInfos">CPU informations</param>
         /// <param name="extendedMetrics">Extended metrics</param>
-        public CPUStats(Dictionary<ProcessKey, uint> perProcessCPUConsumptionInMs, Dictionary<ETWProcessIndex, float> perProcessAvgCPUPriority, CPUPerProcessMethodList perProcessMethodCostsInclusive, CPUTimeLine timeLine, Dictionary<CPUNumber, CPUTopology> cpuInfos, CPUExtended extendedMetrics)
+        public CPUStats(Dictionary<ProcessKey, uint> perProcessCPUConsumptionInMs, Dictionary<ETWProcessIndex, float> perProcessAvgCPUPriority, Dictionary<ETWProcessIndex, List<uint>> perProcessCoreUsage, CPUPerProcessMethodList perProcessMethodCostsInclusive, CPUTimeLine timeLine, Dictionary<CPUNumber, CPUTopology> cpuInfos, CPUExtended extendedMetrics)
         {
             PerProcessCPUConsumptionInMs = perProcessCPUConsumptionInMs;
-            PerProcessAvgCPUPriority = perProcessAvgCPUPriority;   
+            PerProcessAvgCPUPriority = perProcessAvgCPUPriority ?? new();   
+            PerProcessCoreUsage = perProcessCoreUsage ?? new();  // Avoid null reference for legacy data.
             PerProcessMethodCostsInclusive = perProcessMethodCostsInclusive;
             TimeLine = timeLine;
             Topology = cpuInfos;

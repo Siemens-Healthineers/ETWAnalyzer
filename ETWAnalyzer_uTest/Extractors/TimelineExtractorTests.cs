@@ -115,7 +115,7 @@ namespace ETWAnalyzer_uTest.Extractors
             ProcessKey key = new("tester.exe", 100, DateTimeOffset.MinValue);
 
             StaticTraceProcessorContext.MetaData = new TraceMetaDataMock(new DateTimeOffset(2000, 1, 1, 0, 0, 0, TimeSpan.Zero));
-            extract.CPU = new CPUStats(null, null, null, GetSampleData(key),null, null);
+            extract.CPU = new CPUStats(null, null, null, null, GetSampleData(key),null, null);
 
             MemoryStream stream = new();
             ExtractSerializer.Serialize(stream, extract);

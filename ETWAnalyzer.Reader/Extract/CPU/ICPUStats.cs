@@ -23,6 +23,11 @@ namespace ETWAnalyzer.Extract
         IReadOnlyDictionary<ETWProcessIndex, float> PerProcessAvgCPUPriority { get; }
 
         /// <summary>
+        /// List of used CPU cores by this process. If a process uses not all cores this can be hint that a CPU affinity mask was set.
+        /// </summary>
+        IReadOnlyDictionary<ETWProcessIndex, IReadOnlyList<uint>> PerProcessCoreUsage { get; }
+
+        /// <summary>
         /// Contains methods which have CPU/Wait > 10ms (default) 
         /// </summary>
         ICPUPerProcessMethodList PerProcessMethodCostsInclusive { get; }

@@ -180,7 +180,7 @@ namespace ETWAnalyzer_uTest.EventDump
                 DummyMethod,
             };
 
-            extract.CPU = new CPUStats(null, null, new CPUPerProcessMethodList()
+            extract.CPU = new CPUStats(null, null, null, new CPUPerProcessMethodList()
             {
                 MethodStatsPerProcess = new List<MethodsByProcess>
                 {
@@ -872,6 +872,7 @@ namespace ETWAnalyzer_uTest.EventDump
                         { (ETWProcessIndex) 0, 8.0f},
                         { (ETWProcessIndex) 1, 6.0f},
                     },
+                    null,
                     methodList,
                     null,
                     null, 
@@ -906,7 +907,7 @@ namespace ETWAnalyzer_uTest.EventDump
             redirect.Flush();
             var lines = redirect.GetSingleLines();
             Assert.Equal(4, lines.Count);
-            Assert.Equal("\t      CPU ms Process Name        ",    lines[0]);
+            Assert.Equal("\t      CPU ms #Cores Process Name        ",    lines[0]);
             Assert.Equal("1/1/2000 12:00:00 AM    ",               lines[1] );
             Assert.Equal("\t    5,000 ms test1.exe(1024)        ", lines[2]);
             Assert.Equal("\t    6,000 ms test2.exe(2000)        ", lines[3]);
@@ -933,7 +934,7 @@ namespace ETWAnalyzer_uTest.EventDump
             redirect.Flush();
             var lines = redirect.GetSingleLines();
             Assert.Equal(4, lines.Count);
-            Assert.Equal("\t      CPU ms Priority Process Name        ", lines[0]);
+            Assert.Equal("\t      CPU ms Priority #Cores Process Name        ", lines[0]);
             Assert.Equal("1/1/2000 12:00:00 AM    ", lines[1]);
             Assert.Equal("\t    5,000 ms      8.0 test1.exe(1024)        ", lines[2]);
             Assert.Equal("\t    6,000 ms      6.0 test2.exe(2000)        ", lines[3]);
@@ -998,7 +999,7 @@ namespace ETWAnalyzer_uTest.EventDump
             var lines = redirect.GetSingleLines();
 
             Assert.Equal(4, lines.Count);
-            Assert.Equal("\t      CPU ms Process Name        ",     lines[0]);
+            Assert.Equal("\t      CPU ms #Cores Process Name        ",     lines[0]);
             Assert.Equal("1/1/2000 12:00:00 AM    CPU 11,000 ms  ", lines[1]);
             Assert.Equal("\t    5,000 ms test1.exe(1024)        ",  lines[2]);
             Assert.Equal("\t    6,000 ms test2.exe(2000)        ",  lines[3]);
@@ -1031,7 +1032,7 @@ namespace ETWAnalyzer_uTest.EventDump
             var lines = redirect.GetSingleLines();
 
             Assert.Equal(4, lines.Count);
-            Assert.Equal("\t      CPU ms Priority Process Name        ", lines[0]);
+            Assert.Equal("\t      CPU ms Priority #Cores Process Name        ", lines[0]);
             Assert.Equal("1/1/2000 12:00:00 AM    CPU 11,000 ms  ", lines[1]);
             Assert.Equal("\t    5,000 ms      8.0 test1.exe(1024)        ", lines[2]);
             Assert.Equal("\t    6,000 ms      6.0 test2.exe(2000)        ", lines[3]);
@@ -1179,7 +1180,7 @@ namespace ETWAnalyzer_uTest.EventDump
             var lines = redirect.GetSingleLines();
 
             Assert.Equal(3, lines.Count);
-            Assert.Equal("\t      CPU ms Process Name        ", lines[0]);
+            Assert.Equal("\t      CPU ms #Cores Process Name        ", lines[0]);
             Assert.Equal("\t   16,001 ms 2222.exe(2222)       +60.000 hi  ", lines[1]);
             Assert.Equal("\t        7 ms cmd.exe(1234)        +120.000 hi  ", lines[2]);
         }
@@ -1206,7 +1207,7 @@ namespace ETWAnalyzer_uTest.EventDump
             var lines = redirect.GetSingleLines();
 
             Assert.Equal(3, lines.Count);
-            Assert.Equal("\t      CPU ms Priority Process Name        ", lines[0]);
+            Assert.Equal("\t      CPU ms Priority #Cores Process Name        ", lines[0]);
             Assert.Equal("\t   16,001 ms      8.0 2222.exe(2222)       +60.000 hi  ", lines[2]);
         }
 
@@ -1233,7 +1234,7 @@ namespace ETWAnalyzer_uTest.EventDump
             var lines = redirect.GetSingleLines();
 
             Assert.Equal(3, lines.Count);
-            Assert.Equal("\t      CPU ms Process Name        ", lines[0]);
+            Assert.Equal("\t      CPU ms #Cores Process Name        ", lines[0]);
             Assert.Equal("\t        7 ms cmd.exe(1234)        +120.000 hi  ", lines[1]);
             Assert.Equal("\t   16,001 ms 2222.exe(2222)       +60.000 hi  ", lines[2]);
         }
@@ -1268,7 +1269,7 @@ namespace ETWAnalyzer_uTest.EventDump
                     {
                         { myCmdProcess, 7 },
                         { myCmdProcess2, 16001 },
-                    }, new Dictionary<ETWProcessIndex, float>(), null, null, null, null),
+                    }, new Dictionary<ETWProcessIndex, float>(), null, null, null, null, null),
 
             };
 
@@ -1312,7 +1313,7 @@ namespace ETWAnalyzer_uTest.EventDump
                     {
                         { myCmdProcess, 7 },
                         { myCmdProcess2, 16001 },
-                    }, null, null, null, null, null),
+                    }, null, null, null, null, null, null),
 
             };
 
