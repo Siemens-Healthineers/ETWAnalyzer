@@ -121,17 +121,15 @@ namespace ETWAnalyzer.ProcessTools
                 Console.Write(ClipToConsole(line));
             }
 
-            if (prevIdx == 0 )  // single line is printed
+            // Simplified remainder handling:
+            // If no newline was found prevIdx == 0 -> write full text.
+            // If there is remaining text after the last newline -> write substring.
+            if (prevIdx < text.Length)
             {
-                Console.Write(ClipToConsole(text));
-            }
-            else if( prevIdx > 0 && prevIdx < text.Length ) // remainder after last newline
-            {
-                var line = text.Substring( prevIdx, text.Length - prevIdx);
-                Console.Write(ClipToConsole(line));
+                Console.Write(ClipToConsole(prevIdx == 0 ? text : text.Substring(prevIdx)));
             }
 
-            if (lineFeed) // multi line with final line feed
+            if (lineFeed)
             {
                 Console.WriteLine();
             }
