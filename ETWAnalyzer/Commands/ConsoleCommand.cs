@@ -570,13 +570,19 @@ namespace ETWAnalyzer.Commands
                 try
                 {
                     var runs = TestRun.CreateFromDirectory(arg, bRecursive ? System.IO.SearchOption.AllDirectories : System.IO.SearchOption.TopDirectoryOnly, null);
-                    IEnumerable<Lazy<SingleTest>> filesToAdd = runs.SelectMany(x => x.Tests).SelectMany(x => x.Value).Select(x =>
+                    IEnumerable<SingleTest> filesToAdd = runs.SelectMany(x => x.Tests).SelectMany(x => x.Value);
+
+                    // prevent loading same file multiple times or unrelated files, especially when doing recursive queries 
+                    HashSet<string> extractedUniqueFiles  = filesToAdd.SelectMany(x => x.Files).Select(x => x.JsonExtractFileWhenPresent).Where( x => x != null).ToHashSet();
+                    var jsonTests = extractedUniqueFiles.Select(jsonFileName =>
                     {
-                        x.KeepExtract = true; // do not unload serialized Extract when test is disposed.
-                        ForceDeserializeOnLoadWhenRequested(bFullLoad, x);
-                        return new Lazy<SingleTest>(() => x);
+                        var test = new SingleTest(new TestDataFile[] { new TestDataFile(jsonFileName) });
+                        test.KeepExtract = true;
+                        ForceDeserializeOnLoadWhenRequested(bFullLoad, test);
+                        return new Lazy<SingleTest>(() => test);
                     });
-                    tests.AddRange(filesToAdd);
+
+                    tests.AddRange(jsonTests);
                 }
                 catch(Exception ex)
                 {
