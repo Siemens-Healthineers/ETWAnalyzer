@@ -349,7 +349,7 @@ namespace ETWAnalyzer.Extractors.TCP
                 bool bFound = false;
                 foreach (var conn in connectionsByTcb[rundownAtStart.Tcb])
                 {
-                    if (conn.TimeStampOpen == null)
+                    if (conn.TimeStampOpen == null || (conn.TimeStampOpen != null && conn.TimeStampClose== null ) )
                     {
                         bFound = true;  // connection was already added by other TCP events do not add it again
                         break;
