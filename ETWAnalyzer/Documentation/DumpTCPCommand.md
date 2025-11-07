@@ -7,15 +7,60 @@ ETWAnalyzer -extract All -fd xx.etl or
 ETWAnalyzer -extract TCP xx.etl:
 ```
 
-- Number of received/sent packets per connection.
-- Number of received/sent bytes per connection.
-- Number of TCP retransmission events (sent and received).
-    - Induced latency by summing up all retramission delays per connection.
-- Invidual TCP retransmission events with time (*-ShowRetransmit*). Default is local time. It can be changed with *[-timefmt s](DumpProcessCommand.md)* or *here* to 
-  WPA time or you current analyzing machine time.
-- Min/Max/Median of all retransmission events (shown with *-Details*).
-- Used TCP template during connection init (shown with *-Details*).
+After extraction you can dump TCP connection data with 
+```
+ETWAnalyzer -console tcpTrace.json7z
+.dump TCP -TopN 5
+```
 
+For each TCP connection the following data is extracted:
+- **Connection**: Use ```-IpPort``` to filter for connections. As first value always the recording host IP and port is shown followed by remote destination and port. 
+  IPv6 addresses which are wrapped IPv4 are shown in a non standard decimal format to make it easy to identify both addresses.
+- **Connect/Disconnect Time:** Use ```-MinMaxConnect/Disconnect xx yy``` to filter for connections within a time range in ETW session time in seconds.
+  To filter for connection with a specific duration use ```-MinMaxConnectionDurationS xx yy```.
+- **Connection Reset Time:** Present when connection was reset because no connection could be established, or sending did fail due to too many retransmissions. Use ```-Reset -column +ResetTime``` flag to find all connections which were reset.
+- **Client Connection Reset Time:** Use ```-MinMaxClientResetS xx yy``` e.g. ```-MinMaxClientResetS 0.1``` to find all connections which were reset by client.
+- **Received/Sent Packets:** Use ```-MinMaxStatPackets/In/Out xx yy``` which are ```-MinMaxStatPackets``` for total packet count and ```-MinMaxStatPacketsIn``` and ```-MinMaxStatPacketsOut``` for
+  incoming and outgoing packets.
+- **Received/Sent Bytes:** Use ```-MinMax/SentBytes/Received/Bytes xx yy``` which are ```-MinMaxSentBytes```, ```-MinMaxReceivedBytes``` and ```-MinMaxBytes``` for total bytes.
+  
+- **TCP Retransmission** data:
+    - Number of TCP retransmission events (sent and received).
+    - Induced latency by summing up all retramission delays per connection.
+    - Invidual TCP retransmission events with time (*-ShowRetransmit*). Default is local time. It can be changed with *[-timefmt s](DumpProcessCommand.md)* or *here* t          o 
+      WPA time or you current analyzing machine time.
+    - Min/Max/Median of all retransmission events (shown with *-Details*).
+- **LastSentTime:** Last time a packet was sent on this connection. The last send time includes be also zero sized keep alive or control packets. 
+  Use -MinMaxLastSentS
+- **MaxSendDelay:** Maximum time between to sent packets on this connection. Useful to find connections with their own keepalive implementation.
+  Use ```-MinMaxSentDelayS```
+- **LastReceivedTime:** Last time a packet was received on this connection. The last receive time includes be also zero sized keep alive or control packets.
+  Use ```-MinMaxLastReceivedS```
+- **MaxReceiveDelay:** Maximum time between two received packets on this connection. Useful to find connections with their own keepalive implementation.
+  Use ```-MinMaxReceiveDelayS```
+- **KeepAlive**: Windows has its own connection keepalive mechanism. When keepalive events are found the KeepAlive column gets a true value. To find all connections 
+  where keepalive events were found use ```.dump tcp -KeepAlive -column +KeepAlive```
+- **TCP Template:** Selected set of timings depending on connection latency during init. Use ```-Details``` or ```-column +template``` to show the used template.
+- **TCB Pointer:** Transfer Control Block pointer which is used by the kernel during the lifetime of a connection. Use  ```-Tcb 0xdddddd``` to filter and ```-Details``` or ```-column +TCB``` to show its value. 
+  This is helpful to correlate WPA data grouped by TCB and connection for further analysis together with ETWAnalyzer. 
+- **TCP Rundown Data** 
+    - The ETW Event **TcpConnectionSummary** contains data for all still open connections when the ETW trace is stopped
+       - DataBytesIn/DataBytesOut
+       - DataSegmentsIn/DataSegmentsOut
+       - SegmentsOut/SegmentsIn are not used by ETWAnalyzer until now. 
+    - Which TcpConnectionSummary data is mapped to columns
+      -  **StatBytesIn/StatBytesIn:** Total number of data bytes sent/received on this connection.
+      -  **StatPacketsIn/StatPacketsOut:** Total number of data packets sent/received on this connection.
+ - Special Purpose fields used to analyze firewall issues:
+    - **Posted Packets**: Data from TcpSendPosted with **Injected** Field = **posted** events which indicates posting a packets into the TCP send queue. 
+    - **Injected Packets**: Data from TcpSendPosted with **Injected** Field = **injected**. This are usually packets where injected after packet inspected by a firewall.
+      A firewall will usually remove previously posted packets and inject new packets after inspection.
+ - **Process Name**
+    - The associated process name can be wrong due to a number of reasons. For already existing connections no event exists to map a connection
+      to a specific process. During connection creation we have often a good chance to identify the right process but not always. 
+      TCP events are often processed inside DPC or ISR context where no process context is available. Since socket connections can also be shared between
+      processes there is no 100% guarantee that the shown process name is correct. At best it can be used as a hint. 
+    
 Since ETWAnalyzer is all about performance the network data is sorted by TCP retransmission event count which indicates possible network issues and is a hint
 to observed application delays. 
 
