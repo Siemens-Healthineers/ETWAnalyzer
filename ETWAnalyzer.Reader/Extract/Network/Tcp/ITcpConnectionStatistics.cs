@@ -6,7 +6,7 @@ using System;
 namespace ETWAnalyzer.Extract.Network.Tcp
 {
     /// <summary>
-    /// Contains per connection statistics like last sent/received time, maximum delay between packets,
+    /// Contains per connection statistics like last sent/received time, maximum delay between packets and if connection was closed with a RST packet.
     /// </summary>
     public interface ITcpConnectionStatistics
     {
@@ -40,34 +40,38 @@ namespace ETWAnalyzer.Extract.Network.Tcp
         /// <summary>
         /// From OS Connection Summary when connection was closed.  
         /// </summary>
-        public ulong? DataBytesIn { get; }
+        ulong? DataBytesIn { get; }
 
         /// <summary>
         /// From OS Connection Summary when connection was closed.  
         /// </summary>
 
-        public ulong? DataBytesOut { get; }
+        ulong? DataBytesOut { get; }
 
         /// <summary>
         /// From OS Connection Summary when connection was closed.  
         /// </summary>
 
-        public ulong? SegmentsIn { get; }
+        ulong? SegmentsIn { get; }
 
         /// <summary>
         /// From OS Connection Summary when connection was closed.  
         /// </summary>
-
-        public ulong? SegmentsOut { get; }
+        ulong? SegmentsOut { get; }
 
         /// <summary>
         /// Count of send events which were posted to TCP send queue
         /// </summary>
-        public ulong? SendPostedPosted { get;  }
+        ulong? SendPostedPosted { get;  }
 
         /// <summary>
         /// Count of send events which were injected by firewall to TCP send queue
         /// </summary>
-        public ulong? SendPostedInjected { get;  }
+        ulong? SendPostedInjected { get;  }
+
+        /// <summary>
+        /// Time when connection did receive a connection reset (RST) packet from client
+        /// </summary>
+        DateTimeOffset? RstReceivedTime { get; }
     }
 }

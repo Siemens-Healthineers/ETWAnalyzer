@@ -23,6 +23,11 @@ namespace ETWAnalyzer.EventDump
         /// </summary>
         internal Dictionary<string, bool> ColumnConfiguration { get; set; } = new(StringComparer.OrdinalIgnoreCase);
 
+        /// <summary>
+        /// If MergeColumnConfig is true column configuration from parent commands are merged into this command.
+        /// </summary>
+        internal bool MergeColumnConfig {get;set;} =  false;
+
         protected bool GetOverrideFlag(string column, bool defaultFlag)
         {
             // if only disable rules are active we leave the enabled defaults 
@@ -35,7 +40,7 @@ namespace ETWAnalyzer.EventDump
             }
 
             // all other columns are disabled if explicit enable columns are configured.
-            return onlyDisableRules ? defaultFlag : false;
+            return (onlyDisableRules || MergeColumnConfig) ? defaultFlag : false;
         }
 
 

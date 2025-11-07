@@ -72,6 +72,11 @@ namespace ETWAnalyzer.Extract.Network.Tcp
         public ulong? SendPostedInjected {  get; internal set; }
 
         /// <summary>
+        /// Time when connection did receive a connection reset (RST) packet from client
+        /// </summary>
+        public DateTimeOffset? RstReceivedTime { get; internal set; }
+
+        /// <summary>
         /// Used by Json Serializer to create a new instance of this class.
         /// Each input value name must match the property name case insensitive, or we will get some properties not deserialized. 
         /// </summary>
@@ -86,8 +91,9 @@ namespace ETWAnalyzer.Extract.Network.Tcp
         /// <param name="segmentsOut"></param>
         /// <param name="sendPostedInjected"></param>
         /// <param name="sendPostedPosted"></param>
+        /// <param name="rstReceivedTime"></param>
         public TcpConnectionStatistics(DateTimeOffset? lastSent, DateTimeOffset? lastReceived, bool? keepAlive, double? maxSendDelayS, double? maxReceiveDelayS, 
-              ulong? dataBytesIn, ulong? dataBytesOut, ulong? segmentsIn, ulong? segmentsOut, ulong? sendPostedPosted, ulong? sendPostedInjected)
+              ulong? dataBytesIn, ulong? dataBytesOut, ulong? segmentsIn, ulong? segmentsOut, ulong? sendPostedPosted, ulong? sendPostedInjected, DateTimeOffset? rstReceivedTime)
         {
             LastSent = lastSent;
             LastReceived = lastReceived;
@@ -100,6 +106,7 @@ namespace ETWAnalyzer.Extract.Network.Tcp
             SegmentsOut = segmentsOut;
             SendPostedPosted = sendPostedPosted;
             SendPostedInjected = sendPostedInjected;
+            RstReceivedTime = rstReceivedTime;  
         }
     }
 }

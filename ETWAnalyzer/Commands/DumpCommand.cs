@@ -82,7 +82,7 @@ namespace ETWAnalyzer.Commands
         "               HereTime                Same as Here but without date string." + Environment.NewLine +
         "            -TimeDigits d              By default time is formatted with ms (= 3 digits) precision. Supported values are from 0-6." + Environment.NewLine +
         "            -Column xx;yy              Enable/disable specific columns which are printed, or exclude them by prepending them with !. E.g. -column !Duration;!Parentpid;!process will exclude these columns from " + Environment.NewLine +
-       $"                                       the default enabled columns. Valid column names are {String.Join(";", DumpProcesses.ColumnNames.Take(7))}" + Environment.NewLine +
+       $"                                       the default enabled columns. Prepending with + will add column to default enabled colums. Valid column names are {String.Join(";", DumpProcesses.ColumnNames.Take(7))}" + Environment.NewLine +
        $"                                       {String.Join(";", DumpProcesses.ColumnNames.Skip(7))}" + Environment.NewLine +
         "            -ProcessName/pn x;y.exe    Filter by process name or process id. Exclusion filters start with !, Multiple filters are separated by ;" + Environment.NewLine +
         "                                       E.g. cmd;!1234 will filter for all cmd.exe instances excluding cmd.exe(1234). The wildcards * and ? are supported for all filter strings." + Environment.NewLine +
@@ -370,8 +370,9 @@ namespace ETWAnalyzer.Commands
 
         static readonly string TcpHelpStringHeader =
         "  Tcp -filedir/fd Extract\\ or xx.json7z [-IpPort xx] [-ShowRetransmits] [-TopN dd nn] [-SortBy ReceivedCount/SentCount/ReceivedSize/SentSize/TotalCount/TotalSize/ConnectTime/DisconnectTime/RetransmissionCount/RetransmissionTime/MaxRetransmissionTime/LastSentTime/LastReceivedTime/MaxReceiveDelay/MaxReceiveDelay]" + Environment.NewLine +
-        "       [-SortRetransmitBy Delay/Time] [-Issue [Post]] [-MinMaxRetransDelayMs xx-yy] [-MinMaxRetransBytes xx-yy] [-MinMaxRetransCount xx-yy] [-MinMaxSentBytes xx-yy] [-MinMaxReceivedBytes xx-yy] [-TopNRetrans dd nn] [-OnlyClientRetransmit] [-Details] [-Stats] [-Tcb 0xdddddd] " + Environment.NewLine +
-        "       [-MinMaxLastReceivedS xx yy] [-MinMaxLastSentS xx yy] [-Column xx;yy] [-Reset] [-MinMaxConnect xx yy] [-MinMaxDisconnect xx zz] [-KeepAlive] [-MinMaxReceiveDelayS xx yy] [-MinMaxSentDelayS xx yy] [-MinMaxStatBytes/In/Out xx yy] [-MinMaxStatPackets/In/Out xx yy]  [-MinMaxPost xx yy] [-MinMaxInject xx yy]" + Environment.NewLine +
+        "       [-SortRetransmitBy Delay/Time] [-Issue [Post]] [-MinMaxRetransDelayMs xx-yy] [-MinMaxRetransBytes xx-yy] [-MinMaxRetransCount xx-yy] [-MinMaxSentBytes xx-yy] [-MinMaxReceivedBytes xx-yy] [-TopNRetrans dd nn] [-OnlyClientRetransmit] [-Details] [-Stats] [-Tcb 0xdddddd]" + Environment.NewLine +
+        "       [-MinMaxLastReceivedS xx yy] [-MinMaxLastSentS xx yy] [-Column xx;yy] [-MinMaxConnect xx yy] [-MinMaxDisconnect xx zz] [-KeepAlive] [-MinMaxReceiveDelayS xx yy] [-MinMaxSentDelayS xx yy] [-MinMaxStatBytes/In/Out xx yy] [-MinMaxStatPackets/In/Out xx yy]  [-MinMaxPost xx yy] [-MinMaxInject xx yy]" + Environment.NewLine +
+        "       [-Reset] [-MinMaxClientResetS xx yy]" + Environment.NewLine + 
         "       [-TimeFmt s,Local,LocalTime,UTC,UTCTime,Here,HereTime] [-TimeDigits d] [-csv xx.csv] [-NoCSVSeparator] [-NoCmdLine] [-Clip] [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd] [-MinMaxMsTestTimes xx-yy ...] [-ProcessName/pn xx.exe(pid)] " + Environment.NewLine +
         "       [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-CmdLine substring] [-recursive] [-ZeroTime/zt Marker/First/Last/ProcessStart filter] [-ZeroProcessName/zpn filter] [-ShowTotal [File/None]] [-ProcessFmt timefmt] " + Environment.NewLine;
         static readonly string TcpHelpString = TcpHelpStringHeader +
@@ -388,13 +389,14 @@ namespace ETWAnalyzer.Commands
         "       -TopNRetrans dd nn         Show top n retransmission events when -ShowRetransmit is used" + Environment.NewLine +
         "       -SortBy [...]              Default sort order is total bytes. Valid sort orders are ReceivedCount/SentCount/ReceivedSize/SentSize/TotalCount/TotalSize/ConnectTime/DisconnectTime/RetransmissionCount/RetransmissionTime/MaxRetransmissionTime" + Environment.NewLine +
         "                                  LastSentTime/LastReceivedTime/MaxReceiveDelay/MaxReceiveDelay. Sort applies to totals per connection. RetransmissionTime is the sum of all Delays. MaxRetransmissionTime sorts connections by highest max retransmission delay." + Environment.NewLine +
-        "       -Column xx;yy              Enable specific columns which are printed or exclude them by prepending them with !. Column wildards are supported. E.g. -column !Retrans* will hide all columns which start with Retrans in their name." + Environment.NewLine +
+        "       -Column xx;yy              Enable specific columns which are printed or exclude them by prepending them with !, or use + to add columns to default columns. Column wildards are supported. E.g. -column !Retrans* will hide all columns which start with Retrans in their name." + Environment.NewLine +
        $"                                  Valid column names are {String.Join(";", DumpTcp.ColumnNames.Take(10))}" + Environment.NewLine +
        $"                                  {String.Join(";", DumpTcp.ColumnNames.Skip(10))}" + Environment.NewLine +
         "       -SortRetransmitBy [...]    When -ShowRetransmit is used the events are sorted by Time. Valid values are Time/Delay" + Environment.NewLine +
         "       -ShowRetransmit            Show single retransmission events with timing data. Use -timefmt s to convert time to WPA time. Use this or -Details to get all events into a csv file." + Environment.NewLine +
         "       -OnlyClientRetransmit      Only show client retransmissions which are visible by duplicate received packets with a payload > 1 bytes." + Environment.NewLine +
         "       -Reset                     Filter for connections which were reset by us due to connection establishment/send timeouts." + Environment.NewLine +
+        "       -MinMaxClientResetS xx yy  Filter for connections which were closed with a RST package by client." + Environment.NewLine +
         "       -MinMaxStatBytes/In/Out xx yy  Filter OS statistics for received (-MinMaxStatBytesIn)/sent (-MinMaxStatBytesOut)/sent+received (-MinMaxStatBytes) bytes over connection lifetime (=closed), or when TCP Rundown data was collected when connection is still active." + Environment.NewLine +
         "       -MinMaxStatPackets/In/Out xx yy Filter OS statistics for total received (-MinMaxStatPacketsIn)/sent (-MinMaxStatPacketsOut)/sent+received (-MinMaxStatPackets) packets over connection lifetime (=closed), or when TCP Rundown data was collected when connection is still active." + Environment.NewLine +
         "       -MinMax/SentBytes/Received/Bytes xx yy Filter connections which have sent (-MinMaxSentBytes)/received (-MinMaxReivedBytes)/sent+received (-MinMaxBytes) at least xx bytes during trace session." + Environment.NewLine +
@@ -668,8 +670,8 @@ namespace ETWAnalyzer.Commands
         " ETWAnalyzer -fd xx.json7z -dump Tcp  -ShowRetransmit -csv Retransmissions.csv" + Environment.NewLine +
         "[green]Dump all TCP connections with duration ranging from 0-10s.[/green]" + Environment.NewLine +
         " ETWAnalyzer -fd xx.json7z -dump Tcp  -MinMaxConnectionDurationS 0 10s" + Environment.NewLine +
-        "[green]Dump all connections which were reset because no connection could be made. Remove specific columns from output.[/green]" + Environment.NewLine +
-        " ETWAnalyzer -fd xx.json7z -dump Tcp -Reset -MinMaxReceivedBytes 0 0 -Column !*Bytes;!Template;!Retrans*;!TCB;!LastReceiveTime -Details -Timefmt s" + Environment.NewLine +
+        "[green]Dump all connections which were reset because no connection could be made. Add some columns and remove some of the default columns.[/green]" + Environment.NewLine +
+        " ETWAnalyzer -fd xx.json7z -dump Tcp -Reset -MinMaxReceivedBytes 0 0 -Column +Connect*;!Retrans*;!*Bytes;ResetTime -Timefmt s" + Environment.NewLine +
         "[green]Dump all all client retransmission events sorted by delay and omit connections which have no retransmissions in output.[/green]" + Environment.NewLine +
         " ETWAnalyzer -fd xx.json7z -dump Tcp -OnlyClientRetransmit -MinMaxRetransCount 1 -ShowRetransmit -SortRetransmitBy Delay" + Environment.NewLine ;
 
@@ -782,6 +784,7 @@ namespace ETWAnalyzer.Commands
             LastSentTime,
             MaxSendDelay,
             MaxReceiveDelay,
+            ClientResetTime,
             Post,
             Inject,
 
@@ -856,6 +859,7 @@ namespace ETWAnalyzer.Commands
 
 
         public Dictionary<string, bool> ColumnConfiguration { get; private set; } = new(StringComparer.OrdinalIgnoreCase);
+        public bool MergeColumnConfig { get; private set; } = false;
 
         SearchOption mySearchOption = SearchOption.TopDirectoryOnly;
 
@@ -1013,13 +1017,6 @@ namespace ETWAnalyzer.Commands
         public MinMaxRange<double> MinMaxLastS { get; private set; } = new();
         public MinMaxRange<double> MinMaxDurationS { get; private set; } = new();
 
-        public MinMaxRange<double> MinMaxConnectionDurationS { get; private set; } = new();
-        public MinMaxRange<double> MinMaxReceivedS {  get; private set; } = new();
-        public MinMaxRange<double> MinMaxReceiveDelayS { get; private set; } = new();
-        public MinMaxRange<double> MinMaxSentDelayS { get; private set; } = new();
-
-        public MinMaxRange<double> MinMaxSentS { get; private set; } = new();
-
         public int MethodCutStart { get; private set; }
         public int MethodCutLength { get; private set; } = int.MaxValue;
 
@@ -1133,7 +1130,14 @@ namespace ETWAnalyzer.Commands
         public MinMaxRange<ulong> MinMaxStatPacketsIn { get; private set; } = null;
         public MinMaxRange<ulong> MinMaxStatPacketsOut { get; private set; } = null;
         public MinMaxRange<ulong> MinMaxStatPackets { get; private set; } = null;
-        
+        public MinMaxRange<double> MinMaxClientResetS { get; private set; } = null;
+
+        public MinMaxRange<double> MinMaxConnectionDurationS { get; private set; } = new();
+        public MinMaxRange<double> MinMaxReceivedS { get; private set; } = new();
+        public MinMaxRange<double> MinMaxReceiveDelayS { get; private set; } = new();
+        public MinMaxRange<double> MinMaxSentDelayS { get; private set; } = new();
+
+        public MinMaxRange<double> MinMaxSentS { get; private set; } = new();
 
         public MinMaxRange<ulong> MinMaxBytes { get; private set; } = new();
 
@@ -1529,6 +1533,9 @@ namespace ETWAnalyzer.Commands
                     case "-minmaxlastsents":
                         MinMaxSentS = GetDoubleRange("-minmaxlastsents", Units.SameUnit);
                         break;
+                    case "-minmaxclientresets":
+                        MinMaxClientResetS = GetDoubleRange("-minmaxclientresets", Units.SameUnit);
+                        break;
                     case "-minmaxwaitms":
                         var minmaxWaitMsInSeconds = GetDecimalRange("-minmaxwaitms", Units.MSUnit); 
                         MinMaxWaitMs = new MinMaxRange<int>(minmaxWaitMsInSeconds.Min.MultiplyToInt( 1 / Units.MSUnit), 
@@ -1783,7 +1790,7 @@ namespace ETWAnalyzer.Commands
                         ShowTime = true;
                         break;
                     case "-column":
-                        ColumnConfiguration = ParseConfiguredColumns(GetNextNonArg("-column"));
+                        (ColumnConfiguration, MergeColumnConfig) = ParseConfiguredColumns(GetNextNonArg("-column"));
                         break;
                     case "-reset":
                         Reset = true;
@@ -1908,7 +1915,7 @@ namespace ETWAnalyzer.Commands
         }
 
 
-        Dictionary<string, bool> ParseConfiguredColumns(string cols)
+        (Dictionary<string, bool>,bool) ParseConfiguredColumns(string cols)
         {
             Dictionary<string, bool> lret = new(StringComparer.OrdinalIgnoreCase);
 
@@ -1919,6 +1926,7 @@ namespace ETWAnalyzer.Commands
                 _ => throw new NotSupportedException($"The command {myCommand} does not support explicit column configuration (yet).")
             };
 
+            bool mergeColumnConfig = false; 
             string[] columns = cols.Split(mySpaceAndSemicolon, StringSplitOptions.RemoveEmptyEntries);
             foreach (string col in columns) 
             {
@@ -1928,6 +1936,19 @@ namespace ETWAnalyzer.Commands
                     {
                         string colName = col.Substring(1);
                         lret[colName] = false;
+                    }
+                    else
+                    {
+                        throw new NotSupportedException($"Column {col} in column set {cols} is not a column description.");
+                    }
+                }
+                else if( col.StartsWith('+')) // explicit enable over default values
+                {
+                    if( col.Length > 1 )
+                    {
+                        string colName = col.Substring(1);
+                        lret[colName] = true;
+                        mergeColumnConfig = true;
                     }
                     else
                     {
@@ -1946,7 +1967,7 @@ namespace ETWAnalyzer.Commands
 
             ThrowOnInvalidColumnName(myCommand, allowedColumnNames, lret);
 
-            return lret;
+            return (lret, mergeColumnConfig);
         }
 
         /// <summary>
@@ -2160,6 +2181,7 @@ namespace ETWAnalyzer.Commands
                             TimeFormatOption = TimeFormat,
                             TimePrecision = TimeDigits,
                             ColumnConfiguration = ColumnConfiguration,
+                            MergeColumnConfig = MergeColumnConfig,
                             ProcessNameFilter = ProcessNameFilter,
                             ProcessNameFilterSet = ProcessNameFilterSet,
                             // Stay consistent and allow -processfmt or -timefmt as time format string for process tree visualization
@@ -2652,7 +2674,7 @@ namespace ETWAnalyzer.Commands
                             TimeFormatOption = TimeFormat,
                             TimePrecision = TimeDigits,
                             ColumnConfiguration = ColumnConfiguration,
-
+                            MergeColumnConfig = MergeColumnConfig,
                             ShowTotal = ShowTotal,
                             NoCmdLine = NoCmdLine,
                             TopN = TopN,
@@ -2686,6 +2708,7 @@ namespace ETWAnalyzer.Commands
                             MinMaxSentS = MinMaxSentS,
                             MinMaxSentDelayS = MinMaxSentDelayS,
                             MinMaxReceiveDelayS = MinMaxReceiveDelayS,
+                            MinMaxClientResetS = MinMaxClientResetS,
                             MinMaxInject = MinMaxInject,
                             MinMaxPost = MinMaxPost,
                             KeepAliveFilter = KeepAliveFilter,

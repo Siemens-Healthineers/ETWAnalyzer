@@ -118,6 +118,7 @@ namespace ETWAnalyzer.Extractors.TCP
         public SocketConnection LocalIpAndPort { get; }
         public SocketConnection RemoteIpAndPort { get; }
         public ETWProcessIndex ProcessIdx { get; }
+        public DateTimeOffset? ResetTimeStamp { get; internal set; }
 
         public TcpRequestConnect(IGenericEvent ev, ETWProcessIndex processIdx)
         {
