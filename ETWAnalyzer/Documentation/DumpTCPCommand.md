@@ -67,9 +67,10 @@ to observed application delays.
 Below is a picture which shows typical use cases where you analyze a specific extracted ETL file. The used commands were
 
 ```
-EtwAnalyzer -Dump TCP -TopN 3 -NoCmdLine
-EtwAnalyzer -Dump TCP -TopN 3 -NoCmdLine -Details
-EtwAnalyzer -Dump TCP -TopN 3 -NoCmdLine -ShowRetransmit
+ETWAnalyzer -console ZScaler_Download_Slow_100KB_Over100MBit_MouseLags.json7z
+.dump TCP -TopN 3 -NoCmdLine 
+.dump TCP -TopN 3 -NoCmdLine -Details -Timefmt s -Column !*Reset*;!Template 
+.dump TCP -TopN 3 -NoCmdLine -Details -Timefmt s -Column !*Reset*;!Template -ShowRetransmit
 ```
 
 to analyze one file, dump the top 3 connection with highest TCP retransmission count. When you show individual retransmission events with
