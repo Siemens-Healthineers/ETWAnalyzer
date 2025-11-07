@@ -112,7 +112,7 @@ namespace ETWAnalyzer.Extractors.TCP
                 }
 
                 ulong bytesReceived = (ulong)receivedByConnection[tcpconnection].Sum(x => (decimal)((TcpDataTransferReceive)x).NumBytes);
-                var lastreceiveTime = receivedByConnection[tcpconnection].LastOrDefault()?.Timestamp;
+                var lastreceivedTime = receivedByConnection[tcpconnection].LastOrDefault()?.Timestamp;
 
                 ulong bytesSent = (ulong)sentByConnection.Item1[tcpconnection].Sum(x => (decimal)((TcpSendPosted)x).PostedBytes);
                 int datagramsReceived = receivedByConnection[tcpconnection].Count();
@@ -120,7 +120,7 @@ namespace ETWAnalyzer.Extractors.TCP
                 int datagramsPosted = sentByConnection.Item1[tcpconnection].Where(x=>x.IsPosted).Count();
                 int datagramSentCorrected = Math.Max(datagramsSent, datagramsPosted); // in case of port forwarding we can see way too less send events, in that case use Posted count
 
-                TcpConnectionStatistics statistics = new TcpConnectionStatistics(null, lastreceiveTime, null, null, null, null, null, null, null, null, null, tcpconnection.ResetTimeStamp);
+                TcpConnectionStatistics statistics = new TcpConnectionStatistics(null, lastreceivedTime, null, null, null, null, null, null, null, null, null, tcpconnection.ResetTimeStamp);
 
                 TcpConnection connection = new(tcpconnection.Tcb, tcpconnection.LocalIpAndPort, tcpconnection.RemoteIpAndPort, tcpconnection.TimeStampOpen, tcpconnection.TimeStampClose,
                     templates.LastOrDefault(), bytesSent, datagramSentCorrected, bytesReceived, datagramsReceived, tcpconnection.ProcessIdx, tcpconnection.TCPRetansmitTimeout, statistics);

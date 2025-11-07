@@ -127,7 +127,7 @@ namespace ETWAnalyzer.EventDump
                     {   Col_CSVOptions, "Directory", Col_FileName, Col_Date, Col_TestCase, Col_TestTimeinms, Col_Baseline, Col_Process, Col_ProcessName, "Start Time", "End Time", "Duration in s",
                         "SourceIP","Source Port", "DestinationIP", "Destination Port", "TCB", "ConnectionIdx", "Sent Packets (Total per connection)", "Sent Bytes (Total per connection)", "Received Packets (Total per connection)", "Received Bytes (Total per connection)",
                         "Retransmitted Packets (Total per connection)", "% Retransmitted Packets (Total per connection)", "TCP Template", "Connection Open Time", "Connection Close Time", Col_ClientResetTime,
-                        Col_LastSendTime, Col_LastReceiveTime, Col_KeepAlive, Col_MaxReceiveDelay, Col_MaxSendDelay, Col_StatBytesIn, Col_StatBytesOut, Col_StatSegmentsIn, Col_StatSegmentsOut,
+                        Col_LastSentTime, Col_LastReceivedTime, Col_KeepAlive, Col_MaxReceiveDelay, Col_MaxSendDelay, Col_StatBytesIn, Col_StatBytesOut, Col_StatSegmentsIn, Col_StatSegmentsOut,
                         Col_ResetTime,
                         "Posted Packets", "Injected Packets",
                     };
@@ -271,8 +271,8 @@ namespace ETWAnalyzer.EventDump
         const string Col_DisconnectTime = "DisconnectTime";
         const string Col_ResetTime = "ResetTime";
         const string Col_ClientResetTime = "ClientResetTime";   
-        const string Col_LastSendTime = "LastSendTime";
-        const string Col_LastReceiveTime = "LastReceiveTime";
+        const string Col_LastSentTime = "LastSentTime";
+        const string Col_LastReceivedTime = "LastReceivedTime";
         const string Col_TCB = "TCB";
         const string Col_KeepAlive = "KeepAlive";
         const string Col_MaxSendDelay = "MaxSendDelay";
@@ -311,8 +311,8 @@ namespace ETWAnalyzer.EventDump
                 Col_DisconnectTime => GetOverrideFlag(Col_DisconnectTime, ShowDetails),
                 Col_ResetTime => GetOverrideFlag(Col_ResetTime, ShowDetails),
                 Col_ClientResetTime => GetOverrideFlag(Col_ClientResetTime, ShowDetails),
-                Col_LastSendTime => GetOverrideFlag(Col_LastSendTime, ShowDetails),
-                Col_LastReceiveTime => GetOverrideFlag(Col_LastReceiveTime, ShowDetails),
+                Col_LastSentTime => GetOverrideFlag(Col_LastSentTime, ShowDetails),
+                Col_LastReceivedTime => GetOverrideFlag(Col_LastReceivedTime, ShowDetails),
                 Col_KeepAlive => GetOverrideFlag(Col_KeepAlive, ShowDetails),
                 Col_MaxReceiveDelay => GetOverrideFlag(Col_MaxReceiveDelay, ShowDetails),
                 Col_MaxSendDelay => GetOverrideFlag(Col_MaxSendDelay, ShowDetails),
@@ -338,7 +338,7 @@ namespace ETWAnalyzer.EventDump
             Col_Connection,Col_ReceivedPackets,Col_StatSegmentsIn,Col_SentPackets,Col_StatSegmentsOut,Col_ReceivedBytes,Col_StatBytesIn,Col_SentBytes,Col_StatBytesOut,  
             Col_Total,Col_RetransmitCount,Col_RetransmitPercent, 
             Col_RetransmitDelay,Col_RetransmitMin,Col_RetransmitMedian,Col_RetransmitMax,
-            Col_Template,Col_ConnectTime,Col_DisconnectTime,Col_ResetTime,Col_ClientResetTime,Col_LastSendTime, Col_LastReceiveTime,Col_KeepAlive, Col_MaxReceiveDelay, Col_MaxSendDelay,
+            Col_Template,Col_ConnectTime,Col_DisconnectTime,Col_ResetTime,Col_ClientResetTime,Col_LastSentTime, Col_LastReceivedTime,Col_KeepAlive, Col_MaxReceiveDelay, Col_MaxSendDelay,
             Col_TCB,
             Col_EventTime,Col_PostMode,Col_SndNext,Col_Issue,
         };
@@ -539,16 +539,16 @@ namespace ETWAnalyzer.EventDump
             }, new()
             {
                 Title = "LastSent Time",
-                Name = Col_LastSendTime,
-                Enabled = GetEnable(Col_LastSendTime),
+                Name = Col_LastSentTime,
+                Enabled = GetEnable(Col_LastSentTime),
                 DataWidth = timeWidth + 1,
                 Color = ConsoleColor.Red,
 
             }, new()
             {
                 Title = "LastReceived Time",
-                Name = Col_LastReceiveTime,
-                Enabled = GetEnable(Col_LastReceiveTime),
+                Name = Col_LastReceivedTime,
+                Enabled = GetEnable(Col_LastReceivedTime),
                 DataWidth = timeWidth + 1,
                 Color = ConsoleColor.Green,
             }, new()
