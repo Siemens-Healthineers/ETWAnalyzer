@@ -181,19 +181,19 @@ namespace ETWAnalyzer.EventDump
                                 tcpEvent.Connection.LastTcpTemplate,
                                 GetDateTimeString(tcpEvent.Connection.TimeStampOpen, tcpEvent.Session.AdjustedSessionStart, TimeFormatOption, false),
                                 GetDateTimeString(tcpEvent.Connection.TimeStampClose, tcpEvent.Session.AdjustedSessionStart, TimeFormatOption, false),
-                                tcpEvent.Connection?.Statistics?.RstReceivedTime == null ? "" : GetDateTimeString(tcpEvent.Connection.Statistics.RstReceivedTime, tcpEvent.Session.AdjustedSessionStart, TimeFormatOption, false),
-                                GetDateTimeString(tcpEvent.Connection.Statistics.LastSent, tcpEvent.Session.AdjustedSessionStart, TimeFormatOption, false),
-                                GetDateTimeString(tcpEvent.Connection.Statistics.LastReceived, tcpEvent.Session.AdjustedSessionStart, TimeFormatOption, false),
-                                tcpEvent.Connection?.Statistics.KeepAlive == null ? "" : tcpEvent.Connection.Statistics.KeepAlive.Value.ToString(),
-                                tcpEvent.Connection?.Statistics.MaxReceiveDelayS == null ? "" : tcpEvent.Connection?.Statistics.MaxReceiveDelayS.Value.ToString($"F{base.OverridenOrDefaultTimePrecision}"),
-                                tcpEvent.Connection?.Statistics.MaxSendDelayS == null ? "" : tcpEvent.Connection?.Statistics.MaxSendDelayS.Value.ToString($"F{base.OverridenOrDefaultTimePrecision}"),
-                                tcpEvent.Connection?.Statistics.DataBytesIn == null ? 0 : tcpEvent.Connection?.Statistics.DataBytesIn.Value,
-                                tcpEvent.Connection?.Statistics.DataBytesOut == null ? 0 : tcpEvent.Connection?.Statistics.DataBytesOut.Value,
-                                tcpEvent.Connection?.Statistics.SegmentsIn == null ? 0 : tcpEvent.Connection?.Statistics.SegmentsIn.Value,
-                                tcpEvent.Connection?.Statistics.SegmentsOut == null ? 0 : tcpEvent.Connection?.Statistics.SegmentsOut.Value,
+                                tcpEvent.Connection?.Statistics?.RstReceivedTime == null ? "" : GetDateTimeString(tcpEvent.Connection.Statistics?.RstReceivedTime, tcpEvent.Session.AdjustedSessionStart, TimeFormatOption, false),
+                                GetDateTimeString(tcpEvent.Connection?.Statistics?.LastSent, tcpEvent.Session.AdjustedSessionStart, TimeFormatOption, false),
+                                GetDateTimeString(tcpEvent.Connection?.Statistics?.LastReceived, tcpEvent.Session.AdjustedSessionStart, TimeFormatOption, false),
+                                tcpEvent.Connection?.Statistics?.KeepAlive == null ? "" : tcpEvent.Connection.Statistics?.KeepAlive.Value.ToString(),
+                                tcpEvent.Connection?.Statistics?.MaxReceiveDelayS == null ? "" : tcpEvent.Connection?.Statistics?.MaxReceiveDelayS.Value.ToString($"F{base.OverridenOrDefaultTimePrecision}"),
+                                tcpEvent.Connection?.Statistics?.MaxSendDelayS == null ? "" : tcpEvent.Connection?.Statistics?.MaxSendDelayS.Value.ToString($"F{base.OverridenOrDefaultTimePrecision}"),
+                                tcpEvent.Connection?.Statistics?.DataBytesIn == null ? 0 : tcpEvent.Connection?.Statistics?.DataBytesIn.Value,
+                                tcpEvent.Connection?.Statistics?.DataBytesOut == null ? 0 : tcpEvent.Connection?.Statistics?.DataBytesOut.Value,
+                                tcpEvent.Connection?.Statistics?.SegmentsIn == null ? 0 : tcpEvent.Connection?.Statistics?.SegmentsIn.Value,
+                                tcpEvent.Connection?.Statistics?.SegmentsOut == null ? 0 : tcpEvent.Connection?.Statistics?.SegmentsOut.Value,
                                 tcpEvent.Connection?.RetransmitTimeout == null ? "" : GetDateTimeString(tcpEvent.Connection.RetransmitTimeout, tcpEvent.Session.AdjustedSessionStart, TimeFormatOption, false),
-                                tcpEvent.Connection?.Statistics.SendPostedPosted == null ? 0 : tcpEvent.Connection?.Statistics.SendPostedPosted.Value,  
-                                tcpEvent.Connection?.Statistics.SendPostedInjected == null ? 0 : tcpEvent.Connection?.Statistics.SendPostedInjected.Value,
+                                tcpEvent.Connection?.Statistics?.SendPostedPosted == null ? 0 : tcpEvent.Connection?.Statistics?.SendPostedPosted.Value,  
+                                tcpEvent.Connection?.Statistics?.SendPostedInjected == null ? 0 : tcpEvent.Connection?.Statistics?.SendPostedInjected.Value,
 
                                 GetDateTimeString(retrans.RetransmitTime, tcpEvent.Session.AdjustedSessionStart, TimeFormatOption, false),
                                 (int) retrans.RetransmitDiff().TotalMilliseconds,
@@ -228,19 +228,19 @@ namespace ETWAnalyzer.EventDump
                        tcpEvent.Connection.LastTcpTemplate,
                        GetDateTimeString(tcpEvent.Connection.TimeStampOpen, tcpEvent.Session.AdjustedSessionStart, TimeFormatOption, false),
                        GetDateTimeString(tcpEvent.Connection.TimeStampClose, tcpEvent.Session.AdjustedSessionStart, TimeFormatOption, false),
-                       tcpEvent.Connection?.Statistics?.RstReceivedTime == null ? "" : GetDateTimeString(tcpEvent.Connection.Statistics.RstReceivedTime, tcpEvent.Session.AdjustedSessionStart, TimeFormatOption, false),
-                       GetDateTimeString(tcpEvent.Connection?.Statistics.LastSent, tcpEvent.Session.AdjustedSessionStart, TimeFormatOption, false),
-                       GetDateTimeString(tcpEvent.Connection?.Statistics.LastReceived, tcpEvent.Session.AdjustedSessionStart, TimeFormatOption, false),
-                       tcpEvent.Connection?.Statistics.KeepAlive == null ? "" : tcpEvent.Connection.Statistics.KeepAlive.Value.ToString(),
-                       tcpEvent.Connection?.Statistics.MaxReceiveDelayS == null ? "" : tcpEvent.Connection?.Statistics.MaxReceiveDelayS.Value.ToString($"F{base.OverridenOrDefaultTimePrecision}"),
-                       tcpEvent.Connection?.Statistics.MaxSendDelayS == null ? "" : tcpEvent.Connection?.Statistics.MaxSendDelayS.Value.ToString($"F{base.OverridenOrDefaultTimePrecision}"),
-                       tcpEvent.Connection?.Statistics.DataBytesIn == null ? 0 : tcpEvent.Connection?.Statistics.DataBytesIn.Value,
-                       tcpEvent.Connection?.Statistics.DataBytesOut == null ? 0 : tcpEvent.Connection?.Statistics.DataBytesOut.Value,
-                       tcpEvent.Connection?.Statistics.SegmentsIn == null ? 0 : tcpEvent.Connection?.Statistics.SegmentsIn.Value,
-                       tcpEvent.Connection?.Statistics.SegmentsOut == null ? 0 : tcpEvent.Connection?.Statistics.SegmentsOut.Value,
+                       tcpEvent.Connection?.Statistics?.RstReceivedTime == null ? "" : GetDateTimeString(tcpEvent.Connection?.Statistics.RstReceivedTime, tcpEvent.Session.AdjustedSessionStart, TimeFormatOption, false),
+                       GetDateTimeString(tcpEvent.Connection?.Statistics?.LastSent, tcpEvent.Session.AdjustedSessionStart, TimeFormatOption, false),
+                       GetDateTimeString(tcpEvent.Connection?.Statistics?.LastReceived, tcpEvent.Session.AdjustedSessionStart, TimeFormatOption, false),
+                       tcpEvent.Connection?.Statistics?.KeepAlive == null ? "" : tcpEvent.Connection?.Statistics?.KeepAlive.Value.ToString(),
+                       tcpEvent.Connection?.Statistics?.MaxReceiveDelayS == null ? "" : tcpEvent.Connection?.Statistics?.MaxReceiveDelayS.Value.ToString($"F{base.OverridenOrDefaultTimePrecision}"),
+                       tcpEvent.Connection?.Statistics?.MaxSendDelayS == null ? "" : tcpEvent.Connection?.Statistics?.MaxSendDelayS.Value.ToString($"F{base.OverridenOrDefaultTimePrecision}"),
+                       tcpEvent.Connection?.Statistics?.DataBytesIn == null ? 0 : tcpEvent.Connection?.Statistics?.DataBytesIn.Value,
+                       tcpEvent.Connection?.Statistics?.DataBytesOut == null ? 0 : tcpEvent.Connection?.Statistics?.DataBytesOut.Value,
+                       tcpEvent.Connection?.Statistics?.SegmentsIn == null ? 0 : tcpEvent.Connection?.Statistics?.SegmentsIn.Value,
+                       tcpEvent.Connection?.Statistics?.SegmentsOut == null ? 0 : tcpEvent.Connection?.Statistics?.SegmentsOut.Value,
                        tcpEvent.Connection?.RetransmitTimeout == null ? "" : GetDateTimeString(tcpEvent.Connection.RetransmitTimeout, tcpEvent.Session.AdjustedSessionStart, TimeFormatOption, false),
-                       tcpEvent.Connection?.Statistics.SendPostedPosted == null ? 0 : tcpEvent.Connection?.Statistics.SendPostedPosted.Value,
-                       tcpEvent.Connection?.Statistics.SendPostedInjected == null ? 0 : tcpEvent.Connection?.Statistics.SendPostedInjected.Value,
+                       tcpEvent.Connection?.Statistics?.SendPostedPosted == null ? 0 : tcpEvent.Connection?.Statistics?.SendPostedPosted.Value,
+                       tcpEvent.Connection?.Statistics?.SendPostedInjected == null ? 0 : tcpEvent.Connection?.Statistics?.SendPostedInjected.Value,
 
                        NoCmdLine ? "" : tcpEvent.Process.CommandLineNoExe);
                     }
@@ -631,15 +631,15 @@ namespace ETWAnalyzer.EventDump
                     {
                         connection,
                         match.Connection.DatagramsReceived.ToString("N0"),
-                        match.Connection?.Statistics.SegmentsIn == null ? "" : match.Connection?.Statistics.SegmentsIn.Value.ToString("N0"),
+                        match.Connection?.Statistics?.SegmentsIn == null ? "" : match.Connection?.Statistics.SegmentsIn.Value.ToString("N0"),
                         match.Connection.DatagramsSent.ToString("N0"),
-                        match.Connection?.Statistics.SendPostedPosted == null ? "" : match.Connection?.Statistics.SendPostedPosted.Value.ToString("N0"),
-                        match.Connection?.Statistics.SendPostedInjected == null ? "" : match.Connection?.Statistics.SendPostedInjected.Value.ToString("N0"),
-                        match.Connection?.Statistics.SegmentsOut == null ? "" : match.Connection?.Statistics.SegmentsOut.Value.ToString("N0"),
+                        match.Connection?.Statistics?.SendPostedPosted == null ? "" : match.Connection?.Statistics.SendPostedPosted.Value.ToString("N0"),
+                        match.Connection?.Statistics?.SendPostedInjected == null ? "" : match.Connection?.Statistics.SendPostedInjected.Value.ToString("N0"),
+                        match.Connection?.Statistics?.SegmentsOut == null ? "" : match.Connection?.Statistics.SegmentsOut.Value.ToString("N0"),
                         match.Connection.BytesReceived.ToString("N0") + " B",
-                        match.Connection?.Statistics.DataBytesIn == null ? "" : match.Connection?.Statistics.DataBytesIn.Value.ToString("N0") + " B",
+                        match.Connection?.Statistics?.DataBytesIn == null ? "" : match.Connection?.Statistics.DataBytesIn.Value.ToString("N0") + " B",
                         match.Connection.BytesSent.ToString("N0") + " B",
-                        match.Connection?.Statistics.DataBytesOut == null ? "" : match.Connection?.Statistics.DataBytesOut.Value.ToString("N0") + " B",
+                        match.Connection?.Statistics?.DataBytesOut == null ? "" : match.Connection?.Statistics.DataBytesOut.Value.ToString("N0") + " B",
                         GetTotalString(match, TotalColumnWidth),
                         match.Retransmissions.Count.ToString("N0"),
                         retransPercent,
@@ -651,12 +651,12 @@ namespace ETWAnalyzer.EventDump
                         GetDateTimeString(match.Connection.TimeStampOpen, match.Session.AdjustedSessionStart, TimeFormatOption, false),
                         GetDateTimeString(match.Connection.TimeStampClose, match.Session.AdjustedSessionStart, TimeFormatOption, false),
                         match.Connection.RetransmitTimeout != null ? GetDateTimeString(match.Connection.RetransmitTimeout, match.Session.AdjustedSessionStart, TimeFormatOption, false) : "",
-                        match.Connection?.Statistics.RstReceivedTime != null ? GetDateTimeString( match.Connection.Statistics.RstReceivedTime, match.Session.AdjustedSessionStart, TimeFormatOption, false) : "",
-                        match.Connection?.Statistics.LastSent != null ? GetDateTimeString(match.Connection.Statistics.LastSent, match.Session.AdjustedSessionStart, TimeFormatOption, false) : "",
-                        match.Connection?.Statistics.LastReceived != null ?  GetDateTimeString(match.Connection.Statistics.LastReceived, match.Session.AdjustedSessionStart, TimeFormatOption, false) : "",
-                        match.Connection?.Statistics.KeepAlive == null ? "" : match.Connection.Statistics.KeepAlive.Value.ToString(),
-                        match.Connection?.Statistics.MaxReceiveDelayS == null ? "" : match.Connection?.Statistics.MaxReceiveDelayS.Value.ToString($"F{base.OverridenOrDefaultTimePrecision}"),
-                        match.Connection?.Statistics.MaxSendDelayS == null ? "" : match.Connection?.Statistics.MaxSendDelayS.Value.ToString($"F{base.OverridenOrDefaultTimePrecision}"),
+                        match.Connection?.Statistics?.RstReceivedTime != null ? GetDateTimeString( match.Connection.Statistics.RstReceivedTime, match.Session.AdjustedSessionStart, TimeFormatOption, false) : "",
+                        match.Connection?.Statistics?.LastSent != null ? GetDateTimeString(match.Connection.Statistics.LastSent, match.Session.AdjustedSessionStart, TimeFormatOption, false) : "",
+                        match.Connection?.Statistics?.LastReceived != null ?  GetDateTimeString(match.Connection.Statistics.LastReceived, match.Session.AdjustedSessionStart, TimeFormatOption, false) : "",
+                        match.Connection?.Statistics?.KeepAlive == null ? "" : match.Connection.Statistics.KeepAlive.Value.ToString(),
+                        match.Connection?.Statistics?.MaxReceiveDelayS == null ? "" : match.Connection?.Statistics.MaxReceiveDelayS.Value.ToString($"F{base.OverridenOrDefaultTimePrecision}"),
+                        match.Connection?.Statistics?.MaxSendDelayS == null ? "" : match.Connection?.Statistics.MaxSendDelayS.Value.ToString($"F{base.OverridenOrDefaultTimePrecision}"),
                         $"0x{"X".WidthFormat(match.Connection.Tcb, PointerWidth)}",
                         match.Process.GetProcessWithId(UsePrettyProcessName),
                         GetProcessTags(match.Process, match.Session.AdjustedSessionStart),
@@ -948,7 +948,7 @@ namespace ETWAnalyzer.EventDump
 
                 if (KeepAliveFilter)
                 {
-                    if (connection?.Statistics.KeepAlive != true)
+                    if (connection?.Statistics?.KeepAlive != true)
                     {
                         continue;
                     }
@@ -1012,7 +1012,7 @@ namespace ETWAnalyzer.EventDump
 
                 if (KeepAliveFilter)
                 {
-                    if (connection?.Statistics.KeepAlive != true)
+                    if (connection?.Statistics?.KeepAlive != true)
                     {
                         continue;
                     }
@@ -1029,22 +1029,22 @@ namespace ETWAnalyzer.EventDump
                     continue;
                 }
 
-                if (!MinMaxReceivedS.IsWithin(((connection?.Statistics.LastReceived ?? file.Extract.SessionStart) - file.Extract.SessionStart).TotalSeconds))
+                if (!MinMaxReceivedS.IsWithin(((connection?.Statistics?.LastReceived ?? file.Extract.SessionStart) - file.Extract.SessionStart).TotalSeconds))
                 {
                     continue;
                 }
 
-                if (!MinMaxSentS.IsWithin(((connection?.Statistics.LastSent ?? file.Extract.SessionStart) - file.Extract.SessionStart).TotalSeconds))
+                if (!MinMaxSentS.IsWithin(((connection?.Statistics?.LastSent ?? file.Extract.SessionStart) - file.Extract.SessionStart).TotalSeconds))
                 {
                     continue;
                 }
 
-                if (!MinMaxSentDelayS.IsWithin(connection?.Statistics.MaxSendDelayS ?? 0.0d))
+                if (!MinMaxSentDelayS.IsWithin(connection?.Statistics?.MaxSendDelayS ?? 0.0d))
                 {
                     continue;
                 }
 
-                if (!MinMaxReceiveDelayS.IsWithin(connection?.Statistics.MaxReceiveDelayS ?? 0.0d))
+                if (!MinMaxReceiveDelayS.IsWithin(connection?.Statistics?.MaxReceiveDelayS ?? 0.0d))
                 {
                     continue;
                 }
@@ -1062,13 +1062,13 @@ namespace ETWAnalyzer.EventDump
                     continue;
                 }
 
-                if( !MinMaxInject.IsWithin(connection?.Statistics.SendPostedInjected ?? 0))
+                if( !MinMaxInject.IsWithin(connection?.Statistics?.SendPostedInjected ?? 0))
                 {
                     continue;
                 }
 
                 
-                if (!MinMaxPost.IsWithin(connection?.Statistics.SendPostedPosted ?? 0))
+                if (!MinMaxPost.IsWithin(connection?.Statistics?.SendPostedPosted ?? 0))
                 {
                     continue;
                 }
@@ -1109,10 +1109,10 @@ namespace ETWAnalyzer.EventDump
                     MinMaxStatPackets != null
                     )
                 {
-                    if( connection.Statistics.DataBytesIn == null ||
-                        connection.Statistics.DataBytesOut == null ||
-                        connection.Statistics.SegmentsIn == null ||
-                        connection.Statistics.SegmentsOut == null)
+                    if( connection?.Statistics?.DataBytesIn == null ||
+                        connection?.Statistics?.DataBytesOut == null ||
+                        connection?.Statistics?.SegmentsIn == null ||
+                        connection?.Statistics?.SegmentsOut == null)
                     {
                         continue;
                     }
@@ -1253,12 +1253,12 @@ namespace ETWAnalyzer.EventDump
                 SortOrders.RetransmissionCount => match.Retransmissions.Count,
                 SortOrders.RetransmissionTime => (decimal) match.Retransmissions.Sum(x=>x.RetransmitDiff().TotalSeconds),
                 SortOrders.MaxRetransmissionTime => (decimal) match.RetransMaxms,
-                SortOrders.LastReceivedTime => connection?.Statistics.LastReceived != null ? connection.Statistics.LastReceived.Value.Ticks : 0m,
-                SortOrders.LastSentTime => connection?.Statistics.LastSent != null ? connection.Statistics.LastSent.Value.Ticks : 0m,
-                SortOrders.MaxReceiveDelay => connection?.Statistics.MaxReceiveDelayS != null ? (decimal) connection.Statistics.MaxReceiveDelayS.Value : 0m,
-                SortOrders.MaxSendDelay => connection?.Statistics.MaxSendDelayS != null ? (decimal)connection.Statistics.MaxSendDelayS.Value : 0m,
-                SortOrders.Post => connection?.Statistics.SendPostedPosted != null ? connection.Statistics.SendPostedPosted.Value : 0m,
-                SortOrders.Inject => connection?.Statistics.SendPostedInjected != null ? connection.Statistics.SendPostedInjected.Value : 0m,
+                SortOrders.LastReceivedTime => connection?.Statistics?.LastReceived != null ? connection.Statistics.LastReceived.Value.Ticks : 0m,
+                SortOrders.LastSentTime => connection?.Statistics?.LastSent != null ? connection.Statistics.LastSent.Value.Ticks : 0m,
+                SortOrders.MaxReceiveDelay => connection?.Statistics?.MaxReceiveDelayS != null ? (decimal) connection.Statistics.MaxReceiveDelayS.Value : 0m,
+                SortOrders.MaxSendDelay => connection?.Statistics?.MaxSendDelayS != null ? (decimal)connection.Statistics.MaxSendDelayS.Value : 0m,
+                SortOrders.Post => connection?.Statistics?.SendPostedPosted != null ? connection.Statistics.SendPostedPosted.Value : 0m,
+                SortOrders.Inject => connection?.Statistics?.SendPostedInjected != null ? connection.Statistics.SendPostedInjected.Value : 0m,
                 _ => match.Retransmissions.Count,
             };
             return lret;
