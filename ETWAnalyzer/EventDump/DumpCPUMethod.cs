@@ -1398,7 +1398,7 @@ namespace ETWAnalyzer.EventDump
 
         private void WriteCSVProcessTotal(List<MatchData> matches)
         {
-            OpenCSVWithHeader(Col_CSVOptions, Col_TestCase, Col_Date, Col_TestTimeinms, "CPU ms", Col_AveragePriority, Col_Baseline, Col_Process, "ParentPid", Col_ProcessName, 
+            OpenCSVWithHeader(Col_CSVOptions, Col_TestCase, Col_Date, Col_TestTimeinms, "CPU ms", Col_AveragePriority, "#Cores", Col_Baseline, Col_Process, "ParentPid", Col_ProcessName, 
                 Col_StartTime, Col_CommandLine, Col_SourceJsonFile, "SourceDirectory", "IsNewProcess", 
                 Col_FileVersion, Col_VersionString, Col_ProductVersion, Col_ProductName, Col_Description, Col_Directory);
 
@@ -1411,7 +1411,7 @@ namespace ETWAnalyzer.EventDump
                 string description = match.Module?.Description?.Trim() ?? "";
                 string directory = match.Module?.ModulePath ?? "";
                 
-                WriteCSVLine(CSVOptions, match.TestName, match.PerformedAt, match.DurationInMs, match.CPUMs, GetNullIfZero(match.ProcessPriority), match.BaseLine, match.ProcessAndPid, match.Process.ParentPid, match.Process.GetProcessName(UsePrettyProcessName), match.Process.StartTime, match.Process.CmdLine, 
+                WriteCSVLine(CSVOptions, match.TestName, match.PerformedAt, match.DurationInMs, match.CPUMs, GetNullIfZero(match.ProcessPriority),  match?.CoreUsageCount?.Count, match.BaseLine, match.ProcessAndPid, match.Process.ParentPid, match.Process.GetProcessName(UsePrettyProcessName), match.Process.StartTime, match.Process.CmdLine, 
                     Path.GetFileNameWithoutExtension(match.SourceFile), Path.GetDirectoryName(match.SourceFile), (match.Process.IsNew ? 1 : 0),
                     fileVersion, versionString, productVersion, productName, description, directory);
             }
