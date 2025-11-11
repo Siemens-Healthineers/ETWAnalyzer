@@ -429,29 +429,7 @@ namespace ETWAnalyzer.Extractors.CPU
             return lret;
         }
 
-        ConcurrentSet<string> myLoggedProblemSymbols = new();
 
-        /// <summary>
-        /// Get function name from stack frame with exception handling and logging where pdb resolution errors are only logged once per image name.
-        /// </summary>
-        /// <param name="frame"></param>
-        /// <returns>Resolved method name or empty string.</returns>
-        string GetFunctionName(Microsoft.Windows.EventTracing.Symbols.StackFrame frame)
-        {
-            string functionName = "";
-            try
-            {
-                functionName = frame.Symbol?.FunctionName ?? "";
-            }
-            catch (NotImplementedException ex)
-            {
-                if (myLoggedProblemSymbols.Add(frame.Image?.FileName ?? "UnknownImage"))
-                {
-                    Logger.Warn($"Symbol load did throw an exception for image {frame.Image?.FileName}. Exception: {ex}");
-                }
-            }
-            return functionName;
-        }
 
         private void AddPerMethodAndProcessWaits(ETWExtract extract, ProcessKey process, ICpuThreadActivity slice, ConcurrentDictionary<ProcessKey, ConcurrentDictionary<string, ExtractorCPUMethodData>> methodSamplesPerProcess, StackPrinter printer, bool hasCpuSampleData)
         {
@@ -490,7 +468,7 @@ namespace ETWAnalyzer.Extractors.CPU
                     }
                 }
 
-                string method = printer.GetPrettyMethod(GetFunctionName(frame), frame);
+                (string method, bool bSuccess) = printer.GetPrettyMethod(frame);
                 string methodWithRva = StackPrinter.AddRva(method, frame.RelativeVirtualAddress);
 
                 if (recursionCountGuard.Add(methodWithRva) == false)
@@ -580,7 +558,7 @@ namespace ETWAnalyzer.Extractors.CPU
                     }
                 }
 
-                string method = printer.GetPrettyMethod(GetFunctionName(frame), frame);
+                (string method, bool bSuccess) = printer.GetPrettyMethod(frame);
                 string rvaMethod = StackPrinter.AddRva(method, frame.RelativeVirtualAddress);
 
                 if (recursionCountGuard.Add(rvaMethod) == false)

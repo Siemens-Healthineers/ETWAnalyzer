@@ -1,20 +1,16 @@
 ﻿//// SPDX-FileCopyrightText:  © 2022 Siemens Healthcare GmbH
 //// SPDX-License-Identifier:   MIT
 
+using Microsoft.Diagnostics.Tracing.StackSources;
+using Microsoft.Performance.SDK.Runtime;
 using Microsoft.Windows.EventTracing;
 using Microsoft.Windows.EventTracing.Processes;
 using Microsoft.Windows.EventTracing.Symbols;
 using System;
-using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
-using System.Linq;
-using System.Reflection;
 using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace ETWAnalyzer.TraceProcessorHelpers
 {
@@ -94,17 +90,59 @@ namespace ETWAnalyzer.TraceProcessorHelpers
             };
         }
 
+
         /// <summary>
         /// Remove [Cold] and 0x0 and other things from method names which can confuse readers
         /// </summary>
-        /// <param name="methodName">Method Name returned by library</param>
-        /// <param name="frame">stackframe to check if it is a managed or unmanaged method</param>
+        /// <param name="frame">Current StackFrame from which method and image name is deduced.</param>
         /// <returns>Pretty printed method. Once method has been prettified cached results are returned.</returns>
-        public string GetPrettyMethod(string methodName, StackFrame frame)
+        public (string,bool) GetPrettyMethod(Microsoft.Windows.EventTracing.Symbols.StackFrame frame)
         {
-            return GetPrettyMethod(methodName, frame.Image);
+            string functionName = GetFunctionName(frame);
+            return (GetPrettyMethod(functionName, frame.Image), functionName != "");
         }
 
+        /// <summary>
+        /// Remove [Cold] and 0x0 and other things from method names which can confuse readers
+        /// </summary>
+        /// <param name="symbol">symbol to check if it is a managed or unmanaged method from which the function name is resolved.</param>
+        /// <returns>Pretty printed method. Once method has been prettified cached results are returned.</returns>
+        public string GetPrettyMethod(IStackSymbol symbol)
+        {
+            return GetPrettyMethod(GetFunctionName(symbol, symbol?.Image), symbol?.Image);
+        }
+
+        static ConcurrentSet<string> myLoggedProblemSymbols = new();
+
+
+        private string GetFunctionName(IStackSymbol symbol, IImage image)
+        {
+            string functionName = symbol?.FunctionName ?? ""; 
+            return functionName;
+        }
+
+        /// <summary>
+        /// Get function name from stack frame with exception handling and logging where pdb resolution errors are only logged once per image name.
+        /// </summary>
+        /// <param name="frame"></param>
+        /// <returns>Resolved method name or empty string.</returns>
+        string GetFunctionName(Microsoft.Windows.EventTracing.Symbols.StackFrame frame)
+        {
+            string functionName = "";   
+            try
+            {
+                functionName = GetFunctionName(frame.Symbol, frame.Image); // can fail for some pdbs https://github.com/microsoft/eventtracing-processing-samples/issues/12
+            }
+            catch (NotImplementedException ex)
+            {
+                if (myLoggedProblemSymbols.Add(frame.Image?.FileName ?? "UnknownImage"))
+                {
+                    Logger.Warn($"Symbol load did throw an exception for image {frame.Image?.FileName}. Exception: {ex}");
+                }
+            }
+
+            return functionName;
+        }
 
         Dictionary<KeyValuePair<uint, List<Address>>, string> myFrameAddressMap = new(new StackComparer());
 
@@ -176,18 +214,18 @@ namespace ETWAnalyzer.TraceProcessorHelpers
 
                 for (int i=0;i<stack.Frames.Count;i++)
                 {
-                    StackFrame frame = stack.Frames[i];
+                    var frame = stack.Frames[i];
                     if( !frame.HasValue )
                     {
                         lret.AppendLine(UnknownMethod);
                     }
 
                     var frameKey = new KeyValuePair<uint, Address>(stack.ProcessId, frame.RelativeVirtualAddress);
-               
 
-                    if( frame.Symbol != null)
+                    (string methodName, bool bSuccess) = GetPrettyMethod(frame);
+                    if( bSuccess)
                     {
-                        lret.AppendLine(GetPrettyMethod(frame.Symbol.FunctionName, frame));
+                        lret.AppendLine(methodName);
                     }
                     else
                     {
@@ -195,6 +233,7 @@ namespace ETWAnalyzer.TraceProcessorHelpers
                         method = AddRva(method, frame.RelativeVirtualAddress);
                         lret.AppendLine(method);
                     }
+
                 }
 
                 string retStr = lret.ToString();

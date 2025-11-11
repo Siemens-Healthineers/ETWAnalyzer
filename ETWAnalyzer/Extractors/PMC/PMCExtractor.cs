@@ -167,8 +167,8 @@ namespace ETWAnalyzer.Extractors.PMC
 
         bool AreDifferentMethods(IStackSymbol s1, IStackSymbol s2, out string method1, out string method2)
         {
-            method1 = myPrinter.GetPrettyMethod(s1?.FunctionName, s1?.Image);
-            method2 = myPrinter.GetPrettyMethod(s2?.FunctionName, s2?.Image);
+            method1 = myPrinter.GetPrettyMethod(s1);
+            method2 = myPrinter.GetPrettyMethod(s2);
             return method1 != method2;
         }
 
@@ -182,7 +182,16 @@ namespace ETWAnalyzer.Extractors.PMC
 
             if (!symbolCache.TryGetValue(address, out var symbol))
             {
-                symbol = process.GetSymbolForAddress(address);
+                try
+                { 
+                    symbol = process.GetSymbolForAddress(address);
+                }
+                catch(Exception)
+                {
+                    // symbol resolution failed for some reason
+                    symbol = null;
+                }
+
                 symbolCache.Add(address, symbol);
             }
 

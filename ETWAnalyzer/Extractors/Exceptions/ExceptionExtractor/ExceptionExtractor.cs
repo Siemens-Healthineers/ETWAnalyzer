@@ -142,11 +142,17 @@ namespace ETWAnalyzer.Extractors
                             {
                                 if (ev?.Process?.Images != null)
                                 {
-                                    IStackSymbol stackSymbol = ev.Process.GetSymbolForAddress(stackAdr);
+                                    IStackSymbol stackSymbol = null;
+                                    try
+                                    {
+                                        stackSymbol = ev.Process.GetSymbolForAddress(stackAdr); // might fail for pdbs like msedge.dll where the pdb format is not supported by TracePrcessing V2 currently. https://github.com/microsoft/eventtracing-processing-samples/issues/12
+                                    }
+                                    catch(Exception)
+                                    { }
 
                                     if (markerFound)
                                     {
-                                        string method = printer.GetPrettyMethod(stackSymbol?.FunctionName, stackSymbol?.Image);
+                                        string method = printer.GetPrettyMethod(stackSymbol);
                                         sb.AppendLine(method);
                                     }
 
