@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <TargetFrameworks>net8.0-windows</TargetFrameworks>
+    <TargetFrameworks>net10.0-windows</TargetFrameworks>
     <RootNamespace>ETWAnalyzer_iTest</RootNamespace>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <PackageId>ETWAnalyzer_iTest</PackageId>
@@ -15,6 +15,7 @@
     <VSToolsPath Condition="'$(VSToolsPath)' == ''">$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)</VSToolsPath>
     <TestProjectType>UnitTest</TestProjectType>
     <Platforms>x64</Platforms>
+    <NoWarn>$(NoWarn);NU1904</NoWarn>
     <UseCommonOutputDirectory>True</UseCommonOutputDirectory>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
   </PropertyGroup>
@@ -69,7 +70,8 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="ReportGenerator" Version="5.4.16" />
+    <PackageReference Include="Microsoft.Diagnostics.Tracing.TraceEvent" Version="3.1.28" />
+    <PackageReference Include="ReportGenerator" Version="5.5.0" />
     <PackageReference Include="xunit">
       <Version>2.9.3</Version>
     </PackageReference>

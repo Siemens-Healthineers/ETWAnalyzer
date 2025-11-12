@@ -3,7 +3,7 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
-    <TargetFrameworks>net8.0-windows</TargetFrameworks>
+    <TargetFrameworks>net10.0-windows</TargetFrameworks>
     <RootNamespace>ETWAnalyzer</RootNamespace>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <LangVersion>latest</LangVersion>
@@ -11,7 +11,7 @@
     <ApplicationManifest>Properties\app.manifest</ApplicationManifest>
     <PackageCopyToOutput>true</PackageCopyToOutput>
     <DocumentationFile>..\bin\$(Configuration)\ETWAnalyzer.xml</DocumentationFile>
-    <NoWarn>NU5100;CS0618</NoWarn>
+    <NoWarn>NU5100;NU1904;CS0618</NoWarn>
     <EmbedAllSources>true</EmbedAllSources>
 
     <Platforms>x64</Platforms>
@@ -70,7 +70,7 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.Diagnostics.Tracing.TraceEvent">
-      <Version>3.1.24</Version>
+      <Version>3.1.28</Version>
     </PackageReference>
     <PackageReference Include="Microsoft.Windows.EventTracing">
       <Version>2.0.711-preview</Version>

@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net48;net8.0-windows</TargetFrameworks>
+    <TargetFrameworks>net48;net10.0-windows</TargetFrameworks>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <LangVersion>latest</LangVersion>
 
@@ -17,7 +17,7 @@
     <PackageReadmeFile>ProgramaticAccess.md</PackageReadmeFile>
     <Version>4.0.0.1</Version>
     <FileVersion>1.0.0.0</FileVersion>
-    <NoWarn>NU5100</NoWarn>
+    <NoWarn>NU5100;NU1904</NoWarn>
     <EmbedAllSources>true</EmbedAllSources>
     <BaseOutputPath>..\bin</BaseOutputPath>
   </PropertyGroup>
@@ -89,8 +89,8 @@
 
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
-    <PackageReference Include="Squid-Box.SevenZipSharp.Lite" Version="1.6.2.24" />
-    <PackageReference Include="System.Configuration.ConfigurationManager" Version="5.0.0" />
+    <PackageReference Include="Squid-Box.SevenZipSharp.Lite" Version="1.6.2.24"/>
+    <PackageReference Include="System.Configuration.ConfigurationManager" Version="5.0.0"/>
   </ItemGroup>
 
 </Project>
