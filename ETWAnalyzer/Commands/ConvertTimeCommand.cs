@@ -137,7 +137,7 @@ namespace ETWAnalyzer.Commands
         {
             DateTimeOffset dateTime;
 
-            foreach (var fmt in DumpFileDirBase<ConvertTimeCommand>.TimeFormatStrings.Reverse()) // try to parse with most digits first 
+            foreach (var fmt in DumpFileDirBase<ConvertTimeCommand>.TimeFormatStrings.AsEnumerable().Reverse()) // try to parse with most digits first 
             {
                 DateTimeOffset timeWithOffset = default;
 
@@ -200,7 +200,7 @@ namespace ETWAnalyzer.Commands
             DateTimeStyles dtStyle = DateTimeStyles.AllowWhiteSpaces | DateTimeStyles.AssumeLocal;
 
             DateTimeOffset dateTime;
-            foreach (var fmt in DumpFileDirBase<ConvertTimeCommand>.DateTimeFormatStrings.Reverse())
+            foreach (var fmt in DumpFileDirBase<ConvertTimeCommand>.DateTimeFormatStrings.AsEnumerable().Reverse())
             {
                 if (DateTimeOffset.TryParseExact(myTimeString, fmt, null, dtStyle, out dateTime))
                 {

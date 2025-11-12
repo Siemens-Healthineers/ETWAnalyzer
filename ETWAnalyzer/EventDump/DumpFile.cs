@@ -634,7 +634,7 @@ namespace ETWAnalyzer.EventDump
             if(fileName != null && reverse)
             {
                 string[] parts = fileName.Split(PathSplitChars);
-                return String.Join(PathSplitCharAsString, parts.Reverse());
+                return String.Join(PathSplitCharAsString, parts.AsEnumerable().Reverse());
             }
             else
             {

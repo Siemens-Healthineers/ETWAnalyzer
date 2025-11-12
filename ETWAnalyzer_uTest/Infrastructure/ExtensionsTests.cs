@@ -174,7 +174,7 @@ namespace ETWAnalyzer_uTest.Infrastructure
         {
             int[] x = new int[] { 5, 4, 3, 2, 1 };
             Assert.Equal(5, x.ETWMaxBy(x => x));
-            Assert.Equal(5, x.Reverse().ETWMaxBy(x => x));
+            Assert.Equal(5, x.AsEnumerable().Reverse().ETWMaxBy(x => x));
         }
 
         [Fact]
@@ -182,7 +182,7 @@ namespace ETWAnalyzer_uTest.Infrastructure
         {
             int[] x = new int[] { 5, 4, 3, 2, 1 };
             Assert.Equal(1, x.ETWMinBy(x => x));
-            Assert.Equal(1, x.Reverse().ETWMinBy(x => x));
+            Assert.Equal(1, x.AsEnumerable().Reverse().ETWMinBy(x => x));
         }
     }
 }
