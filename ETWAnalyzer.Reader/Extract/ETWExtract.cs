@@ -69,6 +69,10 @@ namespace ETWAnalyzer.Extract
         /// </summary>
         public int CPUSpeedMHz { get; set; }
 
+        /// <summary>
+        /// Number of Processor Groups
+        /// </summary>
+        public uint CPUProcessorGroups { get; set; }
 
         /// <summary>
         /// CPU Vendor

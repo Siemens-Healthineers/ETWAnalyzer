@@ -39,6 +39,11 @@ namespace ETWAnalyzer.Extract
         int CPUSpeedMHz { get; }
 
         /// <summary>
+        /// Number of Processor Groups
+        /// </summary>
+        uint CPUProcessorGroups { get; }
+
+        /// <summary>
         /// Hard Disk IO data per file and totals for all drives
         /// </summary>
         IDiskIOData Disk { get; }

@@ -51,6 +51,7 @@ namespace ETWAnalyzer
             "CPUSpeedMHz",
             "CPUVendor",
             "CPUName",
+            "CPUProcessorGroups",
             "HyperThreading",
             "Disk",
             "SessionStart",
@@ -108,6 +109,7 @@ namespace ETWAnalyzer
             { "CPUSpeedMHz",        FormatSpeedMHz },
             { "CPUVendor",          m => m.CPUVendor },
             { "CPUName",            m => m.CPUName },
+            { "CPUProcessorGroups", m => m.CPUProcessorGroups},
             { "Disk",               m => FormatDisks(m.Disks) },
             { "HyperThreading",     m => m.CPUHyperThreadingEnabled?.ToString() },
             { "SessionStart",       m => m.SessionStart },
@@ -228,6 +230,7 @@ namespace ETWAnalyzer
             public IReadOnlyDictionary<CPUNumber, ICPUTopology> Topology { get; internal set; }
 
             public IReadOnlyList<INetworkInterface> NetworkInterfaces { get; internal set; } = new List<INetworkInterface>();
+            public uint CPUProcessorGroups { get; internal set; }
         }
 
 
@@ -250,19 +253,28 @@ namespace ETWAnalyzer
 
             if( properties.Any(x=>x.StartsWith("!")) )
             {
-                List<string> forbidden = properties.Select(x => x.Substring(1)).ToList();
-                properties = DumpStats.PropertyNames.Where(x => !forbidden.Contains(x)).ToArray();
+                List<Func<string,bool>> forbidden = properties.Select(x => Matcher.CreateMatcher(x.Substring(1))).ToList();
+                properties = DumpStats.PropertyNames.Where(name => forbidden.All( x => !x(name))).ToArray();
             }
 
-            foreach(var prop in properties)
+            foreach(string prop in properties)
             {
-                KeyValuePair<string,Func<Match,object>> extractor = myFieldPropertyExtractors.FirstOrDefault(x => String.Compare(x.Key, prop, StringComparison.OrdinalIgnoreCase) == 0);
-                if( extractor.Key == null)
+                var matcher = Matcher.CreateMatcher(prop);
+                var extractors = myFieldPropertyExtractors.Where(x => matcher(x.Key)).ToList();
+                if( extractors.Count == 0 )
                 {
                     throw new NotSupportedException($"The property {prop} is not one of the supported properties. Valid ones are {AllProperties}");
                 }
 
-                myFormatters.Add(extractor);
+                foreach(var extractor in extractors)
+                {
+                    if( myFormatters.Any(x=>x.Key == extractor.Key))
+                    {
+                        continue; // already added
+                    }
+                    myFormatters.Add(extractor);
+                }
+                
             }
 
 
@@ -309,6 +321,7 @@ namespace ETWAnalyzer
                                 CPUSpeedMHz = file.Extract.CPUSpeedMHz,
                                 CPUName = file.Extract.CPUName,
                                 CPUVendor = file.Extract.CPUVendor,
+                                CPUProcessorGroups = file.Extract.CPUProcessorGroups,
                                 Disks = file.Extract.Disk.DiskInformation,
                                 CPUHyperThreadingEnabled = file.Extract.CPUHyperThreadingEnabled,
                                 SessionStart = file.Extract.SessionStart,
@@ -342,12 +355,12 @@ namespace ETWAnalyzer
                 if (!myHeaderWritten)
                 {
                     myHeaderWritten = true;
-                    OpenCSVWithHeader(Col_CSVOptions, Col_TestCase, "TestDate", Col_TestTimeinms, "SourceFile", Col_Machine, "SourceETLFileName", Col_Baseline, "UsedExtractOptions", "OSName", "OSBuild", "OSVersion", "MemorySizeMB", "NumberOfProcessors", "CPUSpeedMHz", "SessionStart", "SessionEnd", "BootTime", "Model",
+                    OpenCSVWithHeader(Col_CSVOptions, Col_TestCase, "TestDate", Col_TestTimeinms, "SourceFile", Col_Machine, "SourceETLFileName", Col_Baseline, "UsedExtractOptions", "OSName", "OSBuild", "OSVersion", "MemorySizeMB", "NumberOfProcessors", "CPUProcessorGroups", "CPUSpeedMHz",  "SessionStart", "SessionEnd", "BootTime", "Model",
                                       "AdDomain", "IsDomainJoined", "DisplaysHorizontalResolution", "DisplaysVerticalResolution", "DisplayNames", "MainModuleVersion", "Network", "DisplaysMemoryMiB");
                 }
 
                 string networkStr = String.Join(Environment.NewLine, m.NetworkInterfaces.Select(n => $"Address: {n.IpAddresses}, Desc: {n.NicDescription}, PhysicalAddress: {n.PhysicalAddress}, DNS: {n.DnsServerAddresses}"));
-                WriteCSVLine(CSVOptions, m.TestCase, m.PerformedAt, m.DurationMs, m.Source, m.Machine, m.SourceETLFileName, m.BaseLine,  m.UsedExtractOptions, m.OSName, m.OSBuild, m.OSVersion, m.MemorySizeMB, m.NumberOfProcessors, m.CPUSpeedMHz, m.SessionStart, m.SessionEnd, m.BootTime, m.Model,
+                WriteCSVLine(CSVOptions, m.TestCase, m.PerformedAt, m.DurationMs, m.Source, m.Machine, m.SourceETLFileName, m.BaseLine,  m.UsedExtractOptions, m.OSName, m.OSBuild, m.OSVersion, m.MemorySizeMB, m.NumberOfProcessors, m.CPUProcessorGroups, m.CPUSpeedMHz,  m.SessionStart, m.SessionEnd, m.BootTime, m.Model,
                              m.AdDomain, m.IsDomainJoined, m.DisplaysHorizontalResolution, m.DisplaysVerticalResolution, m.DisplaysNames, m.MainModuleVersion, networkStr, m.DisplaysMemoryMiB);
             }
             else
