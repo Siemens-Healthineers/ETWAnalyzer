@@ -39,6 +39,7 @@ namespace ETWAnalyzer.Extractors
         public uint ProcessorGroups { get; private set; } 
 
         public string WinSatOSName { get; private set; }
+        public string WinSatProcessorName { get; private set; } 
 
         public List<NetworkInterface> NetworkInterfaces
         {
@@ -300,6 +301,7 @@ namespace ETWAnalyzer.Extractors
                 case WinSat_SystemConfig:
                     string winSatStr = GetWinSATXml(ref ctx);
                     WinSatOSName = GetOSNameFromWinSat(winSatStr);
+                    WinSatProcessorName = GetProcessorNameFromWinSat(winSatStr);
                     break;
                 default:
                     break;
@@ -341,6 +343,25 @@ namespace ETWAnalyzer.Extractors
             }
 
             return lret;
+        }
+
+        string GetProcessorNameFromWinSat(string xmlStr)
+        {
+            // <ProcessorName>
+            string startNode = "<ProcessorName>";
+            string endNode = "</ProcessorName>";
+            int startIdx = xmlStr.IndexOf(startNode);
+            if( startIdx  > 0 )
+            {
+                startIdx += startNode.Length;
+                int endIdx = xmlStr.IndexOf(endNode, startIdx);
+                if( endIdx > startIdx )
+                {
+                    return xmlStr.Substring(startIdx, endIdx - startIdx);
+                }
+            }
+
+            return null;
         }
 
         /// <summary>
