@@ -131,6 +131,11 @@ namespace ETWAnalyzer.TraceProcessorHelpers
             string functionName = "";   
             try
             {
+                if( myLoggedProblemSymbols.Contains(frame.Image?.FileName ?? "UnknownImage"))  // this can become a major perf hit if debugging ETWAnalyzer 
+                {
+                    // previously failed symbol load
+                    return functionName;
+                }
                 functionName = GetFunctionName(frame.Symbol, frame.Image); // can fail for some pdbs https://github.com/microsoft/eventtracing-processing-samples/issues/12
             }
             catch (NotImplementedException ex)
