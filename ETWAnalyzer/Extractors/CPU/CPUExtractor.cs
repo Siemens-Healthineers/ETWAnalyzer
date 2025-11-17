@@ -264,9 +264,16 @@ namespace ETWAnalyzer.Extractors.CPU
                             if (ready != null)
                             {
                                 ETWProcessIndex processIdx = results.GetProcessIndexByPID(process2Method.Key.Pid, process2Method.Key.StartTime);
-                                if (results.CPU?.ExtendedCPUMetrics == null)
+                                if (results?.CPU?.ExtendedCPUMetrics == null)
                                 {
-                                    results.CPU.ExtendedCPUMetrics = new();
+                                    if (results.CPU == null)
+                                    {
+                                        results.CPU = new CPUStats(null, null, null, null, null, null, new CPUExtended());
+                                    }
+                                    else
+                                    {
+                                        results.CPU.ExtendedCPUMetrics = new();
+                                    }
                                 }
 
                                 Debug.Assert(methodToMs.Key == inclusiveSamplesPerMethod.MethodNames[(int)methodIndex], $"Method Index {methodIndex} and name {methodToMs.Key} are different ({inclusiveSamplesPerMethod.MethodNames[(int)methodIndex]})!");
