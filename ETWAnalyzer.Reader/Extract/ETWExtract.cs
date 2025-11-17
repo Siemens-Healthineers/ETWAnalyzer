@@ -179,7 +179,7 @@ namespace ETWAnalyzer.Extract
         /// <summary>
         /// CPU Metrics
         /// </summary>
-        public CPUStats CPU { get; set; } = new CPUStats(null, null, null, null, null, null, null);
+        public CPUStats CPU { get; set; }
 
         /// <summary>
         /// CPU Metrics
