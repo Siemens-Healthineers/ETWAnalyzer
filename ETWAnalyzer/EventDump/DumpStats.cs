@@ -44,6 +44,7 @@ namespace ETWAnalyzer
             "SourceETLFileName",
             "UsedExtractOptions",
             "OSName",
+            "WinSatOSName",
             "OSBuild",
             "OSVersion",
             "MemorySizeMB",
@@ -102,6 +103,7 @@ namespace ETWAnalyzer
             { "SourceETLFileName",  m => m.SourceETLFileName },
             { "UsedExtractOptions", m => m.UsedExtractOptions },
             { "OSName",             m => m.OSName },
+            { "WinSatOSName",       m => m.WinSatOSName }, 
             { "OSBuild",            m => m.OSBuild },
             { "OSVersion",          m => m.OSVersion },
             { "MemorySizeMB",       m => m.MemorySizeMB },
@@ -205,6 +207,7 @@ namespace ETWAnalyzer
             public string SourceETLFileName;
             public string UsedExtractOptions;
             public string OSName;
+            public string WinSatOSName;
             public string OSBuild;
             public string OSVersion;
             public int MemorySizeMB;
@@ -313,6 +316,7 @@ namespace ETWAnalyzer
                                 SourceETLFileName = file.Extract.SourceETLFileName,
                                 UsedExtractOptions = file.Extract.UsedExtractOptions,
                                 OSName = file.Extract.OSName,
+                                WinSatOSName = file.Extract.WinSatOSName,
                                 OSBuild = file.Extract.OSBuild,
                                 OSVersion = file.Extract.OSVersion.ToString(),
                                 MemorySizeMB = file.Extract.MemorySizeMB,
@@ -355,12 +359,12 @@ namespace ETWAnalyzer
                 if (!myHeaderWritten)
                 {
                     myHeaderWritten = true;
-                    OpenCSVWithHeader(Col_CSVOptions, Col_TestCase, "TestDate", Col_TestTimeinms, "SourceFile", Col_Machine, "SourceETLFileName", Col_Baseline, "UsedExtractOptions", "OSName", "OSBuild", "OSVersion", "MemorySizeMB", "NumberOfProcessors", "CPUProcessorGroups", "CPUSpeedMHz",  "SessionStart", "SessionEnd", "BootTime", "Model",
+                    OpenCSVWithHeader(Col_CSVOptions, Col_TestCase, "TestDate", Col_TestTimeinms, "SourceFile", Col_Machine, "SourceETLFileName", Col_Baseline, "UsedExtractOptions", "OSName", "WinSatOSName", "OSBuild", "OSVersion", "MemorySizeMB", "NumberOfProcessors", "CPUProcessorGroups", "CPUSpeedMHz",  "SessionStart", "SessionEnd", "BootTime", "Model",
                                       "AdDomain", "IsDomainJoined", "DisplaysHorizontalResolution", "DisplaysVerticalResolution", "DisplayNames", "MainModuleVersion", "Network", "DisplaysMemoryMiB");
                 }
 
                 string networkStr = String.Join(Environment.NewLine, m.NetworkInterfaces.Select(n => $"Address: {n.IpAddresses}, Desc: {n.NicDescription}, PhysicalAddress: {n.PhysicalAddress}, DNS: {n.DnsServerAddresses}"));
-                WriteCSVLine(CSVOptions, m.TestCase, m.PerformedAt, m.DurationMs, m.Source, m.Machine, m.SourceETLFileName, m.BaseLine,  m.UsedExtractOptions, m.OSName, m.OSBuild, m.OSVersion, m.MemorySizeMB, m.NumberOfProcessors, m.CPUProcessorGroups, m.CPUSpeedMHz,  m.SessionStart, m.SessionEnd, m.BootTime, m.Model,
+                WriteCSVLine(CSVOptions, m.TestCase, m.PerformedAt, m.DurationMs, m.Source, m.Machine, m.SourceETLFileName, m.BaseLine,  m.UsedExtractOptions, m.OSName, m.WinSatOSName, m.OSBuild, m.OSVersion, m.MemorySizeMB, m.NumberOfProcessors, m.CPUProcessorGroups, m.CPUSpeedMHz,  m.SessionStart, m.SessionEnd, m.BootTime, m.Model,
                              m.AdDomain, m.IsDomainJoined, m.DisplaysHorizontalResolution, m.DisplaysVerticalResolution, m.DisplaysNames, m.MainModuleVersion, networkStr, m.DisplaysMemoryMiB);
             }
             else

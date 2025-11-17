@@ -163,6 +163,13 @@ namespace ETWAnalyzer.Extract
         string OSName { get; }
 
         /// <summary>
+        /// Gets name of the operating system as reported by the Windows System Assessment Tool (WinSAT).
+        /// This information is only set during first Windows installation and not updated during OS upgrades.
+        /// It reports a more meaningful OS name but it could also contain old data...
+        /// </summary>
+        public string WinSatOSName { get; }
+
+        /// <summary>
         /// OS Build version as Version object
         /// </summary>
         Version OSVersion { get; }

@@ -115,6 +115,7 @@ namespace ETWAnalyzer_uTest.Extractors
         public void Can_Get_OS_Name()
         {
             Assert.Equal("Windows 10 Pro", myExtract.OSName);
+            Assert.Equal("Windows 8.1", myExtract.WinSatOSName);
         }
 
         [Fact]

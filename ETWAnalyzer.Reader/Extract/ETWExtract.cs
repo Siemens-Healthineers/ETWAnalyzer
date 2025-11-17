@@ -45,6 +45,13 @@ namespace ETWAnalyzer.Extract
         public string OSName { get; set; }
 
         /// <summary>
+        /// Gets or sets the name of the operating system as reported by the Windows System Assessment Tool (WinSAT).
+        /// This information is only set during first Windows installation and not updated during OS upgrades.
+        /// It reports a more meaningful OS name but it could also contain old data...
+        /// </summary>
+        public string WinSatOSName { get; set; }
+
+        /// <summary>
         /// OS Build version
         /// </summary>
         public string OSBuild { get; set; }
@@ -459,8 +466,7 @@ namespace ETWAnalyzer.Extract
         /// When Extract is deserialized from a file we set here the input file name to be able to deserialize other parts later
         /// </summary>
         internal string DeserializedFileName { get; set; }
-
-
+        
         /// <summary>
         /// Default ctor
         /// </summary>

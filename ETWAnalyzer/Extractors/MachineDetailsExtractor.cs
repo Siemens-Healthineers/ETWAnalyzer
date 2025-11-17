@@ -124,7 +124,8 @@ namespace ETWAnalyzer.Extractors
                 DateTime localTime = new DateTime(mySpecialEvents.BootTimeUTC.Value.Ticks, DateTimeKind.Unspecified) + results.SessionStart.Offset;
                 results.BootTime = new DateTimeOffset(localTime, results.SessionStart.Offset);
                 results.CPUProcessorGroups = mySpecialEvents.ProcessorGroups;
-                results.OSName = mySpecialEvents.WinSatOSName ?? results.OSName; // e.g. Windows 11 is still reported as Windows 10 by "normal" APIs. Use WinSAT data which shows real OS name, if captured.
+                results.WinSatOSName = mySpecialEvents.WinSatOSName; // e.g. Windows 11 is still reported as Windows 10 by "normal" APIs. Use WinSAT data which shows real OS name, if captured.
+                                                                     // The Winsat data seems to be captured only during initial installation and is not updated later. So this might have an old OS name inside as well. 
                 results.CPUVendor = results.CPUVendor ?? mySpecialEvents.WinSatProcessorName; 
                 results.TraceHeader = new TraceHeader
                 {
