@@ -93,7 +93,7 @@ jobs:
             "EtlFileName=$fileName" >> $env:GITHUB_ENV
         - name: Extract
           run: |
-              .\bin\Release\net8.0-windows\win-x64\ETWAnalyzer -extract all -fd ${{ env.EtlFileName }} -outdir Extract 
+              .\bin\Release\net10.0-windows\win-x64\ETWAnalyzer -extract all -fd ${{ env.EtlFileName }} -outdir Extract 
           shell: powershell -Command "& '{0}'"
         # Start Test Profiling
         - name: Start Test Profiling 
@@ -122,7 +122,7 @@ jobs:
             "EtlFileName=$fileName" >> $env:GITHUB_ENV
         - name: Extract Test Profiling Data
           run: |
-              .\bin\Release\net8.0-windows\win-x64\ETWAnalyzer -extract all -fd ${{ env.EtlFileName }} -outdir Extract 
+              .\bin\Release\net10.0-windows\win-x64\ETWAnalyzer -extract all -fd ${{ env.EtlFileName }} -outdir Extract 
           shell: powershell -Command "& '{0}'"
         - name: Upload Profiling Data
           if: always()
