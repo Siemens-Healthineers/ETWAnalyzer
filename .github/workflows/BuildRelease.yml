@@ -60,5 +60,5 @@ jobs:
           uses: actions/upload-artifact@v4
           with:
             name: Samples_Binaries_Zip
-            path: ${{ github.workspace }}/Samples_Binaries.zip
+            path: ${{ github.workspace }}/bin/Release/Samples_Binaries.zip
             retention-days: 90
