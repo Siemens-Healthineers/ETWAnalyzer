@@ -8,8 +8,8 @@ set BinSamplesFolder=!ScriptLocation!..\Samples\bin\x64\Release
 
 set ObjFolder=!ScriptLocation!\obj
 
-set ReleaseZipNet10=!ScriptLocation!\..\bin\ETWAnalyzer_Net10.zip
-set ReleaseSamples=!ScriptLocation!..\bin\Samples_Binaries.zip
+set ReleaseZipNet10=!ScriptLocation!\..\bin\Release\ETWAnalyzer_Net10.zip
+set ReleaseSamples=!ScriptLocation!..\bin\Release\Samples_Binaries.zip
 
 del !ReleaseZipNet10! 2> NUL
 del !ReleaseSamples! 2> NUL
