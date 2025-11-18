@@ -11,11 +11,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using ETWAnalyzer.Extract.Modules;
-using System.Diagnostics;
 using ETWAnalyzer.Commands;
 using static ETWAnalyzer.Commands.DumpCommand;
 using System.IO;
-using Microsoft.Windows.EventTracing.Symbols;
+
 
 namespace ETWAnalyzer.EventDump
 {
@@ -107,12 +106,12 @@ namespace ETWAnalyzer.EventDump
 
         protected override List<MatchData> DumpETL(string etlFile)
         {
-            using ITraceProcessor processor = TraceProcessor.Create(etlFile, new TraceProcessorSettings
+            using ITraceProcessor processor = new TraceProcessorBuilder().WithSettings(new TraceProcessorSettings
             {
                 AllowLostEvents = true,
                 AllowTimeInversion = true,
-                ToolkitPath = ETWAnalyzer.TraceProcessorHelpers.Extensions.GetToolkitPath()
-            });
+            })
+            .Build(etlFile);
 
             myCurrentFile = etlFile;
             IPendingResult<IProcessDataSource> processes = processor.UseProcesses();

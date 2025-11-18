@@ -2,6 +2,7 @@
 using ETWAnalyzer.Extract.CPU;
 using ETWAnalyzer.Extractors;
 using ETWAnalyzer.Extractors.CPU;
+using ETWAnalyzer.Infrastructure;
 using ETWAnalyzer_uTest.TestInfrastructure;
 using Microsoft.Windows.EventTracing;
 using Microsoft.Windows.EventTracing.Cpu;
@@ -66,6 +67,7 @@ namespace ETWAnalyzer_uTest.Extractors
             var duration = TimeSpan.FromSeconds(5.5d);
             var startTime = new DateTimeOffset(2000, 1, 1, 0, 0, 0, TimeSpan.Zero);
             float interval = 1.0f;
+            StaticTraceProcessorContext.MetaData = new TraceMetaDataMock(startTime);
 
             TimelineExtractor extractor = new(interval, startTime, duration);
 
@@ -112,7 +114,8 @@ namespace ETWAnalyzer_uTest.Extractors
 
             ProcessKey key = new("tester.exe", 100, DateTimeOffset.MinValue);
 
-            extract.CPU = new CPUStats(null, null, null, GetSampleData(key),null, null);
+            StaticTraceProcessorContext.MetaData = new TraceMetaDataMock(new DateTimeOffset(2000, 1, 1, 0, 0, 0, TimeSpan.Zero));
+            extract.CPU = new CPUStats(null, null, null, null, GetSampleData(key),null, null);
 
             MemoryStream stream = new();
             ExtractSerializer.Serialize(stream, extract);
@@ -156,49 +159,22 @@ namespace ETWAnalyzer_uTest.Extractors
     }
 
 
-
-    class MockTraceTimestampContext : ITraceTimestampContext
-    {
-        public TraceClockType ClockType => throw new NotImplementedException();
-
-        public TraceTimestampValue ReferenceValue => throw new NotImplementedException();
-
-        public DateTimeOffset ReferenceTime => throw new NotImplementedException();
-
-        public bool IsPartial => true;
-
-        public TraceTimestampValue GetApproximateValue(Timestamp timestamp)
-        {
-            throw new NotImplementedException();
-        }
-
-        public DateTimeOffset GetDateTimeOffset(TraceTimestampValue traceTimestampValue)
-        {
-            return new DateTimeOffset(traceTimestampValue.RawValue, TimeSpan.Zero);
-        }
-
-        public Timestamp GetRelativeTimestamp(TraceTimestampValue traceTimestampValue)
-        {
-            return new Timestamp(traceTimestampValue.RawValue * 100);
-        }
-    }
-
     class DummySample : ICpuSample
     {
         public DummySample(DateTimeOffset time, float weightMs)
         {
-            myTimestamp = new TraceTimestamp(new MockTraceTimestampContext(), new TraceTimestampValue(time.Ticks));
-            myDuration = new TraceDuration(new MockTraceTimestampContext(), new TraceDurationValue((long) (weightMs*10_000)));
+            myTimestamp = new Timestamp(time.Ticks);
+            myDuration = new Duration((long) (weightMs*1000_000));
         }
 
-        public int Processor => throw new NotImplementedException();
+        public uint Processor => 0;
 
-        readonly TraceDuration myDuration;
-        public TraceDuration Weight => myDuration;
+        readonly Duration myDuration;
+        public Duration Weight => myDuration;
 
-        readonly TraceTimestamp myTimestamp;
+        readonly Timestamp myTimestamp;
 
-        public TraceTimestamp Timestamp => myTimestamp;
+        public Timestamp Timestamp => myTimestamp;
 
         public Address InstructionPointer => throw new NotImplementedException();
 
@@ -223,5 +199,6 @@ namespace ETWAnalyzer_uTest.Extractors
         public IThread WorkOnBehalfThread => throw new NotImplementedException();
 
         public IProcess WorkOnBehalfProcess => throw new NotImplementedException();
+
     }
 }

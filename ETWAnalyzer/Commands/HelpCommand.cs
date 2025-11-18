@@ -83,9 +83,6 @@ namespace ETWAnalyzer.Commands
                     case CommandFactory.DumpCommand:
                         Retriever = () => DumpCommand.HelpString;
                         break;
-                    case CommandFactory.AnalyzeArg:
-                        Retriever = () => AnalyzeCommand.HelpString;
-                        break;
                     case CommandFactory.ConvertArg:
                         Retriever = () => ConvertCommand.HelpString;
                         break;

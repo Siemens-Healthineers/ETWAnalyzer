@@ -4,6 +4,7 @@
 using ETWAnalyzer.Analyzers.Infrastructure;
 using ETWAnalyzer.Commands;
 using ETWAnalyzer.Extract;
+using ETWAnalyzer.Extractors;
 using ETWAnalyzer.Infrastructure;
 using ETWAnalyzer.ProcessTools;
 using ETWAnalyzer.TraceProcessorHelpers;
@@ -140,6 +141,12 @@ namespace ETWAnalyzer.EventDump
             SortOrders.Default,
         };
 
+
+        Func<MatchData,string> GetDurationFormatter()
+        {
+            return m => m.LifeTime == null ? "" : base.FormatTimeSpan(m.LifeTime.Value, OverridenOrDefaultTimePrecision);
+        }
+
         /// <summary>
         /// Get column enabled status
         /// </summary>
@@ -218,14 +225,12 @@ namespace ETWAnalyzer.EventDump
                 return;
             }
 
-            string timeSpanFormat = "hh\\:mm\\:ss\\." + new string('f', OverridenOrDefaultTimePrecision);
-
 
             // column data extractors
             Func<MatchData, string> getpid = m => m.ProcessId.ToString().WithWidth(PidWidth);
             Func<MatchData, string> getStartTime = m => m.StartTime != null ? GetDateTimeString(m.StartTime.Value, m.SessionStart, TimeFormatOption) : "";
             Func<MatchData, string> getStopTime = m => m.EndTime != null ? GetDateTimeString(m.EndTime.Value, m.SessionStart, TimeFormatOption) : "";
-            Func<MatchData, string> getDuration = m => (TimePrecision == null || m.LifeTime == null) ? m.LifeTimeString : m.LifeTime.Value.ToString(timeSpanFormat);
+            Func<MatchData, string> getDuration = GetDurationFormatter();
             Func<MatchData, string> getReturnCode = m => m.ReturnCodeString;
             Func<MatchData, string> getParent = m => m.ParentProcessId.ToString().WithWidth(PidWidth);  
             Func<MatchData, string> getSessionId = m => m.SessionId.ToString();
@@ -402,8 +407,9 @@ namespace ETWAnalyzer.EventDump
         {
             string indention = new string(' ', 2 * level); // 2 spaces per level
 
+            var durationFormatter = GetDurationFormatter();
             int userWidth = root.Childs.Count == 0 ? 0 : root.Childs.Max(x => x.User.Length);
-            int lifeTimeWidth = root.Childs.Count == 0 ? 0 : root.Childs.Max(x => x.LifeTimeString.Length);
+            int lifeTimeWidth = root.Childs.Count == 0 ? 0 : root.Childs.Max(x => durationFormatter(x).Length);
             int startTimeWidth = root.Childs.Count == 0 ? 0 : root.Childs.Max(x => x.StartTime.HasValue ? GetDateTimeString(x.StartTime.Value, x.SessionStart, TimeFormatOption).Length : 0);
             int stopTimeWidth = root.Childs.Count == 0 ? 0 : root.Childs.Max(x => x.EndTime.HasValue ? GetDateTimeString(x.EndTime.Value, x.SessionStart, TimeFormatOption).Length : 0);
             int returnCodeWidth = root.Childs.Count == 0 ? 0 : root.Childs.Max(x => (x.ReturnCodeString?.Length).GetValueOrDefault());
@@ -636,8 +642,8 @@ namespace ETWAnalyzer.EventDump
                         PerformedAt = json.PerformedAt,
                         TestCase = json.TestName,
                         ReturnCode = process.ReturnCode,
-                        ParentProcessId = process.ParentPid,
-                        SessionId = process.SessionId,
+                        ParentProcessId = (uint) process.ParentPid,
+                        SessionId = (uint) process.SessionId,
                         User = process.Identity ?? "",
                         SourceFile = json.FileName,
                         StartTime = process.StartTime == DateTimeOffset.MinValue ? (DateTimeOffset?)null : process.StartTime.AddSeconds((-1.0d) * zeroS),
@@ -662,14 +668,17 @@ namespace ETWAnalyzer.EventDump
         protected override List<MatchData> DumpETL(string etlFile)
         {
             List<MatchData> lret = new();
-            using ITraceProcessor processor = TraceProcessor.Create(etlFile, new TraceProcessorSettings
+            var builder = new TraceProcessorBuilder().WithSettings(new TraceProcessorSettings()
             {
                 AllowLostEvents = true,
-                ToolkitPath = ETWAnalyzer.TraceProcessorHelpers.Extensions.GetToolkitPath()
+                AllowTimeInversion = true,
             });
+
+            using ITraceProcessor processor = builder.Build(etlFile);
 
             IPendingResult<IProcessDataSource> processes = processor.UseProcesses();
             ITraceMetadata meta = processor.UseMetadata();
+            StaticTraceProcessorContext.MetaData = meta;
             processor.Process();
 
             ETWExtract extract = new();
@@ -683,16 +692,16 @@ namespace ETWAnalyzer.EventDump
                     CmdLine = String.IsNullOrEmpty(process.CommandLine) ? process.ImageName : process.CommandLine,
                     ProcessID = process.Id,
                     ProcessName = String.Intern(process.ImageName),
-                    ParentPid = process.ParentId,
+                    ParentPid = (int) process.ParentId,
                     IsNew = process.CreateTime.HasValue,
                     HasEnded = process.ExitTime.HasValue,
                     ReturnCode = process.ExitCode,
 #pragma warning disable CA1416
                     Identity = process.User.Value ?? "",
 #pragma warning restore CA1416
-                    SessionId = process.SessionId,
-                    StartTime = process.CreateTime.HasValue ? process.CreateTime.Value.DateTimeOffset : DateTimeOffset.MinValue,
-                    EndTime = process.ExitTime.HasValue ? process.ExitTime.Value.DateTimeOffset : DateTimeOffset.MaxValue,
+                    SessionId = (int) process.SessionId,
+                    StartTime = process.CreateTime.HasValue ? process.CreateTime.Value.ConvertToTime() : DateTimeOffset.MinValue,
+                    EndTime = process.ExitTime.HasValue ? process.ExitTime.Value.ConvertToTime() : DateTimeOffset.MaxValue,
                 }).ToList(),
             };
 
@@ -801,6 +810,12 @@ namespace ETWAnalyzer.EventDump
                 {
                     parents.Add(parent);
                 }
+            }
+
+            // if parent process is no longer running return process if parent filter matches parent pid
+            if ( lret == false )
+            {
+                lret = Parent($"({process.ParentPid.ToString(CultureInfo.InvariantCulture)})");
             }
 
             return lret;
@@ -921,17 +936,17 @@ namespace ETWAnalyzer.EventDump
             /// <summary>
             /// Parent process id
             /// </summary>
-            public int ParentProcessId { get; set; }
+            public uint ParentProcessId { get; set; }
 
             /// <summary>
             /// Windows Session Id
             /// </summary>
-            public int SessionId { get; set; }
+            public uint SessionId { get; set; }
 
             /// <summary>
             /// Process Id
             /// </summary>
-            internal int ProcessId { get; set; }
+            internal uint ProcessId { get; set; }
 
             /// <summary>
             /// User SID or translated SID when extraction was done on generating machine or it was a well known SID.
@@ -1084,8 +1099,8 @@ namespace ETWAnalyzer.EventDump
                 hash = hash * 31 + LifeTime.GetValueOrDefault().GetHashCode();
                 hash = hash * 31 + (CmdLine ?? "").GetHashCode();
                 hash = hash * 31 + ProcessWithPid.GetHashCode();
-                hash = hash * 31 + ParentProcessId;
-                hash = hash * 31 + SessionId;
+                hash = hash * 31 + (int) ParentProcessId;
+                hash = hash * 31 + (int) SessionId;
                 return hash;
             }
 
@@ -1123,12 +1138,12 @@ namespace ETWAnalyzer.EventDump
             public int ExitedProcessCount { get; private set; }
             public int PermanentProcessCount { get; private set; }
             public IEnumerable<ETWProcess> AllProcessIds => allProcessIds;
-            public IEnumerable<int> AllSessionIds => allSessionIds;
+            public IEnumerable<uint> AllSessionIds => allSessionIds;
             public IEnumerable<string> AllUsers => allUsers;
             public IEnumerable<string> AllFiles => allFiles;
 
             private readonly HashSet<ETWProcess> allProcessIds = [];
-            private readonly HashSet<int> allSessionIds = [];
+            private readonly HashSet<uint> allSessionIds = [];
             private readonly HashSet<string> allUsers   = [];
             private readonly HashSet<string> allFiles   = [];
 

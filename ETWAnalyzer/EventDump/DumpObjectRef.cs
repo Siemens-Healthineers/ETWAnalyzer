@@ -9,10 +9,8 @@ using ETWAnalyzer.Infrastructure;
 using ETWAnalyzer.ProcessTools;
 using System;
 using System.Collections.Generic;
-using System.Drawing;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 
 namespace ETWAnalyzer.EventDump
 {
@@ -77,13 +75,13 @@ namespace ETWAnalyzer.EventDump
         public SkipTakeRange TopN { get; internal set; } = new();
         public MinMaxRange<double> MinMaxTime { get; internal set; }
 
-        Dictionary<StackIdx, bool> myStackFilterResult = new();
-        
+        readonly Dictionary<StackIdx, bool> myStackFilterResult = new();
+
 
         /// <summary>
         /// Print stacks only once in CSV mode per stack source
         /// </summary>
-        Dictionary<object,HashSet<StackIdx>> myPrinted = new();
+        readonly Dictionary<object,HashSet<StackIdx>> myPrinted = new();
 
         public override List<MatchData> ExecuteInternal()
         {
@@ -626,10 +624,10 @@ namespace ETWAnalyzer.EventDump
             public int UnmapCount { get; internal set; }
             public int RefChangeCount { get; internal set; }
             public long MapSize { get; private set; }
-            public long UnmapSize { get; private set; } 
+            public long UnmapSize { get; private set; }
 
-            Dictionary<ETWProcess,Counter<string>> myNotClosedHandles = new();
-            Counter<string> myTotalNotClosedHandles = new();
+            readonly Dictionary<ETWProcess,Counter<string>> myNotClosedHandles = new();
+            readonly Counter<string> myTotalNotClosedHandles = new();
 
             void AddNotClosedHandle(ETWProcess process, string handleType)
             {
@@ -984,7 +982,7 @@ namespace ETWAnalyzer.EventDump
             return resolver.GetProcess(procIdx).GetProcessName(UsePrettyProcessName);
         }
 
-        int GetProcessId(ETWProcessIndex procIdx, IProcessExtract resolver)
+        uint GetProcessId(ETWProcessIndex procIdx, IProcessExtract resolver)
         {
             return resolver.GetProcess(procIdx).ProcessID;
         }

@@ -36,7 +36,7 @@ namespace ETWAnalyzer.Extractors.FileIO
             return activty.IssuingProcess != null;
         }
 
-        long GetDurationInus(TraceTimestamp start, TraceTimestamp stop)
+        long GetDurationInus(Timestamp start, Timestamp stop)
         {
             return Math.Max(0, (long)Math.Round((stop - start).TotalMicroseconds, MidpointRounding.AwayFromZero));
         }
@@ -146,7 +146,7 @@ namespace ETWAnalyzer.Extractors.FileIO
                     SetSecurity = new FileSetSecurityOperation()
                 };
 
-                fileSetSec.SetSecurity.AddSecurityEvent(acl.StartTime.DateTimeOffset, acl.ErrorCode);
+                fileSetSec.SetSecurity.AddSecurityEvent(acl.StartTime.ConvertToTime(), acl.ErrorCode);
 
                 data.Add(results, acl.IssuingProcess.Id, acl.IssuingProcess.CreateTime.ConvertToTime(), acl.Path, fileSetSec);
             }

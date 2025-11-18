@@ -11,13 +11,12 @@ using System.Threading;
 
 namespace ETWAnalyzer
 {
-    class Program
+    /// <summary>
+    /// Validating necessary arguments to parse their correctness
+    /// </summary>
+    /// <param name="args"></param>
+    class Program(string[] args)
     {
-        /// <summary>
-        /// Subfolder name of output (-outdir) directory where the extracted Json files are extracted to
-        /// </summary>
-        public const string ExtractFolder = "Extract";
-
         /// <summary>
         /// Property to store debug flag
         /// </summary>
@@ -31,28 +30,18 @@ namespace ETWAnalyzer
         /// <summary>
         /// Current top level command which is now executing
         /// </summary>
-        public ICommand CurrentCommand { get; set; } = new HelpCommand(Array.Empty<string>());
+        public ICommand CurrentCommand { get; set; } = new HelpCommand([]);
 
         /// <summary>
         /// Command line input arguments
         /// </summary>
-        readonly string[] myInputArgs;
+        readonly string[] myInputArgs = args;
 
 
         /// <summary>
         /// Error happened during parse. In that case we print context specific help
         /// </summary>
         bool myIsParserError;
-
-
-        /// <summary>
-        /// Validating necessary arguments to parse their correctness
-        /// </summary>
-        /// <param name="args"></param>
-        public Program(string[] args)
-        {
-            myInputArgs = args;
-        }
 
         /// <summary>
         /// Main entry point

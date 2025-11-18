@@ -90,7 +90,7 @@ namespace ETWAnalyzer.Extractors.Power
                     var idleConfig = processorConfig.IdleConfiguration;
                     var parkingConfig = processorConfig.ProcessorParkingConfiguration;
 
-                    powerData.TimeSinceTraceStartS = (float)power.Timestamp.RelativeTimestamp.TotalSeconds;
+                    powerData.TimeSinceTraceStartS = (float)power.Timestamp.TotalSeconds;
                     powerData.MaxEfficiencyClass1Frequency = (FrequencyValueMHz) processorConfig.MaxEfficiencyClass1Frequency.GetValueOrDefault().TotalMegahertz;
                     powerData.MaxEfficiencyClass0Frequency = (FrequencyValueMHz) processorConfig.MaxEfficiencyClass0Frequency.GetValueOrDefault().TotalMegahertz;
 

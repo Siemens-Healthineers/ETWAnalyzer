@@ -36,7 +36,7 @@ namespace ETWAnalyzer.Extractors.TCP
             Tcb = (ulong)ev.Fields[TcpETWConstants.TcbField].AsAddress.Value;
             BytesSent = (int)ev.Fields[TcpETWConstants.BytesSentField].AsUInt32;
             SequenceNr = ev.Fields[TcpETWConstants.SeqNoField].AsUInt32;
-            Timestamp = ev.Timestamp.DateTimeOffset;
+            Timestamp = ev.Timestamp.ConvertToTime();
         }
     }
 

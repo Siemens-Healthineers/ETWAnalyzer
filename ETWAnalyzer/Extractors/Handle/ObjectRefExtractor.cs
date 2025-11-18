@@ -8,12 +8,14 @@ using ETWAnalyzer.Infrastructure;
 using ETWAnalyzer.TraceProcessorHelpers;
 using Microsoft.Windows.EventTracing;
 using Microsoft.Windows.EventTracing.Processes;
+using Microsoft.Windows.EventTracing.Streaming;
 using Microsoft.Windows.EventTracing.Symbols;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
+using TraceReloggerLib;
 
 namespace ETWAnalyzer.Extractors.Handle
 {
@@ -21,7 +23,7 @@ namespace ETWAnalyzer.Extractors.Handle
     /// <summary>
     /// Object Reference Extractor
     /// </summary>
-    internal class ObjectRefExtractor : ExtractorBase
+    internal class ObjectRefExtractor : ExtractorBase, IUnparsedEventConsumer
     {
         /// <summary>
         /// Guid for Object Tracing which contains the events for Handle and ObjectRef tracing
@@ -118,36 +120,10 @@ namespace ETWAnalyzer.Extractors.Handle
             myStackSource = processor.UseStacks();
             myProcessesSource = processor.UseProcesses();
             mySymbolDataSource = processor.UseSymbols();
-
-            TraceEventCallback handleKernelMemoryEvent = (EventContext eventContext) =>
-            {
-                ClassicEvent classicEvent = eventContext.Event.AsClassicEvent;
-
-                int eventId = classicEvent.Id;
-                int processId = 4;
-                if (classicEvent.ProcessId != null) // assign unknown processes to System 
-                {
-                    processId = unchecked((int)classicEvent.ProcessId.Value);
-                }
-                TraceTimestamp timestamp = classicEvent.Timestamp;
-                int threadId = classicEvent.ThreadId.GetValueOrDefault();
-
-                if( classicEvent.ProviderId == ObTraceGuid)
-                {
-                    ParseObjectProviderEvent(classicEvent, eventId, processId, timestamp, threadId);
-                }
-                else if( classicEvent.ProviderId == MapTraceGuid)
-                {
-                    ParseVAMapEvent(classicEvent, eventId, processId, timestamp, threadId);
-                }
-
-            };
-           
-            processor.Use(new Guid[] { ObTraceGuid, MapTraceGuid }, handleKernelMemoryEvent);
-
+            processor.UseStreaming().UseUnparsedEvents(this, new Guid[] { ObTraceGuid, MapTraceGuid });
         }
 
-        private unsafe void ParseVAMapEvent(ClassicEvent classicEvent, int eventId, int processId, TraceTimestamp timestamp, int threadId)
+        private unsafe void ParseVAMapEvent(ClassicEvent classicEvent, int eventId, uint processId, Timestamp timestamp, uint threadId)
         {
             switch (eventId)
             {
@@ -194,7 +170,7 @@ namespace ETWAnalyzer.Extractors.Handle
             }
         }
 
-        private unsafe void ParseObjectProviderEvent(ClassicEvent classicEvent, int eventId, int processId, TraceTimestamp timestamp, int threadId)
+        private unsafe void ParseObjectProviderEvent(ClassicEvent classicEvent, int eventId, uint processId, Timestamp timestamp, uint threadId)
         {
             switch (eventId)
             {
@@ -281,7 +257,7 @@ namespace ETWAnalyzer.Extractors.Handle
                     myObjectTraceEvents.Add(new HandleDCEndEvent
                     {
                         TimeStamp = timestamp,
-                        ProcessId = (int) handleDCEnd.ProcessId,
+                        ProcessId = handleDCEnd.ProcessId,
                         ThreadId = threadId,
 
                         ObjectPtr = handleDCEnd.ObjectPtr,
@@ -432,15 +408,16 @@ namespace ETWAnalyzer.Extractors.Handle
                     continue;
                 }
 
-                var processIdx = results.GetProcessIndexByPidAtTime(ev.ProcessId, ev.TimeStamp.DateTimeOffset);
+                DateTimeOffset evTime = ev.TimeStamp.ConvertToTime();
+                var processIdx = results.GetProcessIndexByPidAtTime(ev.ProcessId, evTime);
                 if (processIdx == ETWProcessIndex.Invalid)
                 {
                     // some events are logged only after process exit while cleaning up the handle table. Since we do not know how long the process did run we might subtract too much so we 
                     // do a few reasonable times here. 
-                    processIdx = results.GetProcessIndexByPidAtTime(ev.ProcessId, ev.TimeStamp.DateTimeOffset-TimeSpan.FromMilliseconds(2));
+                    processIdx = results.GetProcessIndexByPidAtTime(ev.ProcessId, evTime - TimeSpan.FromMilliseconds(2));
                     if (processIdx == ETWProcessIndex.Invalid)
                     {
-                        processIdx = results.GetProcessIndexByPidAtTime(WindowsConstants.SystemProcessId, ev.TimeStamp.DateTimeOffset);  //otherwise assign it to System 
+                        processIdx = results.GetProcessIndexByPidAtTime(WindowsConstants.SystemProcessId, evTime);  //otherwise assign it to System 
                         if (processIdx == ETWProcessIndex.Invalid)
                         {     
                             if (processIdx == ETWProcessIndex.Invalid)
@@ -467,7 +444,7 @@ namespace ETWAnalyzer.Extractors.Handle
                         {
                             ObjectPtr = create.ObjectPtr,
                             ObjectType = create.ObjectType,
-                            CreateEvent = new RefCountChangeEvent(create.TimeStamp, 1, processIdx, create.ThreadId, stackIndex),
+                            CreateEvent = new RefCountChangeEvent(create.TimeStamp.Nanoseconds, 1, processIdx, create.ThreadId, stackIndex),
                         };
 
                         if (OpenHandles.ContainsKey(trace.ObjectPtr))  // should not happen but the same object pointer can have a create without a delete event. Perhaps some events have gone missing
@@ -482,7 +459,7 @@ namespace ETWAnalyzer.Extractors.Handle
                     case CreateHandleEvent createHandle:
                         if(OpenHandles.TryGetValue(createHandle.ObjectPtr, out ObjectRefTrace hTrace) )
                         {
-                            hTrace.AddHandlCreate(createHandle.TimeStamp, createHandle.HandleValue, processIdx, createHandle.ThreadId,  stackIndex);
+                            hTrace.AddHandlCreate(createHandle.TimeStamp.Nanoseconds, createHandle.HandleValue, processIdx, createHandle.ThreadId,  stackIndex);
                         }
                         else // ObjectRef Traces are missing
                         {
@@ -491,7 +468,7 @@ namespace ETWAnalyzer.Extractors.Handle
                                 ObjectPtr = createHandle.ObjectPtr,
                                 ObjectType = createHandle.ObjectType,
                             };
-                            trace.AddHandlCreate(createHandle.TimeStamp, createHandle.HandleValue, processIdx, createHandle.ThreadId, stackIndex);
+                            trace.AddHandlCreate(createHandle.TimeStamp.Nanoseconds, createHandle.HandleValue, processIdx, createHandle.ThreadId, stackIndex);
                             OpenHandles.Add(trace.ObjectPtr, trace);
                         }
                         break;
@@ -527,7 +504,7 @@ namespace ETWAnalyzer.Extractors.Handle
 
                         break;
                     case DuplicateObjectEvent duplicateObjectEvent:
-                        var sourceProcessIndex = results.GetProcessIndexByPidAtTime(duplicateObjectEvent.SourceProcessId, ev.TimeStamp.DateTimeOffset);
+                        var sourceProcessIndex = results.GetProcessIndexByPidAtTime(duplicateObjectEvent.SourceProcessId, ev.TimeStamp.ConvertToTime());
                         if (processIdx == ETWProcessIndex.Invalid)
                         {
                             continue;
@@ -542,12 +519,12 @@ namespace ETWAnalyzer.Extractors.Handle
                             };
                             OpenHandles.Add(hTrace.ObjectPtr, hTrace);
                         }
-                        hTrace.AddHandleDuplicate(duplicateObjectEvent.TimeStamp, duplicateObjectEvent.SourceHandle, duplicateObjectEvent.TargetHandle, processIdx, sourceProcessIndex, duplicateObjectEvent.ThreadId, stackIndex);
+                        hTrace.AddHandleDuplicate(duplicateObjectEvent.TimeStamp.Nanoseconds, duplicateObjectEvent.SourceHandle, duplicateObjectEvent.TargetHandle, processIdx, sourceProcessIndex, duplicateObjectEvent.ThreadId, stackIndex);
                         break;
                     case CloseHandleEvent closeHandle:
                         if (OpenHandles.TryGetValue(closeHandle.ObjectPtr, out hTrace)) // handle is still known deleteobject is missing or was not enabled
                         {
-                            if (hTrace.AddHandleClose(closeHandle.TimeStamp, closeHandle.HandleValue, closeHandle.Name, processIdx, closeHandle.ThreadId, stackIndex))
+                            if (hTrace.AddHandleClose(closeHandle.TimeStamp.Nanoseconds, closeHandle.HandleValue, closeHandle.Name, processIdx, closeHandle.ThreadId, stackIndex))
                             {
                                 // final close reached
                                 results.HandleData.ObjectReferences.Add(hTrace);
@@ -563,7 +540,7 @@ namespace ETWAnalyzer.Extractors.Handle
                                 var objectTrace = results.HandleData.ObjectReferences[k];
                                 if (objectTrace.ObjectPtr == closeHandle.ObjectPtr)
                                 {
-                                    objectTrace.AddHandleClose(closeHandle.TimeStamp, closeHandle.HandleValue, closeHandle.Name, processIdx, closeHandle.ThreadId, stackIndex);
+                                    objectTrace.AddHandleClose(closeHandle.TimeStamp.Nanoseconds, closeHandle.HandleValue, closeHandle.Name, processIdx, closeHandle.ThreadId, stackIndex);
                                     break;
                                 }
                             }
@@ -572,7 +549,7 @@ namespace ETWAnalyzer.Extractors.Handle
                     case DeleteObjectEvent del:
                         if (OpenHandles.TryGetValue(del.ObjectPtr, out trace))
                         {
-                            trace.DestroyEvent = new RefCountChangeEvent(del.TimeStamp, -1, processIdx, del.ThreadId, stackIndex);
+                            trace.DestroyEvent = new RefCountChangeEvent(del.TimeStamp.Nanoseconds, -1, processIdx, del.ThreadId, stackIndex);
                             results.HandleData.ObjectReferences.Add(trace);
                             OpenHandles.Remove(del.ObjectPtr);  
                         }
@@ -580,19 +557,19 @@ namespace ETWAnalyzer.Extractors.Handle
                     case IncreaseRefCount inc:
                         if (OpenHandles.TryGetValue(inc.ObjectPtr, out trace))
                         {
-                            trace.AddRefChange(inc.TimeStamp, (int) inc.RefCount, processIdx, inc.ThreadId, stackIndex);
+                            trace.AddRefChange(inc.TimeStamp.Nanoseconds, (int) inc.RefCount, processIdx, inc.ThreadId, stackIndex);
                         }
                         break;
                     case DecreaseRefCount dec:
                         if (OpenHandles.TryGetValue(dec.ObjectPtr, out trace))
                         {
-                            trace.AddRefChange(dec.TimeStamp, (int)dec.RefCount, processIdx, dec.ThreadId, stackIndex);
+                            trace.AddRefChange(dec.TimeStamp.Nanoseconds, (int)dec.RefCount, processIdx, dec.ThreadId, stackIndex);
                         }
                         break;
                     case UnMapFileEvent unmapFile:
                         if (OpenHandles.TryGetValue(unmapFile.ObjectPtr, out trace))
                         {
-                            trace.AddFileUnMap(unmapFile.TimeStamp, unmapFile.ViewBase, unmapFile.ViewSize, unmapFile.FileObject, unmapFile.ByteOffset, processIdx, unmapFile.ThreadId, stackIndex);
+                            trace.AddFileUnMap(unmapFile.TimeStamp.Nanoseconds, unmapFile.ViewBase, unmapFile.ViewSize, unmapFile.FileObject, unmapFile.ByteOffset, processIdx, unmapFile.ThreadId, stackIndex);
                             results.HandleData.ObjectReferences.Add(trace);
                             OpenHandles.Remove(unmapFile.ObjectPtr);
                         }
@@ -607,7 +584,7 @@ namespace ETWAnalyzer.Extractors.Handle
                             };
                             OpenHandles.Add(mapFile.ObjectPtr, trace);
                         }
-                        trace.AddFileMap(mapFile.TimeStamp, mapFile.ViewBase, mapFile.ViewSize, mapFile.FileObject, mapFile.ByteOffset, processIdx, mapFile.ThreadId, stackIndex);
+                        trace.AddFileMap(mapFile.TimeStamp.Nanoseconds, mapFile.ViewBase, mapFile.ViewSize, mapFile.FileObject, mapFile.ByteOffset, processIdx, mapFile.ThreadId, stackIndex);
                         break;
                     case HandleTypeEvent typeEvent:
                         results.HandleData.ObjectTypeMap.Add(typeEvent.ObjectType, typeEvent.Name);
@@ -648,6 +625,35 @@ namespace ETWAnalyzer.Extractors.Handle
                     clean.HandleCreateEvents = null;
                 }
             }
+        }
+
+        public void Process(TraceEvent eventData)
+        {
+            ClassicEvent classicEvent = eventData.AsClassicEvent;
+
+            int eventId = classicEvent.Id;
+            uint processId = 4;
+            if (classicEvent.ProcessId != null) // assign unknown processes to System 
+            {
+                processId = classicEvent.ProcessId.Value;
+            }
+            Timestamp timestamp = classicEvent.Timestamp;
+            uint threadId = classicEvent.ThreadId.GetValueOrDefault();
+
+            if (classicEvent.ProviderId == ObTraceGuid)
+            {
+                ParseObjectProviderEvent(classicEvent, eventId, processId, timestamp, threadId);
+            }
+            else if (classicEvent.ProviderId == MapTraceGuid)
+            {
+                ParseVAMapEvent(classicEvent, eventId, processId, timestamp, threadId);
+            }
+        }
+
+
+        public void ProcessFailure(FailureInfo failureInfo)
+        {
+            failureInfo.ThrowAndLogParseFailure();
         }
     }
 }

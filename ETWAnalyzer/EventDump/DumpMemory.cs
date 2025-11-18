@@ -1,24 +1,19 @@
 ﻿//// SPDX-FileCopyrightText:  © 2022 Siemens Healthcare GmbH
 //// SPDX-License-Identifier:   MIT
 
-using ETWAnalyzer.Analyzers.Infrastructure;
+using ETWAnalyzer.Commands;
 using ETWAnalyzer.Extract;
+using ETWAnalyzer.Extract.Modules;
+using ETWAnalyzer.Infrastructure;
+using ETWAnalyzer.ProcessTools;
+using ETWAnalyzer.Reader.Extensions;
+using ETWAnalyzer.TraceProcessorHelpers;
+using Microsoft.Performance.SDK;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using ETWAnalyzer.Analyzers;
 using System.IO;
-using ETWAnalyzer.ProcessTools;
-using ETWAnalyzer.Infrastructure;
-using ETWAnalyzer.Commands;
+using System.Linq;
 using static ETWAnalyzer.Commands.DumpCommand;
-using ETWAnalyzer.Extract.Modules;
-using System.Collections;
-using System.Reflection;
-using System.Text.RegularExpressions;
-using static ETWAnalyzer.EventDump.DumpMemory;
 
 namespace ETWAnalyzer.EventDump
 {
@@ -43,10 +38,10 @@ namespace ETWAnalyzer.EventDump
         public long GlobalDiffMB { get; internal set; }
         public bool TotalMemory { get; internal set; }
 
-        public MinMaxRange<decimal> MinMaxWorkingSetMiB { get; internal set; } = new();
-        public MinMaxRange<decimal> MinMaxCommitMiB { get; internal set; } = new();
-        public MinMaxRange<decimal> MinMaxWorkingsetPrivateMiB { get; internal set; } = new();
-        public MinMaxRange<decimal> MinMaxSharedCommitMiB { get; internal set; } = new();
+        public MinMaxRange<decimal> MinMaxWorkingSetBytes { get; internal set; } = new();
+        public MinMaxRange<decimal> MinMaxCommitBytes { get; internal set; } = new();
+        public MinMaxRange<decimal> MinMaxWorkingSetPrivateBytes { get; internal set; } = new();
+        public MinMaxRange<decimal> MinMaxSharedCommitBytes { get; internal set; } = new();
 
         public DumpCommand.SortOrders SortOrder { get; internal set; }
         public bool NoCmdLine { get; internal set; }
@@ -94,7 +89,7 @@ namespace ETWAnalyzer.EventDump
             public string Baseline;
             public ModuleDefinition Module { get; internal set; }
             public DateTimeOffset SessionStart { get; internal set; }
-            public int SessionId { get; set; }
+            public uint SessionId { get; set; }
 
         }
 
@@ -179,10 +174,10 @@ namespace ETWAnalyzer.EventDump
 
         bool MemoryFilter(IProcessWorkingSet set)
         {
-            return MinMaxWorkingSetMiB.IsWithin( set.WorkingSetInMiB ) &&
-                   MinMaxCommitMiB.IsWithin( set.CommitInMiB ) &&
-                   MinMaxWorkingsetPrivateMiB.IsWithin( set.WorkingsetPrivateInMiB ) &&
-                   MinMaxSharedCommitMiB.IsWithin( set.SharedCommitSizeInMiB);
+            return MinMaxWorkingSetBytes.IsWithin( set.WorkingSetInMiB * (1/Units.MiBUnit) ) &&
+                   MinMaxCommitBytes.IsWithin( set.CommitInMiB * (1 / Units.MiBUnit)) &&
+                   MinMaxWorkingSetPrivateBytes.IsWithin( set.WorkingsetPrivateInMiB * (1 / Units.MiBUnit)) &&
+                   MinMaxSharedCommitBytes.IsWithin( set.SharedCommitSizeInMiB * (1 / Units.MiBUnit));
         }
 
         /// <summary>
@@ -243,7 +238,7 @@ namespace ETWAnalyzer.EventDump
                                 SharedCommitInMiB = mem2.SharedCommitSizeInMiB,
                                 SessionEnd = file.Extract.SessionEnd,
                                 Process = process,
-                                SessionId = process.SessionId,
+                                SessionId = (uint) process.SessionId,
                                 ProcessName = process.GetProcessName(UsePrettyProcessName),
                                 WorkingSetMiB = mem2.WorkingSetInMiB,
                                 WorkingsetPrivateMiB = mem2.WorkingsetPrivateInMiB,
@@ -290,7 +285,7 @@ namespace ETWAnalyzer.EventDump
                         SharedCommitInMiB = mem2.SharedCommitSizeInMiB,
                         SessionEnd = file.Extract.SessionEnd,
                         Process = process,
-                        SessionId = process.SessionId,
+                        SessionId = (uint) process.SessionId,
                         ProcessName = process.GetProcessName(UsePrettyProcessName),
                         WorkingSetMiB = mem2.WorkingSetInMiB,
                         WorkingsetPrivateMiB = mem2.WorkingsetPrivateInMiB,

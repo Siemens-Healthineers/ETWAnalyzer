@@ -5,7 +5,6 @@ using ETWAnalyzer.EventDump;
 using ETWAnalyzer.Extract;
 using ETWAnalyzer.Infrastructure;
 using ETWAnalyzer_uTest.TestInfrastructure;
-using Microsoft.Diagnostics.Tracing.Parsers.FrameworkEventSource;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -125,10 +124,10 @@ namespace ETWAnalyzer_uTest.EventDump
                 "5000     ImmortalParent.exe ",
                 "  |- 5001     ImmortalChild.exe ",
                 "500      ImmortalRoot.exe ",
-                "1234    +10.000 - 20.000 00:00:10  Parent.exe hi ",
+                "1234    +10.000 - 20.000 0.00:00:10.000  Parent.exe hi ",
                 "  |- 10      +12.000  cmd.exe /StartOnly ",
-                "  |- 12345   +15.000 - 25.000 00:00:10  cmd.exe /TransientChild ",
-                "1234    +-0.000 - 9.990 00:00:09.9900000  ParentWrong.exe hi ",
+                "  |- 12345   +15.000 - 25.000 0.00:00:10.000  cmd.exe /TransientChild ",
+                "1234    +-0.000 - 9.990 0.00:00:09.990  ParentWrong.exe hi ",
             };
 
             var lines = testOutput.GetSingleLines();
@@ -288,8 +287,8 @@ namespace ETWAnalyzer_uTest.EventDump
             Assert.Equal(2, totalCounter.NewProcessCount);
             Assert.Equal(1, totalCounter.ExitedProcessCount);
             Assert.Equal(0, totalCounter.PermanentProcessCount);
-            Assert.Contains(1, totalCounter.AllSessionIds);
-            Assert.Contains(2, totalCounter.AllSessionIds);
+            Assert.Contains(1u, totalCounter.AllSessionIds);
+            Assert.Contains(2u, totalCounter.AllSessionIds);
             Assert.Contains("User1", totalCounter.AllUsers);
             Assert.Contains("User2", totalCounter.AllUsers);
 
@@ -370,8 +369,8 @@ namespace ETWAnalyzer_uTest.EventDump
                     Process = proc1,
                     User = proc1.Identity,
                     ProcessId = proc1.ProcessID,
-                    ParentProcessId = proc1.ParentPid,
-                    SessionId = proc1.SessionId,
+                    ParentProcessId = (uint) proc1.ParentPid,
+                    SessionId = (uint)  proc1.SessionId,
                     SourceFile = File3,
                     HasEnded = proc1.HasEnded,
                     IsNewProcess = proc1.IsNew,
@@ -383,8 +382,8 @@ namespace ETWAnalyzer_uTest.EventDump
                     Process = proc3,
                     User = proc3.Identity,
                     ProcessId = proc3.ProcessID,
-                    ParentProcessId = proc3.ParentPid,
-                    SessionId = proc3.SessionId,
+                    ParentProcessId = (uint) proc3.ParentPid,
+                    SessionId = (uint) proc3.SessionId,
                     HasEnded = proc3.HasEnded,
                     IsNewProcess = proc3.IsNew,
                     SourceFile = File2,
@@ -396,8 +395,8 @@ namespace ETWAnalyzer_uTest.EventDump
                     Process = proc2,
                     User = proc2.Identity,
                     ProcessId = proc2.ProcessID,
-                    ParentProcessId = proc2.ParentPid,
-                    SessionId = proc2.SessionId,
+                    ParentProcessId = (uint) proc2.ParentPid,
+                    SessionId = (uint) proc2.SessionId,
                     HasEnded = proc2.HasEnded,
                     IsNewProcess = proc2.IsNew,
                     SourceFile = File1,
@@ -409,8 +408,8 @@ namespace ETWAnalyzer_uTest.EventDump
                     Process = proc1,
                     User = proc3.Identity,
                     ProcessId = proc1.ProcessID,
-                    ParentProcessId = proc1.ParentPid,
-                    SessionId = proc1.SessionId,
+                    ParentProcessId = (uint) proc1.ParentPid,
+                    SessionId = (uint) proc1.SessionId,
                     HasEnded = proc1.HasEnded,
                     IsNewProcess = proc3.IsNew,
                     SourceFile = File1,
@@ -634,9 +633,9 @@ namespace ETWAnalyzer_uTest.EventDump
                     ProcessName = proc.ProcessName,
                     HasEnded = proc.HasEnded,
                     ProcessId = proc.ProcessID,
-                    ParentProcessId = proc.ParentPid,
+                    ParentProcessId = (uint) proc.ParentPid,
                     PerformedAt = test.PerformedAt,
-                    SessionId = proc.SessionId,
+                    SessionId = (uint) proc.SessionId,
                     ReturnCode = proc.ReturnCode,
                     User = proc.Identity,
                 });
@@ -646,12 +645,12 @@ namespace ETWAnalyzer_uTest.EventDump
             Assert.Single(tree);
             var root = tree.First();
             Assert.Equal("Parent.exe", root.ProcessName);
-            Assert.Equal(1234, root.ProcessId);
+            Assert.Equal(1234u, root.ProcessId);
             Assert.Single(root.Childs);
             var child = root.Childs[0];
             Assert.Empty(child.Childs);
             Assert.Equal("cmd.exe", child.ProcessName);
-            Assert.Equal(12345, child.ProcessId);
+            Assert.Equal(12345u, child.ProcessId);
         }
 
         [Fact]
@@ -670,9 +669,9 @@ namespace ETWAnalyzer_uTest.EventDump
                     ProcessName = proc.ProcessName,
                     HasEnded = proc.HasEnded,
                     ProcessId = proc.ProcessID,
-                    ParentProcessId = proc.ParentPid,
+                    ParentProcessId = (uint) proc.ParentPid,
                     PerformedAt = test.PerformedAt,
-                    SessionId = proc.SessionId,
+                    SessionId = (uint) proc.SessionId,
                     ReturnCode = proc.ReturnCode,
                     User = proc.Identity,
                 });
@@ -691,47 +690,47 @@ namespace ETWAnalyzer_uTest.EventDump
             Assert.Equal(5, tree.Count);
             var first = tree[0];
             Assert.Equal("cmd.exe", first.ProcessName);
-            Assert.Equal(123456, first.ProcessId);
+            Assert.Equal(123456u, first.ProcessId);
             Assert.Empty(first.Childs);
             Assert.Null(first.Parent);
 
             var second = tree[1];
             Assert.Equal("ImmortalParent.exe", second.ProcessName);
-            Assert.Equal(5000, second.ProcessId);
+            Assert.Equal(5000u, second.ProcessId);
             Assert.Single(second.Childs);
             Assert.Null(second.Parent);
             var secondChild = second.Childs[0];
-            Assert.Equal(5001, secondChild.ProcessId);
+            Assert.Equal(5001u, secondChild.ProcessId);
             Assert.Equal("ImmortalChild.exe", secondChild.ProcessName);
 
 
             var third = tree[2]; ;
             Assert.Equal("ImmortalRoot.exe", third.ProcessName);
-            Assert.Equal(500, third.ProcessId);
+            Assert.Equal(500u, third.ProcessId);
             Assert.Empty(third.Childs);
             Assert.Null(third.Parent);
 
             var parent = tree[3];
             Assert.Equal("Parent.exe", parent.ProcessName);
-            Assert.Equal(1234, parent.ProcessId);
+            Assert.Equal(1234u, parent.ProcessId);
             Assert.Equal(2, parent.Childs.Count);
             Assert.Null(parent.Parent);
 
             var parentChild1 = parent.Childs[0];
             Assert.Equal("cmd.exe", parentChild1.ProcessName);
-            Assert.Equal(12345, parentChild1.ProcessId);
+            Assert.Equal(12345u, parentChild1.ProcessId);
             Assert.Empty(parentChild1.Childs);
             Assert.Equal(parent, parentChild1.Parent);
 
             var parentChild2 = parent.Childs[1];
             Assert.Equal("cmd.exe", parentChild2.ProcessName);
-            Assert.Equal(10, parentChild2.ProcessId);
+            Assert.Equal(10u, parentChild2.ProcessId);
             Assert.Empty(parentChild2.Childs);
             Assert.Equal(parent, parentChild2.Parent);
 
             var fifth = tree[4];
             Assert.Equal("ParentWrong.exe", fifth.ProcessName);
-            Assert.Equal(1234, fifth.ProcessId);
+            Assert.Equal(1234u, fifth.ProcessId);
             Assert.Empty(fifth.Childs);
         }
 
@@ -878,8 +877,8 @@ namespace ETWAnalyzer_uTest.EventDump
                     Process = proc1,
                     User = proc1.Identity,
                     ProcessId = proc1.ProcessID,
-                    ParentProcessId = proc1.ParentPid,
-                    SessionId = proc1.SessionId,
+                    ParentProcessId = (uint)  proc1.ParentPid,
+                    SessionId = (uint) proc1.SessionId,
                     SourceFile = File3,
                     HasEnded = true,
                     ProcessWithPid = proc1.ToString(),
@@ -928,8 +927,8 @@ namespace ETWAnalyzer_uTest.EventDump
                     Process = proc1,
                     User = proc1.Identity,
                     ProcessId = proc1.ProcessID,
-                    ParentProcessId = proc1.ParentPid,
-                    SessionId = proc1.SessionId,
+                    ParentProcessId = (uint)  proc1.ParentPid,
+                    SessionId = (uint) proc1.SessionId,
                     SourceFile = File3,
                     HasEnded = true,
                     ProcessWithPid = proc1.ToString(),

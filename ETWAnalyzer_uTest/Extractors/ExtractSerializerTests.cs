@@ -1,4 +1,5 @@
 ﻿using ETWAnalyzer.Extractors;
+using ETWAnalyzer.Infrastructure;
 using Microsoft.Windows.EventTracing;
 using System;
 using System.Collections.Generic;

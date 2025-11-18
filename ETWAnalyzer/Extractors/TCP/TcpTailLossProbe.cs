@@ -31,7 +31,7 @@ namespace ETWAnalyzer.Extractors.TCP
         {
             Tcb = (ulong) ev.Fields[TcpETWConstants.TcbField].AsAddress.Value;
             SndUna = ev.Fields["SndUna"].AsUInt32;
-            Timestamp = ev.Timestamp.DateTimeOffset;
+            Timestamp = ev.Timestamp.ConvertToTime();
         }
     }
 }

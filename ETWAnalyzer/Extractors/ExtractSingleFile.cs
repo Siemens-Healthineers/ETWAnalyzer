@@ -7,6 +7,8 @@ using ETWAnalyzer.Configuration;
 using ETWAnalyzer.Extract;
 using ETWAnalyzer.Extract.Modules;
 using ETWAnalyzer.Helper;
+using ETWAnalyzer.Infrastructure;
+using ETWAnalyzer.Reader.ProcessTools;
 using ETWAnalyzer.TraceProcessorHelpers;
 using Microsoft.Windows.EventTracing;
 using Microsoft.Windows.EventTracing.Symbols;
@@ -169,13 +171,13 @@ namespace ETWAnalyzer.Extractors
             List<string> outputFiles = new();
             try
             {
-
-                using ITraceProcessor processor = TraceProcessor.Create(myEtlFile, new TraceProcessorSettings
+                TraceProcessorBuilder builder = new TraceProcessorBuilder().WithSettings(new TraceProcessorSettings
                 {
                     AllowLostEvents = true,
                     AllowTimeInversion = true,
-                    ToolkitPath = ETWAnalyzer.TraceProcessorHelpers.Extensions.GetToolkitPath()
                 });
+
+                using ITraceProcessor processor = builder.Build(myEtlFile);
 
                 bool needSymbols = false;
                 foreach (ExtractorBase preParse in myExtractors)
@@ -215,7 +217,7 @@ namespace ETWAnalyzer.Extractors
                 Logger.Info(perfMsg);
                 if (outputDirectory.IsDefault)
                 {
-                    outputJsonFile = Path.Combine(outputDirectory.OutputDirectory, Program.ExtractFolder, Path.GetFileNameWithoutExtension(myEtlFile) + Extension);
+                    outputJsonFile = Path.Combine(outputDirectory.OutputDirectory, ExtractSerializer.ExtractFolder, Path.GetFileNameWithoutExtension(myEtlFile) + Extension);
                 }
                 else
                 {

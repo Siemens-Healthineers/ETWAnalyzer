@@ -130,7 +130,7 @@ namespace ETWAnalyzer.Extractors.PMC
 
                     if( AreDifferentMethods(sFrom, sTo, out string mFrom, out string mTo) )
                     {
-                        ETWProcessIndex processIdx = results.GetProcessIndexByPID(process.Id, process.CreateTime.HasValue ? process.CreateTime.Value.DateTimeOffset : default);
+                        ETWProcessIndex processIdx = results.GetProcessIndexByPID(process.Id, process.CreateTime.HasValue ? process.CreateTime.Value.ConvertToTime() : default);
                         if( !counts.TryGetValue(processIdx, out Dictionary < string, Counter<string>> from2MethodCount) )
                         {
                             from2MethodCount = new Dictionary<string, Counter<string>>();
@@ -167,8 +167,8 @@ namespace ETWAnalyzer.Extractors.PMC
 
         bool AreDifferentMethods(IStackSymbol s1, IStackSymbol s2, out string method1, out string method2)
         {
-            method1 = myPrinter.GetPrettyMethod(s1?.FunctionName, s1?.Image);
-            method2 = myPrinter.GetPrettyMethod(s2?.FunctionName, s2?.Image);
+            method1 = myPrinter.GetPrettyMethod(s1);
+            method2 = myPrinter.GetPrettyMethod(s2);
             return method1 != method2;
         }
 
@@ -182,7 +182,16 @@ namespace ETWAnalyzer.Extractors.PMC
 
             if (!symbolCache.TryGetValue(address, out var symbol))
             {
-                symbol = process.GetSymbolForAddress(address);
+                try
+                { 
+                    symbol = process.GetSymbolForAddress(address);
+                }
+                catch(Exception)
+                {
+                    // symbol resolution failed for some reason
+                    symbol = null;
+                }
+
                 symbolCache.Add(address, symbol);
             }
 
@@ -210,7 +219,7 @@ namespace ETWAnalyzer.Extractors.PMC
                 }
 
 
-                ETWProcessIndex processIdx = results.GetProcessIndexByPID(diff.Process.Id, diff.Process.CreateTime.HasValue ? diff.Process.CreateTime.Value.DateTimeOffset : default);
+                ETWProcessIndex processIdx = results.GetProcessIndexByPID(diff.Process.Id, diff.Process.CreateTime.HasValue ? diff.Process.CreateTime.Value.ConvertToTime() : default);
 
                 foreach (var rawDelta in diff.RawCounterDeltas)
                 {

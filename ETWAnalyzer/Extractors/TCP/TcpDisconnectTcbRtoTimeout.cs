@@ -30,7 +30,7 @@ namespace ETWAnalyzer.Extractors.TCP
         public TcpDisconnectTcbRtoTimeout(IGenericEvent ev)
         {
             Tcb = (ulong)ev.Fields[TcpETWConstants.TcbField].AsAddress.Value;
-            Timestamp = ev.Timestamp.DateTimeOffset;
+            Timestamp = ev.Timestamp.ConvertToTime();
             LocalIpAndPort = ev.Fields[TcpETWConstants.LocalAddressField].GetSocketConnection();
             RemoteIpAndPort = ev.Fields[TcpETWConstants.RemoteAddressField].GetSocketConnection();
         }

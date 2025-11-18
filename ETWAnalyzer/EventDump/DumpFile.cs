@@ -634,7 +634,7 @@ namespace ETWAnalyzer.EventDump
             if(fileName != null && reverse)
             {
                 string[] parts = fileName.Split(PathSplitChars);
-                return String.Join(PathSplitCharAsString, parts.Reverse());
+                return String.Join(PathSplitCharAsString, parts.AsEnumerable().Reverse());
             }
             else
             {
@@ -866,7 +866,7 @@ namespace ETWAnalyzer.EventDump
                             FileName = fileEvent.FileName,
                             Stats = RemoveStatsFromColumn(fileEvent.Stats),
                             Process = fileEvent.Process,
-                            SessionId = fileEvent.Process.SessionId,
+                            SessionId = (uint) fileEvent.Process.SessionId,
                             DataFile = file,
                             BaseLine = file.Extract.MainModuleVersion != null ? file.Extract.MainModuleVersion.ToString() : "",
                             SessionStart = file.Extract.SessionStart,
@@ -1108,7 +1108,7 @@ namespace ETWAnalyzer.EventDump
             /// </summary>
             public ETWProcess Process { get; internal set; }
 
-            public int SessionId { get; set; }
+            public uint SessionId { get; set; }
 
 
             /// <summary>

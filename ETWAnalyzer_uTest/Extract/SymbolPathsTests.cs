@@ -3,6 +3,7 @@
 
 using ETWAnalyzer.Extract;
 using ETWAnalyzer.Helper;
+using ETWAnalyzer.Reader.ProcessTools;
 using ETWAnalyzer_uTest.TestInfrastructure;
 using System;
 using System.Collections.Generic;

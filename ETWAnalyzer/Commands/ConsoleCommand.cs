@@ -29,7 +29,7 @@ namespace ETWAnalyzer.Commands
         /// </summary>
         Lazy<SingleTest>[] myInputFiles;
 
-        class ConsoleHelpCommand : ArgParser
+        class ConsoleHelpCommand(string[] args) : ArgParser(args)
         {
             public static readonly string HelpDir = ".dir [-r] [-od] folder" + Environment.NewLine +
                 "   Show files in folder. Use -r for recursive and -od for sorting files by modify time. Default sort order is alphabetic." + Environment.NewLine;
@@ -41,6 +41,8 @@ namespace ETWAnalyzer.Commands
                 HelpCd +
                 ".cls"+ Environment.NewLine + 
                 "   Clear screen." + Environment.NewLine +
+                ".clip [0/1 or true/false]"+ Environment.NewLine +
+                "   Enable/disable output clipping to console width. If no argument is given current setting is printed." + Environment.NewLine +
                 ".converttime -time ..." + Environment.NewLine +
                 "   Convert time/datetime string to ETW session time and back." + Environment.NewLine +
                $".dump xxx [ -fd *usecase1* ]" + Environment.NewLine + 
@@ -78,9 +80,6 @@ namespace ETWAnalyzer.Commands
             {
                 ColorConsole.WriteLine(Help, ConsoleColor.Yellow);
             }
-
-            public ConsoleHelpCommand(string[] args) : base(args)
-            { }
         }
 
 
@@ -129,6 +128,7 @@ namespace ETWAnalyzer.Commands
                 ".load+" => Load(args, bKeepOldFiles:true),
                 ".unload" => Unload(args),
                 ".cls" => Cls(args),
+                ".clip" => Clip(args),
                 ".dump" => CreateDumpCommand(args),
                 ".converttime" => CreateConvertTimeCommand(args),
                 ".exit" => new QuitCommand(args),
@@ -175,6 +175,38 @@ namespace ETWAnalyzer.Commands
 
             return bCancel;
         }
+
+        private ICommand Clip(string[] args)
+        {
+            if( args.Length == 0)
+            {
+                Console.WriteLine($"Output clipping is set to {ColorConsole.ClipToConsoleWidth}. To Change use .Clip 0/1");
+            }
+            else
+            {
+                string flag = args[0];
+                bool bFlag = false;
+
+                if (int.TryParse(flag, out int flagValue))
+                {
+                    bFlag = flagValue == 1;
+                }
+                else if (bool.TryParse(flag, out bool flagBool))
+                {
+                    bFlag = flagBool;
+                }
+                else
+                {
+                    ColorConsole.WriteError($"Error: Could not parse {flag} as 0/1 or true/false.");
+                    return null;
+                }
+
+                ColorConsole.WriteLine("Set output clipping to " + bFlag);  
+                ColorConsole.ClipToConsoleWidth = bFlag;
+            }
+            return null;
+        }
+
 
         private ICommand Cls(string[] args)
         {
@@ -363,7 +395,7 @@ namespace ETWAnalyzer.Commands
             {
                 bool sortByDate = false;
                 bool bRecursive = false;
-                Func<string, bool> isArg = x => x.StartsWith("/") || x.StartsWith("-");
+                Func<string, bool> isArg = x => x.StartsWith('/') || x.StartsWith('-');
                 List<string> noSwitches = new List<string>();
                 foreach (var arg in args)
                 {
@@ -538,13 +570,19 @@ namespace ETWAnalyzer.Commands
                 try
                 {
                     var runs = TestRun.CreateFromDirectory(arg, bRecursive ? System.IO.SearchOption.AllDirectories : System.IO.SearchOption.TopDirectoryOnly, null);
-                    IEnumerable<Lazy<SingleTest>> filesToAdd = runs.SelectMany(x => x.Tests).SelectMany(x => x.Value).Select(x =>
+                    IEnumerable<SingleTest> filesToAdd = runs.SelectMany(x => x.Tests).SelectMany(x => x.Value);
+
+                    // prevent loading same file multiple times or unrelated files, especially when doing recursive queries 
+                    HashSet<string> extractedUniqueFiles  = filesToAdd.SelectMany(x => x.Files).Select(x => x.JsonExtractFileWhenPresent).Where( x => x != null).ToHashSet();
+                    var jsonTests = extractedUniqueFiles.Select(jsonFileName =>
                     {
-                        x.KeepExtract = true; // do not unload serialized Extract when test is disposed.
-                        ForceDeserializeOnLoadWhenRequested(bFullLoad, x);
-                        return new Lazy<SingleTest>(() => x);
+                        var test = new SingleTest(new TestDataFile[] { new TestDataFile(jsonFileName) });
+                        test.KeepExtract = true;
+                        ForceDeserializeOnLoadWhenRequested(bFullLoad, test);
+                        return new Lazy<SingleTest>(() => test);
                     });
-                    tests.AddRange(filesToAdd);
+
+                    tests.AddRange(jsonTests);
                 }
                 catch(Exception ex)
                 {
@@ -689,10 +727,7 @@ namespace ETWAnalyzer.Commands
         /// <returns></returns>
         static string[] SplitQuotedString(string str, char splitChar=' ', char quoteChar='"')
         {
-            if (str == null)
-            {
-                throw new ArgumentNullException(nameof(str));
-            }
+            ArgumentNullException.ThrowIfNull(str);
 
             char prevChar = '\0';
             char nextChar = '\0';
@@ -755,7 +790,7 @@ namespace ETWAnalyzer.Commands
         /// <summary>
         /// Prints error when not recognized command is entered.
         /// </summary>
-        class InvalidCommandCommand : ArgParser
+        class InvalidCommandCommand(string[] args) : ArgParser(args)
         {
             public override string Help => throw new NotImplementedException();
 
@@ -767,15 +802,12 @@ namespace ETWAnalyzer.Commands
             {
                 ColorConsole.WriteLine($"Command: {String.Join(" ", myInputArguments)} is not a recognized command. Enter .help to get list of valid commands.", ConsoleColor.Red);
             }
-
-            public InvalidCommandCommand(string[] args) : base(args)
-            { }
         }
 
         /// <summary>
         /// When we want to quite we throw a <see cref="NotImplementedException"/>
         /// </summary>
-        class QuitCommand : ArgParser
+        class QuitCommand(string[] args) : ArgParser(args)
         {
             public override string Help => throw new NotImplementedException();
 
@@ -788,8 +820,6 @@ namespace ETWAnalyzer.Commands
             {
                 throw new OperationCanceledException();
             }
-
-            public QuitCommand(string[] args) : base(args) { }
         }
 
         // Add the missing FileInfoEqualityComparer class definition to resolve the CS0246 error.  
@@ -808,10 +838,7 @@ namespace ETWAnalyzer.Commands
 
             public int GetHashCode(FileInfo obj)
             {
-                if (obj == null)
-                {
-                    throw new ArgumentNullException(nameof(obj));
-                }
+                ArgumentNullException.ThrowIfNull(obj);
 
                 // Replace HashCode.Combine with a manual hash code computation
                 unchecked

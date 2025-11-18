@@ -14,6 +14,7 @@ using ETWAnalyzer.Commands;
 using ETWAnalyzer_uTest.TestInfrastructure;
 using Newtonsoft.Json.Linq;
 using Xunit.Abstractions;
+using ETWAnalyzer.Infrastructure;
 
 namespace ETWAnalyzer_uTest
 {
@@ -129,140 +130,6 @@ namespace ETWAnalyzer_uTest
 
             ExtractSerializer.DeserializeFile(outFile);
         }
-
-        // File filtering Test-Methods
-        [Fact]
-        public void Can_Read_Folder_With_No_TestCaseName_And_No_StartAndStopDates_And_No_ComputerName() // T(0)-S(0)-C(0)
-        {
-            using var printer = new ExceptionalPrinter(myWriter);
-            DataOutput<string> testrunDirectory = TestData.TestRunDirectory;
-            printer.Add(testrunDirectory.Output);
-
-            var runner = new AnalyzeCommand(new string[] { "-filedir", testrunDirectory.Data, "-outdir", "C:\\Temp" });
-            List<TestDataFile> allMachedFiles = TestRun.ExistingSingleTestsIncludeComputerAndTestNameAndDateFilter(runner.TestCaseNames, runner.ComputerNames,runner.StartAndStopDates,TestRun.CreateFromDirectory(testrunDirectory.Data, SearchOption.TopDirectoryOnly, null)).ToTestDataFiles();
-            
-            Assert.Equal(TestData.TestRunDirectoryFileCount, allMachedFiles.Count);
-        }
-
-        [Fact]
-        public void Can_Read_Folder_With_ComputerName_And_No_StartAndStopDates_And_No_TestCaseName()// T(0)-S(0)-C(1)
-        {
-            using var printer = new ExceptionalPrinter(myWriter);
-            DataOutput<string> testrunDirectory = TestData.TestRunDirectory;
-            printer.Add(testrunDirectory.Output);
-
-            var runner = new AnalyzeCommand(new string[] { "-filedir", testrunDirectory.Data, "-computer", "FO9DE01T0166PC", "-outdir", "C:\\Temp" });
-            runner.Parse();
-
-            List<TestDataFile> allMachedFilesPC = TestRun.ExistingSingleTestsIncludeComputerAndTestNameAndDateFilter(runner.TestCaseNames, runner.ComputerNames, runner.StartAndStopDates, TestRun.CreateFromDirectory(testrunDirectory.Data, SearchOption.TopDirectoryOnly, null)).ToTestDataFiles();
-
-            runner = new AnalyzeCommand(new string[] { "-filedir", testrunDirectory.Data, "-computer", "DEFOR09T121SRV", "-outdir", "C:\\Temp" });
-            runner.Parse();
-
-            List<TestDataFile> allMachedFilesSRV = TestRun.ExistingSingleTestsIncludeComputerAndTestNameAndDateFilter(runner.TestCaseNames, runner.ComputerNames, runner.StartAndStopDates, TestRun.CreateFromDirectory(testrunDirectory.Data, SearchOption.TopDirectoryOnly, null)).ToTestDataFiles();
-
-            Assert.Equal(2899,allMachedFilesPC.Count+allMachedFilesSRV.Count);
-        }
-
-        [Fact]
-        public void Can_Read_Folder_With_StartAndStopDates_And_No_TestCaseName_And_No_Computer() // T(0)-S(1)-C(0)
-        {
-            using var printer = new ExceptionalPrinter(myWriter);
-            DataOutput<string> testrunDirectory = TestData.TestRunDirectory;
-            printer.Add(testrunDirectory.Output);
-
-            var runner = new AnalyzeCommand(new string[] { "-filedir", testrunDirectory.Data, "-timerange", "12.09.2018 14.09.2018", "-outdir", "C:\\Temp" });
-            runner.Parse();
-
-            List<TestDataFile> allMachedFiles = TestRun.ExistingSingleTestsIncludeComputerAndTestNameAndDateFilter(runner.TestCaseNames, runner.ComputerNames, runner.StartAndStopDates, TestRun.CreateFromDirectory(testrunDirectory.Data, SearchOption.TopDirectoryOnly, null)).ToTestDataFiles();
-            Assert.Equal(106, allMachedFiles.Count);
-        }
-
-        [Fact]
-        public void Can_Read_Folder_With_StartAndStopDatesSecondFormat_And_No_TestCaseName_And_No_Computer() // T(0)-S(1)-C(0)
-        {
-            using var tmp = TempDir.Create();
-            File.Copy(TestData.ClientEtlFile, Path.Combine(tmp.Name, Path.GetFileName(TestData.ClientEtlFile)));
-            File.SetLastWriteTime(Path.Combine(tmp.Name, Path.GetFileName(TestData.ClientEtlFile)), DateTime.Now);
-            var serverLocalTmp = Path.Combine(tmp.Name, Path.GetFileName(TestData.ServerEtlFile)).Replace("124447", "124448"); // make SpecificModify Date different or else it will end up in the same Test
-            File.Copy(TestData.ServerEtlFile, serverLocalTmp);
-            File.SetLastWriteTime(serverLocalTmp, DateTime.Now.Subtract(TimeSpan.FromDays(7.1)));
-
-            var runner = new AnalyzeCommand(new string[] { "-filedir", tmp.Name, "-timerange", "7", "-outdir", "C:\\Temp" });
-            runner.Parse();
-
-            List<TestDataFile> allMachedFiles = TestRun.ExistingSingleTestsIncludeComputerAndTestNameAndDateFilter(runner.TestCaseNames, runner.ComputerNames, runner.StartAndStopDates, TestRun.CreateFromDirectory(tmp.Name, SearchOption.TopDirectoryOnly, null)).ToTestDataFiles();
-            Assert.Single(allMachedFiles);
-        }
-
-        [Fact]
-        public void Can_Read_Folder_With_StartAndStopDates_And_Computer_And_No_TestCaseName()// T(0)-S(1)-C(1)
-        {
-            using var printer = new ExceptionalPrinter(myWriter);
-            DataOutput<string> testrunDirectory = TestData.TestRunDirectory;
-            printer.Add(testrunDirectory.Output);
-
-            var runner = new AnalyzeCommand(new string[] { "-filedir", testrunDirectory.Data, "-computer", "FO9DE01T0166PC", "-timerange", "12.09.2018 14.09.2018", "-outdir", "C:\\Temp" });
-            runner.Parse();
-
-            List <TestDataFile> allMachedFiles = TestRun.ExistingSingleTestsIncludeComputerAndTestNameAndDateFilter(runner.TestCaseNames, runner.ComputerNames, runner.StartAndStopDates, TestRun.CreateFromDirectory(testrunDirectory.Data, SearchOption.TopDirectoryOnly, null)).ToTestDataFiles();
-            Assert.Equal(53, allMachedFiles.Count);
-        }
-
-        [Fact]
-        public void Can_Read_Folder_With_TestCaseName_And_No_StartAndStopDates_And_No_Computer() // T(1)-S(0)-C(0)
-        {
-            using var printer = new ExceptionalPrinter(myWriter);
-            DataOutput<string> testrunDirectory = TestData.TestRunDirectory;
-            printer.Add(testrunDirectory.Output);
-
-            var runner = new AnalyzeCommand(new string[] { "-filedir", testrunDirectory.Data, "-testcase", "CallupAdhocWarmReadingMR", "-outdir", "C:\\Temp" });
-            runner.Parse();
-
-            List<TestDataFile> allMachedFiles = TestRun.ExistingSingleTestsIncludeComputerAndTestNameAndDateFilter(runner.TestCaseNames, runner.ComputerNames, runner.StartAndStopDates ,TestRun.CreateFromDirectory(testrunDirectory.Data, SearchOption.TopDirectoryOnly, null)).ToTestDataFiles();
-            Assert.Equal(246, allMachedFiles.Count);
-        }
-
-        [Fact]
-        public void Can_Read_Folder_With_TestCaseName_And_Computer_And_No_StartAndStopDates()// T(1)-S(0)-C(1)
-        {
-            using var printer = new ExceptionalPrinter(myWriter);
-            DataOutput<string> testrunDirectory = TestData.TestRunDirectory;
-            printer.Add(testrunDirectory.Output);
-            var runner = new AnalyzeCommand(new string[] { "-filedir", testrunDirectory.Data, "-testcase", "CallupAdhocWarmReadingMR", "-computer", "DEFOR09T121SRV", "-outdir", "C:\\Temp" });
-            runner.Parse();
-
-            List<TestDataFile> allMachedFiles = TestRun.ExistingSingleTestsIncludeComputerAndTestNameAndDateFilter(runner.TestCaseNames, runner.ComputerNames, runner.StartAndStopDates, TestRun.CreateFromDirectory(testrunDirectory.Data, SearchOption.TopDirectoryOnly, null)).ToTestDataFiles();
-            Assert.Equal(123, allMachedFiles.Count);
-        }
-
-        [Fact]
-        public void Can_Read_Folder_With_TestCaseName_And_StartAndStopDates_No_Computer() // T(1)-S(1)-C(0)
-        {
-            using var printer = new ExceptionalPrinter(myWriter);
-            DataOutput<string> testrunDirectory = TestData.TestRunDirectory;
-            printer.Add(testrunDirectory.Output);
-            var runner = new AnalyzeCommand(new string[] { "-filedir", testrunDirectory.Data, "-testcase", "CallupAdhocWarmReadingMR", "-timerange", "21.09.2018 22.09.2018", "-outdir", "C:\\Temp" });
-            runner.Parse();
-
-            List<TestDataFile> allMachedFiles = TestRun.ExistingSingleTestsIncludeComputerAndTestNameAndDateFilter(runner.TestCaseNames, runner.ComputerNames, runner.StartAndStopDates, TestRun.CreateFromDirectory(testrunDirectory.Data, SearchOption.TopDirectoryOnly, null)).ToTestDataFiles();
-            Assert.Equal(14, allMachedFiles.Count);
-        }
-
-        [Fact]
-        public void Can_Read_Folder_With_TestCaseName_And_StartAndStopDates_And_Computer()// T(1)-S(1)-C(1)
-        {
-                   using var printer = new ExceptionalPrinter(myWriter);
-            DataOutput<string> testrunDirectory = TestData.TestRunDirectory;
-            printer.Add(testrunDirectory.Output);
-            var runner = new AnalyzeCommand(new string[] { "-filedir", testrunDirectory.Data, "-testcase", "CallupAdhocWarmReadingMR", "-timerange", "21.09.2018 22.09.2018", "-Computer", "FO9DE01T0166PC", "-outdir", "C:\\Temp" });
-            runner.Parse();
-
-            List<TestDataFile> allMachedFiles = TestRun.ExistingSingleTestsIncludeComputerAndTestNameAndDateFilter(runner.TestCaseNames, runner.ComputerNames, runner.StartAndStopDates ,TestRun.CreateFromDirectory(testrunDirectory.Data, SearchOption.TopDirectoryOnly, null)).ToTestDataFiles();
-            Assert.Equal(7, allMachedFiles.Count);
-        }
-
-
-
+ 
     }
 }

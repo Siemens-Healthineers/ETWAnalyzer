@@ -6,8 +6,10 @@ using ETWAnalyzer.Extract;
 using ETWAnalyzer.Extract.CPU;
 using ETWAnalyzer.Extract.CPU.Extended;
 using ETWAnalyzer.Extract.Disk;
+using ETWAnalyzer.TraceProcessorHelpers;
 using Microsoft.Diagnostics.Tracing.Etlx;
 using Microsoft.Diagnostics.Tracing.Parsers.Symbol;
+using Microsoft.Performance.SDK.Runtime;
 using Microsoft.Windows.EventTracing;
 using Microsoft.Windows.EventTracing.Metadata;
 using Microsoft.Windows.EventTracing.Processes;
@@ -20,6 +22,19 @@ using System.Security.Cryptography;
 
 namespace ETWAnalyzer.Extractors
 {
+    /// <summary>
+    /// Static instance of current Trace MetaData instance which is needed to 
+    /// convert to DateTime instances
+    /// </summary>
+    internal static class StaticTraceProcessorContext
+    {
+        /// <summary>
+        /// Get Trace Metadata
+        /// </summary>
+        public static ITraceMetadata MetaData { get; set; }
+    }
+
+
     class MachineDetailsExtractor : ExtractorBase
     {
         IPendingResult<IProcessDataSource> myProcesses;
@@ -38,6 +53,7 @@ namespace ETWAnalyzer.Extractors
             myProcesses = processor.UseProcesses();
             myMetaData = processor.UseSystemMetadata();
             myTraceMetaData = processor.UseMetadata();
+            StaticTraceProcessorContext.MetaData = processor.UseMetadata();
             myETWMarks = processor.UseMarks();
             mySpecialEvents.RegisterSpecialEvents(processor);
         }
@@ -54,7 +70,6 @@ namespace ETWAnalyzer.Extractors
 
             results.NumberOfProcessors = meta?.ProcessorCount ?? 0;
             results.CPUSpeedMHz = (int)(meta?.ProcessorSpeed.TotalMegahertz ?? 0);
-
 
             Dictionary<CPUNumber, CPUTopology> cpuTopology = new();
             try
@@ -82,7 +97,7 @@ namespace ETWAnalyzer.Extractors
                         };
                     }
 
-                    results.CPU = new CPUStats(results?.CPU?.PerProcessCPUConsumptionInMs, results?.CPU?.PerProcessAvgCPUPriority, results?.CPU?.PerProcessMethodCostsInclusive, results?.CPU?.TimeLine, cpuTopology, null);
+                    results.CPU = new CPUStats(results?.CPU?.PerProcessCPUConsumptionInMs, results?.CPU?.PerProcessAvgCPUPriority, results?.CPU?.PerProcessCoreUsage, results?.CPU?.PerProcessMethodCostsInclusive, results?.CPU?.TimeLine, cpuTopology, null);
                 }
             }
             catch (InvalidTraceDataException ex)
@@ -102,11 +117,16 @@ namespace ETWAnalyzer.Extractors
             results.SourceETLFileName = myTraceMetaData?.TracePath ?? "";
             results.SessionStart = myTraceMetaData?.StartTime ?? DateTimeOffset.MinValue;
             results.SessionEnd = myTraceMetaData?.StopTime ?? DateTimeOffset.MaxValue;
+            
 
             if (mySpecialEvents.BootTimeUTC.HasValue && results.SessionStart != default)
             {
                 DateTime localTime = new DateTime(mySpecialEvents.BootTimeUTC.Value.Ticks, DateTimeKind.Unspecified) + results.SessionStart.Offset;
                 results.BootTime = new DateTimeOffset(localTime, results.SessionStart.Offset);
+                results.CPUProcessorGroups = mySpecialEvents.ProcessorGroups;
+                results.WinSatOSName = mySpecialEvents.WinSatOSName; // e.g. Windows 11 is still reported as Windows 10 by "normal" APIs. Use WinSAT data which shows real OS name, if captured.
+                                                                     // The Winsat data seems to be captured only during initial installation and is not updated later. So this might have an old OS name inside as well. 
+                results.CPUVendor = results.CPUVendor ?? mySpecialEvents.WinSatProcessorName; 
                 results.TraceHeader = new TraceHeader
                 {
                     BufferSize = mySpecialEvents.BufferSize,
@@ -234,7 +254,7 @@ namespace ETWAnalyzer.Extractors
             {
                 foreach (IMark mark in myETWMarks.Result.Marks)
                 {
-                    marks.Add(new ETWMark(mark.Timestamp.DateTimeOffset, mark.Label));
+                    marks.Add(new ETWMark(mark.Timestamp.ConvertToTime(), mark.Label));
                 }
             }
             results.ETWMarks = marks;
@@ -422,12 +442,12 @@ namespace ETWAnalyzer.Extractors
                     ProcessID = data.Id,
                     ProcessName = data.ImageName,
                     CmdLine = data.CommandLine,
-                    StartTime = data.CreateTime != null ? data.CreateTime.Value.DateTimeOffset : DateTimeOffset.MinValue,
-                    EndTime = data.ExitTime != null ? data.ExitTime.Value.DateTimeOffset : DateTimeOffset.MaxValue,
+                    StartTime = data.CreateTime != null ? data.CreateTime.Value.ConvertToTime() : DateTimeOffset.MinValue,
+                    EndTime = data.ExitTime != null ? data.ExitTime.Value.ConvertToTime() : DateTimeOffset.MaxValue,
                     IsNew = data.CreateTime != null,
                     ReturnCode = data.ExitCode,
-                    ParentPid = data.ParentId,
-                    SessionId = data.SessionId,
+                    ParentPid = (int) data.ParentId,
+                    SessionId = (int) data.SessionId,
                     HasEnded = data.ExitTime != null,
                     Identity = userName,
                 };

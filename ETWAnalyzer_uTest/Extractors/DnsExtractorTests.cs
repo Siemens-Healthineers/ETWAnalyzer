@@ -1,6 +1,7 @@
 ﻿using ETWAnalyzer.Extract;
 using ETWAnalyzer.Extract.Network;
 using ETWAnalyzer.Extractors;
+using ETWAnalyzer.Infrastructure;
 using System;
 using System.Collections.Generic;
 using System.IO;

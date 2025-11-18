@@ -30,7 +30,7 @@ namespace ETWAnalyzer.Extractors.TCP
         public TcpTemplateChanged(IGenericEvent ev)
         {
             Tcb = (ulong)ev.Fields[TcpETWConstants.TcbField].AsAddress.Value;
-            Timestamp = ev.Timestamp.DateTimeOffset;
+            Timestamp = ev.Timestamp.ConvertToTime();
             TemplateType = (TCPIP_TEMPLATE_TYPES) ev.Fields[TemplateTypeField].AsUInt32;
         }
     }

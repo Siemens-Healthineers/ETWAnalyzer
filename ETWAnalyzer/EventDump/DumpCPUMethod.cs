@@ -1,26 +1,20 @@
 ﻿//// SPDX-FileCopyrightText:  © 2022 Siemens Healthcare GmbH
 //// SPDX-License-Identifier:   MIT
 
-using ETWAnalyzer.Analyzers;
-using ETWAnalyzer.Infrastructure;
 using ETWAnalyzer.Commands;
 using ETWAnalyzer.Configuration;
 using ETWAnalyzer.Extract;
+using ETWAnalyzer.Extract.CPU.Extended;
 using ETWAnalyzer.Extract.Modules;
+using ETWAnalyzer.Infrastructure;
 using ETWAnalyzer.ProcessTools;
+using ETWAnalyzer.Reader.Extensions;
+using ETWAnalyzer.TraceProcessorHelpers;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using static ETWAnalyzer.Commands.DumpCommand;
-using ETWAnalyzer.TraceProcessorHelpers;
-using System.Text.RegularExpressions;
-using System.Diagnostics;
-using ETWAnalyzer.Extract.CPU;
-using ETWAnalyzer.Extract.CPU.Extended;
-using ETWAnalyzer.Extractors.CPU;
-using static ETWAnalyzer.EventDump.DumpMemory;
-using System.Security.Claims;
 
 namespace ETWAnalyzer.EventDump
 {
@@ -214,6 +208,11 @@ namespace ETWAnalyzer.EventDump
         /// </summary>
         const int CPUtotal_PriorityColumnWidth = 8;
 
+        /// <summary>
+        /// Core usage count column width
+        /// </summary>
+        const int CPUTotal_CoreUsageColumnWidth = 6;
+
 
         /// <summary>
         /// Total CPU Header Process Name column width
@@ -258,11 +257,13 @@ namespace ETWAnalyzer.EventDump
             public bool? HasCPUSamplingData { get; internal set; }
             public bool? HasCSwitchData { get; internal set; }
             public ProcessKey ProcessKey { get; internal set; }
-            public int SessionId { get; set; }
+            public uint SessionId { get; set; }
             public ICPUUsage[] CPUUsage { get; internal set; }
             public IReadOnlyDictionary<CPUNumber, ICPUTopology> Topology { get; internal set; }
             public IReadyTimes ReadyDetails { get; internal set; }
             public float ProcessPriority { get; internal set; }
+
+            public IReadOnlyList<uint> CoreUsageCount { get ; internal set; }
             public bool HasFrequencyData { get; internal set; }
 
             public override string ToString()
@@ -384,7 +385,7 @@ namespace ETWAnalyzer.EventDump
                             FirstLastCallDurationS = (float)stacktag.FirstLastOccurenceDuration.TotalSeconds,
                             SessionStart = file.Extract.SessionStart,
                             Process = process,
-                            SessionId = process.SessionId,
+                            SessionId = (uint) process.SessionId,
                             ExeModule = exeModule,
                             ZeroTimeS = zeroTimeS,
                         });
@@ -438,12 +439,14 @@ namespace ETWAnalyzer.EventDump
                         ICPUUsage[] cpuUsage = null;
                         IReadyTimes readyTimes = null;
                         float prio = 0.0f;
+                        IReadOnlyList<uint> usedCores = null;
                         bool hasFrequencyData = false;
 
                         if (perProcess.Process.Pid > WindowsConstants.IdleProcessId)
                         {
                             ETWProcessIndex idx = file.Extract.GetProcessIndexByPID(perProcess.Process.Pid, perProcess.Process.StartTime);
                             file.Extract?.CPU?.PerProcessAvgCPUPriority?.TryGetValue(idx, out prio); // get process priority
+                            file.Extract?.CPU?.PerProcessCoreUsage?.TryGetValue(idx, out usedCores); // get core usage count
 
                             ProcessMethodIdx procMethod = idx.Create(methodCost.MethodIdx);
                             if (file.Extract.CPU?.ExtendedCPUMetrics?.MethodIndexToCPUMethodData?.ContainsKey(procMethod) == true)
@@ -460,9 +463,6 @@ namespace ETWAnalyzer.EventDump
                             }
                         }
 
-
-
-
                         matches.Add(new MatchData
                         {
                             TestName = file.TestName,
@@ -475,6 +475,7 @@ namespace ETWAnalyzer.EventDump
                             ReadyMs = methodCost.ReadyMs,
                             ReadyAverageUs = methodCost.ReadyAverageUs,
                             ProcessPriority = prio,
+                            CoreUsageCount = usedCores,
                             ContextSwitchCount = methodCost.ContextSwitchCount,
                             Threads = methodCost.Threads,
                             CPUUsage = cpuUsage,
@@ -493,7 +494,7 @@ namespace ETWAnalyzer.EventDump
                             SessionStart = file.Extract.SessionStart,
                             StackDepth = methodCost.DepthFromBottom,
                             Process = process,
-                            SessionId = process.SessionId,
+                            SessionId = (uint) process.SessionId,
                             Module = module,
                             ExeModule = exeModule,
                             Driver = driver,
@@ -528,7 +529,7 @@ namespace ETWAnalyzer.EventDump
 
                 if (lret)
                 {
-                    ETWProcess process = ProcessExtensions.FindProcessByKey(file, procCPU.Key);
+                    ETWProcess process = file.FindProcessByKey(procCPU.Key);
                     if (process == null)
                     {
                         lret = false;
@@ -561,7 +562,7 @@ namespace ETWAnalyzer.EventDump
             {
                 if (!lookupCache.TryGetValue(key, out ETWProcess process))
                 {
-                    process = ProcessExtensions.FindProcessByKey(file, key);
+                    process = file.FindProcessByKey(key);
                     lookupCache[key] = process;
                 }
 
@@ -602,6 +603,9 @@ namespace ETWAnalyzer.EventDump
                 float prio = 0.0f;
                 file.Extract?.CPU.PerProcessAvgCPUPriority?.TryGetValue(index, out prio);
 
+                IReadOnlyList<uint> coreUsageCount = null;
+                file.Extract?.CPU?.PerProcessCoreUsage?.TryGetValue(index, out coreUsageCount);
+
                 return new MatchData
                 {
                     TestName = file.TestName,
@@ -609,13 +613,14 @@ namespace ETWAnalyzer.EventDump
                     DurationInMs = file.DurationInMs,
                     CPUMs = x.Value,
                     ProcessPriority = prio,
+                    CoreUsageCount = coreUsageCount,
                     BaseLine = file.Extract.MainModuleVersion != null ? file.Extract.MainModuleVersion.ToString() : "",
                     Method = "",
                     ProcessAndPid = process.GetProcessWithId(UsePrettyProcessName),
                     ProcessKey = process,
                     SourceFile = file.JsonExtractFileWhenPresent,
                     Process = process,
-                    SessionId = process.SessionId,
+                    SessionId = (uint) process.SessionId,
                     Module = module,
 
                 };
@@ -641,7 +646,7 @@ namespace ETWAnalyzer.EventDump
                 matches.Add(cpu);
                 if (!IsCSVEnabled && !Merge && !(ShowTotal == TotalModes.Total))
                 {
-                    PrintCPUTotal(cpu.CPUMs, cpu.ProcessPriority, cpu.Process, Path.GetFileNameWithoutExtension(file.FileName), file.Extract.SessionStart, matches[matches.Count - 1].Module);
+                    PrintCPUTotal(cpu.CPUMs, cpu.ProcessPriority, cpu.CoreUsageCount, cpu.Process, Path.GetFileNameWithoutExtension(file.FileName), file.Extract.SessionStart, matches[matches.Count - 1].Module);
                 }
             }
         }
@@ -651,13 +656,14 @@ namespace ETWAnalyzer.EventDump
             if (!IsCSVEnabled)
             {
                 string cpuHeaderName = "CPU";
-                string priorityHeaderName = ShowTotal == TotalModes.Total || NoPriorityDetails ? "" : "Priority".WithWidth(CPUtotal_PriorityColumnWidth)+" ";
+                string priorityHeaderName = ShowTotal == TotalModes.Total || NoPriorityDetails ? "" : "Priority".WithWidth(CPUtotal_PriorityColumnWidth) + " ";
+                string coreUsageHeaderName = ShowTotal == TotalModes.Total || NoCoreUsage ? "" : "#Cores".WithWidth(CPUTotal_CoreUsageColumnWidth) + " ";
                 string processHeaderName = "Process Name";
                 string sessionHeaderName = ShowDetails ? "Session " : "";
 
                 if (myCPUTotalHeaderShown == false)
                 {
-                    ColorConsole.WriteEmbeddedColorLine($"\t[Green]{cpuHeaderName.WithWidth(CPUTotal_CPUColumnWidth)} ms[/Green] [red]{priorityHeaderName}[/red][yellow]{sessionHeaderName}{processHeaderName.WithWidth(CPUTotal_ProcessNameWidth)}[/yellow]");
+                    ColorConsole.WriteEmbeddedColorLine($"\t[Green]{cpuHeaderName.WithWidth(CPUTotal_CPUColumnWidth)} ms[/Green] [red]{priorityHeaderName}[/red][magenta]{coreUsageHeaderName}[/magenta][yellow]{sessionHeaderName}{processHeaderName.WithWidth(CPUTotal_ProcessNameWidth)}[/yellow]");
                     myCPUTotalHeaderShown = true;
                 }
             }
@@ -678,7 +684,7 @@ namespace ETWAnalyzer.EventDump
             return priority >= 8.0f ? $"[red]{"F1".WidthFormat(priority, width)}[/red]" : $"[green]{"F1".WidthFormat(priority, width)}[/green]";
         }
 
-        void PrintCPUTotal(long cpu, float priority, ETWProcess process, string sourceFile, DateTimeOffset sessionStart, ModuleDefinition exeModule)
+        void PrintCPUTotal(long cpu, float priority, IReadOnlyList<uint> coreUsageCount, ETWProcess process, string sourceFile, DateTimeOffset sessionStart, ModuleDefinition exeModule)
         {
             string fileName = this.Merge ? $" {sourceFile}" : "";
 
@@ -698,15 +704,27 @@ namespace ETWAnalyzer.EventDump
                 prio = FormatPriorityColor(priority, CPUtotal_PriorityColumnWidth) + " ";
             }
 
-            
+            string coreUsage = "";
+            if( NoCoreUsage == false && coreUsageCount?.Count > 0)
+            {
+                if( ShowCoreNumber == true )
+                {
+                    coreUsage = $"[magenta]{String.Join(' ', coreUsageCount)} [/magenta]";
+                }
+                else
+                {
+                    coreUsage = $"[magenta]{coreUsageCount.Count,CPUTotal_CoreUsageColumnWidth} [/magenta]";
+                }
+            }
+
 
             if (NoCmdLine)
             {
-                ColorConsole.WriteEmbeddedColorLine($"\t[Green]{cpuStr,CPUTotal_CPUColumnWidth} ms[/Green] {prio}[yellow]{process.GetProcessWithId(UsePrettyProcessName),CPUTotal_ProcessNameWidth}{GetProcessTags(process, sessionStart)}[/yellow]{fileName} [red]{moduleInfo}[/red]");
+                ColorConsole.WriteEmbeddedColorLine($"\t[Green]{cpuStr,CPUTotal_CPUColumnWidth} ms[/Green] {prio}{coreUsage}[yellow]{process.GetProcessWithId(UsePrettyProcessName),CPUTotal_ProcessNameWidth}{GetProcessTags(process, sessionStart)}[/yellow]{fileName} [red]{moduleInfo}[/red]");
             }
             else
             {
-                ColorConsole.WriteEmbeddedColorLine($"\t[Green]{cpuStr,CPUTotal_CPUColumnWidth} ms[/Green] {prio}[yellow]{sessionIdStr}{process.GetProcessWithId(UsePrettyProcessName),CPUTotal_ProcessNameWidth}{GetProcessTags(process, sessionStart)}[/yellow] {process.CommandLineNoExe}", ConsoleColor.DarkCyan, true);
+                ColorConsole.WriteEmbeddedColorLine($"\t[Green]{cpuStr,CPUTotal_CPUColumnWidth} ms[/Green] {prio}{coreUsage}[yellow]{sessionIdStr}{process.GetProcessWithId(UsePrettyProcessName),CPUTotal_ProcessNameWidth}{GetProcessTags(process, sessionStart)}[/yellow] {process.CommandLineNoExe}", ConsoleColor.DarkCyan, true);
                 ColorConsole.WriteEmbeddedColorLine($" {fileName} [red]{moduleInfo}[/red]");
             }
         }
@@ -920,6 +938,8 @@ namespace ETWAnalyzer.EventDump
         {
             get => StackTagFilter.Key != null && (MethodFilter.Key == null || !TopNMethods.IsEmpty);
         }
+        public bool NoCoreUsage { get; set; }
+        public bool ShowCoreNumber { get; set; }
 
         private Formatter<MatchData> GetHeaderFormatter(List<MatchData> matches, FormatterType type)
         {
@@ -1370,14 +1390,15 @@ namespace ETWAnalyzer.EventDump
 
                     long diff = group.ETWMaxBy(x => x.PerformedAt).CPUMs - cpu;
 
-                    PrintCPUTotal(cpu, subgroup.First().ProcessPriority, subgroup.First().Process, String.Join(" ", subgroup.Select(x => Path.GetFileNameWithoutExtension(x.SourceFile)).ToHashSet()) + $" Diff: {diff:N0} ms ", subgroup.First().SessionStart, subgroup.FirstOrDefault().Module);
+                    var processTotal = subgroup.First();
+                    PrintCPUTotal(cpu, processTotal.ProcessPriority, processTotal.CoreUsageCount, processTotal.Process, String.Join(" ", subgroup.Select(x => Path.GetFileNameWithoutExtension(x.SourceFile)).ToHashSet()) + $" Diff: {diff:N0} ms ", subgroup.First().SessionStart, subgroup.FirstOrDefault().Module);
                 }
             }
         }
 
         private void WriteCSVProcessTotal(List<MatchData> matches)
         {
-            OpenCSVWithHeader(Col_CSVOptions, Col_TestCase, Col_Date, Col_TestTimeinms, "CPU ms", Col_AveragePriority, Col_Baseline, Col_Process, "ParentPid", Col_ProcessName, 
+            OpenCSVWithHeader(Col_CSVOptions, Col_TestCase, Col_Date, Col_TestTimeinms, "CPU ms", Col_AveragePriority, "#Cores", Col_Baseline, Col_Process, "ParentPid", Col_ProcessName, 
                 Col_StartTime, Col_CommandLine, Col_SourceJsonFile, "SourceDirectory", "IsNewProcess", 
                 Col_FileVersion, Col_VersionString, Col_ProductVersion, Col_ProductName, Col_Description, Col_Directory);
 
@@ -1390,7 +1411,7 @@ namespace ETWAnalyzer.EventDump
                 string description = match.Module?.Description?.Trim() ?? "";
                 string directory = match.Module?.ModulePath ?? "";
                 
-                WriteCSVLine(CSVOptions, match.TestName, match.PerformedAt, match.DurationInMs, match.CPUMs, GetNullIfZero(match.ProcessPriority), match.BaseLine, match.ProcessAndPid, match.Process.ParentPid, match.Process.GetProcessName(UsePrettyProcessName), match.Process.StartTime, match.Process.CmdLine, 
+                WriteCSVLine(CSVOptions, match.TestName, match.PerformedAt, match.DurationInMs, match.CPUMs, GetNullIfZero(match.ProcessPriority),  match?.CoreUsageCount?.Count, match.BaseLine, match.ProcessAndPid, match.Process.ParentPid, match.Process.GetProcessName(UsePrettyProcessName), match.Process.StartTime, match.Process.CmdLine, 
                     Path.GetFileNameWithoutExtension(match.SourceFile), Path.GetDirectoryName(match.SourceFile), (match.Process.IsNew ? 1 : 0),
                     fileVersion, versionString, productVersion, productName, description, directory);
             }

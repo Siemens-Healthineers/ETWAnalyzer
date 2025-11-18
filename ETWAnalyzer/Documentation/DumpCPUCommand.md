@@ -28,10 +28,16 @@ C:\tmp\Extract>EtwAnalyzer -dump CPU -topN 5
 ```
 ![](Images/DumpCPUTop5.png "Dump CPU Top 5")
 
-In this view also the average dynamic process priority is shown. The priority data is taken either from CPU sampling or Context Switch data. 
+In this view also the average dynamic process priority is shown. You can suppress it with ```-NoPriority```. The priority data is taken either from CPU sampling or Context Switch data. 
 Dynamic priority means that this is not the priority you did set for your process/thread but the prority the OS did use after applying priority
 boosts. The priority can be important to spot scheduling issues when CPU is low or when hybrid CPUs (Alder Lake+) on Windows 10 are used. 
 On Windows 10 for Below Normal priority processes the work is scheduled almost 100% to the Efficicency Cores. 
+
+Additionally the number of used CPU cores is shown on which CPU work for this process did run. This can be helpful to spot CPU affinity issues where
+a process is limited to a small number of cores only. To omit that data you can use ```-NoCoreUsage```. If you want to see on which cores
+the process did run you can use ```-ShowCoreNumber``` which will print a sorted list of all used cores. 
+A typical issue with CPU affinity is when some methods did run slow because they were scheduled on busy cores only resulting
+in high unreasonable high Ready times (up to 100+ ms per Ready Event). Core Scheduling data is taken from Context Switch events, and if these are not present from CPU sampling events.
 
 Did you notice the +- after the process SerializerTests? These characters signal that the process was started + and has ended - during 
 the recording. The other processes did run since trace start. You can print also the process start time instead of the +- signs to analyze 
@@ -41,9 +47,10 @@ C:\tmp\Extract>EtwAnalyzer -dump CPU -topN 2 -ProcessFmt s
 ```
 ![](Images/DumpCPUTopN2ProcessFmt.png "Dump CPU Top 2 Processes")
 
-The +- signs are replaced by start/stop and duration for the process.
-The blue part after the process name is its command line. If you are using custom color schemes in your shell you can add *-nocolor* to omit coloring output.
-If you are experiencing word wrapping in your shell you can add *-clip* to prevent word wrapping while omitting the additional output which did clutter
+The +- signs are replaced by start/stop and duration for the process. You can control the number of digits with ```-timedigits``` which can range from 0-6.
+If you use 0 then the process duration is printed in full seconds without decimal places.
+The blue part after the process name is its command line. If you are using custom color schemes in your shell you can add ```-nocolor``` to omit coloring output.
+If you are experiencing word wrapping in your shell you can add ```-clip``` to prevent word wrapping while omitting the additional output which did clutter
 your console. This is very useful to copy the output into an Email to show the issue a colleague.
 
 Lets look inside the top 20 methods of SerializerTests
@@ -177,7 +184,7 @@ slowdown and we can trust this number.
 
 To identify the region where Defender did intercept our calls we can use WPA, or we can interleave method names and Stacktags in one common output. 
 ```
-EtwAnalyzer -dump CPU -pn SerializerTests -stacktags *virus* -methods * -minmaxWaitMs 500-900 -SortBy wait
+EtwAnalyzer -dump CPU -pn SerializerTests -stacktags *virus* -methods * -minmaxWaitMs 500 900 -SortBy wait
 ```
 ![](Images/DumpCPUAV_SortByWait.png "Dump AV Sort By Wait")
 
@@ -188,7 +195,7 @@ but there is a list of pretty much all Filter Driver altitudes published by Micr
 of the Who’s Who of AV device drivers. ETWAnalyzer can use that to our advantage and print module infos for well known
 driver names:
 ```
-EtwAnalyzer -dump CPU -pn SerializerTests -stacktags *virus* -methods * -MinMaxWaitMs 500-900 -SortBy Wait -id -smi -clip -NoReady
+EtwAnalyzer -dump CPU -pn SerializerTests -stacktags *virus* -methods * -MinMaxWaitMs 500 900 -SortBy Wait -id -smi -clip -NoReady
 ```
 ![alt text](Images/WindowsDefender_SMI.png)
 

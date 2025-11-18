@@ -8,14 +8,27 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ETWAnalyzer", "ETWAnalyzer\ETWAnalyzer.csproj", "{B163151C-42DC-44DA-A153-FC833EE4C9E2}"
+	ProjectSection(ProjectDependencies) = postProject
+		{D4BAB343-CDFA-4069-B395-6086037B6BE5} = {D4BAB343-CDFA-4069-B395-6086037B6BE5}
+	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ETWAnalyzer_iTest", "ETWAnalyzer_iTest\ETWAnalyzer_iTest.csproj", "{B7A9F2AB-BED5-4485-9C10-734A87A97080}"
+	ProjectSection(ProjectDependencies) = postProject
+		{D4BAB343-CDFA-4069-B395-6086037B6BE5} = {D4BAB343-CDFA-4069-B395-6086037B6BE5}
+	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ETWAnalyzer_uTest", "ETWAnalyzer_uTest\ETWAnalyzer_uTest.csproj", "{025AC7F6-C444-403C-AC95-5B535CE1FBC5}"
+	ProjectSection(ProjectDependencies) = postProject
+		{D4BAB343-CDFA-4069-B395-6086037B6BE5} = {D4BAB343-CDFA-4069-B395-6086037B6BE5}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "EventLeak", "Samples\EventLeak\EventLeak.vcxproj", "{7037CD7E-D381-4482-B65E-4B30B008356F}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TraceLoggingTester", "Samples\TraceLoggingTester\TraceLoggingTester.csproj", "{D40A9BF4-0DE6-B204-6910-891D813CF75E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ETWAnalyzer.Reader", "ETWAnalyzer.Reader\ETWAnalyzer.Reader.csproj", "{D4BAB343-CDFA-4069-B395-6086037B6BE5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ETWAnalyzer.Reader.Example", "Samples\ETWAnalyzer.Reader.Example\ETWAnalyzer.Reader.Example.csproj", "{26A538E3-492C-1D2C-55E2-FF59ECD23E97}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -87,6 +100,30 @@ Global
 		{D40A9BF4-0DE6-B204-6910-891D813CF75E}.Release|x64.Build.0 = Release|Any CPU
 		{D40A9BF4-0DE6-B204-6910-891D813CF75E}.Release|x86.ActiveCfg = Release|Any CPU
 		{D40A9BF4-0DE6-B204-6910-891D813CF75E}.Release|x86.Build.0 = Release|Any CPU
+		{D4BAB343-CDFA-4069-B395-6086037B6BE5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D4BAB343-CDFA-4069-B395-6086037B6BE5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D4BAB343-CDFA-4069-B395-6086037B6BE5}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{D4BAB343-CDFA-4069-B395-6086037B6BE5}.Debug|x64.Build.0 = Debug|Any CPU
+		{D4BAB343-CDFA-4069-B395-6086037B6BE5}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{D4BAB343-CDFA-4069-B395-6086037B6BE5}.Debug|x86.Build.0 = Debug|Any CPU
+		{D4BAB343-CDFA-4069-B395-6086037B6BE5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D4BAB343-CDFA-4069-B395-6086037B6BE5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D4BAB343-CDFA-4069-B395-6086037B6BE5}.Release|x64.ActiveCfg = Release|Any CPU
+		{D4BAB343-CDFA-4069-B395-6086037B6BE5}.Release|x64.Build.0 = Release|Any CPU
+		{D4BAB343-CDFA-4069-B395-6086037B6BE5}.Release|x86.ActiveCfg = Release|Any CPU
+		{D4BAB343-CDFA-4069-B395-6086037B6BE5}.Release|x86.Build.0 = Release|Any CPU
+		{26A538E3-492C-1D2C-55E2-FF59ECD23E97}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{26A538E3-492C-1D2C-55E2-FF59ECD23E97}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{26A538E3-492C-1D2C-55E2-FF59ECD23E97}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{26A538E3-492C-1D2C-55E2-FF59ECD23E97}.Debug|x64.Build.0 = Debug|Any CPU
+		{26A538E3-492C-1D2C-55E2-FF59ECD23E97}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{26A538E3-492C-1D2C-55E2-FF59ECD23E97}.Debug|x86.Build.0 = Debug|Any CPU
+		{26A538E3-492C-1D2C-55E2-FF59ECD23E97}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{26A538E3-492C-1D2C-55E2-FF59ECD23E97}.Release|Any CPU.Build.0 = Release|Any CPU
+		{26A538E3-492C-1D2C-55E2-FF59ECD23E97}.Release|x64.ActiveCfg = Release|Any CPU
+		{26A538E3-492C-1D2C-55E2-FF59ECD23E97}.Release|x64.Build.0 = Release|Any CPU
+		{26A538E3-492C-1D2C-55E2-FF59ECD23E97}.Release|x86.ActiveCfg = Release|Any CPU
+		{26A538E3-492C-1D2C-55E2-FF59ECD23E97}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

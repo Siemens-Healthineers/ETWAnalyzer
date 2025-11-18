@@ -5,6 +5,7 @@ using ETWAnalyzer.Extract;
 using ETWAnalyzer.Extract.TraceLogging;
 using ETWAnalyzer.Extractors;
 using ETWAnalyzer.Helper;
+using ETWAnalyzer.Infrastructure;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -120,7 +121,7 @@ namespace ETWAnalyzer_uTest.Extractors
             ITraceLoggingEvent traceEv = testProvider.Events[0];
 
             Assert.Equal(1, traceEv.EventId);
-            Assert.Equal(100, traceEv.ThreadId);
+            Assert.Equal(100u, traceEv.ThreadId);
             Assert.Equal(KTime, traceEv.TimeStamp);
             Assert.Equal(1, traceEv.EventId);
             Assert.Equal("TestProcess", traceEv.Process.ProcessName);

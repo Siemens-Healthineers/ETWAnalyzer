@@ -3,6 +3,7 @@
 
 using ETWAnalyzer.Extract;
 using ETWAnalyzer.Extract.Network.Tcp;
+using ETWAnalyzer.Extractor.Tcp;
 using ETWAnalyzer.TraceProcessorHelpers;
 using Microsoft.Windows.EventTracing.Events;
 using System;
@@ -31,7 +32,7 @@ namespace ETWAnalyzer.Extractors.TCP
             LocalIpAndPort = ev.Fields[TcpETWConstants.LocalAddressField].GetSocketConnection();
             RemoteIpAndPort = ev.Fields[TcpETWConstants.RemoteAddressField].GetSocketConnection();
             Pid = ev.Fields[TcpETWConstants.PidField].AsUInt32;
-            Timestamp = ev.Timestamp.DateTimeOffset;
+            Timestamp = ev.Timestamp.ConvertToTime();
         }
 
         /// <summary>
@@ -45,7 +46,7 @@ namespace ETWAnalyzer.Extractors.TCP
     }
 
     /// <summary>
-    /// It is written when a connection is closed.
+    /// It is written when a connection is closed or when a TCP rundown was performed.
     /// </summary>
     internal class TcpConnectionSummary
     {
@@ -94,34 +95,37 @@ namespace ETWAnalyzer.Extractors.TCP
             BytesRetrans = ev.Fields["BytesRetrans"].AsUInt32;
             Timeouts = ev.Fields["Timeouts"].AsUInt32;
             FastRetransmissions = ev.Fields["FastRetran"].AsUInt32;
-            Timestamp = ev.Timestamp.DateTimeOffset;
+            Timestamp = ev.Timestamp.ConvertToTime();
         }
 
     }
 
-    internal class TcpRequestConnect : IEquatable<TcpRequestConnect>
+
+
+    internal class TcpRequestConnect : IEquatable<TcpRequestConnect>, ITcpRequestConnect
     {
         // Tcb,  LocalAddress,  RemoteAddress
 
         /// <summary>
         /// Transmission Control Block kernel address which is used by other events are correlation identifier for a socket connection.
         /// </summary>
-        public ulong Tcb { get;  }
+        public ulong Tcb { get; }
 
-        public DateTimeOffset? TimeStampOpen { get;  }
+        public DateTimeOffset? TimeStampOpen { get; }
         public DateTimeOffset? TimeStampClose { get; internal set; }
         public DateTimeOffset? TCPRetansmitTimeout { get; internal set; }
 
-        public SocketConnection LocalIpAndPort { get;  }
+        public SocketConnection LocalIpAndPort { get; }
         public SocketConnection RemoteIpAndPort { get; }
-        public ETWProcessIndex ProcessIdx { get;  }
+        public ETWProcessIndex ProcessIdx { get; }
+        public DateTimeOffset? ResetTimeStamp { get; internal set; }
 
-        public TcpRequestConnect(IGenericEvent ev, ETWProcessIndex processIdx )
+        public TcpRequestConnect(IGenericEvent ev, ETWProcessIndex processIdx)
         {
-            Tcb = (ulong) ev.Fields[TcpETWConstants.TcbField].AsAddress.Value;
+            Tcb = (ulong)ev.Fields[TcpETWConstants.TcbField].AsAddress.Value;
             LocalIpAndPort = ev.Fields[TcpETWConstants.LocalAddressField].GetSocketConnection();
             RemoteIpAndPort = ev.Fields[TcpETWConstants.RemoteAddressField].GetSocketConnection();
-            TimeStampOpen = ev.Timestamp.DateTimeOffset;
+            TimeStampOpen = ev.Timestamp.ConvertToTime();
             ProcessIdx = processIdx;
         }
 
@@ -143,10 +147,10 @@ namespace ETWAnalyzer.Extractors.TCP
         /// <returns>true if connection matches tcp value or false otherwise.</returns>
         public bool IsMatching(ulong tcb, DateTimeOffset time)
         {
-            return tcb == Tcb && 
+            return tcb == Tcb &&
                 // time needs some wiggle room since we are using different events to detect a connection which are logged during connection handshake at  different times
-                ( !TimeStampOpen.HasValue  ||  (time >= TimeStampOpen.Value-TimeSpan.FromMilliseconds(1)) )  && 
-                ( !TimeStampClose.HasValue ||  (time <= TimeStampClose.Value + TimeSpan.FromMilliseconds(1)) ) ;
+                (!TimeStampOpen.HasValue || (time >= TimeStampOpen.Value - TimeSpan.FromMilliseconds(1))) &&
+                (!TimeStampClose.HasValue || (time <= TimeStampClose.Value + TimeSpan.FromMilliseconds(1)));
         }
 
 
@@ -168,12 +172,12 @@ namespace ETWAnalyzer.Extractors.TCP
         /// <returns></returns>
         public bool Equals(TcpRequestConnect other)
         {
-            if( other == null )
+            if (other == null)
             {
                 return false;
             }
 
-            if( this.Tcb == other.Tcb &&
+            if (this.Tcb == other.Tcb &&
                 this.TimeStampOpen == other.TimeStampOpen &&
                 this.TimeStampClose == other.TimeStampClose &&
                 this.LocalIpAndPort == other.LocalIpAndPort &&

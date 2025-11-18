@@ -180,7 +180,7 @@ namespace ETWAnalyzer_uTest.EventDump
                 DummyMethod,
             };
 
-            extract.CPU = new CPUStats(null, null, new CPUPerProcessMethodList()
+            extract.CPU = new CPUStats(null, null, null, new CPUPerProcessMethodList()
             {
                 MethodStatsPerProcess = new List<MethodsByProcess>
                 {
@@ -582,9 +582,9 @@ namespace ETWAnalyzer_uTest.EventDump
             new KeyValuePair<string, MinMaxRange<int>>("1", new MinMaxRange<int>(1, int.MaxValue)),
             new KeyValuePair<string, MinMaxRange<int>>("1ms", new MinMaxRange<int>(1, int.MaxValue)),
             new KeyValuePair<string, MinMaxRange<int>>("0.5s", new MinMaxRange<int>(500, int.MaxValue)),
-            new KeyValuePair<string, MinMaxRange<int>>("1s-2s", new MinMaxRange<int>(1000, 2000)),
-            new KeyValuePair<string, MinMaxRange<int>>("1ms-5000", new MinMaxRange<int>(1, 5000)),
-            new KeyValuePair<string, MinMaxRange<int>>("500-1000", new MinMaxRange<int>(500, 1000)),
+            new KeyValuePair<string, MinMaxRange<int>>("1s 2s", new MinMaxRange<int>(1000, 2000)),
+            new KeyValuePair<string, MinMaxRange<int>>("1ms 5000", new MinMaxRange<int>(1, 5000)),
+            new KeyValuePair<string, MinMaxRange<int>>("500 1000", new MinMaxRange<int>(500, 1000)),
         };
 
 
@@ -593,7 +593,7 @@ namespace ETWAnalyzer_uTest.EventDump
         {
             foreach (var input in RangeValues)
             {
-                var args = new string[] { "-dump", "cpu", "-MinMaxCPUms",input.Key };
+                var args = CreateCmdLine(new string[] { "-dump", "cpu", "-MinMaxCPUms" }, input.Key );
                 DumpCommand dump = (DumpCommand)CommandFactory.CreateCommand(args);
                 dump.Parse();
                 dump.Run();
@@ -650,7 +650,7 @@ namespace ETWAnalyzer_uTest.EventDump
 
             foreach (var input in RangeValues)
             {
-                var args = new string[] { "-dump", "cpu", "-MinMaxWaitms", input.Key };
+                var args = CreateCmdLine( new string[] { "-dump", "cpu", "-MinMaxWaitms" }, input.Key );
                 DumpCommand dump = (DumpCommand)CommandFactory.CreateCommand(args);
                 dump.Parse();
                 dump.Run();
@@ -662,13 +662,25 @@ namespace ETWAnalyzer_uTest.EventDump
         }
 
 
+        /// <summary>
+        /// Append all values splitted by space to values array
+        /// </summary>
+        /// <param name="values"></param>
+        /// <param name="key"></param>
+        /// <returns></returns>
+        internal static string[] CreateCmdLine(string[] values, string additionalValues)
+        {
+            List<string> lret = new List<string>(values);
+            lret.AddRange(additionalValues.Split(' '));
+            return lret.ToArray();
+        }
+
         [Fact]
         public void ReadyMs_Filter()
         {
-
             foreach (var input in RangeValues)
             {
-                var args = new string[] { "-dump", "cpu", "-MinMaxReadyMS", input.Key };
+                var args = CreateCmdLine(new string[] { "-dump", "cpu", "-MinMaxReadyMS" }, input.Key );
                 DumpCommand dump = (DumpCommand)CommandFactory.CreateCommand(args);
                 dump.Parse();
                 dump.Run();
@@ -686,12 +698,12 @@ namespace ETWAnalyzer_uTest.EventDump
             {
                 new KeyValuePair<string, MinMaxRange<int>>("1", new MinMaxRange<int>(1, int.MaxValue)),
                 new KeyValuePair<string, MinMaxRange<int>>("1ms", new MinMaxRange<int>(1000, int.MaxValue)),
-                new KeyValuePair<string, MinMaxRange<int>>("1-5", new MinMaxRange<int>(1, 5)),
+                new KeyValuePair<string, MinMaxRange<int>>("1 5", new MinMaxRange<int>(1, 5)),
             };
 
             foreach (var input in readyRanges)
             {
-                var args = new string[] { "-dump", "cpu", "-MinMaxReadyAvgus", input.Key };
+                var args = CreateCmdLine( new string[] { "-dump", "cpu", "-MinMaxReadyAvgus" }, input.Key );
                 DumpCommand dump = (DumpCommand)CommandFactory.CreateCommand(args);
                 dump.Parse();
                 dump.Run();
@@ -710,12 +722,12 @@ namespace ETWAnalyzer_uTest.EventDump
             {
                 new KeyValuePair<string, MinMaxRange<int>>("1", new MinMaxRange<int>(1, int.MaxValue)),
                 new KeyValuePair<string, MinMaxRange<int>>("0", new MinMaxRange<int>(0, int.MaxValue)),
-                new KeyValuePair<string, MinMaxRange<int>>("1-5", new MinMaxRange<int>(1, 5)),
+                new KeyValuePair<string, MinMaxRange<int>>("1 5", new MinMaxRange<int>(1, 5)),
             };
 
             foreach (var input in readyRanges)
             {
-                var args = new string[] { "-dump", "cpu", "-MinMaxCSwitchCount", input.Key };
+                var args = CreateCmdLine( new string[] { "-dump", "cpu", "-MinMaxCSwitchCount" }, input.Key );
                 DumpCommand dump = (DumpCommand)CommandFactory.CreateCommand(args);
                 dump.Parse();
                 dump.Run();
@@ -819,19 +831,19 @@ namespace ETWAnalyzer_uTest.EventDump
             ProcessKey proc1 = new("test1.exe", 1024, DateTimeOffset.MinValue);
             ProcessKey proc2 = new("test2.exe", 2000, DateTimeOffset.MinValue);
 
-            methodList.AddMethod(proc1, "Z", new CPUMethodData(new Duration(100_000_000), new Duration(101_000_000), 5m, 6m, 10, 5), cutOffMs: 0);
-            methodList.AddMethod(proc1, "Y", new CPUMethodData(new Duration(90_000_000),  new Duration(91_000_000), 4m, 5m, 20, 4), cutOffMs: 0);
-            methodList.AddMethod(proc1, "X", new CPUMethodData(new Duration(80_000_000),  new Duration(81_000_000), 3m, 5m, 30, 3), cutOffMs: 0);
-            methodList.AddMethod(proc1, "B", new CPUMethodData(new Duration(20_000_000),  new Duration(21_000_000), 2m, 5m, 40, 2), cutOffMs: 0);
-            methodList.AddMethod(proc1, "A", new CPUMethodData(new Duration(9_000_000),   new Duration(11_000_000), 1m, 5m, 50, 1), cutOffMs: 0);  
-            methodList.AddMethod(proc1, "A0", new CPUMethodData(new Duration(5_000_000),  new Duration(5_000_000), 1m, 5m, 50, 1), cutOffMs: 0);
+            methodList.AddMethod(proc1, "Z", new ExtractorCPUMethodData(new Duration(100_000_000), new Duration(101_000_000), 5m, 6m, 10, 5), cutOffMs: 0);
+            methodList.AddMethod(proc1, "Y", new ExtractorCPUMethodData(new Duration(90_000_000),  new Duration(91_000_000), 4m, 5m, 20, 4), cutOffMs: 0);
+            methodList.AddMethod(proc1, "X", new ExtractorCPUMethodData(new Duration(80_000_000),  new Duration(81_000_000), 3m, 5m, 30, 3), cutOffMs: 0);
+            methodList.AddMethod(proc1, "B", new ExtractorCPUMethodData(new Duration(20_000_000),  new Duration(21_000_000), 2m, 5m, 40, 2), cutOffMs: 0);
+            methodList.AddMethod(proc1, "A", new ExtractorCPUMethodData(new Duration(9_000_000),   new Duration(11_000_000), 1m, 5m, 50, 1), cutOffMs: 0);  
+            methodList.AddMethod(proc1, "A0", new ExtractorCPUMethodData(new Duration(5_000_000),  new Duration(5_000_000), 1m, 5m, 50, 1), cutOffMs: 0);
 
-            methodList.AddMethod(proc2, "Z", new CPUMethodData(new Duration(200_000_000), new Duration(101_000_000), 5m, 6m, 10, 5), cutOffMs: 0);
-            methodList.AddMethod(proc2, "Y", new CPUMethodData(new Duration(180_000_000), new Duration(91_000_000), 4m, 5m, 20, 4), cutOffMs: 0);
-            methodList.AddMethod(proc2, "X", new CPUMethodData(new Duration(160_000_000), new Duration(81_000_000), 3m, 5m, 30, 3), cutOffMs: 0);
-            methodList.AddMethod(proc2, "B", new CPUMethodData(new Duration(40_000_000),  new Duration(21_000_000), 2m, 5m, 40, 2), cutOffMs: 0);
-            methodList.AddMethod(proc2, "A", new CPUMethodData(new Duration(18_000_000),  new Duration(11_000_000), 1m, 5m, 50, 1), cutOffMs: 0);
-            methodList.AddMethod(proc2, "A0", new CPUMethodData(new Duration(10_000_000), new Duration(5_000_000), 1m, 5m, 50, 1), cutOffMs: 0);
+            methodList.AddMethod(proc2, "Z", new ExtractorCPUMethodData(new Duration(200_000_000), new Duration(101_000_000), 5m, 6m, 10, 5), cutOffMs: 0);
+            methodList.AddMethod(proc2, "Y", new ExtractorCPUMethodData(new Duration(180_000_000), new Duration(91_000_000), 4m, 5m, 20, 4), cutOffMs: 0);
+            methodList.AddMethod(proc2, "X", new ExtractorCPUMethodData(new Duration(160_000_000), new Duration(81_000_000), 3m, 5m, 30, 3), cutOffMs: 0);
+            methodList.AddMethod(proc2, "B", new ExtractorCPUMethodData(new Duration(40_000_000),  new Duration(21_000_000), 2m, 5m, 40, 2), cutOffMs: 0);
+            methodList.AddMethod(proc2, "A", new ExtractorCPUMethodData(new Duration(18_000_000),  new Duration(11_000_000), 1m, 5m, 50, 1), cutOffMs: 0);
+            methodList.AddMethod(proc2, "A0", new ExtractorCPUMethodData(new Duration(10_000_000), new Duration(5_000_000), 1m, 5m, 50, 1), cutOffMs: 0);
 
 
             TestDataFile file = new("Test", "test.json", new DateTime(2000, 1, 1), 500, 1000, "TestMachine", null);
@@ -860,6 +872,7 @@ namespace ETWAnalyzer_uTest.EventDump
                         { (ETWProcessIndex) 0, 8.0f},
                         { (ETWProcessIndex) 1, 6.0f},
                     },
+                    null,
                     methodList,
                     null,
                     null, 
@@ -894,7 +907,7 @@ namespace ETWAnalyzer_uTest.EventDump
             redirect.Flush();
             var lines = redirect.GetSingleLines();
             Assert.Equal(4, lines.Count);
-            Assert.Equal("\t      CPU ms Process Name        ",    lines[0]);
+            Assert.Equal("\t      CPU ms #Cores Process Name        ",    lines[0]);
             Assert.Equal("1/1/2000 12:00:00 AM    ",               lines[1] );
             Assert.Equal("\t    5,000 ms test1.exe(1024)        ", lines[2]);
             Assert.Equal("\t    6,000 ms test2.exe(2000)        ", lines[3]);
@@ -921,7 +934,7 @@ namespace ETWAnalyzer_uTest.EventDump
             redirect.Flush();
             var lines = redirect.GetSingleLines();
             Assert.Equal(4, lines.Count);
-            Assert.Equal("\t      CPU ms Priority Process Name        ", lines[0]);
+            Assert.Equal("\t      CPU ms Priority #Cores Process Name        ", lines[0]);
             Assert.Equal("1/1/2000 12:00:00 AM    ", lines[1]);
             Assert.Equal("\t    5,000 ms      8.0 test1.exe(1024)        ", lines[2]);
             Assert.Equal("\t    6,000 ms      6.0 test2.exe(2000)        ", lines[3]);
@@ -986,7 +999,7 @@ namespace ETWAnalyzer_uTest.EventDump
             var lines = redirect.GetSingleLines();
 
             Assert.Equal(4, lines.Count);
-            Assert.Equal("\t      CPU ms Process Name        ",     lines[0]);
+            Assert.Equal("\t      CPU ms #Cores Process Name        ",     lines[0]);
             Assert.Equal("1/1/2000 12:00:00 AM    CPU 11,000 ms  ", lines[1]);
             Assert.Equal("\t    5,000 ms test1.exe(1024)        ",  lines[2]);
             Assert.Equal("\t    6,000 ms test2.exe(2000)        ",  lines[3]);
@@ -1019,7 +1032,7 @@ namespace ETWAnalyzer_uTest.EventDump
             var lines = redirect.GetSingleLines();
 
             Assert.Equal(4, lines.Count);
-            Assert.Equal("\t      CPU ms Priority Process Name        ", lines[0]);
+            Assert.Equal("\t      CPU ms Priority #Cores Process Name        ", lines[0]);
             Assert.Equal("1/1/2000 12:00:00 AM    CPU 11,000 ms  ", lines[1]);
             Assert.Equal("\t    5,000 ms      8.0 test1.exe(1024)        ", lines[2]);
             Assert.Equal("\t    6,000 ms      6.0 test2.exe(2000)        ", lines[3]);
@@ -1167,7 +1180,7 @@ namespace ETWAnalyzer_uTest.EventDump
             var lines = redirect.GetSingleLines();
 
             Assert.Equal(3, lines.Count);
-            Assert.Equal("\t      CPU ms Process Name        ", lines[0]);
+            Assert.Equal("\t      CPU ms #Cores Process Name        ", lines[0]);
             Assert.Equal("\t   16,001 ms 2222.exe(2222)       +60.000 hi  ", lines[1]);
             Assert.Equal("\t        7 ms cmd.exe(1234)        +120.000 hi  ", lines[2]);
         }
@@ -1194,7 +1207,7 @@ namespace ETWAnalyzer_uTest.EventDump
             var lines = redirect.GetSingleLines();
 
             Assert.Equal(3, lines.Count);
-            Assert.Equal("\t      CPU ms Priority Process Name        ", lines[0]);
+            Assert.Equal("\t      CPU ms Priority #Cores Process Name        ", lines[0]);
             Assert.Equal("\t   16,001 ms      8.0 2222.exe(2222)       +60.000 hi  ", lines[2]);
         }
 
@@ -1221,7 +1234,7 @@ namespace ETWAnalyzer_uTest.EventDump
             var lines = redirect.GetSingleLines();
 
             Assert.Equal(3, lines.Count);
-            Assert.Equal("\t      CPU ms Process Name        ", lines[0]);
+            Assert.Equal("\t      CPU ms #Cores Process Name        ", lines[0]);
             Assert.Equal("\t        7 ms cmd.exe(1234)        +120.000 hi  ", lines[1]);
             Assert.Equal("\t   16,001 ms 2222.exe(2222)       +60.000 hi  ", lines[2]);
         }
@@ -1256,7 +1269,7 @@ namespace ETWAnalyzer_uTest.EventDump
                     {
                         { myCmdProcess, 7 },
                         { myCmdProcess2, 16001 },
-                    }, new Dictionary<ETWProcessIndex, float>(), null, null, null, null),
+                    }, new Dictionary<ETWProcessIndex, float>(), null, null, null, null, null),
 
             };
 
@@ -1300,7 +1313,7 @@ namespace ETWAnalyzer_uTest.EventDump
                     {
                         { myCmdProcess, 7 },
                         { myCmdProcess2, 16001 },
-                    }, null, null, null, null, null),
+                    }, null, null, null, null, null, null),
 
             };
 

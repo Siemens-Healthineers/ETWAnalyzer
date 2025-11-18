@@ -90,6 +90,11 @@ namespace ETWAnalyzer.TraceProcessorHelpers
         /// Fields: Tcb:Pointer, LocalAddressLength, LocalAddress:Binary, RemoteAddressLength, RemoteAddress:Binary, NewState, RexmitCount
         /// </summary>
         public const int TcpConnectTcbFailedRcvdRst = 1183;
+
+        /// <summary>
+        /// Fields: Tcb:Pointer, LocalAddressLength, LocalAddress:Binary, RemoteAddressLength, RemoteAddress:Binary, Status, ProcessId, Compartment, Tcb, ProcessStartKey
+        /// </summary>
+        public const int TcpAbortTcbRequest = 1039;
         /// <summary>
         /// Fields: Tcb, LocalAddress, RemoteAddress, NewState 
         /// </summary>

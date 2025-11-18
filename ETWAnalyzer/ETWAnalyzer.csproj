@@ -3,26 +3,17 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
-    <TargetFrameworks>net48;net8.0-windows</TargetFrameworks>
+    <TargetFrameworks>net10.0-windows</TargetFrameworks>
     <RootNamespace>ETWAnalyzer</RootNamespace>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-    <PackageId>ETWAnalyzer</PackageId>
     <LangVersion>latest</LangVersion>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <ApplicationManifest>Properties\app.manifest</ApplicationManifest>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Authors>Siemens Healthineers</Authors>
-    <RepositoryUrl></RepositoryUrl>
-    <PackageTags>ETW;C#;TraceProcessing;</PackageTags>
     <PackageCopyToOutput>true</PackageCopyToOutput>
     <DocumentationFile>..\bin\$(Configuration)\ETWAnalyzer.xml</DocumentationFile>
-    <NoWarn>NU5100;CS0618</NoWarn>
+    <NoWarn>NU5100;NU1904;CS0618</NoWarn>
     <EmbedAllSources>true</EmbedAllSources>
-    <PackageLicenseFile>License</PackageLicenseFile>
-    <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
-    <PackageProjectUrl>https://github.com/Siemens-Healthineers/ETWAnalyzer</PackageProjectUrl>
-    <PackageReadmeFile>ProgramaticAccess.md</PackageReadmeFile>
-    <Version>3.0.0.14</Version>
+
     <Platforms>x64</Platforms>
   </PropertyGroup>
   <PropertyGroup Condition="'$(TargetFramework)' == 'net8.0-windows'">
@@ -79,13 +70,13 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.Diagnostics.Tracing.TraceEvent">
-      <Version>3.1.23</Version>
+      <Version>3.1.28</Version>
     </PackageReference>
-    <PackageReference Include="Microsoft.Windows.EventTracing.Processing.All">
-      <Version>1.12.10</Version>
+    <PackageReference Include="Microsoft.Windows.EventTracing">
+      <Version>2.0.711-preview</Version>
     </PackageReference>
     <PackageReference Include="Newtonsoft.Json">
-      <Version>13.0.3</Version>
+      <Version>13.0.4</Version>
     </PackageReference>
     <PackageReference Include="Squid-Box.SevenZipSharp.Lite" Version="1.6.2.24" />
     <PackageReference Include="System.Configuration.ConfigurationManager" Version="5.0.0" />
@@ -128,26 +119,10 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  <pack>false</pack>
     </Content>
-    <Content Include="3rdParty\7-Zip\7z.exe">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <TargetPath>7z.exe</TargetPath>
-      <PackageFlatten>true</PackageFlatten>
-      <PackageCopyToOutput>true</PackageCopyToOutput>
-    </Content>
-    <Content Include="3rdParty\7-Zip\7z.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <TargetPath>7z.dll</TargetPath>
-      <PackageFlatten>true</PackageFlatten>
-      <PackageCopyToOutput>true</PackageCopyToOutput>
-    </Content>
     <Content Include="Configuration\TestRunConfiguration.xml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  <pack>false</pack>
     </Content>
-    <None Include="Documentation\ProgramaticAccess.md">
-      <Pack>True</Pack>
-      <PackagePath>/</PackagePath>
-    </None>
     <None Include="Documentation\Images\ProgramaticAccess.png ">
       <Pack>True</Pack>
       <PackagePath>Images</PackagePath>
@@ -181,11 +156,17 @@
   
 </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\ETWAnalyzer.Reader\ETWAnalyzer.Reader.csproj" />
+  </ItemGroup>
+  <ItemGroup>
     <Compile Update="Settings.Designer.cs">
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
       <AutoGen>True</AutoGen>
       <DependentUpon>Settings.settings</DependentUpon>
     </Compile>
   </ItemGroup>
-  <ProjectExtensions><VisualStudio><UserProperties runtimeconfig_1template_1json__JsonSchema="https://cdn.jsdelivr.net/npm/liblab@latest/liblab.config.schema.json" /></VisualStudio></ProjectExtensions>
+  <ItemGroup>
+    <Folder Include="Analyzers\Exception\" />
+    <Folder Include="ProcessTools\" />
+  </ItemGroup>
 </Project>

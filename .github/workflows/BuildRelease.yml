@@ -21,7 +21,11 @@ jobs:
             Solution_Name: ETWAnalyzer.sln
 
         steps:
-       
+
+        - uses: actions/setup-dotnet@v5
+          with:
+            dotnet-version: '10.0.x'     
+
         - name: Checkout
           uses: actions/checkout@v4
           with:
@@ -38,18 +42,11 @@ jobs:
         - name: Build Release
           run: ${{ github.workspace }}\ETWAnalyzer\MakeRelease.cmd
             
-        - name: Upload .NET 8 Binaries
+        - name: Upload .NET 10 Binaries
           uses: actions/upload-artifact@v4
           with:
-            name: Net8Binaries
-            path: ${{ github.workspace }}/bin/Release/ETWAnalyzer_Net8.zip
-            retention-days: 90
-
-        - name: Upload .NET 4.8 Binaries
-          uses: actions/upload-artifact@v4
-          with:
-            name: Net48Binaries
-            path: ${{ github.workspace }}/bin/Release/ETWAnalyzer_Net48.zip
+            name: Net10Binaries
+            path: ${{ github.workspace }}/bin/Release/ETWAnalyzer_Net10.zip
             retention-days: 90
 
         - name: Upload Nuget Package
@@ -62,6 +59,6 @@ jobs:
         - name: Upload Samples
           uses: actions/upload-artifact@v4
           with:
-            name: Samples_Binaries
-            path: ${{ github.workspace }}/Samples_Binaries.zip
+            name: Samples_Binaries_Zip
+            path: ${{ github.workspace }}/bin/Release/Samples_Binaries.zip
             retention-days: 90

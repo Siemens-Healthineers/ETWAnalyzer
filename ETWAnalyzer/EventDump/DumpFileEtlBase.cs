@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using ETWAnalyzer.Extract;
 using System.IO;
+using ETWAnalyzer.Reader.ProcessTools;
 
 namespace ETWAnalyzer.EventDump
 {

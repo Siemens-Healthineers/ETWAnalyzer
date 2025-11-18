@@ -23,6 +23,11 @@ namespace ETWAnalyzer.EventDump
         /// </summary>
         internal Dictionary<string, bool> ColumnConfiguration { get; set; } = new(StringComparer.OrdinalIgnoreCase);
 
+        /// <summary>
+        /// If MergeColumnConfig is true column configuration from parent commands are merged into this command.
+        /// </summary>
+        internal bool MergeColumnConfig {get;set;} =  false;
+
         protected bool GetOverrideFlag(string column, bool defaultFlag)
         {
             // if only disable rules are active we leave the enabled defaults 
@@ -35,7 +40,7 @@ namespace ETWAnalyzer.EventDump
             }
 
             // all other columns are disabled if explicit enable columns are configured.
-            return onlyDisableRules ? defaultFlag : false;
+            return (onlyDisableRules || MergeColumnConfig) ? defaultFlag : false;
         }
 
 
@@ -435,13 +440,33 @@ namespace ETWAnalyzer.EventDump
                     }
                     if (process.IsNew && process.HasEnded) // print process duration as timespan
                     {
-                        lret += $" {process.EndTime - process.StartTime}";
+                        lret += $" {FormatTimeSpan(process.EndTime - process.StartTime, OverridenOrDefaultTimePrecision)}";
                     }
                 }
                 return lret;
             }
 
         }
+
+        /// <summary>
+        /// Common method to format a TimeSpan into a string with variable precision
+        /// </summary>
+        /// <param name="span"></param>
+        /// <param name="precision"></param>
+        /// <returns>string representation</returns>
+        protected string FormatTimeSpan(TimeSpan span, int precision)
+        {
+            if (precision == 0)
+            {
+                return $"{span.TotalSeconds.ToString("F0", CultureInfo.InvariantCulture)} s";
+            }
+            else
+            { 
+                string digits = new string('f', precision);
+                return span.ToString($@"d\.hh\:mm\:ss\.{digits}");
+            }
+        }
+
 
         /// <summary>
         /// Get maximum string length for column width calculation.

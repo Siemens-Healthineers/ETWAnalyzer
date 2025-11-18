@@ -4,6 +4,8 @@
 using ETWAnalyzer;
 using ETWAnalyzer.Extract;
 using ETWAnalyzer.Helper;
+using ETWAnalyzer.Infrastructure;
+using ETWAnalyzer.Reader.ProcessTools;
 using ETWAnalyzer_uTest.TestInfrastructure;
 using System;
 using System.Collections.Generic;
@@ -171,7 +173,7 @@ namespace ETWAnalyzer_uTest
                         // To speed up the tests store only the compressed version and unzip it only once
                         // the EtlZipCommand will skip decompression if the resulting ETL file exist already in place
                         EtlZipCommand cmd = new EtlZipCommand();
-                        unzipedFile = cmd.Unzip(ServerZipFile, null, new ETWAnalyzer.Extract.SymbolPaths { SymbolFolder = "C:\\Symbols" });
+                        unzipedFile = cmd.Unzip(ServerZipFile, null, new SymbolPaths { SymbolFolder = "C:\\Symbols" });
                     }
                     return unzipedFile;
                 }
@@ -196,7 +198,7 @@ namespace ETWAnalyzer_uTest
                         // To speed up the tests store only the compressed version and unzip it only once
                         // the EtlZipCommand will skip decompression if the resulting ETL file exist already in place
                         EtlZipCommand cmd = new EtlZipCommand();
-                        unzipedFile = cmd.Unzip(srcPath, null, new ETWAnalyzer.Extract.SymbolPaths { SymbolFolder = "C:\\Symbols" });
+                        unzipedFile = cmd.Unzip(srcPath, null, new SymbolPaths { SymbolFolder = "C:\\Symbols" });
                     }
                     return unzipedFile;
                 }
@@ -241,7 +243,7 @@ namespace ETWAnalyzer_uTest
                         // To speed up the tests store only the compressed version and unzip it only once
                         // the EtlZipCommand will skip decompression if the resulting ETL file exist already in place
                         EtlZipCommand cmd = new EtlZipCommand();
-                        unzipedFile = cmd.Unzip(ClientZipFile, null, new ETWAnalyzer.Extract.SymbolPaths { SymbolFolder = "C:\\Symbols" });
+                        unzipedFile = cmd.Unzip(ClientZipFile, null, new SymbolPaths { SymbolFolder = "C:\\Symbols" });
                     }
                     return unzipedFile;
                 }
@@ -320,7 +322,7 @@ namespace ETWAnalyzer_uTest
         /// <returns>folder with empty .json files</returns>
         public static string TestRunDirectoryJson(ITempOutput temp)
         {
-            Directory.CreateDirectory(Path.Combine(temp.Name, Program.ExtractFolder));
+            Directory.CreateDirectory(Path.Combine(temp.Name, ExtractSerializer.ExtractFolder));
             DataOutput<string> value = UnzipTestContainerFileOnlyOnce.Value;
             DirectoryInfo directoryInfo = new DirectoryInfo(value.Data);
             FileInfo[] fileinfo = directoryInfo.GetFiles();
@@ -333,7 +335,7 @@ namespace ETWAnalyzer_uTest
                 MaxDegreeOfParallelism = 4,
             }, (file) =>
             {
-                string emptyJsonFile = Path.Combine(temp.Name, Program.ExtractFolder, file.Name[..^3] + ".json");
+                string emptyJsonFile = Path.Combine(temp.Name, ExtractSerializer.ExtractFolder, file.Name[..^3] + ".json");
                 using (var createdFile = new FileStream(emptyJsonFile, FileMode.Create))
                 {
                 }
@@ -346,7 +348,7 @@ namespace ETWAnalyzer_uTest
                 }
             });
 
-            return Path.Combine(temp.Name, Program.ExtractFolder);
+            return Path.Combine(temp.Name, ExtractSerializer.ExtractFolder);
         }
 
         public static DataOutput<string> TestRunSample_Server
@@ -409,7 +411,7 @@ namespace ETWAnalyzer_uTest
 
         public static string GetSampleDataJson
         {
-            get => Path.Combine(UnzipTestContainerFileOnlyOnceJson.Value, Program.ExtractFolder);
+            get => Path.Combine(UnzipTestContainerFileOnlyOnceJson.Value, ExtractSerializer.ExtractFolder);
         }
 
         static readonly Lazy<string> UnzipTestContainerFileOnlyOnceJson = new Lazy<string>(UnzipFilesJson);
@@ -417,12 +419,12 @@ namespace ETWAnalyzer_uTest
         static string UnzipFilesJson()
         {
             string samplePath = GetPath("SampleDataJson");
-            string extractedFile = Path.Combine(samplePath, Program.ExtractFolder, "CallupAdhocColdReadingCT_25498msDEFOR09T130SRV.20191107-111219.json");
+            string extractedFile = Path.Combine(samplePath, ExtractSerializer.ExtractFolder, "CallupAdhocColdReadingCT_25498msDEFOR09T130SRV.20191107-111219.json");
             // check if file is already uncompressed 
             if (!File.Exists(extractedFile))
             {
                 // No then uncompress it now
-                ProcessCommand cmd = new ProcessCommand("7z.exe", $"x {Path.Combine(samplePath, Program.ExtractFolder, "SampleDataJsonFiles.sample")} -o{Path.Combine(samplePath, Program.ExtractFolder)}");
+                ProcessCommand cmd = new ProcessCommand("7z.exe", $"x {Path.Combine(samplePath, ExtractSerializer.ExtractFolder, "SampleDataJsonFiles.sample")} -o{Path.Combine(samplePath, ExtractSerializer.ExtractFolder)}");
                 ExecResult output = cmd.Execute();
                 Console.WriteLine($"7z output: {output.AllOutput}");
             }

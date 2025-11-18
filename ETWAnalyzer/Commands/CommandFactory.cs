@@ -44,9 +44,6 @@ namespace ETWAnalyzer.Commands
                     case ConvertArg:
                         lret = new ConvertCommand(args);
                         break;
-                    case AnalyzeArg:
-                        lret = new AnalyzeCommand(args);
-                        break;
                     case LoadSymbolArg:
                         lret = new LoadSymbolCommand(args);
                         break;

@@ -7,6 +7,7 @@ using ETWAnalyzer.Extract;
 using ETWAnalyzer.Extract.FileIO;
 using ETWAnalyzer.Extractors;
 using ETWAnalyzer.Extractors.FileIO;
+using ETWAnalyzer.Infrastructure;
 using ETWAnalyzer_uTest.TestInfrastructure;
 using Microsoft.Windows.EventTracing;
 using System;
@@ -45,10 +46,10 @@ namespace ETWAnalyzer_uTest
                 if (myInteralExtract == null)
                 {
                     var tmp = new ETWExtract();
-                    using ITraceProcessor processor = TraceProcessor.Create(TestData.ServerEtlFile, new TraceProcessorSettings
+                    using ITraceProcessor processor = new TraceProcessorBuilder().WithSettings(new TraceProcessorSettings
                     {
                         AllowLostEvents = true,
-                    });
+                    }).Build(TestData.ServerEtlFile);
 
                     MachineDetailsExtractor extractor = new();
                     FileExtractor fileExtractor = new();

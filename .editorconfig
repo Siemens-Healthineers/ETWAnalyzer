@@ -40,3 +40,42 @@ dotnet_diagnostic.CA1707.severity = silent
 dotnet_diagnostic.CA1028.severity = silent
 
 dotnet_diagnostic.CA5369.severity = silent
+
+# IDE0090: Use 'new(...)'
+dotnet_diagnostic.IDE0090.severity = silent
+
+# IDE0028: Simplify collection initialization
+dotnet_diagnostic.IDE0028.severity = silent
+
+# IDE0305: Collection initialization can be simplified
+dotnet_diagnostic.IDE0305.severity = silent
+
+# IDE0034: 'default' expression can be simplified
+dotnet_diagnostic.IDE0034.severity = silent
+
+# IDE0055: Fix formatting
+dotnet_diagnostic.IDE0055.severity = silent
+
+# IDE0008: Use explicit type
+dotnet_diagnostic.IDE0008.severity = silent
+
+# IDE0057: Use range operator
+dotnet_diagnostic.IDE0057.severity = silent
+
+# IDE0350: Lambda expression can be simplified
+dotnet_diagnostic.IDE0350.severity = silent
+
+# IDE0320: Make anonymous function static
+csharp_prefer_static_anonymous_function = false
+
+# IDE0039: Use local function
+dotnet_diagnostic.IDE0039.severity = silent
+
+# IDE0060: Remove unused parameter
+dotnet_diagnostic.IDE0060.severity = silent
+
+# IDE0025: Use expression body for property
+dotnet_diagnostic.IDE0025.severity = silent
+
+# Default severity for analyzer diagnostics with category 'Naming'
+dotnet_analyzer_diagnostic.category-Naming.severity = silent

@@ -9,6 +9,7 @@ using System;
 using System.IO;
 using System.Linq;
 using ETWAnalyzer.ProcessTools;
+using ETWAnalyzer.Reader.ProcessTools;
 
 namespace ETWAnalyzer_uTest
 {

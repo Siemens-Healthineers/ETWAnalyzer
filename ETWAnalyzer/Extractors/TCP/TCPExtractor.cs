@@ -1,7 +1,6 @@
 ﻿//// SPDX-FileCopyrightText:  © 2023 Siemens Healthcare GmbH
 //// SPDX-License-Identifier:   MIT
 
-using ETWAnalyzer.EventDump;
 using ETWAnalyzer.Extract;
 using ETWAnalyzer.Extract.Network.Tcp;
 using ETWAnalyzer.Extract.Network.Tcp.Issues;
@@ -95,6 +94,8 @@ namespace ETWAnalyzer.Extractors.TCP
 
             AddExistingConnections(results, ref connectionsByTcb); // add already existing connections which are present during trace start
 
+            UpdateConnectionResetTimeStampSentFromClient();
+
             (ILookup<TcpRequestConnect, TcpSendPosted>, ILookup < TcpRequestConnect, TcpDataTransferSend >) sentByConnection = UpdateConnectionForSentAndPostedPackets(results, ref connectionsByTcb);
             ILookup<TcpRequestConnect, TcpDataTransferReceive> receivedByConnection = UpdateConnectionForReceivedPackets(results, ref connectionsByTcb);
             ILookup<TcpRequestConnect, TcpTemplateChanged> byConnectionTemplateChanges = UpdateConnectionForTemplateChangeEvents(results, ref connectionsByTcb); 
@@ -111,7 +112,7 @@ namespace ETWAnalyzer.Extractors.TCP
                 }
 
                 ulong bytesReceived = (ulong)receivedByConnection[tcpconnection].Sum(x => (decimal)((TcpDataTransferReceive)x).NumBytes);
-                var lastreceiveTime = receivedByConnection[tcpconnection].LastOrDefault()?.Timestamp;
+                var lastreceivedTime = receivedByConnection[tcpconnection].LastOrDefault()?.Timestamp;
 
                 ulong bytesSent = (ulong)sentByConnection.Item1[tcpconnection].Sum(x => (decimal)((TcpSendPosted)x).PostedBytes);
                 int datagramsReceived = receivedByConnection[tcpconnection].Count();
@@ -119,7 +120,7 @@ namespace ETWAnalyzer.Extractors.TCP
                 int datagramsPosted = sentByConnection.Item1[tcpconnection].Where(x=>x.IsPosted).Count();
                 int datagramSentCorrected = Math.Max(datagramsSent, datagramsPosted); // in case of port forwarding we can see way too less send events, in that case use Posted count
 
-                TcpConnectionStatistics statistics = new TcpConnectionStatistics(null, lastreceiveTime, null, null, null, null, null, null, null, null, null);
+                TcpConnectionStatistics statistics = new TcpConnectionStatistics(null, lastreceivedTime, null, null, null, null, null, null, null, null, null, tcpconnection.ResetTimeStamp);
 
                 TcpConnection connection = new(tcpconnection.Tcb, tcpconnection.LocalIpAndPort, tcpconnection.RemoteIpAndPort, tcpconnection.TimeStampOpen, tcpconnection.TimeStampClose,
                     templates.LastOrDefault(), bytesSent, datagramSentCorrected, bytesReceived, datagramsReceived, tcpconnection.ProcessIdx, tcpconnection.TCPRetansmitTimeout, statistics);
@@ -349,7 +350,7 @@ namespace ETWAnalyzer.Extractors.TCP
                 bool bFound = false;
                 foreach (var conn in connectionsByTcb[rundownAtStart.Tcb])
                 {
-                    if (conn.TimeStampOpen == null)
+                    if (conn.TimeStampOpen == null || (conn.TimeStampOpen != null && conn.TimeStampClose== null ) )
                     {
                         bFound = true;  // connection was already added by other TCP events do not add it again
                         break;
@@ -359,7 +360,7 @@ namespace ETWAnalyzer.Extractors.TCP
 
                 if (!bFound)
                 {
-                    ETWProcessIndex pIdx = GetProcessIndex(results, rundownAtStart.Timestamp, (int)rundownAtStart.Pid, 0);
+                    ETWProcessIndex pIdx = GetProcessIndex(results, rundownAtStart.Timestamp, rundownAtStart.Pid, 0);
 
                     var connection = new TcpRequestConnect(rundownAtStart.Tcb, rundownAtStart.LocalIpAndPort, rundownAtStart.RemoteIpAndPort, null, null, pIdx);
 
@@ -442,6 +443,9 @@ namespace ETWAnalyzer.Extractors.TCP
                     case TcpETWConstants.TcpConnectTcbFailedRcvdRst:
                         OnTcpConnectTcbFailedRcvdRst(ev);     // Connection establishment failed. This is not a real connection close event.
                         break;
+                    case TcpETWConstants.TcpAbortTcbRequest:
+                        OnTcpAbortTcbRequest(ev);            // Connection Reset sent by client
+                        break;
                     case TcpETWConstants.TcpCloseTcbRequest:
                         OnClose(ev, results);              // TCB will not be requested to close e.g. in case of connection failure this will not be called
                         break;
@@ -498,15 +502,14 @@ namespace ETWAnalyzer.Extractors.TCP
             var neighbor = new IpNeighborState(ev);
         }
 
-        readonly List<TcpConnectTcbFailedRcvdRst> myTcpConnectTcbFailedRcvdRst = new();
-
+        /// <summary>
+        /// Connection attempt failed, send connection reset during handshake to client
+        /// </summary>
         private void OnTcpConnectTcbFailedRcvdRst(IGenericEvent ev)
         {
             TcpConnectTcbFailedRcvdRst rst = new(ev);
             if (TCBFilter(rst.Tcb))
             {
-                myTcpConnectTcbFailedRcvdRst.Add(rst);
-
                 ulong tcb = (ulong)ev.Fields[TcpETWConstants.TcbField].AsAddress.Value;
 
                 // connection open did fail. There is no close event
@@ -515,6 +518,37 @@ namespace ETWAnalyzer.Extractors.TCP
                     if (connect.Tcb == tcb && connect.TimeStampOpen < rst.Timestamp && connect.TimeStampClose == null)
                     {
                         connect.TimeStampClose = rst.Timestamp;
+                        break;
+                    }
+                }
+            }
+        }
+
+        List<TcpAbortTcbRequest> myTcpAbortRequests = new();
+
+        /// <summary>
+        /// Client did send connection reset packet
+        /// </summary>
+        /// <param name="ev"></param>
+        void OnTcpAbortTcbRequest(IGenericEvent ev)
+        {
+            TcpAbortTcbRequest abort = new(ev);
+            if (TCBFilter(abort.Tcb))
+            {
+                myTcpAbortRequests.Add(abort);
+            }
+        }
+
+        void UpdateConnectionResetTimeStampSentFromClient()
+        {
+            foreach (var abort in myTcpAbortRequests.OrderByDescending(x=>x.Timestamp))
+            {
+                foreach (var connect in myConnections.OrderByDescending(x => x.TimeStampClose))
+                {
+                    if (connect.Tcb == abort.Tcb && connect.TimeStampClose > abort.Timestamp && connect.ResetTimeStamp == null &&
+                        (connect.TimeStampOpen ?? DateTimeOffset.MinValue) < abort.Timestamp)
+                    {
+                        connect.ResetTimeStamp = abort.Timestamp;
                         break;
                     }
                 }
@@ -571,7 +605,7 @@ namespace ETWAnalyzer.Extractors.TCP
         /// <param name="extract"></param>
         private void OnConnect(IGenericEvent ev, ETWExtract extract)
         {
-            ETWProcessIndex idx = GetProcessIndex(extract, ev.Timestamp.DateTimeOffset, ev.Process?.Id, ev.ProcessId);
+            ETWProcessIndex idx = GetProcessIndex(extract, ev.Timestamp.ConvertToTime(), ev.Process?.Id, ev.ProcessId);
             TcpRequestConnect conn = new(ev, idx);
             if (TCBFilter(conn.Tcb))
             {
@@ -586,7 +620,7 @@ namespace ETWAnalyzer.Extractors.TCP
         /// <param name="extract"></param>
         private void OnTcpAcceptListenerComplete(IGenericEvent ev, ETWExtract extract)
         {
-            ETWProcessIndex idx = GetProcessIndex(extract, ev.Timestamp.DateTimeOffset, ev.Process?.Id, ev.ProcessId);
+            ETWProcessIndex idx = GetProcessIndex(extract, ev.Timestamp.ConvertToTime(), ev.Process?.Id, ev.ProcessId);
             TcpRequestConnect conn = new(ev, idx);
 
             if (TCBFilter(conn.Tcb))
@@ -637,7 +671,7 @@ namespace ETWAnalyzer.Extractors.TCP
 
                 if ( !bFound)  // connections which are closed, but were not opened during the trace need to add a synthetic connection
                 {
-                    ETWProcessIndex processIdx = GetProcessIndex(extract, close.Timestamp, (int) close.ProcessId, ev.ProcessId);
+                    ETWProcessIndex processIdx = GetProcessIndex(extract, close.Timestamp, close.ProcessId, ev.ProcessId);
                     // normally close is issued by Idle which is not a real process. Use invalid here.
                     myConnections.Add( new TcpRequestConnect(close.Tcb, close.LocalIpAndPort, close.RemoteIpAndPort, null, close.Timestamp, processIdx));
                 }
@@ -655,7 +689,7 @@ namespace ETWAnalyzer.Extractors.TCP
 
                 if (!bFound)  // connections which are closed, but were not opened during the trace need to add a synthetic connection
                 {
-                    ETWProcessIndex processIdx = GetProcessIndex(extract, shutdown.Timestamp, (int)shutdown.ProcessId, ev.ProcessId );
+                    ETWProcessIndex processIdx = GetProcessIndex(extract, shutdown.Timestamp, shutdown.ProcessId, ev.ProcessId );
                     // normally close is issued by Idle which is not a real process. Use invalid here.
                     myConnections.Add(new TcpRequestConnect(shutdown.Tcb, shutdown.LocalIpAndPort, shutdown.RemoteIpAndPort, null, shutdown.Timestamp, processIdx));
                 }
@@ -679,9 +713,9 @@ namespace ETWAnalyzer.Extractors.TCP
             return bFound;
         }
 
-        ETWProcessIndex GetProcessIndex(ETWExtract extract, DateTimeOffset time, int? eventProcessId, int etwProcessIdx)
+        ETWProcessIndex GetProcessIndex(ETWExtract extract, DateTimeOffset time, uint? eventProcessId, uint etwProcessIdx)
         {
-            if (eventProcessId != null && eventProcessId > 0)
+            if (eventProcessId != null && eventProcessId > 0 && eventProcessId != uint.MaxValue)
             {
                 return extract.GetProcessIndexByPidAtTime(eventProcessId.Value, time);
             }
@@ -901,7 +935,6 @@ namespace ETWAnalyzer.Extractors.TCP
             myTemplateChangedEvents.Clear();
             myTcpConnectionRundowns.Clear();
             myTcpConnectionSummaries.Clear();
-            myTcpConnectTcbFailedRcvdRst.Clear();
             myTcpDisconnectTcbRtoTimeout.Clear();
             myGenericEvents = null;
         }

@@ -3,6 +3,7 @@
 
 using ETWAnalyzer.Extract;
 using ETWAnalyzer.Infrastructure;
+using ETWAnalyzer.TraceProcessorHelpers;
 using Microsoft.Diagnostics.Tracing.Etlx;
 using Microsoft.Windows.EventTracing;
 using Microsoft.Windows.EventTracing.Memory;
@@ -72,11 +73,21 @@ namespace ETWAnalyzer.Extractors
                         };
                         extract.Processes.Add(process);
                     }
-                    lret.Add(new ProcessWorkingSet(process.ToProcessKey(), entry.CommitSize, entry.WorkingSetSize, entry.PrivateWorkingSetSize, entry.SharedCommitSize));
+                    lret.Add(new ProcessWorkingSet(process.ToProcessKey(), entry.CommitSize.TotalMebibytes, entry.WorkingSetSize.TotalMebibytes, entry.PrivateWorkingSetSize.TotalMebibytes, entry.SharedCommitSize.TotalMebibytes));
                 }
                 else if (entry?.Process?.ImageName != null)
                 {
-                    lret.Add(new ProcessWorkingSet(entry.Process, entry.CommitSize, entry.WorkingSetSize, entry.PrivateWorkingSetSize, entry.SharedCommitSize));
+                    if (entry.Process == null)
+                    {
+                        throw new ArgumentNullException(nameof(entry.Process));
+                    }
+                    DateTimeOffset createTime = default;
+                    if (entry.Process.CreateTime.HasValue)
+                    {
+                        createTime = entry.Process.CreateTime.Value.ConvertToTime();
+                    }
+                    ProcessKey key = new ProcessKey(entry.Process.ImageName, entry.Process.Id, createTime);
+                    lret.Add(new ProcessWorkingSet(key, entry.CommitSize.TotalMebibytes, entry.WorkingSetSize.TotalMebibytes, entry.PrivateWorkingSetSize.TotalMebibytes, entry.SharedCommitSize.TotalMebibytes));
                 }
                 
             }

@@ -16,6 +16,8 @@ using System.Security.Cryptography;
 using ETWAnalyzer.Extract.Network.Tcp;
 using System.ComponentModel.DataAnnotations;
 using ETWAnalyzer_uTest.Extract;
+using ETWAnalyzer.Extractors;
+using ETWAnalyzer_uTest.TestInfrastructure;
 
 namespace ETWAnalyzer_uTest.Extractors
 {
@@ -178,6 +180,7 @@ namespace ETWAnalyzer_uTest.Extractors
             const string Remote1 = "20.20.20.20:40000";
             const string SrcIpPort = "10.10.10.10:100";
 
+            StaticTraceProcessorContext.MetaData = new TraceMetaDataMock();
             IGenericEvent[] events = new IGenericEvent[]
             {
                 CreateConnect(   Time.T0_1, Pid.OneDrive,     TCB.One, SrcIpPort, Remote1),
@@ -228,6 +231,8 @@ namespace ETWAnalyzer_uTest.Extractors
             const string SrcIpPort_1 = "10.10.10.10:101";
             const string SrcIpPort_2 = "10.10.10.10:102";
 
+            StaticTraceProcessorContext.MetaData = new TraceMetaDataMock();
+
             IGenericEvent[] events = new IGenericEvent[]
             {
                 CreateConnect(   Time.T0_1, Pid.OneDrive,     TCB.One, SrcIpPort, Remote1),
@@ -271,6 +276,8 @@ namespace ETWAnalyzer_uTest.Extractors
             const string SrcIpPort = "10.10.10.10:100";
             const string SrcIpPort_1 = "10.10.10.10:101";
             const string SrcIpPort_2 = "10.10.10.10:102";
+
+            StaticTraceProcessorContext.MetaData = new TraceMetaDataMock();
 
             IGenericEvent[] events = new IGenericEvent[]
             {
@@ -401,7 +408,7 @@ namespace ETWAnalyzer_uTest.Extractors
             fields = new Mock<IGenericEventFieldList>();
 
             var process = new Mock<IProcess>();
-            process.Setup(x => x.Id).Returns((int)pid);
+            process.Setup(x => x.Id).Returns((uint) pid);
 
             mockEvent.Setup(x => x.Id).Returns(eventId);
             mockEvent.Setup(x => x.Timestamp).Returns(CreateTime(timeStampTicks));
@@ -423,9 +430,9 @@ namespace ETWAnalyzer_uTest.Extractors
             return address;
         }
 
-        static TraceTimestamp CreateTime(Time timeStampTicks)
+        static Timestamp CreateTime(Time timeStampTicks)
         {
-            return new TraceTimestamp(new MockTraceTimestampContext(), new TraceTimestampValue((long)timeStampTicks));
+            return new Timestamp((long)timeStampTicks);
         }
 
         ETWExtract CreateExtract()

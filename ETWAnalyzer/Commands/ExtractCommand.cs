@@ -26,6 +26,8 @@ using ETWAnalyzer.Extractors.TCP;
 using ETWAnalyzer.Extractors.Power;
 using ETWAnalyzer.Extractors.Handle;
 using ETWAnalyzer.Extractors.TraceLogging;
+using ETWAnalyzer.Infrastructure;
+using ETWAnalyzer.Reader.ProcessTools;
 
 namespace ETWAnalyzer.Commands
 {
@@ -107,7 +109,7 @@ namespace ETWAnalyzer.Commands
          " -symFolder xxx       Default is C:\\Symbols. Path to a short directory name in which links are created from the unzipped ETL files to prevent symbol loading issues due to MAX_PATH limitations." + Environment.NewLine +
          " -child               Force single threaded in-process extraction" + Environment.NewLine +
          " -recursive           Search below -filedir directory recursively for data to extract." + Environment.NewLine +
-        $" -outdir xxxx         By default the extracted data will be put into the folder \"{Program.ExtractFolder}\" besides the input file. You can override the output folder with that switch." + Environment.NewLine +
+        $" -outdir xxxx         By default the extracted data will be put into the folder \"{ExtractSerializer.ExtractFolder}\" besides the input file. You can override the output folder with that switch." + Environment.NewLine +
          " -tempdir xxxx        If input data needs to be unzipped you can enter here an alternate path to e.g. prevent extraction on slow network shares. " + Environment.NewLine + 
         $" -unzipoperation \"cmd\" Execute command after a compressed zip archive was uncompressed. The variables {ETLFileNameVariable} and {ETLFileDirVariable} are expanded. " + Environment.NewLine +
         $"                      You can use ' to escape an exe with spaces. E.g. -unzipoperation \"'C:\\Program Files\\Relogger.exe' {ETLFileNameVariable}\"" + Environment.NewLine + 

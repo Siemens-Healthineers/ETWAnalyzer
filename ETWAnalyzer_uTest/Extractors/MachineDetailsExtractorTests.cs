@@ -12,6 +12,7 @@ using System.Linq;
 using ETWAnalyzer.Extractors;
 using System.IO;
 using System.Threading;
+using ETWAnalyzer.Infrastructure;
 
 namespace ETWAnalyzer_uTest.Extractors
 {
@@ -41,10 +42,10 @@ namespace ETWAnalyzer_uTest.Extractors
                 if (myInteralExtract == null)
                 {
                     var tmp = new ETWExtract();
-                    using ITraceProcessor processor = TraceProcessor.Create(TestData.ClientEtlFile, new TraceProcessorSettings
+                    using ITraceProcessor processor = new TraceProcessorBuilder().WithSettings(new TraceProcessorSettings
                     {
                         AllowLostEvents = true,
-                    });
+                    }).Build(TestData.ClientEtlFile);
                     MachineDetailsExtractor extractor = new();
                     extractor.RegisterParsers(processor);
                     processor.Process();
@@ -114,6 +115,7 @@ namespace ETWAnalyzer_uTest.Extractors
         public void Can_Get_OS_Name()
         {
             Assert.Equal("Windows 10 Pro", myExtract.OSName);
+            Assert.Equal("Windows 8.1", myExtract.WinSatOSName);
         }
 
         [Fact]

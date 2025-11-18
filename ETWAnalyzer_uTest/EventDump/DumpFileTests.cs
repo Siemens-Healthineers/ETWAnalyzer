@@ -429,13 +429,13 @@ namespace ETWAnalyzer_uTest.EventDump
                 {
                     new KeyValuePair<string, MinMaxRange<decimal>>("1ms", new MinMaxRange<decimal>(1000/ Million, decimal.MaxValue)),
                     new KeyValuePair<string, MinMaxRange<decimal>>("0.5s", new MinMaxRange<decimal>(500_000/ Million, decimal.MaxValue)),
-                    new KeyValuePair<string, MinMaxRange<decimal>>("1s-1000s", new MinMaxRange <decimal>(1, 1000)),
-                    new KeyValuePair<string, MinMaxRange<decimal>>("1000ms-2000ms", new MinMaxRange <decimal>(1, 2)),
-                    new KeyValuePair<string, MinMaxRange<decimal>>("1000ms-2000s", new MinMaxRange <decimal>(1, 2000)),
+                    new KeyValuePair<string, MinMaxRange<decimal>>("1s 1000s", new MinMaxRange <decimal>(1, 1000)),
+                    new KeyValuePair<string, MinMaxRange<decimal>>("1000ms 2000ms", new MinMaxRange <decimal>(1, 2)),
+                    new KeyValuePair<string, MinMaxRange<decimal>>("1000ms 2000s", new MinMaxRange <decimal>(1, 2000)),
                 };
             foreach (var input in RangeValues)
             {
-                var args = new string[] { "-dump", "file", "-MinMaxTotalTime", input.Key };
+                var args = DumpCPUMethodTests.CreateCmdLine( new string[] { "-dump", "file", "-MinMaxTotalTime" }, input.Key );
                 DumpCommand dump = (DumpCommand)CommandFactory.CreateCommand(args);
                 dump.Parse();
                 dump.Run();
@@ -447,7 +447,7 @@ namespace ETWAnalyzer_uTest.EventDump
 
             foreach (var input in RangeValues)
             {
-                var args = new string[] { "-dump", "file", "-MinMaxReadTime", input.Key };
+                var args = DumpCPUMethodTests.CreateCmdLine(new string[] { "-dump", "file", "-MinMaxReadTime" }, input.Key );
                 DumpCommand dump = (DumpCommand)CommandFactory.CreateCommand(args);
                 dump.Parse();
                 dump.Run();
@@ -458,7 +458,7 @@ namespace ETWAnalyzer_uTest.EventDump
             }
             foreach (var input in RangeValues)
             {
-                var args = new string[] { "-dump", "file", "-MinMaxWriteTime", input.Key };
+                var args = DumpCPUMethodTests.CreateCmdLine( new string[] { "-dump", "file", "-MinMaxWriteTime" }, input.Key );
                 DumpCommand dump = (DumpCommand)CommandFactory.CreateCommand(args);
                 dump.Parse();
                 dump.Run();
@@ -480,14 +480,14 @@ namespace ETWAnalyzer_uTest.EventDump
                     new KeyValuePair<string, MinMaxRange<decimal>>("1KB", new MinMaxRange<decimal>(1000, decimal.MaxValue)),
                     new KeyValuePair<string, MinMaxRange<decimal>>("1GB", new MinMaxRange<decimal>(1000_000_000, decimal.MaxValue)),
                     new KeyValuePair<string, MinMaxRange<decimal>>("1TB", new MinMaxRange<decimal>(1000_000_000_000, decimal.MaxValue)),
-                    new KeyValuePair<string, MinMaxRange<decimal>>("1000Bytes-2000Bytes", new MinMaxRange <decimal>(1000, 2000)),
-                    new KeyValuePair<string, MinMaxRange<decimal>>("1KB-1000KB", new MinMaxRange <decimal>(1000, 1000_000)),
-                    new KeyValuePair<string, MinMaxRange<decimal>>("1GB-2GB", new MinMaxRange <decimal>(1000_000_000, 2000_000_000)),
-                    new KeyValuePair<string, MinMaxRange<decimal>>("1KB-2GB", new MinMaxRange <decimal>(1000, 2000_000_000)),
+                    new KeyValuePair<string, MinMaxRange<decimal>>("1000Bytes 2000Bytes", new MinMaxRange <decimal>(1000, 2000)),
+                    new KeyValuePair<string, MinMaxRange<decimal>>("1KB 1000KB", new MinMaxRange <decimal>(1000, 1000_000)),
+                    new KeyValuePair<string, MinMaxRange<decimal>>("1GB 2GB", new MinMaxRange <decimal>(1000_000_000, 2000_000_000)),
+                    new KeyValuePair<string, MinMaxRange<decimal>>("1KB 2GB", new MinMaxRange <decimal>(1000, 2000_000_000)),
                 };
             foreach (var input in RangeValues)
             {
-                var args = new string[] { "-dump", "file", "-MinMaxTotalSize", input.Key };
+                var args = DumpCPUMethodTests.CreateCmdLine( new string[] { "-dump", "file", "-MinMaxTotalSize" }, input.Key );
                 DumpCommand dump = (DumpCommand)CommandFactory.CreateCommand(args);
                 dump.Parse();
                 dump.Run();
@@ -498,7 +498,7 @@ namespace ETWAnalyzer_uTest.EventDump
             }
             foreach (var input in RangeValues)
             {
-                var args = new string[] { "-dump", "file", "-MinMaxReadSize", input.Key };
+                var args = DumpCPUMethodTests.CreateCmdLine( new string[] { "-dump", "file", "-MinMaxReadSize" }, input.Key );
                 DumpCommand dump = (DumpCommand)CommandFactory.CreateCommand(args);
                 dump.Parse();
                 dump.Run();
@@ -509,7 +509,7 @@ namespace ETWAnalyzer_uTest.EventDump
             }
             foreach (var input in RangeValues)
             {
-                var args = new string[] { "-dump", "file", "-MinMaxWriteSize", input.Key };
+                var args = DumpCPUMethodTests.CreateCmdLine(new string[] { "-dump", "file", "-MinMaxWriteSize" }, input.Key );
                 DumpCommand dump = (DumpCommand)CommandFactory.CreateCommand(args);
                 dump.Parse();
                 dump.Run();
@@ -710,15 +710,15 @@ namespace ETWAnalyzer_uTest.EventDump
         [Fact]
         public void MinMaxCountFilter()
         {
-            KeyValuePair<string, MinMaxRange<int>>[] RangeValues = new KeyValuePair<string, MinMaxRange<int>>[]
+            KeyValuePair<string, MinMaxRange<decimal>>[] RangeValues = new KeyValuePair<string, MinMaxRange<decimal>>[]
                 {
-                    new KeyValuePair<string, MinMaxRange<int>>("100", new MinMaxRange<int>(100, int.MaxValue)),
-                    new KeyValuePair<string, MinMaxRange<int>>("0-1000", new MinMaxRange <int>(0, 1000)),
-                    new KeyValuePair<string, MinMaxRange<int>>("10-200", new MinMaxRange <int>(10, 200)),
+                    new KeyValuePair<string, MinMaxRange<decimal>>("100", new MinMaxRange<decimal>(100, decimal.MaxValue)),
+                    new KeyValuePair<string, MinMaxRange<decimal>>("0 1000", new MinMaxRange <decimal>(0, 1000)),
+                    new KeyValuePair<string, MinMaxRange<decimal>>("10 200", new MinMaxRange <decimal>(10, 200)),
                 };
             foreach (var input in RangeValues)
             {
-                var args = new string[] { "-dump", "file", "-MinMaxTotalCount", input.Key };
+                var args = DumpCPUMethodTests.CreateCmdLine(new string[] { "-dump", "file", "-MinMaxTotalCount" }, input.Key );
                 DumpCommand dump = (DumpCommand)CommandFactory.CreateCommand(args);
                 dump.Parse();
                 dump.Run();

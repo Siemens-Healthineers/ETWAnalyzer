@@ -2,19 +2,22 @@
 //// SPDX-License-Identifier:   MIT
 
 
+using ETWAnalyzer.Extractor.Tcp;
 using ETWAnalyzer.TraceProcessorHelpers;
 using Microsoft.Windows.EventTracing.Events;
 using System;
 
 namespace ETWAnalyzer.Extractors.TCP
 {
+
+
     /// <summary>
     /// Fired when data written to a socket for by firewall driver which can catch packets and inject rewritten ones.
     /// To calculate the actual number of bytes sent we should consider just the posted packets and not injected ones. 
     /// The Injected field is a string which does not contain any documentation so we might still to revisit our logic again. 
     ///  Tcb, Injected, NumBytes, SndNxt
     /// </summary>
-    internal class TcpSendPosted : IGenericTcpEvent
+    internal class TcpSendPosted : IGenericTcpEvent, ITcpSendPosted
     {
         /// <summary>
         /// Transfer Control Block pointer which is used to correlate all TCP events for a connection for the lifetime of the connection.
@@ -23,6 +26,8 @@ namespace ETWAnalyzer.Extractors.TCP
         public ulong Tcb { get; set; }
 
         public TcpRequestConnect Connection { get; set; }
+
+        ITcpRequestConnect ITcpSendPosted.Connection => Connection;
 
         /// <summary>
         /// Number of sent bytes
@@ -58,7 +63,7 @@ namespace ETWAnalyzer.Extractors.TCP
         /// <summary>
         /// Just count the bytes which are posted by application and not the injected ones.
         /// </summary>
-        public uint PostedBytes         
+        public uint PostedBytes
         {
             get
             {
@@ -107,7 +112,7 @@ namespace ETWAnalyzer.Extractors.TCP
             NumBytes = ev.Fields[TcpETWConstants.NumBytesField].AsUInt32;
             SndNext = ev.Fields[TcpETWConstants.SndNxtField].AsUInt32;
             Injected = ev.Fields[TcpETWConstants.InjectedField].AsString;
-            Timestamp = ev.Timestamp.DateTimeOffset;
+            Timestamp = ev.Timestamp.ConvertToTime();
         }
 
         public override string ToString()

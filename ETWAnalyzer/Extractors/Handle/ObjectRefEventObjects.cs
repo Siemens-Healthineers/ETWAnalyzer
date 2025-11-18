@@ -78,7 +78,7 @@ namespace ETWAnalyzer.Extractors.Handle
         public UInt32 TargetHandle;
         public UInt32 TargetHandleId;
         public UInt16 ObjectType;
-        public int SourceProcessId;
+        public uint SourceProcessId;
     }
 
 
@@ -112,9 +112,9 @@ namespace ETWAnalyzer.Extractors.Handle
 
     class BaseEvent
     {
-        internal TraceTimestamp TimeStamp { get; set; }
-        public int ProcessId { get; set; }
-        public int ThreadId { get; set; }
+        internal Timestamp TimeStamp { get; set; }
+        public uint ProcessId { get; set; }
+        public uint ThreadId { get; set; }
 
         public string StackTrace { get; set; }
 
@@ -137,7 +137,7 @@ namespace ETWAnalyzer.Extractors.Handle
     {
         public UInt32 SourceHandle { get; set; }
         public UInt32 TargetHandle { get; set; }
-        public int SourceProcessId { get; set; }
+        public uint SourceProcessId { get; set; }
         public UInt32 TargetHandleId { get; set; }
         public UInt16 ObjectType { get; set; }
     }

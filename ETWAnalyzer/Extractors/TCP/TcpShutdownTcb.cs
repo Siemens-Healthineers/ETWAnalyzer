@@ -43,7 +43,7 @@ namespace ETWAnalyzer.Extractors.TCP
                 ProcessStartKey = ev.Fields[TcpETWConstants.ProcessStartKey].AsUInt64;
             }
             Status = (NtStatus) ev.Fields[TcpETWConstants.StatusField].AsUInt32;
-            Timestamp = ev.Timestamp.DateTimeOffset;
+            Timestamp = ev.Timestamp.ConvertToTime();
         }
     }
 }

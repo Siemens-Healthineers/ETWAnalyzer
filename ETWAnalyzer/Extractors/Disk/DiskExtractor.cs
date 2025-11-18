@@ -3,7 +3,9 @@
 
 using ETWAnalyzer.Extract;
 using ETWAnalyzer.Extract.Disk;
+using ETWAnalyzer.Extractors.Disk;
 using ETWAnalyzer.Infrastructure;
+using ETWAnalyzer.TraceProcessorHelpers;
 using Microsoft.Diagnostics.Tracing.Etlx;
 using Microsoft.Windows.EventTracing;
 using Microsoft.Windows.EventTracing.Disk;
@@ -15,6 +17,8 @@ using System.Linq;
 
 namespace ETWAnalyzer.Extractors
 {
+   
+
     class DiskExtractor : ExtractorBase
     {
         IPendingResult<IDiskActivityDataSource> myDiskIO;
@@ -41,7 +45,7 @@ namespace ETWAnalyzer.Extractors
 
             foreach (IDiskActivity diskActivity in myDiskIO.Result.Activity)
             {
-                data.Add(diskActivity);
+                diskActivity.Add(data);
             }
 
             results.Disk = data;

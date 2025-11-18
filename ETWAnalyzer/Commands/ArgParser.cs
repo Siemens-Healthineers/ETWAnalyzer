@@ -4,6 +4,8 @@
 using ETWAnalyzer;
 using ETWAnalyzer.Commands;
 using ETWAnalyzer.Extract;
+using ETWAnalyzer.Infrastructure;
+using ETWAnalyzer.Reader.ProcessTools;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -51,7 +53,6 @@ abstract class ArgParser : ICommand
     /// <summary>
     /// Supported file extensions
     /// </summary>
-    internal const string EtlExtension = ".etl";
     internal const string ZipExtension = ".zip";
     internal const string SevenZipExtension = ".7z";
     internal const string JsonExtension = ".json";
@@ -172,6 +173,81 @@ abstract class ArgParser : ICommand
             }
         }
         return args;
+    }
+
+    protected MinMaxRange<int> GetIntRange(string argName, decimal defaultUnit)
+    {
+        string minStr = GetNextNonArg(argName);
+        string maxStr = GetNextNonArg(argName, false); //optional
+        Tuple<int, int> minMax = minStr.GetMinMaxInt(maxStr, defaultUnit);
+        return new MinMaxRange<int>(minMax.Item1, minMax.Item2);
+    }
+
+    /// <summary>
+    /// Get from a range string xx yy where the upper bound can be omitted as ulong value.
+    /// Default unit is multiplied to the parsed value.
+    /// xx and yy can have unit suffixes like s, MB, ms, us, ...
+    /// </summary>
+    /// <param name="argName">Argument name which is parsed.</param>
+    /// <param name="defaultUnit">Default multiplier to multiply if no unit multiplier was supplied.</param>
+    /// <returns>Parsed range instance.</returns>
+    protected MinMaxRange<ulong> GetULongRange(string argName, decimal defaultUnit)
+    {
+        string minStr = GetNextNonArg(argName);
+        string maxStr = GetNextNonArg(argName, false); //optional
+        Tuple<long, long> minMax = minStr.GetMinMaxLong(maxStr, defaultUnit);
+        return new MinMaxRange<ulong>((ulong)minMax.Item1, (ulong)minMax.Item2);
+    }
+
+    /// <summary>
+    /// Get from a range string xx yy where the upper bound can be omitted as long value.
+    /// Default unit is multiplied to the parsed value.
+    /// xx and yy can have unit suffixes like s, MB, ms, us, ...
+    /// </summary>
+    /// <param name="argName">Argument name which is parsed.</param>
+    /// <param name="defaultUnit">Default multiplier to multiply if no unit multiplier was supplied.</param>
+    /// <returns>Parsed range instance.</returns>
+
+    protected MinMaxRange<long> GetLongRange(string argName, decimal defaultUnit)
+    {
+        string minStr = GetNextNonArg(argName);
+        string maxStr = GetNextNonArg(argName, false); //optional
+        Tuple<long, long> minMax = minStr.GetMinMaxLong(maxStr, defaultUnit);
+        return new MinMaxRange<long>(minMax.Item1, minMax.Item2);
+    }
+
+    /// <summary>
+    /// Get from a range string xx yy where the upper bound can be omitted as decimal value.
+    /// Default unit is multiplied to the parsed value.
+    /// xx and yy can have unit suffixes like s, MB, ms, us, ...
+    /// </summary>
+    /// <param name="argName">Argument name which is parsed.</param>
+    /// <param name="defaultUnit">Default multiplier to multiply if no unit multiplier was supplied.</param>
+    /// <returns>Parsed range instance.</returns>
+
+    protected MinMaxRange<decimal> GetDecimalRange(string argName, decimal defaultUnit)
+    {
+        string minStr = GetNextNonArg(argName);
+        string maxStr = GetNextNonArg(argName, false); //optional
+        Tuple<decimal, decimal> minMax = minStr.GetMinMaxDecimal(maxStr, defaultUnit);
+        return new MinMaxRange<decimal>(minMax.Item1, minMax.Item2);
+    }
+
+    /// <summary>
+    /// Get from a range string xx yy where the upper bound can be omitted as double value.
+    /// Default unit is multiplied to the parsed value.
+    /// xx and yy can have unit suffixes like s, MB, ms, us, ...
+    /// </summary>
+    /// <param name="argName">Argument name which is parsed.</param>
+    /// <param name="defaultUnit">Default multiplier to multiply if no unit multiplier was supplied.</param>
+    /// <returns>Parsed range instance.</returns>
+
+    protected MinMaxRange<double> GetDoubleRange(string argName, decimal defaultUnit)
+    {
+        string minStr = GetNextNonArg(argName);
+        string maxStr = GetNextNonArg(argName, false); //optional
+        Tuple<double, double> minMax = minStr.GetMinMaxDouble(maxStr, defaultUnit);
+        return new MinMaxRange<double>(minMax.Item1, minMax.Item2);
     }
 
 

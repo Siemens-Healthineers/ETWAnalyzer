@@ -4,6 +4,7 @@
 using ETWAnalyzer;
 using ETWAnalyzer.Extract;
 using ETWAnalyzer.Helper;
+using ETWAnalyzer.Infrastructure;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -57,7 +58,7 @@ namespace ETWAnalyzer_uTest
             using var tmp = TempDir.Create();
             string outFolder = Path.Combine(tmp.Name, "OutputFolder");
             Directory.CreateDirectory(outFolder);
-            string outExtractFolder = Path.Combine(outFolder, Program.ExtractFolder);
+            string outExtractFolder = Path.Combine(outFolder, ExtractSerializer.ExtractFolder);
             Directory.CreateDirectory(outExtractFolder);
 
             string sevenZFile = Path.Combine(tmp.Name, "Test1.7z");
@@ -139,7 +140,7 @@ namespace ETWAnalyzer_uTest
             const string testFileNameNoExt = "LoadPrepCR";
 
             string etlFile = Path.Combine(dir, testFileNameNoExt + TestRun.ETLExtension);
-            string extractedSubFolder = Path.Combine(dir, Program.ExtractFolder, testFileNameNoExt + TestRun.ExtractExtension);
+            string extractedSubFolder = Path.Combine(dir, ExtractSerializer.ExtractFolder, testFileNameNoExt + TestRun.ExtractExtension);
 
             CreateFiles(etlFile, extractedSubFolder);
 
@@ -158,7 +159,7 @@ namespace ETWAnalyzer_uTest
             const string testFileNameNoExt = "LoadPrepCR";
 
             string zipFile = Path.Combine(dir, testFileNameNoExt + TestRun.SevenZExtension);
-            string extractedSubFolder = Path.Combine(dir, Program.ExtractFolder, testFileNameNoExt + TestRun.ExtractExtension);
+            string extractedSubFolder = Path.Combine(dir, ExtractSerializer.ExtractFolder, testFileNameNoExt + TestRun.ExtractExtension);
 
             CreateFiles(zipFile, extractedSubFolder);
 

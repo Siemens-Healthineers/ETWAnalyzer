@@ -28,12 +28,12 @@ namespace ETWAnalyzer.EventDump
         /// <summary>
         /// Filter for total query time which is the sum of all DNS query times for one host.
         /// </summary>
-        public MinMaxRange<double> MinMaxTotalTimeMs { get; set; } = new MinMaxRange<double>();
+        public MinMaxRange<decimal> MinMaxTotalTimeS { get; set; } = new MinMaxRange<decimal>();
 
         /// <summary>
         /// Filter for every DNS query duration before they are aggregated
         /// </summary>
-        public MinMaxRange<double> MinMaxTimeMs { get; set;  } = new MinMaxRange<double>();
+        public MinMaxRange<double> MinMaxTimeS { get; set;  } = new MinMaxRange<double>();
 
         /// <summary>
         /// -Details flag to show query time for every DNS Request
@@ -129,7 +129,7 @@ namespace ETWAnalyzer.EventDump
                 ETWProcess[] previous = null;
                 foreach (MatchData data in sorted)
                 {
-                    if( !MinMaxTotalTimeMs.IsWithin( (double) (data.GroupQueryTimeS) ) )
+                    if( !MinMaxTotalTimeS.IsWithin( data.GroupQueryTimeS ) )
                     {
                         continue;
                     }
@@ -228,7 +228,7 @@ namespace ETWAnalyzer.EventDump
                             continue;
                         }
 
-                        if( !MinMaxTimeMs.IsWithin( dns.Duration.TotalSeconds) )
+                        if( !MinMaxTimeS.IsWithin( dns.Duration.TotalSeconds) )
                         {
                             continue;
                         }
