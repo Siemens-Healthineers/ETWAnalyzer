@@ -263,7 +263,7 @@ namespace ETWAnalyzer.EventDump
 
                             bFirst = false;
 
-                            if ( !ProcessNameFilter(eventData.Process.GetProcessName(UsePrettyProcessName)) )
+                            if ( !IsMatchingProcessAndCmdLine(file, eventData.Process.ToProcessKey()) )
                             {
                                 continue;
                             }

@@ -297,12 +297,9 @@ namespace ETWAnalyzer.Extract
 
         ProcessKey myKey;
         /// <summary>
-        /// Convert an ETWProcess to a ProcessKey struct. Warning you should check ProcessName for null before trying method ir it will 
-        /// throw an exception. This can happen for events which were collected early or late of the recording where the pid was known,
-        /// but no image data event was captured.
+        /// Convert an ETWProcess to a ProcessKey struct.
         /// </summary>
         /// <returns>ProcessKey instance</returns>
-        /// <exception cref="ArgumentNullException">When <see cref="ProcessName"/> was null of the current instance.</exception>
         public ProcessKey ToProcessKey()
         {
             if( myKey == null)
