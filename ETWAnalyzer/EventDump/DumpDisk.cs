@@ -3,6 +3,7 @@
 
 using ETWAnalyzer.Commands;
 using ETWAnalyzer.Extract;
+using ETWAnalyzer.Extract.Disk;
 using ETWAnalyzer.Extract.FileIO;
 using ETWAnalyzer.Infrastructure;
 using ETWAnalyzer.ProcessTools;
@@ -75,27 +76,18 @@ namespace ETWAnalyzer.EventDump
         {
             List<MatchData> data = ReadDiskData();
 
-            if( IsCSVEnabled )
+            if (IsCSVEnabled)
             {
-                OpenCSVWithHeader(Col_CSVOptions, Col_Date, Col_TestCase, Col_TestTimeinms, Col_Baseline, Col_FileName, $"Level{DirectoryLevel}Directory", 
-                    "DiskTotalTimeIOInus", "DiskReadTimeInus", "DiskWriteTimeInus", "DiskFlushTimeInus", "DiskWrittenBytes", "DiskReadBytes", 
-                    "DiskReadPerf MB/s", "DiskWritePerf MB/s", "Processes", "SourceDirectory", Col_SourceJsonFile);
-
-                foreach(var diskData in data)
-                {
-                    WriteCSVLine(CSVOptions, diskData.DataFile.PerformedAt, diskData.DataFile.TestName, diskData.DataFile.DurationInMs, diskData.BaseLine,
-                                 diskData.FileName,  MatchData.GetDirectoryLevel(diskData.FileName, DirectoryLevel), diskData.DiskTotalTimeInus, diskData.DiskReadTimeInus, diskData.DiskWriteTimeInus, diskData.DiskFlushTimeInus, diskData.DiskWriteSizeInBytes, diskData.DiskReadSizeInBytes,
-                                 diskData.ReadMBPerSeconds, diskData.WriteMBPerSeconds,  String.Join(";", diskData.Processes.Select(x => x.GetProcessWithId(UsePrettyProcessName))), 
-                                 Path.GetDirectoryName(diskData.SourceFileName), Path.GetFileNameWithoutExtension(diskData.SourceFileName));
-                }
-                return data;
+                OpenCSVWithHeader(Col_CSVOptions, Col_Date, Col_TestCase, Col_TestTimeinms, Col_Baseline, Col_FileName, $"Level{DirectoryLevel}Directory",
+                    "DiskTotalTimeIOInus", "DiskReadTimeInus", "DiskWriteTimeInus", "DiskFlushTimeInus", "DiskWrittenBytes", "DiskReadBytes",
+                    "DiskReadPerf MB/s", "DiskWritePerf MB/s", "% Active", "DiskNumber", "Processes", "SourceDirectory", Col_SourceJsonFile);
             }
 
             const int TotalHeadlineWidth = 15;
+            const int PercentWidth = 8;
 
             // group by file or if merge is used do not group at all
             TestDataFile grouping(MatchData data) => Merge ? null : data.DataFile;
-
 
             foreach (var byFileOrNoGroup in data.GroupBy(grouping).OrderBy(x => x.Key?.PerformedAt))
             {
@@ -105,16 +97,21 @@ namespace ETWAnalyzer.EventDump
                 decimal totalReadTimeInus = 0;
                 decimal totalWriteTimeInus = 0;
                 decimal totalFlushtimeInus = 0;
+                decimal percentActive = 0;
 
                 List<MatchData> aggregatedByDirectory = AggregateByDirectory(byFileOrNoGroup.ToList(), DirectoryLevel);
-                if (byFileOrNoGroup.Key != null)
+                if (byFileOrNoGroup.Key != null && !IsCSVEnabled)
                 {
                     PrintFileName(byFileOrNoGroup.Key.JsonExtractFileWhenPresent, null, byFileOrNoGroup.Key.PerformedAt, byFileOrNoGroup.Key.Extract?.MainModuleVersion?.ToString());
                 }
 
-                string headline = $"[green]Read                                [/green][yellow]Write                               [/yellow][cyan]Flush       [/cyan] [magenta]{GetTotalHeadline(-1*TotalHeadlineWidth)}[/magenta]Directory or File if -dirLevel 100 is used";
+                string headline = $"[green]Read                                [/green][yellow]Write                               [/yellow][cyan]Flush       [/cyan] [magenta]% Active {GetTotalHeadline(-1*TotalHeadlineWidth)}[/magenta][Directory or File if -dirLevel 100 is used";
 
-                ColorConsole.WriteEmbeddedColorLine(headline);
+                if(!IsCSVEnabled)
+                {
+                    ColorConsole.WriteEmbeddedColorLine(headline);
+                }
+
                 foreach (MatchData group in aggregatedByDirectory.Where(MinMaxFilter).SortAscendingGetTopNLast(SortByValue, null, TopN))
                 {
                     totalReadBytes     += group.DiskReadSizeInBytes;
@@ -122,33 +119,55 @@ namespace ETWAnalyzer.EventDump
                     totalReadTimeInus  += group.DiskReadTimeInus;
                     totalWriteTimeInus += group.DiskWriteTimeInus;
                     totalFlushtimeInus += group.DiskFlushTimeInus;
+                    percentActive = 100*((group.DiskReadTimeInus + group.DiskWriteTimeInus + group.DiskFlushTimeInus) / Million) / group.SessionDurationS;
 
-                    string diskReadTime = $"{group.DiskReadTimeInus / Million:F5}";
-                    string diskReadMB = $"{group.DiskReadSizeInBytes / Million:F0}";
-                    string diskWriteTime = $"{group.DiskWriteTimeInus / Million:F5}";
-                    string diskWriteMB = $"{group.DiskWriteSizeInBytes / Million:F0}";
-                    string diskFlushTime = $"{group.DiskFlushTimeInus / Million:F3}";
+                    if (IsCSVEnabled)
+                    {
+                        TestDataFile testDataFile = byFileOrNoGroup.Key;
+                        WriteCSVLine(CSVOptions, testDataFile.PerformedAt, testDataFile.TestName, testDataFile.DurationInMs, group.BaseLine,
+                                        DirectoryLevel >= 100 ? group.RootLevelDirectory : "",  // if DirectoryLevel >= 100 the full file name is RootLevelDirectory
+                                        DirectoryLevel >= 100 ? MatchData.GetDirectoryNameSafe(group.RootLevelDirectory) : group.RootLevelDirectory, // Get Directory name if not already grouped by directory
+                                        group.DiskTotalTimeInus, group.DiskReadTimeInus, group.DiskWriteTimeInus, group.DiskFlushTimeInus, group.DiskWriteSizeInBytes, group.DiskReadSizeInBytes,
+                                        group.ReadMBPerSeconds, group.WriteMBPerSeconds,
+                                        Math.Round((double)percentActive, 0, MidpointRounding.AwayFromZero),
+                                        group.DiskNumber,
+                                        String.Join(";", group.Processes.Select(x => x.GetProcessWithId(UsePrettyProcessName))),
+                                        Path.GetDirectoryName(testDataFile.JsonExtractFileWhenPresent), Path.GetFileNameWithoutExtension(testDataFile.JsonExtractFileWhenPresent));
+                    }
+                    else
+                    {
 
-                    string line = $"[green]r {diskReadTime,10} s {diskReadMB,7} MB {group.ReadMBPerSeconds,4} MB/s[/green] " +
-                                  $"[yellow]w {diskWriteTime,10} s {diskWriteMB,7} MB {group.WriteMBPerSeconds,4} MB/s[/yellow] " +
-                                  $"[cyan]f {diskFlushTime,8} s[/cyan] " +
-                                  $"[magenta]{GetTotalValue(group,TotalHeadlineWidth)}[/magenta]"+
-                                  $"{DumpFile.GetFileName(group.RootLevelDirectory, ReverseFileName)}";
+                        string diskReadTime = $"{group.DiskReadTimeInus / Million:F5}";
+                        string diskReadMB = $"{group.DiskReadSizeInBytes / Million:F0}";
+                        string diskWriteTime = $"{group.DiskWriteTimeInus / Million:F5}";
+                        string diskWriteMB = $"{group.DiskWriteSizeInBytes / Million:F0}";
+                        string diskFlushTime = $"{group.DiskFlushTimeInus / Million:F3}";
+                        string diskpercentActive = $"{percentActive:F0} %".WithWidth(PercentWidth);
 
-                    ColorConsole.WriteEmbeddedColorLine(line);
+                        string line = $"[green]r {diskReadTime,10} s {diskReadMB,7} MB {group.ReadMBPerSeconds,4} MB/s[/green] " +
+                                      $"[yellow]w {diskWriteTime,10} s {diskWriteMB,7} MB {group.WriteMBPerSeconds,4} MB/s[/yellow] " +
+                                      $"[cyan]f {diskFlushTime,8} s[/cyan] " +
+                                      $"[magenta]{diskpercentActive} {GetTotalValue(group, TotalHeadlineWidth)}[/magenta]" +
+                                      $"{DumpFile.GetFileName(group.RootLevelDirectory, ReverseFileName)}";
+
+                        ColorConsole.WriteEmbeddedColorLine(line);
+                    }
                 }
 
-                ColorConsole.WriteEmbeddedColorLine(
-                    $"[magenta]Totals {(totalFlushtimeInus + totalReadTimeInus + totalWriteTimeInus) / Million:F2} s {(totalReadBytes + totalWriteBytes) / Million:N0} MB[/magenta] " +
-                    $"[green]r {totalReadTimeInus / Million:F2} s {totalReadBytes / Million:N0} MB[/green] " +
-                    $"[yellow]w {totalWriteTimeInus / Million:F2} s {totalWriteBytes / Million:N0} MB[/yellow] " +
-                    $"[cyan]f {totalFlushtimeInus/ Million:F2} s[/cyan] " +
-                    $"{byFileOrNoGroup.Count()} accessed file/s. Process Count: {new HashSet<ETWProcess>(byFileOrNoGroup.SelectMany(x => x.Processes)).Count}"
-                    );
+                if (!IsCSVEnabled)
+                {
+                    ColorConsole.WriteEmbeddedColorLine(
+                        $"[magenta]Totals {(totalFlushtimeInus + totalReadTimeInus + totalWriteTimeInus) / Million:F2} s {(totalReadBytes + totalWriteBytes) / Million:N0} MB[/magenta] " +
+                        $"[green]r {totalReadTimeInus / Million:F2} s {totalReadBytes / Million:N0} MB[/green] " +
+                        $"[yellow]w {totalWriteTimeInus / Million:F2} s {totalWriteBytes / Million:N0} MB[/yellow] " +
+                        $"[cyan]f {totalFlushtimeInus / Million:F2} s[/cyan] " +
+                        $"{byFileOrNoGroup.Count()} accessed file/s. Process Count: {new HashSet<ETWProcess>(byFileOrNoGroup.SelectMany(x => x.Processes)).Count}"
+                        );
+                }
             }
 
 
-            if (IsPerProcess)
+            if (IsPerProcess && !IsCSVEnabled)
             {
                 foreach (var byFileOrNoGroup in data.GroupBy(grouping).OrderBy(x => x.Key?.PerformedAt))
                 {
@@ -285,9 +304,11 @@ namespace ETWAnalyzer.EventDump
                     DiskReadTimeInus = group.Select(x => (decimal)x.DiskReadTimeInus).Sum(),
                     RootLevelDirectory = group.Key,
                     FileName = "Grouped Data",
+                    DiskNumber = group.First().DiskNumber,
                     SourceFileName = String.Join(" ", group.Select(x => x.SourceFileName).ToHashSet().ToArray()),
                     DiskReadSizeInBytes = group.Select(x => (decimal)x.DiskReadSizeInBytes).Sum(),
                     DiskWriteSizeInBytes = group.Select(x => (decimal)x.DiskWriteSizeInBytes).Sum(),
+                    SessionDurationS = group.ToLookup(x=>x.SourceFileName).Select(x=>x.First().SessionDurationS).Sum(),
                 };
                 aggregatedByDirectory.Add(groupedData);
 
@@ -317,9 +338,11 @@ namespace ETWAnalyzer.EventDump
                     DiskReadTimeInus = group.Select(x => (decimal)x.DiskReadTimeInus).Sum(),
                     RootLevelDirectory = group.Key,
                     FileName = "Grouped Data",
+                    DiskNumber = group.First().DiskNumber,
                     SourceFileName = String.Join(" ", group.Select(x => x.SourceFileName).ToHashSet().ToArray()),
                     DiskReadSizeInBytes = group.Select(x => (decimal)x.DiskReadSizeInBytes).Sum(),
                     DiskWriteSizeInBytes = group.Select(x => (decimal)x.DiskWriteSizeInBytes).Sum(),
+                    SessionDurationS = group.ToLookup(x => x.SourceFileName).Select(x => x.First().SessionDurationS).Sum(),
                     Processes = set
                 });
             }
@@ -349,6 +372,16 @@ namespace ETWAnalyzer.EventDump
                         continue;
                     }
 
+                    Dictionary<char, int> driveLetterToDiskMap = new();
+                    for (int i=0;i<file.Extract?.Disk?.DiskInformation?.Count;i++)
+                    {
+                        IDiskLayout diskInfo = file.Extract.Disk.DiskInformation[i];
+                        foreach(var partition in diskInfo.Partitions)
+                        {
+                            driveLetterToDiskMap[partition.Drive[0]] = i;
+                        }
+                    }
+
                     foreach (var diskEvent in file.Extract.Disk.DiskIOEvents)
                     {
                         if (!FileNameFilter(diskEvent.FileName))
@@ -371,16 +404,36 @@ namespace ETWAnalyzer.EventDump
                             continue;
                         }
 
+                        if( !driveLetterToDiskMap.TryGetValue(diskEvent.FileName[0], out int diskNumber) )
+                        {
+                            if (diskEvent.FileName.StartsWith("Id") && diskEvent.FileName.Length > 2)
+                            {
+                                // file name contains disk id like Id0, Id1, ... mostly for flush events
+                                if ( !int.TryParse(diskEvent.FileName[2..3], out diskNumber))
+                                {
+                                   diskNumber = -1; // unknown disk
+                                }
+
+                            }
+                            else
+                            {
+                                diskNumber = -1; // unknown disk
+                            }
+                        }
+
+
                         lret.Add(new MatchData
                         {
                             SourceFileName = file.FileName,
                             DataFile = file,
                             FileName = diskEvent.FileName,
+                            DiskNumber = diskNumber,
                             DiskReadSizeInBytes = diskEvent.ReadSizeInBytes,
                             DiskWriteSizeInBytes = diskEvent.WriteSizeInBytes,
                             DiskReadTimeInus = diskEvent.DiskReadTimeInus,
                             DiskWriteTimeInus = diskEvent.DiskWriteTimeInus,
                             DiskFlushTimeInus = diskEvent.DiskFlushTimeInus,
+                            SessionDurationS = (decimal) file.Extract.SessionDuration.TotalSeconds,
                             Processes = diskEvent.GetProcesses(file.Extract).ToHashSet(),
                             BaseLine = file.Extract.MainModuleVersion != null ? file.Extract.MainModuleVersion.ToString() : "",
                         });
@@ -405,7 +458,7 @@ namespace ETWAnalyzer.EventDump
             public decimal DiskWriteTimeInus;
             public decimal DiskFlushTimeInus;
             public HashSet<ETWProcess> Processes = new();
-
+            public decimal SessionDurationS;
 
             public int ReadMBPerSeconds => DiskReadTimeInus > 0 ? (int)(DiskReadSizeInBytes / Million / (DiskReadTimeInus / Million)) : 0;
             public int WriteMBPerSeconds => DiskWriteTimeInus > 0 ? (int)(DiskWriteSizeInBytes / Million / (DiskWriteTimeInus / Million)) : 0;
@@ -440,8 +493,9 @@ namespace ETWAnalyzer.EventDump
             }
             public TestDataFile DataFile { get; internal set; }
             public string BaseLine { get; internal set; }
+            public int DiskNumber { get; internal set; }
 
-            static string GetDirectoryNameSafe(string filePath)
+            internal static string GetDirectoryNameSafe(string filePath)
             {
                 string root = filePath;
                 try

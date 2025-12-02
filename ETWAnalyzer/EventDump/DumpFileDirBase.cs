@@ -718,7 +718,7 @@ namespace ETWAnalyzer.EventDump
             {
                 myWriter.Dispose();
                 myWriter = null;
-                Console.WriteLine($"CSV export was successful. File is: {CSVFile}");
+                Console.WriteLine($"CSV export was successful. File is: {Path.GetFullPath(CSVFile)}");
             }
 
             base.Dispose(disposing);
