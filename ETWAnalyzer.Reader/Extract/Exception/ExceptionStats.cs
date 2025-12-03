@@ -87,7 +87,9 @@ namespace ETWAnalyzer.Extract.Exceptions
                                         container.Type,
                                         myExtract.GetProcess(container.Processes[i]),
                                         container.Times[i],
-                                        stackAndMessages.Key);
+                                        container.Threads[i],
+                                        stackAndMessages.Key
+                                        );
 
                                     exceptions.Add(ev);
                                 }

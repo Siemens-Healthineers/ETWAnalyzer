@@ -25,6 +25,11 @@ namespace ETWAnalyzer.Extract.Exceptions
         public DateTimeOffset Time { get; }
 
         /// <summary>
+        /// Get Thread on which exception occurred
+        /// </summary>
+        public uint ThreadId { get; }
+
+        /// <summary>
         /// 
         /// </summary>
         public string Stack { get; }
@@ -45,14 +50,16 @@ namespace ETWAnalyzer.Extract.Exceptions
         /// <param name="message"></param>
         /// <param name="type"></param>
         /// <param name="process"></param>
+        /// <param name="threadId"></param>
         /// <param name="time"></param>
         /// <param name="stack"></param>
-        public ExceptionEventForQuery(string message, string type, ETWProcess process, DateTimeOffset time, string stack)
+        public ExceptionEventForQuery(string message, string type, ETWProcess process, DateTimeOffset time, uint threadId, string stack)
         {
             Message = message;
             Type = type;
             Process = process;
             Time = time;
+            ThreadId = threadId;
             Stack = stack;
         }
     }

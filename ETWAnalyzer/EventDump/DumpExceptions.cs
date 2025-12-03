@@ -7,12 +7,8 @@ using ETWAnalyzer.Extract.Exceptions;
 using ETWAnalyzer.Extract.Modules;
 using ETWAnalyzer.Infrastructure;
 using ETWAnalyzer.ProcessTools;
-using Microsoft.Diagnostics.Tracing.Parsers.FrameworkEventSource;
-using Microsoft.Windows.EventTracing.Events;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
 using System.Linq;
 
 namespace ETWAnalyzer.EventDump
@@ -110,6 +106,7 @@ namespace ETWAnalyzer.EventDump
             public ModuleDefinition Module { get; internal set; }
 
             public uint SessionId { get; set; }
+            public uint ThreadId { get; internal set; }
 
             public MatchData Clone()
             {
@@ -125,6 +122,10 @@ namespace ETWAnalyzer.EventDump
                     ZeroTimeS = ZeroTimeS,
                     BaseLine = BaseLine,
                     SessionId = SessionId,
+                    ThreadId = ThreadId,
+                    PerformedAt = PerformedAt,
+                    SessionStart = SessionStart,
+                    TestCase = TestCase,
                 };
             }
         }
@@ -176,7 +177,7 @@ namespace ETWAnalyzer.EventDump
 
         private void WriteToCSVFile(List<MatchData> matches)
         {
-            OpenCSVWithHeader(Col_CSVOptions, Col_Time, "Exception Type", "Message", Col_Process, Col_ProcessName, Col_Session, Col_StartTime, 
+            OpenCSVWithHeader(Col_CSVOptions, Col_Time, "Exception Type", "Message", Col_Process, Col_ProcessName, "Thread", Col_Session, Col_StartTime, 
                 Col_CommandLine, "StackTrace", Col_TestCase, Col_Baseline, "PerformedAt", Col_SourceJsonFile, 
                 Col_FileVersion, Col_VersionString, Col_ProductVersion, Col_ProductName, Col_Description, Col_Directory);
             foreach(var match in matches)
@@ -188,7 +189,7 @@ namespace ETWAnalyzer.EventDump
                 string description = match.Module?.Description?.Trim() ?? "";
                 string directory = match.Module?.ModulePath ?? "";
                 WriteCSVLine(CSVOptions, GetDateTimeString(match.TimeStamp, match.SessionStart, TimeFormatOption), match.Type, match.Message, match.Process.GetProcessWithId(UsePrettyProcessName), 
-                    match.Process.GetProcessName(UsePrettyProcessName), match.Process.SessionId, match.Process.StartTime,
+                    match.Process.GetProcessName(UsePrettyProcessName), match.ThreadId, match.Process.SessionId, match.Process.StartTime,
                     match.Process.CmdLine, match.Stack, match.TestCase, match.BaseLine, match.PerformedAt, match.SourceFile,
                     fileVersion, versionString, productVersion, productName, description, directory);
             }
@@ -229,6 +230,7 @@ namespace ETWAnalyzer.EventDump
                     Process = ex.Process,
                     SessionId = (uint) ex.Process.SessionId,
                     TimeStamp = ex.Time.AddSeconds(-1.0d*zeroTimeS),
+                    ThreadId = ex.ThreadId,
                     Stack = ex.Stack,
                     SourceFile = file.JsonExtractFileWhenPresent,
                     TestCase = file.TestName,
@@ -289,14 +291,17 @@ namespace ETWAnalyzer.EventDump
             const int processWidth = 36;
             string processheader = "Process";
             const int sessionWidth = 7;
+            string threadIdHeader = "Thread";
+            const int threadIdWidth = 7;
             string sessionHeader = ShowDetails ?$"{"Session",sessionWidth}" : "";
             const int expmsgWidth = 90;
             string expmsgheader = "Exception Message";
-            ColorConsole.WriteEmbeddedColorLine($"{timeHeader.WithWidth(timeWidth)} [magenta]{processheader.WithWidth(processWidth)}[/magenta] [yellow]{sessionHeader}[/yellow] [green]{excheader.WithWidth(expTypeWidth)}[/green] {expmsgheader.WithWidth(expmsgWidth)}");
+            ColorConsole.WriteEmbeddedColorLine($"{timeHeader.WithWidth(timeWidth)} [magenta]{processheader.WithWidth(processWidth)} {threadIdHeader.WithWidth(threadIdWidth)}[/magenta] [yellow]{sessionHeader}[/yellow] [green]{excheader.WithWidth(expTypeWidth)}[/green] {expmsgheader.WithWidth(expmsgWidth)}");
 
             string previousExceptionType = null;
             string previousProcess = null;
             string previousMessage = null;
+            string previousThreadId = null;
 
             const string SameString = "...";
 
@@ -304,19 +309,21 @@ namespace ETWAnalyzer.EventDump
             {
                 string timeStr = GetDateTimeString(item.TimeStamp, item.SessionStart, TimeFormatOption).WithWidth(timeWidth);
                 string currentProcess = item.Process.GetProcessWithId(UsePrettyProcessName);
+                string currentThreadId = item.ThreadId.ToString();
                 string currentSession = ShowDetails ? $"{item.Process.SessionId.ToString(),sessionWidth}" : "";
                 string currentMessage = item.Message;
                 string currentExceptiontype = item.Type;
 
                 string tobePrintedMsg = currentMessage == previousMessage ? SameString : currentMessage;
                 string tobePrintedType = currentExceptiontype == previousExceptionType ? SameString : item.Type;
-                string tobePrintedProcess = currentProcess == previousProcess ? SameString : currentProcess; ;
+                string tobePrintedProcess = currentProcess == previousProcess ? SameString : currentProcess;
+                string tobePrintedThreadId = currentThreadId == previousThreadId ? SameString : currentThreadId;
 
                 previousMessage = currentMessage;
                 previousExceptionType = currentExceptiontype;
                 previousProcess = currentProcess;
 
-                ColorConsole.WriteEmbeddedColorLine($"{timeStr} [magenta]{tobePrintedProcess,processWidth}[/magenta] [yellow]{currentSession}[/yellow] [green]{tobePrintedType,expTypeWidth}[/green] {tobePrintedMsg,expmsgWidth}");
+                ColorConsole.WriteEmbeddedColorLine($"{timeStr} [magenta]{tobePrintedProcess,processWidth} {tobePrintedThreadId,threadIdWidth}[/magenta] [yellow]{currentSession}[/yellow] [green]{tobePrintedType,expTypeWidth}[/green] {tobePrintedMsg,expmsgWidth}");
             }
         }
         
