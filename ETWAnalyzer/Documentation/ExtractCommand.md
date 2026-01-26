@@ -91,4 +91,8 @@ An exception occurred while processing the events: 0xD000003E.
 ```
 This happens only for CPU sampling data. If you have collected Context Switch data you can still process the data by adding the flag ```-NoSampling``` which will then extract just the 
 context switch data, when present. That way you can get at least some insights from such VMs. 
+### Update 
+Microsoft has ackknowledged this is a bug in Windows Server 2022 which will be fixed in Feb 2026 Update (not mandatory yet, 3 month later it will be rolled out as mandatory update). 
+Windows Server 2025 should have received this fix already. 
 
+MS Ticket is 2509160050000583: Default profile interval query API changes causes error when opening recorded .ETL file on VMware/KVM platform.
