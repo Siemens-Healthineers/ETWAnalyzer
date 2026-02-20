@@ -1170,6 +1170,12 @@ namespace ETWAnalyzer.EventDump
                     retransmissions.Add(retransmission);
                 }
 
+                // do not display connections which do not have a sufficient bad retransmission 
+                if( !MinMaxRetransDelayS.IsDefault && retransmissions.Count == 0 )
+                {
+                    continue;
+                }
+
 
                 if (!MinMaxRetransCount.IsWithin(retransmissions.Count))
                 {

@@ -138,7 +138,7 @@ namespace ETWAnalyzer.Extract.Network.Tcp
         public bool IsMatching(ulong tcb, DateTimeOffset time)
         {
             return tcb == Tcb &&
-                (!TimeStampOpen.HasValue || TimeStampOpen.Value < time) &&
+                (!TimeStampOpen.HasValue || TimeStampOpen.Value < time+TimeSpan.FromMilliseconds(1)) &&   // sometimes the timestamps from open and sent data are differing by ca. 200us add some wiggle room here
                 (!TimeStampClose.HasValue || time < TimeStampClose.Value);
         }
 
