@@ -1054,7 +1054,7 @@ namespace ETWAnalyzer.EventDump
 
                 if (data.ReadyDetails.HasNonDeepSleepTimes)
                 {
-                    int spaces = data.ReadyDetails.HasNonDeepSleepTimes ? 5 : 0;
+                    int spaces = 5;
                     lret += "".WithWidth(spaces) + $"  Other Ready Min/5%/25%/50%/90%/95%/99%/Max Percentiles in us: {"F1".WidthFormat(data.ReadyDetails.MinNonDeepSleepUs, 3)} {"F1".WidthFormat(data.ReadyDetails.Percentile5NonDeepSleepUs, 4)} {"F1".WidthFormat(data.ReadyDetails.Percentile25NonDeepSleepUs, 4)} {"F1".WidthFormat(data.ReadyDetails.Percentile50NonDeepSleepUs, 4)} " +
                         $"{"F0".WidthFormat(data.ReadyDetails.Percentile90NonDeepSleepUs, 5)} {"F0".WidthFormat(data.ReadyDetails.Percentile95NonDeepSleepUs, 5)} {"F0".WidthFormat(data.ReadyDetails.Percentile99NonDeepSleepUs, 5)} {"F0".WidthFormat(data.ReadyDetails.MaxNonDeepSleepUs, 7)} us " +
                         $">99% Sum: {"F4".WidthFormat(data.ReadyDetails.SumGreater99PercentNonDeepSleepUs/1_000_000.0d, 8)} s Sum: {"F4".WidthFormat(data.ReadyDetails.SumNonDeepSleepUs / 1_000_000.0d, 8)} s Count: {"N0".WidthFormat(data.ReadyDetails.CSwitchCountNonDeepSleep, 10)}";
