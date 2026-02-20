@@ -297,6 +297,15 @@ namespace ETWAnalyzer.EventDump
 
             foreach (var group in data.GroupBy(x => MatchData.GetDirectoryLevel(x.FileName, level)))
             {
+                HashSet<ETWProcess> set = new(ETWProcess.CompareOnlyPidCmdLine);
+                foreach (var g in group)
+                {
+                    foreach (var p in g.Processes)
+                    {
+                        set.Add(p);
+                    }
+                }
+
                 MatchData groupedData = new()
                 {
                     DiskFlushTimeInus = group.Select(x => (decimal)x.DiskFlushTimeInus).Sum(),
@@ -309,6 +318,8 @@ namespace ETWAnalyzer.EventDump
                     DiskReadSizeInBytes = group.Select(x => (decimal)x.DiskReadSizeInBytes).Sum(),
                     DiskWriteSizeInBytes = group.Select(x => (decimal)x.DiskWriteSizeInBytes).Sum(),
                     SessionDurationS = group.ToLookup(x=>x.SourceFileName).Select(x=>x.First().SessionDurationS).Sum(),
+                    Processes = set,
+                    BaseLine = group.First().BaseLine,
                 };
                 aggregatedByDirectory.Add(groupedData);
 
