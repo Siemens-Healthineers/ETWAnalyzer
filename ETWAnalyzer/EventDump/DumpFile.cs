@@ -503,7 +503,7 @@ namespace ETWAnalyzer.EventDump
                         FileOperation.Rename => 0m,      // has no data
                         FileOperation.All => data.FileReadSizeInBytes + data.FileWriteSizeInBytes,
                         _ => ThrowNotSupportedException(),
-                    }; ;
+                    };
                     break;
                 case SortOrders.Length:
                     totalSortOrderPos = FileOperationValue switch
@@ -538,7 +538,7 @@ namespace ETWAnalyzer.EventDump
                     // always printed
                     break;
                 case SortOrders.OpenCloseTime:
-                    totalSortOrderTimeInus = data.FileReadTimeInus + data.FileWriteTimeInus;
+                    totalSortOrderTimeInus = data.FileOpenTimeInus + data.FileCloseTimeInus;
                     break;
             }
 
