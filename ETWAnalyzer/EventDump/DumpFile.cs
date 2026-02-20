@@ -178,7 +178,7 @@ namespace ETWAnalyzer.EventDump
 
             foreach (var group in data.GroupBy(grouping).OrderBy(x => x?.Key?.PerformedAt))
             {
-                if (group.Key != null)
+                if (group.Key != null && !IsCSVEnabled)
                 {
                     PrintFileName(group.Key.JsonExtractFileWhenPresent, null, group.Key.PerformedAt, group.Key.Extract.MainModuleVersion?.ToString());
                 }
@@ -642,7 +642,7 @@ namespace ETWAnalyzer.EventDump
             }
         }
 
-        internal List<MatchData> AggregateByDirectory(List<MatchData> data, int level)
+        internal List<MatchData>  AggregateByDirectory(List<MatchData> data, int level)
         {
             List<MatchData> aggregatedByDirectory = new();
 
@@ -734,68 +734,75 @@ namespace ETWAnalyzer.EventDump
 
         internal FileIOStatistics RemoveStatsFromColumn(FileIOStatistics stats)
         {
+            FileIOStatistics clone = stats;
+            if (FileOperationValue != FileOperation.All)
+            {
+                byte[] bytes = System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(stats); // to ensure all lazy properties are evaluated
+                clone = System.Text.Json.JsonSerializer.Deserialize<FileIOStatistics>(bytes);
+            }
+
             switch (FileOperationValue)
             {
                 case FileOperation.Open:
-                    stats.Close = null;
-                    stats.Write = null;
-                    stats.Read = null;
-                    stats.SetSecurity = null;
-                    stats.Delete = null;
-                    stats.Rename = null;
+                    clone.Close = null;
+                    clone.Write = null;
+                    clone.Read = null;
+                    clone.SetSecurity = null;
+                    clone.Delete = null;
+                    clone.Rename = null;
                     break;
                 case FileOperation.Close:
-                    stats.Open = null;
-                    stats.Write = null;
-                    stats.Read = null;
-                    stats.SetSecurity = null;
-                    stats.Delete = null;
-                    stats.Rename = null;
+                    clone.Open = null;
+                    clone.Write = null;
+                    clone.Read = null;
+                    clone.SetSecurity = null;
+                    clone.Delete = null;
+                    clone.Rename = null;
                     break;
                 case FileOperation.SetSecurity:
-                    stats.Close = null;
-                    stats.Write = null;
-                    stats.Read = null;
-                    stats.Open = null;
-                    stats.Delete = null;
-                    stats.Rename = null;
+                    clone.Close = null;
+                    clone.Write = null;
+                    clone.Read = null;
+                    clone.Open = null;
+                    clone.Delete = null;
+                    clone.Rename = null;
                     break;
                 case FileOperation.All:
                     break;
                 case FileOperation.Write:
-                    stats.Close = null;
-                    stats.Open = null;
-                    stats.Read = null;
-                    stats.SetSecurity = null;
-                    stats.Delete = null;
-                    stats.Rename = null;
+                    clone.Close = null;
+                    clone.Open = null;
+                    clone.Read = null;
+                    clone.SetSecurity = null;
+                    clone.Delete = null;
+                    clone.Rename = null;
                     break;
                 case FileOperation.Read:
-                    stats.Close = null;
-                    stats.Write = null;
-                    stats.Open = null;
-                    stats.SetSecurity = null;
-                    stats.Delete = null;
-                    stats.Rename = null;
+                    clone.Close = null;
+                    clone.Write = null;
+                    clone.Open = null;
+                    clone.SetSecurity = null;
+                    clone.Delete = null;
+                    clone.Rename = null;
                     break;
                 case FileOperation.Delete:
-                    stats.Close = null;
-                    stats.Write = null;
-                    stats.Read = null;
-                    stats.SetSecurity = null;
-                    stats.Open = null;
-                    stats.Rename = null;
+                    clone.Close = null;
+                    clone.Write = null;
+                    clone.Read = null;
+                    clone.SetSecurity = null;
+                    clone.Open = null;
+                    clone.Rename = null;
                     break;
                 case FileOperation.Rename:
-                    stats.Close = null;
-                    stats.Write = null;
-                    stats.Read = null;
-                    stats.SetSecurity = null;
-                    stats.Delete = null;
-                    stats.Open = null;
+                    clone.Close = null;
+                    clone.Write = null;
+                    clone.Read = null;
+                    clone.SetSecurity = null;
+                    clone.Delete = null;
+                    clone.Open = null;
                     break;
             }
-            return stats;
+            return clone;
         }
 
 
