@@ -80,7 +80,51 @@ sort by latency with *-SortRetransmitBy Delay*.
 
 ![](Images/DumpTCP.png)
 
-## Data Interpretation
+## Identify broken connections
+A common source of issues are long running connections which are suddenly failing leading to application errors just in a few deployments. 
+First you need to have an error or even better an exception.
+By looking at the logs a pattern has been found that whenever the Backend process did have an a SocketExcpeption with a timeout error of 1:05 
+we were having issues with missing notifications in DistributionServer.NotifyClients. 
+We can dump with recorded ETW data .NET Exceptions with the following query:
+
+```.dump Exception -ShowStack -ShowTime -message *1:05* ```
+
+![](Images/DumpExceptionNetwork.png)
+
+This will print the Exception time in local time and WPA Session time. From the stacktrace we see that this is a WCF socket error which did try to send
+data but failed with a timeout of 1:05 minutes. By just looking at the logs this error is unsolvable. One needs now either Wireshark data
+which is hard to correlate, or we use ETW to record TCP and exception events for a longer period of time. 
+
+
+From the Exception we know that our application has a socket issue in DistributionServer.NotifyClients at 300.102s in WPA session time. 
+Let's now correlate that with TCP events. We can dump all connections that stopped sending between 300 and 301s. Because we usually
+get back multiple connections, we add the TCB pointer to the output to be able to filter for a specific connection. If you have no clue,
+you would first use ```-details``` to dump all connection data. 
+
+```.dump tcp -minmaxlastsents 300 301 -column +tcb;+ConnectTime;+DisconnectTime```
+![](Images/DumpTcpMinMaxLastSentS300_301.png)
+Here we have a nice correlation that the connection 172.21.156.14:32914 -> 172.21.64.98:60935 was closed at 16:00:03.504, we did get an exception at 16:00:03.501 which is just 3 ms apart. 
+We have 9 retransmit events with a total retransmission delay of 20.299s. 
+We can dump individual retransmission events with *-ShowRetransmit* to see when the retransmissions happened. 
+```.dump tcp -tcb 0xFFFFC38F1E1DFB00 -column +tcb;+ConnectTime;+DisconnectTime  -ShowRetransmit```
+![](Images/DumpTcpShowRetransmit.png)
+Here we see that 3 packets were tried to be sent, but the first one with a size of 65536 did not get through the network. The used TCP template
+was DataCenter, which starts with a MinRto of 20ms. This is doubled with every round until Windows gives up after 20.3 seconds and resets the connection.
+A deeper analysis of other files preceding that one showed that no network activity was happening on that connection for over 1 hour. 
+
+This is a known issue where connections that have been idle for much longer than a few minutes are closed by firewalls without prior notice.
+When such an implicitly closed
+connection is used, the firewall will drop the packets and we get into a situation where a never-closed connection stops working. 
+If the firewall is considerate, it can send a TCP RST packet to the sender to indicate that the connection is closed.
+You can filter for connections that received "server" reset packets with ```-Reset -column +ResetTime``` to find all connections that were reset.
+To resolve the issue, one needs to increase the firewall connection idle timeout setting. This approach has limits because firewalls need to keep
+track of all open connections, including those from DDoS attacks. Firewalls usually have a setting in the range of 30–60 minutes but not many hours. 
+To address the root cause, you need to implement your own keepalive mechanism. In WCF, you can achieve this with a custom behavior. 
+It is not sufficient to send zero-sized ACK packets because these are usually filtered out by firewalls. This approach is used by Windows Sockets if you 
+enable the SO_KEEPALIVE socket option, but that is not reliable. The only reliable approach is to send packets with a 
+payload > 0 bytes (where the payload is not null).
+
+## Used TCP Template
 When a TCP connection is initiated Windows Server editions measure the connection latency. Depending on the measured latency value and other factors Windows 
 uses different TCP settings.
 There are 4 possible values
@@ -179,6 +223,11 @@ which should provide a good start.
 ```
 wpr -start MultipProfile.wprp!Network
 ```
+
+### Long Term Recording
+To capture sporadic network and other issues you can use since ETWController 2.5.5 the powershell script ```LongTermRecording.ps1``` which is part of ETWController. To get network data collected you just
+need to start ETWController and select the profile ```Longterm - Network``` to record files into the c:\ETL folder where a new file create every 10 minutes.
+Recording will stop automatically if the disk has less than 6 GB of free space. 
 
 ## Open Points
 - UDP Traffic is currently not covered although it is also traced by the TCP provider

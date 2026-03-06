@@ -10,11 +10,20 @@ IO because it did parse the data so slow that the OS had plenty of time to prefe
 
 ![WPA_DiskIO](Images/WPA_DiskIO.png)
 
-ETWAnalyzer can show aggregates per directory which is configurable via -DirLevel, Read/Write throughput for one, or if *-Merge* is 
+ETWAnalyzer can show aggregates per directory which is configurable via ```-DirLevel```, Read/Write throughput for one, or if ```-Merge``` is 
 used a collection of files to check e.g. average throughput over an extended test run.
 
 ![](Images/DumpDisk.png "Dump Disk")
 
 You can also get per file metrics by using *-DirLevel 100*. If the output does not suit your needs you can export the data
 to a CSV file and analyze it further with Excel or R.
+
+The ```% Active Time``` column shows the percentage of time the disk was active doing IO while the tracing was recorded. The percentage is calculated for the disk device 
+not for each drive letter. If you have multiple drives on the same disk then you need to add the numbers accordingly (or export to CSV).
+
+## Exporting Data to CSV
+What you see you can also export to a CSV file by adding ```.dump Disk -csv file.csv``` to your query. By default all individual files are 
+exported. If that due the large number of files leads to a large CSV file you can limit the output size by grouping 
+it by directory with ```-DirLevel 1``` to get per drive Directory aggregated Disk IO metrics. 
+
 
