@@ -113,5 +113,10 @@ namespace ETWAnalyzer.EventDump
         /// Dump manifest free TraceLog data
         /// </summary>
         TraceLog,
+
+        /// <summary>
+        /// Dump VirtualAlloc data
+        /// </summary>
+        VirtualAlloc,
     }
 }

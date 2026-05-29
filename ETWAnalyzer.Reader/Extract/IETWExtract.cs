@@ -11,6 +11,7 @@ using ETWAnalyzer.Extract.PMC;
 using ETWAnalyzer.Extract.Power;
 using ETWAnalyzer.Extract.ThreadPool;
 using ETWAnalyzer.Extract.TraceLogging;
+using ETWAnalyzer.Extract.VirtualAlloc;
 using System;
 using System.Collections.Generic;
 
@@ -238,7 +239,12 @@ namespace ETWAnalyzer.Extract
         /// Contains TraceLogging (manifest free) ETW provider data which are all C# ETW providers which derive from <see cref="System.Diagnostics.Tracing.EventSource"/>
         /// One can generate TraceLogging events also in C++ code. 
         /// </summary>
-        public ITraceLoggingData TraceLogging { get; }  
+        public ITraceLoggingData TraceLogging { get; }
+
+        /// <summary>
+        /// Contains per process VirtualAlloc/Free data with stack traces.
+        /// </summary>
+        public IVirtualAllocData VirtualAlloc { get; }
 
         /// <summary>
         /// Convert a trace relative time which is seconds since trace start to an absolute time

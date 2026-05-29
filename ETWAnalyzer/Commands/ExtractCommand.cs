@@ -28,6 +28,7 @@ using ETWAnalyzer.Extractors.Handle;
 using ETWAnalyzer.Extractors.TraceLogging;
 using ETWAnalyzer.Infrastructure;
 using ETWAnalyzer.Reader.ProcessTools;
+using ETWAnalyzer.Extractors.Memory;
 
 namespace ETWAnalyzer.Commands
 {
@@ -70,6 +71,7 @@ namespace ETWAnalyzer.Commands
          "  ThreadPool: Extract relevant data from .NET Runtime ThreadPool if available. ThreadingKeyword 0x10000 needs to be set for the Microsoft-Windows-DotNETRuntime ETW Provider during recording." + Environment.NewLine +
          "              Json Nodes: ThreadPool-PerProcessThreadPoolStarvations" + Environment.NewLine +
          "  TraceLog  : Extract Tracelogging events which are non manifest based ETW providers which emit their manifest at runtime to ETW data. These are all C# EventSource derived ETW providers, but you can also generate these events from C++." + Environment.NewLine +
+         "  VirtualAlloc: Extract VirtualAlloc events" + Environment.NewLine + 
          "The following filters work only if the input files adhere to a specific file naming convention." + Environment.NewLine + 
          "Select files from a testrun (all tests which have a time gap < 1h) to e.g. select only the first, or skip the warmump run or to extract just a sample of test cases." + Environment.NewLine +
          "         TestCaseName_ddddmsMachineName.yyyymmdd-hhmmss.7z/.zip/.etl  e.g. Build_166375msfv-az192-659.20230127-093520"  + Environment.NewLine + 
@@ -105,6 +107,7 @@ namespace ETWAnalyzer.Commands
          " -NoReady             By default when Context switch data is present an extra Json file with extended CPU data is created." + Environment.NewLine +
          "                      You will miss with -Dump CPU -Details Ready time percentiles." + Environment.NewLine +
          " -allExceptions       By default exceptions are filtered away by the rules configured in Configuration\\ExceptionFilters.xml. To get all specify this flag." + Environment.NewLine +
+         " -IncludeExitedProcesses By default VirtualAlloc data for processes that have exited during the trace are ignored because they do usually not contribute to a memory leak." + Environment.NewLine +
          " -timeLine dd         When CPU data is extracted additionally extract CPU timeline data with given sampling interval in seconds. This data is only accessible at API level at IETWExtract.CPU.TimeLine." + Environment.NewLine +
          " -symFolder xxx       Default is C:\\Symbols. Path to a short directory name in which links are created from the unzipped ETL files to prevent symbol loading issues due to MAX_PATH limitations." + Environment.NewLine +
          " -child               Force single threaded in-process extraction" + Environment.NewLine +
@@ -182,7 +185,7 @@ namespace ETWAnalyzer.Commands
             Dns,
             TCP,
             Frequency,
-          //  VirtualAlloc,
+            VirtualAlloc,
             ObjectRef,
             Power,
             TraceLog,
@@ -222,7 +225,7 @@ namespace ETWAnalyzer.Commands
             { ExtractionOptions.Dns,         () => new DnsClientExtractor()    },
             { ExtractionOptions.TCP,         () => new TCPExtractor()          },
             { ExtractionOptions.Frequency,   () => new CpuFrequencyExtractor() },
-            //    { ExtractionOptions.VirtualAlloc,() => new VirtualAllocExtractor() },
+            { ExtractionOptions.VirtualAlloc,() => new VirtualAllocExtractor() },
             { ExtractionOptions.ObjectRef,   () => new ObjectRefExtractor() },
             { ExtractionOptions.Power       ,() => new PowerExtractor() },
             { ExtractionOptions.TraceLog    ,() => new TraceLoggingEventExtractor()  },
@@ -309,6 +312,11 @@ namespace ETWAnalyzer.Commands
         /// When present do not extract Ready time percentiles when CPU is extracted and Context Switch data is found in the ETL file.
         /// </summary>
         public bool NoReady { get; private set; }
+
+        /// <summary>
+        /// When true, VirtualAlloc extractor will ignore allocation data for processes that have exited during the trace.
+        /// </summary>
+        public bool IncludeExitedProcesses { get; private set; }
 
 
         /// <summary>
@@ -476,6 +484,9 @@ namespace ETWAnalyzer.Commands
                     case AllExceptionsArgs:  // -allexceptions
                         DisableExceptionFilter = true;
                         break;
+                    case "-includeexitedprocesses":
+                        IncludeExitedProcesses = true;
+                        break;
                     case RecursiveArg:    // -recursive
                         mySearchOption = SearchOption.AllDirectories;
                         break;
@@ -542,7 +553,7 @@ namespace ETWAnalyzer.Commands
             }
 
             ConfigureExtractors(Extractors, myProcessingActionList);
-            SetExtractorFilters(Extractors, ExtractAllCPUData, DisableExceptionFilter, TimelineDataExtractionIntervalS, Concurrency, NoReady, IgnoreCPUSampling, IgnoreCSwitchData);
+            SetExtractorFilters(Extractors, ExtractAllCPUData, DisableExceptionFilter, TimelineDataExtractionIntervalS, Concurrency, NoReady, IgnoreCPUSampling, IgnoreCSwitchData, IncludeExitedProcesses);
 
         }
 
@@ -580,7 +591,7 @@ namespace ETWAnalyzer.Commands
                         extractors.Add(myExtractorFactory[ExtractionOptions.TCP]());
                         extractors.Add(myExtractorFactory[ExtractionOptions.Power]());
                         extractors.Add(myExtractorFactory[ExtractionOptions.ObjectRef]());
-                 //       extractors.Add(myExtractorFactory[ExtractionOptions.VirtualAlloc]());
+                        extractors.Add(myExtractorFactory[ExtractionOptions.VirtualAlloc]());
                     }
                     else
                     {
@@ -605,7 +616,7 @@ namespace ETWAnalyzer.Commands
 
         private static void SortDependantExtractors(List<ExtractorBase> extractors)
         {
-            // CPUFrequency must first extract its data before CPU extractor can calcualte average CPU frequencies for methods
+            // CPUFrequency must first extract its data before CPU extractor can calculate average CPU frequencies for methods
             for (int i = 0; i < extractors.Count; i++)
             {
                 ExtractorBase extractor = extractors[i];
@@ -618,7 +629,7 @@ namespace ETWAnalyzer.Commands
             }
         }
 
-        static void SetExtractorFilters(List<ExtractorBase> extractors, bool extractAllCpuData, bool disableExceptionFilter, float? timelineExtractionInterval, int ?concurrency, bool noReady, bool noSampling, bool noCSwitch)
+        static void SetExtractorFilters(List<ExtractorBase> extractors, bool extractAllCpuData, bool disableExceptionFilter, float? timelineExtractionInterval, int ?concurrency, bool noReady, bool noSampling, bool noCSwitch, bool includeExitedProcess)
         {
             var cpu = extractors.OfType<CPUExtractor>().SingleOrDefault();
             if (cpu != null)
@@ -643,6 +654,12 @@ namespace ETWAnalyzer.Commands
             if (exception != null)
             {
                 exception.DisableExceptionFilter = disableExceptionFilter;
+            }
+
+            var virtualAlloc = extractors.OfType<VirtualAllocExtractor>().SingleOrDefault();
+            if (virtualAlloc != null)
+            {
+                virtualAlloc.IgnoreExitedProcesses = !includeExitedProcess;
             }
         }
 

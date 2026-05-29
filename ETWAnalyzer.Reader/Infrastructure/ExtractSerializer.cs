@@ -65,6 +65,16 @@ namespace ETWAnalyzer.Infrastructure
         public const string HandleStackPostFix = "HandleStacks";
 
         /// <summary>
+        /// VirtualAlloc data is stored in external file with this postfix.
+        /// </summary>
+        public const string VirtualAllocPostFix = "VirtualAlloc";
+
+        /// <summary>
+        /// Stacks for VirtualAlloc events are stored in external file with this postfix.
+        /// </summary>
+        public const string VirtualAllocStackPostFix = "VirtualAllocStacks";
+
+        /// <summary>
         /// Stacks for Tracelogging events are stored in external file with this postfix.
         /// </summary>
         public const string TraceLogStackPostFix = "TraceLogStacks";    
@@ -208,6 +218,19 @@ namespace ETWAnalyzer.Infrastructure
                     Serialize(handleStackStream, stacks);
                 }
 
+                if (extract?.VirtualAllocData != null && extract.VirtualAllocData.VirtualAllocEvents.Count > 0)
+                {
+                    StackCollection virtualAllocStacks = extract.VirtualAllocData.Stacks;
+                    extract.VirtualAllocData.Stacks = null;
+
+                    using var virtualAllocStream = GetOutputStreamFor(VirtualAllocPostFix, outputFiles);
+                    Serialize(virtualAllocStream, extract.VirtualAllocData);
+                    extract.VirtualAllocData = null;
+
+                    using var virtualAllocStackStream = GetOutputStreamFor(VirtualAllocStackPostFix, outputFiles);
+                    Serialize(virtualAllocStackStream, virtualAllocStacks);
+                }
+
                 if( extract?.TraceLogging != null && extract.TraceLogging.EventsByProvider.Count > 0 )
                 {
                     using var stackTraceLogingStream = GetOutputStreamFor(TraceLogStackPostFix, outputFiles);
@@ -283,7 +306,7 @@ namespace ETWAnalyzer.Infrastructure
 
         static internal string[] GetDerivedFileNameParts()
         {
-            string[] all = new string[] { FileIOPostFix, ModulesPostFix, ExtendedCPUPostFix, HandlePostFix, HandleStackPostFix };
+            string[] all = new string[] { FileIOPostFix, ModulesPostFix, ExtendedCPUPostFix, HandlePostFix, HandleStackPostFix, VirtualAllocPostFix, VirtualAllocStackPostFix };
             return all.Select(x => DerivedFilePart + x).ToArray();
         }
 

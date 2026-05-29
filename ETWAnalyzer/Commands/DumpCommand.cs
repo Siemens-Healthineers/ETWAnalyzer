@@ -3,6 +3,7 @@
 
 using ETWAnalyzer.EventDump;
 using ETWAnalyzer.Extract;
+using ETWAnalyzer.Extract.Common;
 using ETWAnalyzer.Infrastructure;
 using ETWAnalyzer.ProcessTools;
 using ETWAnalyzer.TraceProcessorHelpers;
@@ -24,7 +25,7 @@ namespace ETWAnalyzer.Commands
     /// <param name="args"></param>
     class DumpCommand(string[] args) : ArgParser(args)
     {
-        internal const string AllDumpCommands = "[CPU,Disk,Dns,Exception,File,LBR,Mark,Memory,ObjectRef,PMC,Power,Process,Stats,TestRun,ThreadPool,Tracelog,Version]";
+        internal const string AllDumpCommands = "[CPU,Disk,Dns,Exception,File,LBR,Mark,Memory,ObjectRef,PMC,Power,Process,Stats,TestRun,ThreadPool,Tracelog,VirtualAlloc,Version]";
 
         static readonly string DumpHelpStringPrefix =
         "ETWAnalyzer -Dump "+ AllDumpCommands + " [-nocolor]" + Environment.NewLine;
@@ -702,6 +703,49 @@ namespace ETWAnalyzer.Commands
         "[green]Dump all tracelog events[/green]" + Environment.NewLine +
         " ETWAnalyzer -fd xx.json7z -dump TraceLog";
 
+        static readonly string VirtualAllocHelpStringHeader =
+        "  VirtualAlloc -filedir/fd Extract\\ or xx.json7z" + Environment.NewLine +
+        "             [-Stats] [-ShowStack] [-StackFilter filter] [-StackIdx idx1;idx2;...] [-TopN dd] [-TopNStacks dd] [-ShowTotal [Total,None]] [-NoCmdLine]" + Environment.NewLine +
+       $"             [-Details] [-SortBy {String.Join(';', DumpVirtualAlloc.ColumnNames)}]" + Environment.NewLine +
+        "             [-MinMaxNotReleasedSize xx yy] [-MinMaxNotReleasedCount xx yy] [-MinMaxAllocTime xx yy]" + Environment.NewLine +
+        "             [-TimeFmt s,Local,LocalTime,UTC,UTCTime,Here,HereTime] [-TimeDigits d]" + Environment.NewLine +
+        "             [-Column col1;col2;...] [-ProcessName/pn xx.exe(pid)] [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-CmdLine substring]" + Environment.NewLine;
+
+        static readonly string VirtualAllocHelpString = VirtualAllocHelpStringHeader +
+        " Dump VirtualAlloc events with summary and details about unreleased allocations (committed memory). Shows top allocation stacks and individual allocation events." + Environment.NewLine +
+        " This can be used to find larger memory leaks which are visible in VirtualAlloc events. It operates in 3 modes: " + Environment.NewLine+ 
+        "    # Summary mode shows per process summary of VirtualAlloc data (default)." + Environment.NewLine + 
+        "    # When -Details is used it shows top allocation stacks (committed but not released memory) per process. Can be limited with -TopNStacks." + Environment.NewLine + 
+        "    # When -StackIdx is added it shows individual allocation events for given allocation stack/s. Can be limited with -MinMaxAllocTime." + Environment.NewLine +
+        "             -TopN dd                      Limit number of processes shown (default: all)." + Environment.NewLine +
+        "             -Details                      Show allocation stacks instead of summary." + Environment.NewLine +
+        "             -NoCmdLine                    Do not print command line of processes." + Environment.NewLine +
+        "             -ProcessName/pn filter        Filter by process name." + Environment.NewLine +
+        "             -ShowStack                    Show stack traces for unreleased allocations." + Environment.NewLine +
+        "             -StackFilter filter           Filter allocations by stack trace content." + Environment.NewLine +
+        "             -StackIdx idx1;idx2;...       Show individual allocation events for given stack indices. Time format is controlled by -timefmt." + Environment.NewLine +
+        "             -TopNStacks dd                Limit number of stacks shown per process (default: 10)." + Environment.NewLine +
+        "             -MinMaxNotReleasedSize xx yy  Filter stacks in details view by not released size in bytes. Supports units like KB, MB, GB." + Environment.NewLine +
+        "             -MinMaxNotReleasedCount xx yy Filter stacks in details view by not released commit count." + Environment.NewLine +
+        "             -MinMaxAllocTime xx yy        Filter allocation events by time in seconds since trace start." + Environment.NewLine +
+        "             -TimeFmt s,Local,...          Time format for displayed times (default: s = seconds since trace start)." + Environment.NewLine +
+        "             -TimeDigits d                 Time precision digits (0-6, default: 3 = ms)." + Environment.NewLine +
+       $"             -SortBy xx                    Default sort order is {DumpCommand.SortOrders.NotReleasedSize}. Allowed values are {String.Join(";", DumpVirtualAlloc.ColumnNames)}." + Environment.NewLine +
+       $"             -Column col1;col2;...         Configure visible columns. Prefix with ! to disable, + to add. Valid: {String.Join(';', DumpVirtualAlloc.ColumnNames)}." + Environment.NewLine +
+        "             -ShowTotal [Total,None]       Control total summary. None suppresses it." + Environment.NewLine;
+
+        static readonly string VirtualAllocExamples = ExamplesHelpString +
+        "[green]Show per-process VirtualAlloc statistics.[/green]" + Environment.NewLine +
+        " ETWAnalyzer -fd xx.json7z -dump VirtualAlloc" + Environment.NewLine +
+        "[green]Show top 10 unreleased allocations per process with stacks.[/green]" + Environment.NewLine +
+        " ETWAnalyzer -fd xx.json7z -dump VirtualAlloc -Details -ShowStack -TopNStacks 10" + Environment.NewLine +
+        "[green]Show unreleased allocations for a specific process.[/green]" + Environment.NewLine +
+        " ETWAnalyzer -fd xx.json7z -dump VirtualAlloc -pn myapp.exe -Details -ShowStack" + Environment.NewLine +
+        "[green]Show statistics without total summary.[/green]" + Environment.NewLine +
+        " ETWAnalyzer -fd xx.json7z -dump VirtualAlloc -ShowTotal None" + Environment.NewLine +
+        "[green]Show individual allocation events for stack index 5 and 12 with local time format.[/green]" + Environment.NewLine +
+        " ETWAnalyzer -fd xx.json7z -dump VirtualAlloc -Details -StackIdx 5;12 -timefmt local" + Environment.NewLine;
+
         /// <summary>
         /// Default Helpstring which prints all dump commands
         /// </summary>
@@ -716,7 +760,8 @@ namespace ETWAnalyzer.Commands
             MarkHelpStringHeader + 
             MemoryHelpStringHeader +
             ObjectRefHelpStringHeader + 
-            PMCHelpStringHeader + 
+            VirtualAllocHelpStringHeader +
+            PMCHelpStringHeader +
             PowerHelpStringHeader +
             ProcessHelpStringHeader + 
             StatsHelpStringHeader + 
@@ -802,6 +847,15 @@ namespace ETWAnalyzer.Commands
 
             // Retransmit Orders
             Delay,
+
+            // VirtualAlloc sort orders
+            CommitCount,
+            CommitSize,
+            FreedCount,
+            FreedSize,
+            NotReleasedCount,
+            NotReleasedSize,
+            MaxCommitSize,
 
         }
 
@@ -967,6 +1021,7 @@ namespace ETWAnalyzer.Commands
 
         // Dump ObjRef/Exception specific Flags
         public KeyValuePair<string, Func<string, bool>> StackFilter { get; private set; } = new(null, _ => true);
+        public HashSet<StackIdx> StackIdxFilter { get; private set; }
         public KeyValuePair<string, Func<string, bool>> TypeFilter { get; private set; } = new(null, _ => true);
 
         public MinMaxRange<double> MinMaxTime { get; private set; } = new();
@@ -1074,6 +1129,8 @@ namespace ETWAnalyzer.Commands
 
         public MinMaxRange<decimal> MinMaxTotalCount { get; private set; } = new();
 
+        public bool ShowStats { get; set; }
+
 
         // Dump File specific flags
         public bool ShowAllFiles { get; private set; }
@@ -1123,7 +1180,6 @@ namespace ETWAnalyzer.Commands
         public MinMaxRange<double> MinMaxDisconnect { get; private set; } = new MinMaxRange<double>();
         public MinMaxRange<double> MinMaxConnect { get; private set; } = new MinMaxRange<double>();
         public bool Reset { get; private set; }
-        public bool ShowStats { get; private set; }
         public bool KeepAliveFilter { get; private set; }
         public IssueTypes IssueType { get; private set; } = IssueTypes.None;
 
@@ -1161,6 +1217,13 @@ namespace ETWAnalyzer.Commands
 
         // Dump Tracelog specific flags
         public KeyValuePair<string, Func<string, bool>> ProviderFilter { get; private set; } = new KeyValuePair<string, Func<string, bool>>(null, _ => true);
+
+        // Dump VirtualAlloc specific flags
+        public SkipTakeRange TopNStacks { get; private set; } = new(10, 0);
+        public MinMaxRange<long> MinMaxNotReleasedSize { get; private set; } = new();
+        public MinMaxRange<long> MinMaxNotReleasedCount { get; private set; } = new();
+        public MinMaxRange<double> MinMaxAllocTime { get; private set; } = new();
+
 
         /// <summary>
         /// Do not load data again if in console mode
@@ -1365,6 +1428,21 @@ namespace ETWAnalyzer.Commands
                         Tuple<int, int> topNAndSkipMethods = topnMethods.GetRange(skipMethods);
                         TopNMethods = new SkipTakeRange(topNAndSkipMethods.Item1, topNAndSkipMethods.Item2);
                         break;
+                    case "-topnstacks":
+                        string topnStacks = GetNextNonArg("-topnstacks");
+                        string skipStacks = GetNextNonArg("-topnstacks", false); // skip string is optional
+                        Tuple<int, int> topNAndSkipStacks = topnStacks.GetRange(skipStacks);
+                        TopNStacks = new SkipTakeRange(topNAndSkipStacks.Item1, topNAndSkipStacks.Item2);
+                        break;
+                    case "-minmaxnotreleasedsize":
+                        MinMaxNotReleasedSize = GetLongRange("-minmaxnotreleasedsize", Units.SameUnit);
+                        break;
+                    case "-minmaxnotreleasedcount":
+                        MinMaxNotReleasedCount = GetLongRange("-minmaxnotreleasedcount", Units.SameUnit);
+                        break;
+                    case "-minmaxalloctime":
+                        MinMaxAllocTime = GetDoubleRange("-minmaxalloctime", Units.SameUnit);
+                        break;
                     case "-filterexceptions":
                         FilterExceptions = true;
                         break;
@@ -1433,6 +1511,10 @@ namespace ETWAnalyzer.Commands
                     case "-sf":
                         string stackfilter = GetNextNonArg("-stackfilter");
                         StackFilter =           new KeyValuePair<string, Func<string, bool>>(stackfilter, Matcher.CreateMatcher(stackfilter));
+                        break;
+                    case "-stackidx":
+                        string stackIdxStr = GetNextNonArg("-stackidx");
+                        StackIdxFilter = new HashSet<StackIdx>(stackIdxStr.Split(';', StringSplitOptions.RemoveEmptyEntries).Select(x => (StackIdx)int.Parse(x, CultureInfo.InvariantCulture)));
                         break;
                     case "-destroystack":
                         string destroyStackfilter = GetNextNonArg("-destroystack");
@@ -1898,6 +1980,9 @@ namespace ETWAnalyzer.Commands
                     case "objectref":
                         myCommand = DumpCommands.ObjectRef;
                         break;
+                    case "virtualalloc":
+                        myCommand = DumpCommands.VirtualAlloc;
+                        break;
                     case "tracelog":
                         myCommand = DumpCommands.TraceLog;
                         break;
@@ -1936,6 +2021,7 @@ namespace ETWAnalyzer.Commands
                 DumpCommands.Process => new HashSet<string>(DumpProcesses.ColumnNames, StringComparer.OrdinalIgnoreCase),
                 DumpCommands.File => new HashSet<string>(DumpFile.ColumnNames, StringComparer.OrdinalIgnoreCase),
                 DumpCommands.Disk => new HashSet<string>(DumpDisk.ColumnNames, StringComparer.OrdinalIgnoreCase),
+                DumpCommands.VirtualAlloc => new HashSet<string>(DumpVirtualAlloc.ColumnNames, StringComparer.OrdinalIgnoreCase),
                 _ => throw new NotSupportedException($"The command {myCommand} does not support explicit column configuration (yet).")
             };
 
@@ -2080,6 +2166,9 @@ namespace ETWAnalyzer.Commands
                         break;
                     case DumpCommands.TraceLog:
                         lret = TraceLogExamples + Environment.NewLine + TraceLogHelpString;
+                        break;
+                    case DumpCommands.VirtualAlloc:
+                        lret = VirtualAllocExamples + Environment.NewLine + VirtualAllocHelpString;
                         break;
                 }
                 return lret.TrimEnd(Environment.NewLine.ToCharArray());
@@ -2817,6 +2906,46 @@ namespace ETWAnalyzer.Commands
                         };
                         break;
 
+                    case DumpCommands.VirtualAlloc:
+                        myCurrentDumper = new DumpVirtualAlloc
+                        {
+                            CommandArguments = myConsoleCommandArgs,
+                            FileOrDirectoryQueries = FileOrDirectoryQueries,
+                            ShowFullFileName = ShowFullFileName,
+                            Recursive = mySearchOption,
+                            TestsPerRun = TestsPerRun,
+                            SkipNTests = SkipNTests,
+                            TestRunIndex = TestRunIndex,
+                            TestRunCount = TestRunCount,
+                            LastNDays = LastNDays,
+                            MinMaxMsTestTimes = MinMaxMsTestTimes,
+                            CSVFile = CSVFile,
+                            NoCSVSeparator = NoCSVSeparator,
+                            ProcessNameFilter = ProcessNameFilter,
+                            ProcessNameFilterSet = ProcessNameFilterSet,
+                            ProcessFormatOption = ProcessFormat,
+                            CommandLineFilter = CmdLineFilter,
+                            NewProcessFilter = NewProcess,
+                            UsePrettyProcessName = UsePrettyProcessName,
+                            TimeFormatOption = TimeFormat,
+                            TimePrecision = TimeDigits,
+
+                            ShowDetails = ShowDetails,
+                            ShowTotal = ShowTotal,
+                            TopN = TopN,
+                            TopNStacks = TopNStacks,
+                            ShowStack = ShowStack,
+                            NoCmdLine = NoCmdLine,
+                            StackFilter = StackFilter,
+                            StackIdxFilter = StackIdxFilter,
+                            MinMaxNotReleasedSize = MinMaxNotReleasedSize,
+                            MinMaxNotReleasedCount = MinMaxNotReleasedCount,
+                            MinMaxAllocTime = MinMaxAllocTime,
+                            SortOrder = SortOrder,
+                            ColumnConfiguration = ColumnConfiguration,
+                            MergeColumnConfig = MergeColumnConfig,
+                         };
+                         break;
                     case DumpCommands.None:
                         throw new NotSupportedException("-dump needs an argument what you want to dump.");
                     case DumpCommands.Allocations:
@@ -2862,6 +2991,7 @@ namespace ETWAnalyzer.Commands
                     SortRetransmitContext => DumpTcp.SupportRetransmitSortOrders,
                     _ => DumpTcp.SupportedSortOrders,
                 },
+                DumpCommands.VirtualAlloc => DumpVirtualAlloc.ValidSortOrders,
 
                 _ => (SortOrders[]) Enum.GetValues(typeof(SortOrders)),
             };

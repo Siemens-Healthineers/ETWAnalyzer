@@ -3,31 +3,26 @@
 
 using ETWAnalyzer;
 using ETWAnalyzer.Extract;
+using ETWAnalyzer.Extract.Common;
 using ETWAnalyzer.Extract.CPU.Extended;
 using ETWAnalyzer.Extract.Exceptions;
 using ETWAnalyzer.Extract.Modules;
 using ETWAnalyzer.Extract.TraceLogging;
+using ETWAnalyzer.Extract.VirtualAlloc;
 using ETWAnalyzer.Extractors;
 using ETWAnalyzer.Helper;
 using ETWAnalyzer.Infrastructure;
-using ETWAnalyzer_iTest;
 using ETWAnalyzer_uTest;
 using ETWAnalyzer_uTest.TestInfrastructure;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Diagnostics.Eventing.Reader;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
-using System.Security.Policy;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 using Xunit;
 using Xunit.Abstractions;
-using static ETWAnalyzer.Extract.CPUPerProcessMethodList;
 
 namespace ETWAnalyzer_iTest
 {
@@ -163,7 +158,7 @@ namespace ETWAnalyzer_iTest
             File.Copy(TestData.ServerEtlFile, pathName);
 
 
-            string[] extractArgs = new string[] { "-extract", "Disk", "CPU", "Memory", "Exception", "-noCompress", "-filedir", tmp.Name, "-outdir", tmp.Name };
+            string[] extractArgs = new string[] { "-extract", "Disk", "CPU", "Memory", "Exception", "VirtualAlloc", "-noCompress", "-filedir", tmp.Name, "-outdir", tmp.Name };
                         
             if (!TestContext.IsInGithubPipeline()) // when we are executed with symbol server access then use it to resolve method names
             {
@@ -185,9 +180,19 @@ namespace ETWAnalyzer_iTest
             using var extractStream = new FileStream(etractServerJson, FileMode.Open);
             var extractedServer = ExtractSerializer.Deserialize<ETWExtract>(extractStream);
 
-            CheckServerExtract(extractedServer, etractServerJson);
+            CheckServerExtract(extractedServer, fileInfo1.FullName);
+
+            ExportVirtualAlloctorCSV(fileInfo1.FullName);
         }
 
+        private void ExportVirtualAlloctorCSV(string fullName)
+        {
+            string csvFile = Path.Combine(Path.GetDirectoryName(fullName), "DumpVirtAlloc.csv");
+            Program.MainCore(new string[] { "-Dump", "VirtualAlloc", "-fd", fullName, "-csv",  csvFile});
+            // Skip first 3 lines to avoid having the extraction command line from CSV in the comparison which can 
+            // change between invocations. The rest of the data should be immutable.
+            Assert.Equal(File.ReadAllLines(TestData.VirtualAllocCSVFile).Skip(3), File.ReadAllLines(csvFile).Skip(3));
+        }
 
         [Fact]
         public void Can_Extract_From_ETLFolder_Check_Compressed_Extract()
@@ -198,7 +203,7 @@ namespace ETWAnalyzer_iTest
             File.Copy(TestData.ServerEtlFile, pathName);
 
 
-            string[] extractArgs = new string[] { "-extract", "Disk", "CPU", "File", "Memory", "Exception", "-filedir", tmp.Name, "-outdir", tmp.Name };
+            string[] extractArgs = new string[] { "-extract", "Disk", "CPU", "File", "Memory", "Exception", "VirtualAlloc", "-filedir", tmp.Name, "-outdir", tmp.Name };
 
             if (!TestContext.IsInGithubPipeline()) // when we are executed with symbol server access then use it to resolve method names
             {
@@ -219,12 +224,10 @@ namespace ETWAnalyzer_iTest
 
             ExtractSerializer deser = new ExtractSerializer(extractServerJson);
             var extractedServer = deser.Deserialize<ETWExtract>(null);
-
             IETWExtract iextract = (IETWExtract)extractedServer;
-
             Assert.NotNull(iextract.FileIO);
 
-            CheckServerExtract(extractedServer, extractServerJson);
+            CheckServerExtract(extractedServer, fileInfo1.FullName);
         }
 
         bool IsSymbolServerReachable()
@@ -563,6 +566,24 @@ namespace ETWAnalyzer_iTest
             Assert.Equal(529uL, highestEnd.CommitInMiB);
             Assert.Equal(332uL, highestEnd.WorkingsetPrivateInMiB);
             Assert.Equal(2uL, highestEnd.SharedCommitSizeInMiB);
+
+            IETWExtract ietw = extractedServer as IETWExtract;
+
+            // Check VirtualAlloc extracted data
+            IVirtualAllocProcessStats conhost = ietw.VirtualAlloc.PerProcessStats.Where(x => extractedServer.GetProcess(x.ProcessIdx).ProcessWithID == "conhost.exe(20116)").FirstOrDefault();
+            Assert.NotNull(conhost);
+            Assert.Equal(136, conhost.CommitCount);
+            Assert.Equal(11665408, conhost.CommittedSizeInBytes);
+            Assert.Equal(9, conhost.FreedCount);
+            Assert.Equal(7278592, conhost.FreedSizeInBytes);
+            Assert.Equal(282624, conhost.MaxCommitSizeInBytes);
+            Assert.Equal(131, conhost.NotReleasedCommitCount);
+            Assert.Equal(11620352, conhost.NotReleasedSizeInBytes);
+
+            Assert.Equal(79, ietw.VirtualAlloc.PerProcessStats.Count);
+            string stackStr = ietw.VirtualAlloc.Stacks.GetStack((StackIdx)1);
+            Assert.NotNull(stackStr);
+            Assert.NotEmpty(stackStr);
         }
 
         [Fact]

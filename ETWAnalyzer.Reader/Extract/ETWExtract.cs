@@ -11,6 +11,7 @@ using ETWAnalyzer.Extract.PMC;
 using ETWAnalyzer.Extract.Power;
 using ETWAnalyzer.Extract.ThreadPool;
 using ETWAnalyzer.Extract.TraceLogging;
+using ETWAnalyzer.Extract.VirtualAlloc;
 using ETWAnalyzer.Infrastructure;
 using Newtonsoft.Json;
 using System;
@@ -373,6 +374,13 @@ namespace ETWAnalyzer.Extract
         IHandleObjectData IETWExtract.HandleData => myHandleDeserializer.Value;
 
         /// <summary>
+        /// Contains per process VirtualAlloc/Free data
+        /// </summary>
+        public VirtualAllocData VirtualAllocData { get; set; } = new();
+
+        IVirtualAllocData IETWExtract.VirtualAlloc => myVirtualAllocDeserializer.Value;
+
+        /// <summary>
         /// When File  IO data is accessed via IETWExtract 
         /// </summary>
         readonly Lazy<FileIOData> myFileIODeserializer;
@@ -408,6 +416,24 @@ namespace ETWAnalyzer.Extract
             return lret;
         }
 
+
+        readonly Lazy<VirtualAllocData> myVirtualAllocDeserializer;
+
+        VirtualAllocData ReadVirtualAllocDataFromExternalFile()
+        {
+            VirtualAllocData lret = null;
+            if (DeserializedFileName != null)
+            {
+                ExtractSerializer ser = new(DeserializedFileName);
+                lret = ser.Deserialize<VirtualAllocData>(ExtractSerializer.VirtualAllocPostFix);
+                if (lret != null)
+                {
+                    lret.DeserializedFileName = DeserializedFileName;
+                }
+            }
+
+            return lret;
+        }
 
         private readonly Lazy<TraceLoggingEventData> myTraceLoggingDeserializer;
 		
@@ -475,6 +501,7 @@ namespace ETWAnalyzer.Extract
             myFileIODeserializer = new Lazy<FileIOData>(ReadFileIOFromExternalFile);
             myModuleDeserializer = new Lazy<ModuleContainer>(ReadModuleInformationFromExternalFile);
             myHandleDeserializer = new Lazy<HandleObjectData>(ReadHandleDataFromExternalFile);
+            myVirtualAllocDeserializer = new Lazy<VirtualAllocData>(ReadVirtualAllocDataFromExternalFile);
             myTraceLoggingDeserializer = new Lazy<TraceLoggingEventData>(ReadTraceLoggingFromExternalFile);
         }
 

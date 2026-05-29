@@ -35,6 +35,7 @@ Besides ```All``` the following extractors are available:
 |  TCP        | Extract TCP statistic per connection. You need to enable the provider Microsoft-Windows-TCPIP.  |
 |  ThreadPool | Extract relevant data from .NET Runtime ThreadPool if available. ThreadingKeyword 0x10000 needs to be set for the Microsoft-Windows-DotNETRuntime ETW Provider during recording.|
 |             | Json Nodes: ThreadPool-PerProcessThreadPoolStarvations|
+|  VirtualAlloc | Extract VirtualAlloc events to find large memory leaks. The Kernel provider VirtualAlloc must be enabled during recording.|
 
 
 If you extract from 7z archives the files are uncompressed in-place and deleted after extraction. If you want to leave the decompressed files on disk after extraction 

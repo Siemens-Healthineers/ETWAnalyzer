@@ -285,6 +285,11 @@ namespace ETWAnalyzer_uTest
             get => GetPath(DiscIOWpaProfileCsvFileName);
         }
 
+        public static string VirtualAllocCSVFile
+        {
+            get => GetPath("DumpVirtualAlloc.csv"); 
+        }
+
         public static string CPUWPAProfile
         {
             get => GetPath("CPUWeight.wpaProfile");
