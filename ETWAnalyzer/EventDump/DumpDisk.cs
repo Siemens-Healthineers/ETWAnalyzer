@@ -33,6 +33,11 @@ namespace ETWAnalyzer.EventDump
         public bool IsPerProcess { get; internal set; }
 
         /// <summary>
+        /// Show more columns
+        /// </summary>
+        public bool ShowDetails { get; internal set; }
+
+        /// <summary>
         /// Merge multiple files together
         /// </summary>
         public bool Merge { get; internal set; }
@@ -67,6 +72,47 @@ namespace ETWAnalyzer.EventDump
         public MinMaxRange<decimal> MinMaxWriteTimeS { get; internal set; } = new();
         public MinMaxRange<decimal> MinMaxTotalTimeS { get; internal set; } = new();
         public MinMaxRange<decimal> MinMaxTotalSizeBytes { get; internal set; } = new();
+
+        const string Col_ReadTime = "ReadTime";
+        const string Col_ReadSize = "ReadSize";
+        const string Col_ReadThroughput = "ReadThroughput";
+        const string Col_WriteTime = "WriteTime";
+        const string Col_WriteSize = "WriteSize";
+        const string Col_WriteThroughput = "WriteThroughput";
+        const string Col_FlushTime = "FlushTime";
+        const string Col_PercentActive = "PercentActive";
+        const string Col_TotalSize = "TotalSize";
+        const string Col_TotalTime = "TotalTime";
+        const string Col_FileDir = "FileDir";
+
+        /// <summary>
+        /// Valid column names which can be enabled for more flexible output
+        /// </summary>
+        public static string[] ColumnNames =
+        {
+            Col_ReadTime, Col_ReadSize, Col_ReadThroughput,
+            Col_WriteTime, Col_WriteSize, Col_WriteThroughput,
+            Col_FlushTime, Col_PercentActive, Col_TotalSize, Col_TotalTime, Col_FileDir,
+        };
+
+        bool GetColumnEnable(string columnName)
+        {
+            return columnName switch
+            {
+                Col_ReadTime => GetOverrideFlag(Col_ReadTime, true),
+                Col_ReadSize => GetOverrideFlag(Col_ReadSize, true),
+                Col_ReadThroughput => GetOverrideFlag(Col_ReadThroughput, true),
+                Col_WriteTime => GetOverrideFlag(Col_WriteTime, true),
+                Col_WriteSize => GetOverrideFlag(Col_WriteSize, true),
+                Col_WriteThroughput => GetOverrideFlag(Col_WriteThroughput, true),
+                Col_FlushTime => GetOverrideFlag(Col_FlushTime, true),
+                Col_PercentActive => GetOverrideFlag(Col_PercentActive, true),
+                Col_TotalSize => GetOverrideFlag(Col_TotalSize, ShowDetails),
+                Col_TotalTime => GetOverrideFlag(Col_TotalTime, ShowDetails),
+                Col_FileDir => GetOverrideFlag(Col_FileDir, true),
+                _ => throw new NotSupportedException($"Column {columnName} is not configurable."),
+            };
+        }
 
         internal List<MatchData> myUTestData;
 
@@ -105,11 +151,19 @@ namespace ETWAnalyzer.EventDump
                     PrintFileName(byFileOrNoGroup.Key.JsonExtractFileWhenPresent, null, byFileOrNoGroup.Key.PerformedAt, byFileOrNoGroup.Key.Extract?.MainModuleVersion?.ToString());
                 }
 
-                string headline = $"[green]Read                                [/green][yellow]Write                               [/yellow][cyan]Flush       [/cyan] [magenta]% Active {GetTotalHeadline(-1*TotalHeadlineWidth)}[/magenta][Directory or File if -dirLevel 100 is used";
-
                 if(!IsCSVEnabled)
                 {
-                    ColorConsole.WriteEmbeddedColorLine(headline);
+                    bool anyRead = GetColumnEnable(Col_ReadTime) || GetColumnEnable(Col_ReadSize) || GetColumnEnable(Col_ReadThroughput);
+                    bool anyWrite = GetColumnEnable(Col_WriteTime) || GetColumnEnable(Col_WriteSize) || GetColumnEnable(Col_WriteThroughput);
+                    int readWidth = 1 + (GetColumnEnable(Col_ReadTime) ? 13 : 0) + (GetColumnEnable(Col_ReadSize) ? 11 : 0) + (GetColumnEnable(Col_ReadThroughput) ? 10 : 0) + 1;
+                    int writeWidth = 1 + (GetColumnEnable(Col_WriteTime) ? 13 : 0) + (GetColumnEnable(Col_WriteSize) ? 11 : 0) + (GetColumnEnable(Col_WriteThroughput) ? 10 : 0) + 1;
+                    string readH = !anyRead ? "" : $"[green]{"Read".WithWidth(-readWidth)}[/green]";
+                    string writeH = !anyWrite ? "" : $"[yellow]{"Write".WithWidth(-writeWidth)}[/yellow]";
+                    string flushH = !GetColumnEnable(Col_FlushTime) ? "" : "[cyan]Flush       [/cyan] ";
+                    string pctH = !GetColumnEnable(Col_PercentActive) ? "" : "[magenta]% Active [/magenta]";
+                    string totalH = $"[magenta]{GetTotalHeadline(-1*TotalHeadlineWidth)}[/magenta]";
+                    string dirH = !GetColumnEnable(Col_FileDir) ? "" : "[Directory or File if -dirLevel 100 is used";
+                    ColorConsole.WriteEmbeddedColorLine($"{readH}{writeH}{flushH}{pctH}{totalH}{dirH}");
                 }
 
                 foreach (MatchData group in aggregatedByDirectory.Where(MinMaxFilter).SortAscendingGetTopNLast(SortByValue, null, TopN))
@@ -136,6 +190,8 @@ namespace ETWAnalyzer.EventDump
                     }
                     else
                     {
+                        bool anyRead = GetColumnEnable(Col_ReadTime) || GetColumnEnable(Col_ReadSize) || GetColumnEnable(Col_ReadThroughput);
+                        bool anyWrite = GetColumnEnable(Col_WriteTime) || GetColumnEnable(Col_WriteSize) || GetColumnEnable(Col_WriteThroughput);
 
                         string diskReadTime = $"{group.DiskReadTimeInus / Million:F5}";
                         string diskReadMB = $"{group.DiskReadSizeInBytes / Million:F0}";
@@ -144,13 +200,22 @@ namespace ETWAnalyzer.EventDump
                         string diskFlushTime = $"{group.DiskFlushTimeInus / Million:F3}";
                         string diskpercentActive = $"{percentActive:F0} %".WithWidth(PercentWidth);
 
-                        string line = $"[green]r {diskReadTime,10} s {diskReadMB,7} MB {group.ReadMBPerSeconds,4} MB/s[/green] " +
-                                      $"[yellow]w {diskWriteTime,10} s {diskWriteMB,7} MB {group.WriteMBPerSeconds,4} MB/s[/yellow] " +
-                                      $"[cyan]f {diskFlushTime,8} s[/cyan] " +
-                                      $"[magenta]{diskpercentActive} {GetTotalValue(group, TotalHeadlineWidth)}[/magenta]" +
-                                      $"{DumpFile.GetFileName(group.RootLevelDirectory, ReverseFileName)}";
+                        string readPart = !anyRead ? "" : "[green]r" +
+                            (GetColumnEnable(Col_ReadTime) ? $" {diskReadTime,10} s" : "") +
+                            (GetColumnEnable(Col_ReadSize) ? $" {diskReadMB,7} MB" : "") +
+                            (GetColumnEnable(Col_ReadThroughput) ? $" {group.ReadMBPerSeconds,4} MB/s" : "") +
+                            "[/green] ";
+                        string writePart = !anyWrite ? "" : "[yellow]w" +
+                            (GetColumnEnable(Col_WriteTime) ? $" {diskWriteTime,10} s" : "") +
+                            (GetColumnEnable(Col_WriteSize) ? $" {diskWriteMB,7} MB" : "") +
+                            (GetColumnEnable(Col_WriteThroughput) ? $" {group.WriteMBPerSeconds,4} MB/s" : "") +
+                            "[/yellow] ";
+                        string flushPart = !GetColumnEnable(Col_FlushTime) ? "" : $"[cyan]f {diskFlushTime,8} s[/cyan] ";
+                        string pctPart = !GetColumnEnable(Col_PercentActive) ? "" : $"[magenta]{diskpercentActive} [/magenta]";
+                        string totalPart = $"[magenta]{GetTotalValue(group, TotalHeadlineWidth)}[/magenta]";
+                        string dirPart = !GetColumnEnable(Col_FileDir) ? "" : $"{DumpFile.GetFileName(group.RootLevelDirectory, ReverseFileName)}";
 
-                        ColorConsole.WriteEmbeddedColorLine(line);
+                        ColorConsole.WriteEmbeddedColorLine($"{readPart}{writePart}{flushPart}{pctPart}{totalPart}{dirPart}");
                     }
                 }
 
@@ -176,8 +241,18 @@ namespace ETWAnalyzer.EventDump
                     {
                         PrintFileName(byFileOrNoGroup.Key.JsonExtractFileWhenPresent, null, byFileOrNoGroup.Key.PerformedAt, byFileOrNoGroup.Key.Extract?.MainModuleVersion?.ToString());
                     }
-                    string headline = $"[green]Read                            [/green][yellow]Write                           [/yellow][cyan]Flush         [/cyan][magenta]{GetTotalHeadline(TotalHeadlineWidth)}[/magenta]Involved Processes";
-                    ColorConsole.WriteEmbeddedColorLine(headline);
+                    {
+                        bool anyReadH = GetColumnEnable(Col_ReadTime) || GetColumnEnable(Col_ReadSize) || GetColumnEnable(Col_ReadThroughput);
+                        bool anyWriteH = GetColumnEnable(Col_WriteTime) || GetColumnEnable(Col_WriteSize) || GetColumnEnable(Col_WriteThroughput);
+                        int readWidthH = 1 + (GetColumnEnable(Col_ReadTime) ? 11 : 0) + (GetColumnEnable(Col_ReadSize) ? 9 : 0) + (GetColumnEnable(Col_ReadThroughput) ? 10 : 0) + 1;
+                        int writeWidthH = 1 + (GetColumnEnable(Col_WriteTime) ? 11 : 0) + (GetColumnEnable(Col_WriteSize) ? 9 : 0) + (GetColumnEnable(Col_WriteThroughput) ? 10 : 0) + 1;
+                        string readH = !anyReadH ? "" : $"[green]{"Read".WithWidth(-readWidthH)}[/green]";
+                        string writeH = !anyWriteH ? "" : $"[yellow]{"Write".WithWidth(-writeWidthH)}[/yellow]";
+                        string flushH = !GetColumnEnable(Col_FlushTime) ? "" : "[cyan]Flush         [/cyan]";
+                        string totalH = $"[magenta]{GetTotalHeadline(TotalHeadlineWidth)}[/magenta]";
+                        string headline = $"{readH}{writeH}{flushH}{totalH}Involved Processes";
+                        ColorConsole.WriteEmbeddedColorLine(headline);
+                    }
 
                     List<MatchData> aggregatedByProcess = AggregateByProcess(byFileOrNoGroup.ToList(), UsePrettyProcessName);
                     foreach (var group in aggregatedByProcess.Where(MinMaxFilter).SortAscendingGetTopNLast(SortByValue, null, TopNProcesses))
@@ -206,7 +281,25 @@ namespace ETWAnalyzer.EventDump
                         string diskReadSizeInMB = $"{group.DiskReadSizeInBytes / Million:F0}";
                         string diskWriteSizeInMB = $"{group.DiskWriteSizeInBytes / Million:F0}";
 
-                        ColorConsole.WriteEmbeddedColorLine($"[green]r {diskReadTime,8} s {diskReadSizeInMB,5} MB {group.ReadMBPerSeconds,4} MB/s[/green] [yellow]w {diskWriteTime,8} s {diskWriteSizeInMB,5} MB {group.WriteMBPerSeconds,4} MB/s[/yellow] [cyan]f {diskFlushTime,8}[/cyan] s  [magenta]{GetTotalValue(group,TotalHeadlineWidth)}[/magenta]{procs}");
+                        {
+                            bool anyRead = GetColumnEnable(Col_ReadTime) || GetColumnEnable(Col_ReadSize) || GetColumnEnable(Col_ReadThroughput);
+                            bool anyWrite = GetColumnEnable(Col_WriteTime) || GetColumnEnable(Col_WriteSize) || GetColumnEnable(Col_WriteThroughput);
+
+                            string readPart = !anyRead ? "" : "[green]r" +
+                                (GetColumnEnable(Col_ReadTime) ? $" {diskReadTime,8} s" : "") +
+                                (GetColumnEnable(Col_ReadSize) ? $" {diskReadSizeInMB,5} MB" : "") +
+                                (GetColumnEnable(Col_ReadThroughput) ? $" {group.ReadMBPerSeconds,4} MB/s" : "") +
+                                "[/green] ";
+                            string writePart = !anyWrite ? "" : "[yellow]w" +
+                                (GetColumnEnable(Col_WriteTime) ? $" {diskWriteTime,8} s" : "") +
+                                (GetColumnEnable(Col_WriteSize) ? $" {diskWriteSizeInMB,5} MB" : "") +
+                                (GetColumnEnable(Col_WriteThroughput) ? $" {group.WriteMBPerSeconds,4} MB/s" : "") +
+                                "[/yellow] ";
+                            string flushPart = !GetColumnEnable(Col_FlushTime) ? "" : $"[cyan]f {diskFlushTime,8}[/cyan] s  ";
+                            string totalPart = $"[magenta]{GetTotalValue(group,TotalHeadlineWidth)}[/magenta]";
+
+                            ColorConsole.WriteEmbeddedColorLine($"{readPart}{writePart}{flushPart}{totalPart}{procs}");
+                        }
                     }
                 }
             }
@@ -228,30 +321,34 @@ namespace ETWAnalyzer.EventDump
             SortOrders.WriteSize,
             SortOrders.TotalSize,
             SortOrders.TotalTime,
-            SortOrders.Default,
         };
 
         string GetTotalHeadline(int minWidth)
         {
-            return SortOrder switch 
+            List<string> parts = new();
+            if (GetColumnEnable(Col_TotalSize) || (ColumnConfiguration.Count == 0 && SortOrder is SortOrders.Default or SortOrders.TotalSize))
             {
-                SortOrders.Default => "TotalSize".WithWidth(minWidth) + " ",
-                SortOrders.TotalSize => "TotalSize".WithWidth(minWidth) + " ",
-                SortOrders.TotalTime => "TotalTime".WithWidth(minWidth) + " ",
-                _ => "",
-            };
+                parts.Add("TotalSize".WithWidth(minWidth));
+            }
+            if (GetColumnEnable(Col_TotalTime) || (ColumnConfiguration.Count == 0 && SortOrder is SortOrders.TotalTime))
+            {
+                parts.Add("TotalTime".WithWidth(minWidth));
+            }
+            return parts.Count > 0 ? String.Join(" ", parts) + " " : "";
         }
 
         string GetTotalValue(MatchData data, int minWidth)
         {
-            return SortOrder switch
+            List<string> parts = new();
+            if (GetColumnEnable(Col_TotalSize) || (ColumnConfiguration.Count == 0 && SortOrder is SortOrders.Default or SortOrders.TotalSize))
             {
-                SortOrders.Default => $"{(data.DiskWriteSizeInBytes + data.DiskReadSizeInBytes) / Million:F0} MB".WithWidth(minWidth) + " ",
-                SortOrders.TotalSize => $"{(data.DiskWriteSizeInBytes + data.DiskReadSizeInBytes) / Million:F0} MB".WithWidth(minWidth) + " ",
-                SortOrders.TotalTime => $"{data.DiskTotalTimeInus/Million:F5} s".WithWidth(minWidth) + " ",
-                SortOrders.FlushTime => $"{data.DiskFlushTimeInus/Million:F5} s".WithWidth(minWidth) + " ",
-                _ => ""
-            };
+                parts.Add($"{(data.DiskWriteSizeInBytes + data.DiskReadSizeInBytes) / Million:F0} MB".WithWidth(minWidth));
+            }
+            if (GetColumnEnable(Col_TotalTime) || (ColumnConfiguration.Count == 0 && SortOrder is SortOrders.TotalTime or SortOrders.FlushTime))
+            {
+                parts.Add($"{data.DiskTotalTimeInus / Million:F5} s".WithWidth(minWidth));
+            }
+            return parts.Count > 0 ? String.Join(" ", parts) + " " : "";
         }
 
 

@@ -1,4 +1,4 @@
-﻿//// SPDX-FileCopyrightText:  © 2022 Siemens Healthcare GmbH
+//// SPDX-FileCopyrightText:  © 2022 Siemens Healthcare GmbH
 //// SPDX-License-Identifier:   MIT
 
 using ETWAnalyzer.EventDump;
@@ -108,7 +108,7 @@ namespace ETWAnalyzer.Commands
         "            -MinMaxStart minS [maxS]   Select processes which did start after minS seconds." + Environment.NewLine +
         "            -ShowFileOnLine            Show etl file name on each printed line." + Environment.NewLine +
         "            -Crash                     Show potentially crashed processes with unusual return codes, or did trigger Windows Error Reporting." + Environment.NewLine +
-        "            -Details                   Show more columns" + Environment.NewLine +
+        "            -Details                   Show also total columns." + Environment.NewLine +
         "            -Session dd;yy             Filter processes by Windows session id. Multiple filters are separated by ;" + Environment.NewLine +
         "                                       E.g. dd;dd2 will filter for all dd instances and dd2. The wildcards * and ? are supported for all filter strings." + Environment.NewLine +
         "            -User abc;*xyz*            Filter user name by which the process was started. Multiple filters are separated by ;" + Environment.NewLine +
@@ -252,9 +252,9 @@ namespace ETWAnalyzer.Commands
         "             [-NewProcess] [-CmdLine] [-ShowFullFileName] refer to help of TestRun, Process and CPU (-ProcessFmt, -ShowModuleInfo).  Run \'EtwAnalyzer -help dump\' to get more infos." + Environment.NewLine;
 
         static readonly string DiskHelpStringHeader =
-        "  Disk -filedir/fd Extract\\ or xx.json7z [-DirLevel dd] [-PerProcess] [-filename *C:*] [-MinMax[Read/Write/Total][Size/Time] xx yy] [-TopN dd nn] [-SortBy order] [-FileOperation op] [-ReverseFileName/rfn] [-Merge] [-recursive] [-csv xx.csv] [-NoCSVSeparator]" + Environment.NewLine +
+        "  Disk -filedir/fd Extract\\ or xx.json7z [-DirLevel dd] [-PerProcess] [-filename *C:*] [-MinMax[Read/Write/Total][Size/Time] xx yy] [-TopN dd nn] [-SortBy order] [-FileOperation op] [-ReverseFileName/rfn] [-Merge] [-recursive] [-csv xx.csv] [-NoCSVSeparator]" + Environment.NewLine + 
         "        [-TopNProcesses dd nn] [-TimeFmt s,Local,LocalTime,UTC,UTCTime,Here,HereTime] [-TimeDigits d] [-Clip] [-TestsPerRun dd - SkipNTests dd] [-TestRunIndex dd - TestRunCount dd] [-MinMaxMsTestTimes xx-yy ...] [-ProcessName/pn xx.exe(pid)]" + Environment.NewLine +
-        "        [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-CmdLine substring]" + Environment.NewLine +
+        "        [-Column xx;yy] [-Details] [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-CmdLine substring]" + Environment.NewLine +
         "        [-ShowFullFileName/-sffn]" + Environment.NewLine;
         static readonly string DiskHelpString = DiskHelpStringHeader +
         "        Print disk IO metrics to console or to a CSV file if -csv is used. To get output -extract Disk, All or Default must have been used during extraction." + Environment.NewLine +
@@ -269,6 +269,9 @@ namespace ETWAnalyzer.Commands
         "        -SortBy order              Console Output Only. Valid values are: ReadSize,WriteSize,ReadTime,WriteTime,FlushTime,TotalSize and TotalTime (= Read+Write+Flush). Default is TotalTime." + Environment.NewLine +
         "        -TopN dd nn                Select top dd (skip nn) files based on current sort order." + Environment.NewLine +
         "        -MinMax[Read/Write/Total][Size/Time] xx yy Filter column wise for corresponding data. You can add units for size B,MB,MiB,GB,GiB,TB and time s,seconds,ms,us,ns. E.g. -MinMaxReadSize 100MB 500MB. Fractions use . as decimal separator." + Environment.NewLine +
+        "        -Column xx;yy              Enable specific columns which are printed or exclude them by prepending them with !, or use + to add columns to default columns. Column wildcards are supported." + Environment.NewLine +
+       $"                                   Valid column names are {String.Join(";", DumpDisk.ColumnNames)}" + Environment.NewLine +
+        "        -Details                   Show total columns." + Environment.NewLine +
         "        -ReverseFileName/rfn       Reverse file name. Useful with -Clip to keep output clean (no console wraparound regardless how long the file name is)." + Environment.NewLine +
         "        -Merge                     Merge all selected Json files into one summary output. Useful to get a merged view of a session consisting of multiple ETL files." + Environment.NewLine +
         "        For other options [-recursive] [-csv] [-NoCSVSeparator] [-TimeFmt] [-TestsPerRun] [-SkipNTests] [-TestRunIndex] [-TestRunCount] [-MinMaxMsTestTimes] [-ProcessName/pn] [-NewProcess] [-CmdLine]" + Environment.NewLine +
@@ -1932,6 +1935,7 @@ namespace ETWAnalyzer.Commands
                 DumpCommands.TCP => new HashSet<string>(DumpTcp.ColumnNames, StringComparer.OrdinalIgnoreCase),
                 DumpCommands.Process => new HashSet<string>(DumpProcesses.ColumnNames, StringComparer.OrdinalIgnoreCase),
                 DumpCommands.File => new HashSet<string>(DumpFile.ColumnNames, StringComparer.OrdinalIgnoreCase),
+                DumpCommands.Disk => new HashSet<string>(DumpDisk.ColumnNames, StringComparer.OrdinalIgnoreCase),
                 _ => throw new NotSupportedException($"The command {myCommand} does not support explicit column configuration (yet).")
             };
 
@@ -2307,6 +2311,7 @@ namespace ETWAnalyzer.Commands
                             Merge = Merge,
                             DirectoryLevel = DirectoryLevel,
                             IsPerProcess = IsPerProcess,
+                            ShowDetails = ShowDetails,
                             FileNameFilter = FileNameFilter,
                             MinMaxReadSizeBytes = MinMaxReadSizeBytes,
                             MinMaxReadTimeS = MinMaxReadTimeS,
@@ -2316,12 +2321,14 @@ namespace ETWAnalyzer.Commands
                             MinMaxTotalSizeBytes = MinMaxTotalSizeBytes,
                             TopN = TopN,
                             TopNProcesses = TopNProcesses,
-                            SortOrder = SortOrder,
-                            FileOperationValue = FileOperation,
-                            ReverseFileName = ReverseFileName,
-                        };
-                        break;
-                    case DumpCommands.File:
+                                     SortOrder = SortOrder,
+                                     FileOperationValue = FileOperation,
+                                     ReverseFileName = ReverseFileName,
+                                     ColumnConfiguration = ColumnConfiguration,
+                                     MergeColumnConfig = MergeColumnConfig,
+                                 };
+                                break;
+                            case DumpCommands.File:
                         ThrowIfFileOrDirectoryIsInvalid(FileOrDirectoryQueries);
                         myCurrentDumper = new DumpFile
                         {
