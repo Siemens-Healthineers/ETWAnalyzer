@@ -408,6 +408,8 @@ namespace ETWAnalyzer.EventDump
             decimal result = SortOrder switch
             {
                 SortOrders.Length => Math.Max(oldValue, newValue),
+                SortOrders.MaxReadPos => Math.Max(oldValue, newValue),
+                SortOrders.MaxWritePos => Math.Max(oldValue, newValue),
                 _ => oldValue + newValue,
             };
 
@@ -424,6 +426,8 @@ namespace ETWAnalyzer.EventDump
             string total = SortOrder switch
             {
                 SortOrders.Length => $"{totalValue / Kilo:N0} KB",
+                SortOrders.MaxReadPos => $"{totalValue / Kilo:N0} KB",
+                SortOrders.MaxWritePos => $"{totalValue / Kilo:N0} KB",
                 SortOrders.OpenCloseTime => "",  // already part of summary
                 SortOrders.ReadSize => "",       // already part of summary
                 SortOrders.ReadTime => "",       // already part of summary
@@ -508,16 +512,22 @@ namespace ETWAnalyzer.EventDump
                 case SortOrders.Length:
                     totalSortOrderPos = FileOperationValue switch
                     {
-                        FileOperation.Read => ShowDetails ? 0u : data.FileReadMaxPos,       // do not show duplicate column data
-                        FileOperation.Write => ShowDetails ? 0u : data.FileWriteMaxFilePos,  // do not show duplicate column data
-                        FileOperation.Open => 0u,
-                        FileOperation.Close => 0u,
-                        FileOperation.SetSecurity => 0u,
-                        FileOperation.Delete => 0u,
-                        FileOperation.Rename => 0u,
                         FileOperation.All => Math.Max(data.FileReadMaxPos, data.FileWriteMaxFilePos),
-                        _ => ThrowNotSupportedException(),
+                        FileOperation.Close => null,
+                        FileOperation.Delete => null,
+                        FileOperation.Open => null,
+                        FileOperation.Read => ShowDetails ? 0u : data.FileReadMaxPos,
+                        FileOperation.Rename => null,
+                        FileOperation.SetSecurity => null,
+                        FileOperation.Write => ShowDetails ? 0u : data.FileWriteMaxFilePos,
+                        _ => null,
                     };
+                    break;
+                case SortOrders.MaxReadPos:
+                    totalSortOrderPos = ShowDetails ? 0u : data.FileReadMaxPos;
+                    break;
+                case SortOrders.MaxWritePos:
+                    totalSortOrderPos = ShowDetails ? 0u : data.FileWriteMaxFilePos;
                     break;
                 case SortOrders.ReadSize:
                     // always printed
@@ -619,6 +629,8 @@ namespace ETWAnalyzer.EventDump
                 },
                 SortOrders.WriteSize => null, // already printed
                 SortOrders.WriteTime => null, // already printed
+                SortOrders.MaxReadPos => ShowDetails ? null : "MaxReadPos",
+                SortOrders.MaxWritePos => ShowDetails ? null : "MaxWritePos",
                 _ => null,
             };
         }
@@ -1019,6 +1031,12 @@ namespace ETWAnalyzer.EventDump
                 case SortOrders.OpenCloseTime:
                     lret = data.FileOpenTimeInus + data.FileCloseTimeInus;
                     break;
+                case SortOrders.MaxReadPos:
+                    lret = data.FileReadMaxPos;
+                    break;
+                case SortOrders.MaxWritePos:
+                    lret = data.FileWriteMaxFilePos;
+                    break;
                 default:
                     throw new InvalidOperationException($"There should be a sort order. SortOrder was: {SortOrder}. By default SortOrders.Size == SortOrders.Default = 0 so we should never get here.");
             }
@@ -1053,6 +1071,8 @@ namespace ETWAnalyzer.EventDump
 
             SortOrders.Count,
             SortOrders.Length,
+            SortOrders.MaxReadPos,
+            SortOrders.MaxWritePos,
             SortOrders.Time,
             SortOrders.Default,
         };

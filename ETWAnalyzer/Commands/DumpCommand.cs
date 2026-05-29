@@ -288,7 +288,7 @@ namespace ETWAnalyzer.Commands
         "        -FileName *C:*             Filter IO for specific files only. Multiple filters are separated by ;" + Environment.NewLine +
         "        -FileOperation op          Filter files for specific operations." + Environment.NewLine +
         "                                   Possible values are " + String.Join(",", Enum.GetNames(typeof(Extract.FileIO.FileIOStatistics.FileOperation))) + Environment.NewLine +
-        "        -SortBy order              Console Output Only. Valid values are: Count (Open+Close+Read+Write+SetSecurity),ReadSize,WriteSize,ReadTime,WriteTime,Length,TotalSize; TotalTime = Time (= Open+Close+Read+Write); OpenCloseTime (= Open+Close).  Default is TotalTime." + Environment.NewLine +
+        "        -SortBy order              Console Output Only. Valid values are: Count (Open+Close+Read+Write+SetSecurity),ReadSize,MaxReadPos,WriteSize,MaxWritePos,ReadTime,WriteTime,Length,TotalSize; TotalTime = Time (= Open+Close+Read+Write); OpenCloseTime (= Open+Close).  Default is TotalTime." + Environment.NewLine +
         "                                   Depending on sort order a dynamic column is added to show the values by which the sort is performed." + Environment.NewLine + 
         "        -TopN dd nn                Select top dd files based on current sort order." + Environment.NewLine +
         "        -MinMax[Read/Write/Total][Size/Time] and MinMaxTotalCount xx yy Filter column wise for corresponding data. You can add units for size: B,MB,MiB,GB,GiB,TB, time: s,seconds,ms,us,ns, count does not require any units." + Environment.NewLine + 
@@ -756,6 +756,8 @@ namespace ETWAnalyzer.Commands
             ReadTime,
             WriteSize,
             WriteTime,
+            MaxWritePos,
+            MaxReadPos,
             FlushTime,
             OpenCloseTime,
             TotalSize,
