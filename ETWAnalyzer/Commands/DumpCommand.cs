@@ -278,7 +278,7 @@ namespace ETWAnalyzer.Commands
         "  File -filedir/fd Extract\\ or xx.json7z [-DirLevel dd] [-PerProcess] [-filename *C:*] [-ShowTotal [Total/Process/File/None]] [-TopN dd nn] [-SortBy order] [-FileOperation op] [-ReverseFileName/rfn] [-Merge] [-Details] [-recursive] " + Environment.NewLine +
         "        [-TopNProcesses dd nn] [-csv xx.csv] [-NoCSVSeparator] [-TimeFmt s,Local,LocalTime,UTC,UTCTime,Here,HereTime] [-TimeDigits d] [-ProcessFmt timefmt] [-Clip] [-TestsPerRun dd -SkipNTests dd] " + Environment.NewLine +
         "        [-TestRunIndex dd -TestRunCount dd] [-MinMaxMsTestTimes xx-yy ...] [-ProcessName/pn xx.exe(pid)] [-NoCmdLine] [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-CmdLine substring]" + Environment.NewLine +
-        "        [-ShowFullFileName/-sffn] [-MinMax[Read/Write/Total][Size/Time] xx yy] [-MinMaxTotalCount xx yy] [-ShowModuleInfo [filter]]" + Environment.NewLine;
+        "        [-ShowFullFileName/-sffn] [-MinMax[Read/Write/Total][Size/Time] xx yy] [-MinMaxTotalCount xx yy] [-ShowModuleInfo [filter]] [-Column xx;yy]" + Environment.NewLine;
         static readonly string FileHelpString = FileHelpStringHeader +
         "        Print File IO metrics to console or to a CSV file if -csv is used. To get output -extract File, All or Default must have been used during extraction." + Environment.NewLine +
         "        The extracted data is an exact summary per file and process. Unlike Disk IO, File IO tracing captures all file accesses regardless if the data was e.g. read from disk or file system cache." + Environment.NewLine +
@@ -293,6 +293,9 @@ namespace ETWAnalyzer.Commands
         "        -TopN dd nn                Select top dd files based on current sort order." + Environment.NewLine +
         "        -MinMax[Read/Write/Total][Size/Time] and MinMaxTotalCount xx yy Filter column wise for corresponding data. You can add units for size: B,MB,MiB,GB,GiB,TB, time: s,seconds,ms,us,ns, count does not require any units." + Environment.NewLine + 
         "                                   E.g. -MinMaxReadSize 100MB 500MB. Fractions use . as decimal separator." + Environment.NewLine +
+        "        -Column xx;yy              Enable specific columns which are printed or exclude them by prepending them with !, or use + to add columns to default columns. Column wildcards are supported." + Environment.NewLine +
+       $"                                   Valid column names are {String.Join(";", DumpFile.ColumnNames.Take(10))}" + Environment.NewLine +
+       $"                                   {String.Join(";", DumpFile.ColumnNames.Skip(10))}" + Environment.NewLine +
         "        -Details                   Show more columns" + Environment.NewLine +
         "        -Session dd;yy             Filter processes by Windows session id. Multiple filters are separated by ;" + Environment.NewLine +
         "        -ReverseFileName/rfn       Reverse file name. Useful with -Clip to keep output clean (no console wraparound regardless how long the file name is)." + Environment.NewLine +
@@ -1928,6 +1931,7 @@ namespace ETWAnalyzer.Commands
             {
                 DumpCommands.TCP => new HashSet<string>(DumpTcp.ColumnNames, StringComparer.OrdinalIgnoreCase),
                 DumpCommands.Process => new HashSet<string>(DumpProcesses.ColumnNames, StringComparer.OrdinalIgnoreCase),
+                DumpCommands.File => new HashSet<string>(DumpFile.ColumnNames, StringComparer.OrdinalIgnoreCase),
                 _ => throw new NotSupportedException($"The command {myCommand} does not support explicit column configuration (yet).")
             };
 
@@ -2363,9 +2367,11 @@ namespace ETWAnalyzer.Commands
                             ShowDetails = ShowDetails,
                             Session = Session,
                             ShowModuleInfo = ShowModuleInfo,
-                            ShowModuleFilter = ShowModuleFilter,
-                            ReverseFileName = ReverseFileName,
-                        };
+                                ShowModuleFilter = ShowModuleFilter,
+                                ReverseFileName = ReverseFileName,
+                                ColumnConfiguration = ColumnConfiguration,
+                                MergeColumnConfig = MergeColumnConfig,
+                            };
                         break;
                     case DumpCommands.Power:
                         ThrowIfFileOrDirectoryIsInvalid(FileOrDirectoryQueries);

@@ -105,6 +105,63 @@ namespace ETWAnalyzer.EventDump
         /// </summary>
         const string UnknownFileName = "Unknown";
 
+        const string Col_ReadSize = "ReadSize";
+        const string Col_ReadMaxPos = "ReadMaxPos";
+        const string Col_ReadDuration = "ReadDuration";
+        const string Col_ReadThroughput = "ReadThroughput";
+        const string Col_ReadCount = "ReadCount";
+        const string Col_WriteSize = "WriteSize";
+        const string Col_WriteMaxPos = "WriteMaxPos";
+        const string Col_WriteDuration = "WriteDuration";
+        const string Col_WriteThroughput = "WriteThroughput";
+        const string Col_WriteCount = "WriteCount";
+        const string Col_OpenCloseDuration = "OpenCloseDuration";
+        const string Col_OpenCount = "OpenCount";
+        const string Col_CloseCount = "CloseCount";
+        const string Col_SetSecurityCount = "SetSecurityCount";
+        const string Col_DeleteCount = "DeleteCount";
+        const string Col_RenameCount = "RenameCount";
+        const string Col_FileDir = "FileDir";
+
+        /// <summary>
+        /// Valid column names which can be enabled for more flexible output
+        /// </summary>
+        public static string[] ColumnNames =
+        {
+            Col_ReadSize, Col_ReadMaxPos, Col_ReadDuration, Col_ReadThroughput, Col_ReadCount,
+            Col_WriteSize, Col_WriteMaxPos, Col_WriteDuration, Col_WriteThroughput, Col_WriteCount,
+            Col_OpenCloseDuration, Col_OpenCount, Col_CloseCount,
+            Col_SetSecurityCount, Col_DeleteCount, Col_RenameCount,
+            Col_FileDir,
+        };
+
+        bool GetColumnEnable(string columnName)
+        {
+            return columnName switch
+            {
+                Col_ReadSize => GetOverrideFlag(Col_ReadSize, true),
+                Col_ReadMaxPos => GetOverrideFlag(Col_ReadMaxPos, ShowDetails),
+                Col_ReadDuration => GetOverrideFlag(Col_ReadDuration, true),
+                Col_ReadThroughput => GetOverrideFlag(Col_ReadThroughput, ShowDetails),
+                Col_ReadCount => GetOverrideFlag(Col_ReadCount, true),
+                Col_WriteSize => GetOverrideFlag(Col_WriteSize, true),
+                Col_WriteMaxPos => GetOverrideFlag(Col_WriteMaxPos, ShowDetails),
+                Col_WriteDuration => GetOverrideFlag(Col_WriteDuration, true),
+                Col_WriteThroughput => GetOverrideFlag(Col_WriteThroughput, ShowDetails),
+                Col_WriteCount => GetOverrideFlag(Col_WriteCount, true),
+                Col_OpenCloseDuration => GetOverrideFlag(Col_OpenCloseDuration, true),
+                Col_OpenCount => GetOverrideFlag(Col_OpenCount, true),
+                Col_CloseCount => GetOverrideFlag(Col_CloseCount, true),
+                Col_SetSecurityCount => GetOverrideFlag(Col_SetSecurityCount, ShowDetails),
+                Col_DeleteCount => GetOverrideFlag(Col_DeleteCount, ShowDetails),
+                Col_RenameCount => GetOverrideFlag(Col_RenameCount, ShowDetails),
+                Col_FileDir => GetOverrideFlag(Col_FileDir, true),
+                _ => throw new NotSupportedException($"Column {columnName} is not configurable."),
+            };
+        }
+
+
+
 
         static readonly char[] PathSplitChars = new char[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar };
         static readonly string PathSplitCharAsString = new(Path.DirectorySeparatorChar, 1);
@@ -275,14 +332,33 @@ namespace ETWAnalyzer.EventDump
 
                     if (bPrintHeader && !IsPerProcessTotal && !IsTotalMode)
                     {
-                        if (ShowDetails)
-                        {
-                            ColorConsole.WriteEmbeddedColorLine($"[magenta]{sortOrderHeadline}[/magenta][green]Read (Size, MaxFilePos, Duration, Throughput, Count)[/green][yellow]              Write (Size, MaxFilePos, Duration, Throughput, Count)[/yellow][cyan]              Open+Close Duration, Open, Close, SetSecurity Count, Del Count, Rename Count[/cyan]          Directory or File if -dirLevel 100 is used");
-                        }
-                        else
-                        {
-                            ColorConsole.WriteEmbeddedColorLine($"[magenta]{sortOrderHeadline}[/magenta][green]Read (Size, Duration, Count)[/green][yellow]        Write (Size, Duration, Count)[/yellow][cyan]         Open+Close Duration, Open, Close[/cyan]        Directory or File if -dirLevel 100 is used");
-                        }
+                        bool anyRead = GetColumnEnable(Col_ReadSize) || GetColumnEnable(Col_ReadMaxPos) || GetColumnEnable(Col_ReadDuration) || GetColumnEnable(Col_ReadThroughput) || GetColumnEnable(Col_ReadCount);
+                        bool anyWrite = GetColumnEnable(Col_WriteSize) || GetColumnEnable(Col_WriteMaxPos) || GetColumnEnable(Col_WriteDuration) || GetColumnEnable(Col_WriteThroughput) || GetColumnEnable(Col_WriteCount);
+                        bool anyOC = GetColumnEnable(Col_OpenCloseDuration) || GetColumnEnable(Col_OpenCount) || GetColumnEnable(Col_CloseCount) || GetColumnEnable(Col_SetSecurityCount) || GetColumnEnable(Col_DeleteCount) || GetColumnEnable(Col_RenameCount);
+                        string readHeader = !anyRead ? "" : "[green]Read (" +
+                            (GetColumnEnable(Col_ReadSize) ? "Size, " : "") +
+                            (GetColumnEnable(Col_ReadMaxPos) ? "MaxFilePos, " : "") +
+                            (GetColumnEnable(Col_ReadDuration) ? "Duration, " : "") +
+                            (GetColumnEnable(Col_ReadThroughput) ? "Throughput, " : "") +
+                            (GetColumnEnable(Col_ReadCount) ? "Count" : "") +
+                            ")[/green]";
+                        string writeHeader = !anyWrite ? "" : "[yellow]              Write (" +
+                            (GetColumnEnable(Col_WriteSize) ? "Size, " : "") +
+                            (GetColumnEnable(Col_WriteMaxPos) ? "MaxFilePos, " : "") +
+                            (GetColumnEnable(Col_WriteDuration) ? "Duration, " : "") +
+                            (GetColumnEnable(Col_WriteThroughput) ? "Throughput, " : "") +
+                            (GetColumnEnable(Col_WriteCount) ? "Count" : "") +
+                            ")[/yellow]";
+                        string ocHeader = !anyOC ? "" : "[cyan]              " +
+                            (GetColumnEnable(Col_OpenCloseDuration) ? "Open+Close Duration, " : "") +
+                            (GetColumnEnable(Col_OpenCount) ? "Open, " : "") +
+                            (GetColumnEnable(Col_CloseCount) ? "Close" : "") +
+                            (GetColumnEnable(Col_SetSecurityCount) ? ", SetSecurity Count" : "") +
+                            (GetColumnEnable(Col_DeleteCount) ? ", Del Count" : "") +
+                            (GetColumnEnable(Col_RenameCount) ? ", Rename Count" : "") +
+                            "[/cyan]";
+                        string dirHeader = GetColumnEnable(Col_FileDir) ? "          Directory or File if -dirLevel 100 is used" : "";
+                        ColorConsole.WriteEmbeddedColorLine($"[magenta]{sortOrderHeadline}[/magenta]{readHeader}{writeHeader}{ocHeader}{dirHeader}");
                         bPrintHeader = false;
                     }
 
@@ -319,14 +395,34 @@ namespace ETWAnalyzer.EventDump
 
                         dynamicColumnTotal = AggregateDynamicColumn(dynamicColumnTotal,columnData.Value);
 
-                        if (ShowDetails)
-                        {
-                            ColorConsole.WriteEmbeddedColorLine($"[magenta]{totalSortOrderCell}[/magenta][green]r {fileReadKB,12} KB {fileReadMaxPosKB,12} KB {fileReadTime,10} s {(int)readMBPerSeconds,5} MB/s {fileEvent.FileReadCount,4} [/green] [yellow]w {fileWriteKB,12} KB {fileWriteMaxPos,12} KB {fileWriteTime,10} s {(int)writeMBPerSeconds,5} MB/s {fileEvent.FileWriteCount,4} [/yellow] [cyan] O+C {fileOpenCloseTime,10} s Open: {fileEvent.FileOpenCount,4} Close: {fileEvent.FileCloseCount,4} SetSecurity: {fileEvent.FileSetSecurityCount,3} Del: {fileEvent.FileDeleteCount,3}, Ren: {fileEvent.FileRenameCount,3}[/cyan] {GetFileName(fileEvent.RootLevelDirectory, ReverseFileName)}");
-                        }
-                        else
-                        {
-                            ColorConsole.WriteEmbeddedColorLine($"[magenta]{totalSortOrderCell}[/magenta][green]r {fileReadKB,12} KB {fileReadTime,10} s {fileEvent.FileReadCount,4}[/green] [yellow]w {fileWriteKB,12} KB {fileWriteTime,10} s {fileEvent.FileWriteCount,4} [/yellow] [cyan] O+C {fileOpenCloseTime,10} s Open: {fileEvent.FileOpenCount,4} Close: {fileEvent.FileCloseCount,4}[/cyan] {GetFileName(fileEvent.RootLevelDirectory, ReverseFileName)}");
-                        }
+                        bool anyRead = GetColumnEnable(Col_ReadSize) || GetColumnEnable(Col_ReadMaxPos) || GetColumnEnable(Col_ReadDuration) || GetColumnEnable(Col_ReadThroughput) || GetColumnEnable(Col_ReadCount);
+                        bool anyWrite = GetColumnEnable(Col_WriteSize) || GetColumnEnable(Col_WriteMaxPos) || GetColumnEnable(Col_WriteDuration) || GetColumnEnable(Col_WriteThroughput) || GetColumnEnable(Col_WriteCount);
+                        bool anyOC = GetColumnEnable(Col_OpenCloseDuration) || GetColumnEnable(Col_OpenCount) || GetColumnEnable(Col_CloseCount) || GetColumnEnable(Col_SetSecurityCount) || GetColumnEnable(Col_DeleteCount) || GetColumnEnable(Col_RenameCount);
+
+                        string readPart = !anyRead ? "" : "[green]r" +
+                            (GetColumnEnable(Col_ReadSize) ? $" {fileReadKB,12} KB" : "") +
+                            (GetColumnEnable(Col_ReadMaxPos) ? $" {fileReadMaxPosKB,12} KB" : "") +
+                            (GetColumnEnable(Col_ReadDuration) ? $" {fileReadTime,10} s" : "") +
+                            (GetColumnEnable(Col_ReadThroughput) ? $" {(int)readMBPerSeconds,5} MB/s" : "") +
+                            (GetColumnEnable(Col_ReadCount) ? $" {fileEvent.FileReadCount,4}" : "") +
+                            " [/green]";
+                        string writePart = !anyWrite ? "" : "[yellow]w" +
+                            (GetColumnEnable(Col_WriteSize) ? $" {fileWriteKB,12} KB" : "") +
+                            (GetColumnEnable(Col_WriteMaxPos) ? $" {fileWriteMaxPos,12} KB" : "") +
+                            (GetColumnEnable(Col_WriteDuration) ? $" {fileWriteTime,10} s" : "") +
+                            (GetColumnEnable(Col_WriteThroughput) ? $" {(int)writeMBPerSeconds,5} MB/s" : "") +
+                            (GetColumnEnable(Col_WriteCount) ? $" {fileEvent.FileWriteCount,4}" : "") +
+                            " [/yellow]";
+                        string ocPart = !anyOC ? "" : "[cyan]" +
+                            (GetColumnEnable(Col_OpenCloseDuration) ? $" O+C {fileOpenCloseTime,10} s" : "") +
+                            (GetColumnEnable(Col_OpenCount) ? $" Open: {fileEvent.FileOpenCount,4}" : "") +
+                            (GetColumnEnable(Col_CloseCount) ? $" Close: {fileEvent.FileCloseCount,4}" : "") +
+                            (GetColumnEnable(Col_SetSecurityCount) ? $" SetSecurity: {fileEvent.FileSetSecurityCount,3}" : "") +
+                            (GetColumnEnable(Col_DeleteCount) ? $" Del: {fileEvent.FileDeleteCount,3}" : "") +
+                            (GetColumnEnable(Col_RenameCount) ? $" Ren: {fileEvent.FileRenameCount,3}" : "") +
+                            "[/cyan]";
+                        string dirPart = GetColumnEnable(Col_FileDir) ? $" {GetFileName(fileEvent.RootLevelDirectory, ReverseFileName)}" : "";
+                        ColorConsole.WriteEmbeddedColorLine($"[magenta]{totalSortOrderCell}[/magenta]{readPart}{writePart}{ocPart}{dirPart}");
                     }
                     printedFiles++;
                     processes.UnionWith(fileEvent.Processes);
@@ -347,11 +443,52 @@ namespace ETWAnalyzer.EventDump
 
                     if (ShowDetails)
                     {
-                        ColorConsole.WriteEmbeddedColorLine($"[cyan]{dynamicPerProcessColumntotalString}[/cyan][red]r {fileReadKB,12} KB {fileReadTimeS,10} s {totalPerProcessFileReadCount,4}[/red] [magenta]w {fileWriteKB,12} KB {fileWriteTimeS,10} s {totalPerProcessFileWriteCount,4} [/magenta] [yellow] O+C {fileOpenCloseTimeS,10} s Open: {totalPerProcessFileOpenCount,4} Close: {totalPerProcessFileCloseCount,4} SetSecurity: {totalPerProcessFileSetSecurityCount,4} Del: {totalPerProcessFileDeleteCount,3}, Ren: {totalPerProcessFileRenameCount,3}[/yellow] [magenta]TotalTime: {fileTotalTimeS} s[/magenta] Process Total with {totalPerProcessFileCount} accessed files");
+                        bool anyRead = GetColumnEnable(Col_ReadSize) || GetColumnEnable(Col_ReadDuration) || GetColumnEnable(Col_ReadCount);
+                        bool anyWrite = GetColumnEnable(Col_WriteSize) || GetColumnEnable(Col_WriteDuration) || GetColumnEnable(Col_WriteCount);
+                        bool anyOC = GetColumnEnable(Col_OpenCloseDuration) || GetColumnEnable(Col_OpenCount) || GetColumnEnable(Col_CloseCount) || GetColumnEnable(Col_SetSecurityCount) || GetColumnEnable(Col_DeleteCount) || GetColumnEnable(Col_RenameCount);
+
+                        string readStr = !anyRead ? "" : $"[red]r" +
+                            (GetColumnEnable(Col_ReadSize) ? $" {fileReadKB,12} KB" : "") +
+                            (GetColumnEnable(Col_ReadDuration) ? $" {fileReadTimeS,10} s" : "") +
+                            (GetColumnEnable(Col_ReadCount) ? $" {totalPerProcessFileReadCount,4}" : "") +
+                            $"[/red] ";
+                        string writeStr = !anyWrite ? "" : $"[magenta]w" +
+                            (GetColumnEnable(Col_WriteSize) ? $" {fileWriteKB,12} KB" : "") +
+                            (GetColumnEnable(Col_WriteDuration) ? $" {fileWriteTimeS,10} s" : "") +
+                            (GetColumnEnable(Col_WriteCount) ? $" {totalPerProcessFileWriteCount,4}" : "") +
+                            $" [/magenta] ";
+                        string ocStr = !anyOC ? "" : $"[yellow]" +
+                            (GetColumnEnable(Col_OpenCloseDuration) ? $" O+C {fileOpenCloseTimeS,10} s" : "") +
+                            (GetColumnEnable(Col_OpenCount) ? $" Open: {totalPerProcessFileOpenCount,4}" : "") +
+                            (GetColumnEnable(Col_CloseCount) ? $" Close: {totalPerProcessFileCloseCount,4}" : "") +
+                            (GetColumnEnable(Col_SetSecurityCount) ? $" SetSecurity: {totalPerProcessFileSetSecurityCount,4}" : "") +
+                            (GetColumnEnable(Col_DeleteCount) ? $" Del: {totalPerProcessFileDeleteCount,3}" : "") +
+                            (GetColumnEnable(Col_RenameCount) ? $", Ren: {totalPerProcessFileRenameCount,3}" : "") +
+                            $"[/yellow] ";
+                        ColorConsole.WriteEmbeddedColorLine($"[cyan]{dynamicPerProcessColumntotalString}[/cyan]{readStr}{writeStr}{ocStr}[magenta]TotalTime: {fileTotalTimeS} s[/magenta] Process Total with {totalPerProcessFileCount} accessed files");
                     }
                     else
                     {
-                        ColorConsole.WriteEmbeddedColorLine($"[cyan]{dynamicPerProcessColumntotalString}[/cyan][red]r {fileReadKB,12} KB {fileReadTimeS,10} s {totalPerProcessFileReadCount,4}[/red] [magenta]w {fileWriteKB,12} KB {fileWriteTimeS,10} s {totalPerProcessFileWriteCount,4} [/magenta] [yellow] O+C {fileOpenCloseTimeS,10} s Open: {totalPerProcessFileOpenCount,4} Close: {totalPerProcessFileCloseCount,4}[/yellow] [magenta]TotalTime: {fileTotalTimeS} s[/magenta] Process Total with {totalPerProcessFileCount} accessed files");
+                        bool anyRead = GetColumnEnable(Col_ReadSize) || GetColumnEnable(Col_ReadDuration) || GetColumnEnable(Col_ReadCount);
+                        bool anyWrite = GetColumnEnable(Col_WriteSize) || GetColumnEnable(Col_WriteDuration) || GetColumnEnable(Col_WriteCount);
+                        bool anyOC = GetColumnEnable(Col_OpenCloseDuration) || GetColumnEnable(Col_OpenCount) || GetColumnEnable(Col_CloseCount);
+
+                        string readStr = !anyRead ? "" : $"[red]r" +
+                            (GetColumnEnable(Col_ReadSize) ? $" {fileReadKB,12} KB" : "") +
+                            (GetColumnEnable(Col_ReadDuration) ? $" {fileReadTimeS,10} s" : "") +
+                            (GetColumnEnable(Col_ReadCount) ? $" {totalPerProcessFileReadCount,4}" : "") +
+                            $"[/red] ";
+                        string writeStr = !anyWrite ? "" : $"[magenta]w" +
+                            (GetColumnEnable(Col_WriteSize) ? $" {fileWriteKB,12} KB" : "") +
+                            (GetColumnEnable(Col_WriteDuration) ? $" {fileWriteTimeS,10} s" : "") +
+                            (GetColumnEnable(Col_WriteCount) ? $" {totalPerProcessFileWriteCount,4}" : "") +
+                            $" [/magenta] ";
+                        string ocStr = !anyOC ? "" : $"[yellow]" +
+                            (GetColumnEnable(Col_OpenCloseDuration) ? $" O+C {fileOpenCloseTimeS,10} s" : "") +
+                            (GetColumnEnable(Col_OpenCount) ? $" Open: {totalPerProcessFileOpenCount,4}" : "") +
+                            (GetColumnEnable(Col_CloseCount) ? $" Close: {totalPerProcessFileCloseCount,4}" : "") +
+                            $"[/yellow] ";
+                        ColorConsole.WriteEmbeddedColorLine($"[cyan]{dynamicPerProcessColumntotalString}[/cyan]{readStr}{writeStr}{ocStr}[magenta]TotalTime: {fileTotalTimeS} s[/magenta] Process Total with {totalPerProcessFileCount} accessed files");
                     }
                 }
 
@@ -386,11 +523,52 @@ namespace ETWAnalyzer.EventDump
 
                     if (ShowDetails)
                     {
-                        ColorConsole.WriteEmbeddedColorLine($"[cyan]{dynamicTotalString}[/cyan][red]r {fileReadKB,12} KB {fileReadTimeS,10} s {totalFileReadCount,6}[/red] [magenta]w {fileWriteKB,12} KB {fileWriteTimeS,10} s {totalFileWriteCount,6} [/magenta] [yellow] O+C {fileOpenCloseTimeS,10} s Open: {totalFileOpenCount,6} Close: {totalFileCloseCount,6} SetSecurity: {totalFileSetSecurityCount,6} Del: {totalFileDeleteCount,5}, Ren: {totalFileRenameCount,5}[/yellow] [magenta]TotalTime: {fileTotalTimeS} s[/magenta] File/s Total with {totalFileCount} accessed file/s. Process Count: {processes.Count}");
+                        bool anyRead = GetColumnEnable(Col_ReadSize) || GetColumnEnable(Col_ReadDuration) || GetColumnEnable(Col_ReadCount);
+                        bool anyWrite = GetColumnEnable(Col_WriteSize) || GetColumnEnable(Col_WriteDuration) || GetColumnEnable(Col_WriteCount);
+                        bool anyOC = GetColumnEnable(Col_OpenCloseDuration) || GetColumnEnable(Col_OpenCount) || GetColumnEnable(Col_CloseCount) || GetColumnEnable(Col_SetSecurityCount) || GetColumnEnable(Col_DeleteCount) || GetColumnEnable(Col_RenameCount);
+
+                        string readStr = !anyRead ? "" : $"[red]r" +
+                            (GetColumnEnable(Col_ReadSize) ? $" {fileReadKB,12} KB" : "") +
+                            (GetColumnEnable(Col_ReadDuration) ? $" {fileReadTimeS,10} s" : "") +
+                            (GetColumnEnable(Col_ReadCount) ? $" {totalFileReadCount,6}" : "") +
+                            $"[/red] ";
+                        string writeStr = !anyWrite ? "" : $"[magenta]w" +
+                            (GetColumnEnable(Col_WriteSize) ? $" {fileWriteKB,12} KB" : "") +
+                            (GetColumnEnable(Col_WriteDuration) ? $" {fileWriteTimeS,10} s" : "") +
+                            (GetColumnEnable(Col_WriteCount) ? $" {totalFileWriteCount,6}" : "") +
+                            $" [/magenta] ";
+                        string ocStr = !anyOC ? "" : $"[yellow]" +
+                            (GetColumnEnable(Col_OpenCloseDuration) ? $" O+C {fileOpenCloseTimeS,10} s" : "") +
+                            (GetColumnEnable(Col_OpenCount) ? $" Open: {totalFileOpenCount,6}" : "") +
+                            (GetColumnEnable(Col_CloseCount) ? $" Close: {totalFileCloseCount,6}" : "") +
+                            (GetColumnEnable(Col_SetSecurityCount) ? $" SetSecurity: {totalFileSetSecurityCount,6}" : "") +
+                            (GetColumnEnable(Col_DeleteCount) ? $" Del: {totalFileDeleteCount,5}" : "") +
+                            (GetColumnEnable(Col_RenameCount) ? $", Ren: {totalFileRenameCount,5}" : "") +
+                            $"[/yellow] ";
+                        ColorConsole.WriteEmbeddedColorLine($"[cyan]{dynamicTotalString}[/cyan]{readStr}{writeStr}{ocStr}[magenta]TotalTime: {fileTotalTimeS} s[/magenta] File/s Total with {totalFileCount} accessed file/s. Process Count: {processes.Count}");
                     }
                     else
                     {
-                        ColorConsole.WriteEmbeddedColorLine($"[cyan]{dynamicTotalString}[/cyan][red]r {fileReadKB,12} KB {fileReadTimeS,10} s {totalFileReadCount,6}[/red] [magenta]w {fileWriteKB,12} KB {fileWriteTimeS,10} s {totalFileWriteCount,6} [/magenta] [yellow] O+C {fileOpenCloseTimeS,10} s Open: {totalFileOpenCount,6} Close: {totalFileCloseCount,6}[/yellow] [magenta]TotalTime: {fileTotalTimeS} s[/magenta] File/s Total with {totalFileCount} accessed file/s. Process Count: {processes.Count}");
+                        bool anyRead = GetColumnEnable(Col_ReadSize) || GetColumnEnable(Col_ReadDuration) || GetColumnEnable(Col_ReadCount);
+                        bool anyWrite = GetColumnEnable(Col_WriteSize) || GetColumnEnable(Col_WriteDuration) || GetColumnEnable(Col_WriteCount);
+                        bool anyOC = GetColumnEnable(Col_OpenCloseDuration) || GetColumnEnable(Col_OpenCount) || GetColumnEnable(Col_CloseCount);
+
+                        string readStr = !anyRead ? "" : $"[red]r" +
+                            (GetColumnEnable(Col_ReadSize) ? $" {fileReadKB,12} KB" : "") +
+                            (GetColumnEnable(Col_ReadDuration) ? $" {fileReadTimeS,10} s" : "") +
+                            (GetColumnEnable(Col_ReadCount) ? $" {totalFileReadCount,6}" : "") +
+                            $"[/red] ";
+                        string writeStr = !anyWrite ? "" : $"[magenta]w" +
+                            (GetColumnEnable(Col_WriteSize) ? $" {fileWriteKB,12} KB" : "") +
+                            (GetColumnEnable(Col_WriteDuration) ? $" {fileWriteTimeS,10} s" : "") +
+                            (GetColumnEnable(Col_WriteCount) ? $" {totalFileWriteCount,6}" : "") +
+                            $" [/magenta] ";
+                        string ocStr = !anyOC ? "" : $"[yellow]" +
+                            (GetColumnEnable(Col_OpenCloseDuration) ? $" O+C {fileOpenCloseTimeS,10} s" : "") +
+                            (GetColumnEnable(Col_OpenCount) ? $" Open: {totalFileOpenCount,6}" : "") +
+                            (GetColumnEnable(Col_CloseCount) ? $" Close: {totalFileCloseCount,6}" : "") +
+                            $"[/yellow] ";
+                        ColorConsole.WriteEmbeddedColorLine($"[cyan]{dynamicTotalString}[/cyan]{readStr}{writeStr}{ocStr}[magenta]TotalTime: {fileTotalTimeS} s[/magenta] File/s Total with {totalFileCount} accessed file/s. Process Count: {processes.Count}");
                     }
                 }
             }
