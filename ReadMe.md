@@ -48,7 +48,7 @@ See [Documentation Folder in Repo](https://github.com/Siemens-Healthineers/ETWAn
 - [TestRun](ETWAnalyzer/Documentation/DumpTestRunCommand.md)
 - [ThreadPool](ETWAnalyzer/Documentation/DumpThreadPoolCommand.md) 
 - [Version](ETWAnalyzer/Documentation/DumpVersionCommand.md)
-- [VirtualAlloc](ETWAnalyzer/Documentation/DumpVirtualAllocCommand.md)]
+- [VirtualAlloc](ETWAnalyzer/Documentation/DumpVirtualAllocCommand.md)
 
 They all support -filedir/-fd and an extensive command line help what you can dump from the extracted data. 
 
