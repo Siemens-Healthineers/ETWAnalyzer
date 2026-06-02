@@ -197,7 +197,31 @@ namespace ETWAnalyzer_iTest
 
             // Skip first 3 lines to avoid having the extraction command line from CSV in the comparison which can 
             // change between invocations. The rest of the data should be immutable.
-            Assert.Equal(File.ReadAllLines(TestData.VirtualAllocCSVFile).Skip(3), File.ReadAllLines(csvFile).Skip(3));
+            // Also exclude timestamp columns (Date, Start Time) which are locale-dependent.
+            string[] expectedLines = File.ReadAllLines(TestData.VirtualAllocCSVFile).Skip(3).ToArray();
+            string[] actualLines = File.ReadAllLines(csvFile).Skip(3).ToArray();
+            Assert.Equal(expectedLines.Length, actualLines.Length);
+
+            // Find indices of Date and Start Time columns to exclude from comparison
+            string[] headerCols = File.ReadAllLines(TestData.VirtualAllocCSVFile).Skip(2).First().Split(';');
+            var excludeIndices = new HashSet<int>();
+            for (int i = 0; i < headerCols.Length; i++)
+            {
+                if (headerCols[i].Equals("Date", StringComparison.OrdinalIgnoreCase) ||
+                    headerCols[i].Equals("Start Time", StringComparison.OrdinalIgnoreCase))
+                {
+                    excludeIndices.Add(i);
+                }
+            }
+
+            for (int i = 0; i < expectedLines.Length; i++)
+            {
+                string[] expectedCols = expectedLines[i].Split(';');
+                string[] actualCols = actualLines[i].Split(';');
+                string expectedFiltered = String.Join(";", expectedCols.Where((_, idx) => !excludeIndices.Contains(idx)));
+                string actualFiltered = String.Join(";", actualCols.Where((_, idx) => !excludeIndices.Contains(idx)));
+                Assert.Equal(expectedFiltered, actualFiltered);
+            }
         }
 
         [Fact]
