@@ -23,6 +23,8 @@ namespace ETWAnalyzer_uTest.TestInfrastructure
 
         ITestOutputHelper myWriter;
 
+        bool myStdoutRedirect = false;
+
         /// <summary>
         /// Redirected Stdout
         /// </summary>
@@ -43,6 +45,7 @@ namespace ETWAnalyzer_uTest.TestInfrastructure
             myWriter = writer;
             if (redirectStdout)
             {
+                myStdoutRedirect = true;
                 myStringWriter = new StringWriter();
                 Console.SetOut(myStringWriter);
             }
@@ -97,6 +100,10 @@ namespace ETWAnalyzer_uTest.TestInfrastructure
                 foreach (var message in Messages)
                 {
                     myWriter.WriteLine(message);
+                    if (!myStdoutRedirect)
+                    {
+                        Console.WriteLine("ExcpeptionalPrinter: " + message);
+                    }
                 }
             }
 
