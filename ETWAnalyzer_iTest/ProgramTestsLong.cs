@@ -187,11 +187,16 @@ namespace ETWAnalyzer_iTest
 
         private void ExportVirtualAlloctorCSV(string fullName)
         {
+            using var printer = new ExceptionalPrinter(myWriter);
+
             string csvFile = Path.Combine(Path.GetDirectoryName(fullName), "DumpVirtAlloc.csv");
             Program.MainCore(new string[] { "-Dump", "VirtualAlloc", "-fd", fullName, "-csv",  csvFile});
+
             // Skip first 3 lines to avoid having the extraction command line from CSV in the comparison which can 
             // change between invocations. The rest of the data should be immutable.
             Assert.Equal(File.ReadAllLines(TestData.VirtualAllocCSVFile).Skip(3), File.ReadAllLines(csvFile).Skip(3));
+            printer.Add($"Exported VirtualAlloc CSV to {File.ReadAllText(csvFile)}");
+            printer.Add($"Sample File: {File.ReadAllText(TestData.VirtualAllocCSVFile)}");
         }
 
         [Fact]

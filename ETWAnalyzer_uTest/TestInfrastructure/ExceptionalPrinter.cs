@@ -15,7 +15,7 @@ namespace ETWAnalyzer_uTest.TestInfrastructure
     /// The intention of this class is to omit testoutput in the good case, but add diagnostics messages
     /// when the test fails.
     /// </summary>
-    class ExceptionalPrinter : IDisposable
+    public class ExceptionalPrinter : IDisposable
     {
         public List<string> Messages { get; set; } = new List<string>();
 
