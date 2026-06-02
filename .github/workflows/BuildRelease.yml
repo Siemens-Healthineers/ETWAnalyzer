@@ -27,13 +27,13 @@ jobs:
             dotnet-version: '10.0.x'     
 
         - name: Checkout
-          uses: actions/checkout@v4
+          uses: actions/checkout@v6
           with:
             fetch-depth: 0
 
         # Add  MSBuild to the PATH: https://github.com/microsoft/setup-msbuild
         - name: Setup MSBuild.exe
-          uses: microsoft/setup-msbuild@v2
+          uses: microsoft/setup-msbuild@v3
 
         # Print .NET information
         - name: Get .NET Information
@@ -43,21 +43,21 @@ jobs:
           run: ${{ github.workspace }}\ETWAnalyzer\MakeRelease.cmd
             
         - name: Upload .NET 10 Binaries
-          uses: actions/upload-artifact@v4
+          uses: actions/upload-artifact@v7
           with:
             name: Net10Binaries
             path: ${{ github.workspace }}/bin/Release/ETWAnalyzer_Net10.zip
             retention-days: 90
 
         - name: Upload Nuget Package
-          uses: actions/upload-artifact@v4
+          uses: actions/upload-artifact@v7
           with:
             name: ETWAnalyzer.nupkg
             path: ${{ github.workspace }}/bin/Release/ETWAnalyzer*.nupkg
             retention-days: 90
 
         - name: Upload Samples
-          uses: actions/upload-artifact@v4
+          uses: actions/upload-artifact@v7
           with:
             name: Samples_Binaries_Zip
             path: ${{ github.workspace }}/bin/Release/Samples_Binaries.zip
