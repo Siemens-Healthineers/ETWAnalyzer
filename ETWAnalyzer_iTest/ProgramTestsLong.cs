@@ -202,8 +202,12 @@ namespace ETWAnalyzer_iTest
             string[] actualLines = File.ReadAllLines(csvFile).Skip(3).ToArray();
             Assert.Equal(expectedLines.Length, actualLines.Length);
 
+            string expectedHeader  = File.ReadAllLines(TestData.VirtualAllocCSVFile).Skip(1).First();
+            string actualHeader = File.ReadAllLines(csvFile).Skip(1).First();
+            Assert.Equal(expectedHeader, actualHeader);
+
             // Find indices of Date and Start Time columns to exclude from comparison
-            string[] headerCols = File.ReadAllLines(TestData.VirtualAllocCSVFile).Skip(2).First().Split(';');
+            string[] headerCols = expectedHeader.Split(';');
             var excludeIndices = new HashSet<int>();
             for (int i = 0; i < headerCols.Length; i++)
             {
@@ -211,6 +215,7 @@ namespace ETWAnalyzer_iTest
                     headerCols[i].Equals("Start Time", StringComparison.OrdinalIgnoreCase))
                 {
                     excludeIndices.Add(i);
+                    Console.WriteLine($"Excluded column index {i}: {headerCols[i]}");
                 }
             }
 
@@ -218,8 +223,9 @@ namespace ETWAnalyzer_iTest
             {
                 string[] expectedCols = expectedLines[i].Split(';');
                 string[] actualCols = actualLines[i].Split(';');
-                string expectedFiltered = String.Join(";", expectedCols.Where((_, idx) => !excludeIndices.Contains(idx)));
-                string actualFiltered = String.Join(";", actualCols.Where((_, idx) => !excludeIndices.Contains(idx)));
+                string line = $"Line {i}: ";
+                string expectedFiltered = line +  String.Join(";", expectedCols.Where((_, idx) => !excludeIndices.Contains(idx)));
+                string actualFiltered = line + String.Join(";", actualCols.Where((_, idx) => !excludeIndices.Contains(idx)));
                 Assert.Equal(expectedFiltered, actualFiltered);
             }
         }
