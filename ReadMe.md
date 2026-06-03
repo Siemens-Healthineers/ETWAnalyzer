@@ -237,4 +237,4 @@ see if e.g. a running Windows Installer did have an effect to your test executio
 
 <!-- References -->
 [ETWAnalyzerLicense]:                                       <LICENSE>
-[ETWAnalyzerOSS]:                                           <ETWAnalyzer/3rdParty/ReadMeOSS.md>
+[ETWAnalyzerOSS]:                                           <ETWAnalyzer.Reader/3rdParty/ReadMeOSS.md>
