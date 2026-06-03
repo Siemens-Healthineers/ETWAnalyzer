@@ -17,7 +17,7 @@ one or a collection of thousands of ETL files.
 After extraction ETWAnalyzer has many query commands to make the data much more accessible. It can query one or many files where the output is either printed to console, 
 or written to a CSV file for further analysis. 
 
-The Json files can also be accessed via a C# interface [**IETWExtract**](ETWAnalyzer/Documentation/ProgramaticAccess.md) which enables you to write custom analyzers.
+The Json files can also be accessed via a C# interface [**IETWExtract**](ETWAnalyzer.Reader/Documentation/ProgramaticAccess.md) which enables you to write custom analyzers by referencing the Nuget package ETWAnalyzer.Reader.
 
 Compressed Json files are much faster to query than the input ETL files without slow symbol server lookups.
 It is based on years of field experience with ETW file analysis to keep the extracted Json file size as small as possible while maximizing the insights you can get of the extracted files.
