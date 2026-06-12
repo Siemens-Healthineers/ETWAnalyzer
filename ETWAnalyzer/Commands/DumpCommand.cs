@@ -1933,7 +1933,7 @@ namespace ETWAnalyzer.Commands
                         myCommand = DumpCommands.CPU;
                         break;
                     case "exception":
-                        myCommand = DumpCommands.Exceptions;
+                        myCommand = DumpCommands.Exception;
                         break;
                     case "stats":
                         myCommand = DumpCommands.Stats;
@@ -1942,7 +1942,7 @@ namespace ETWAnalyzer.Commands
                         myCommand = DumpCommands.Process;
                         break;
                     case "version":
-                        myCommand = DumpCommands.Versions;
+                        myCommand = DumpCommands.Version;
                         break;
                     case "memory":
                         myCommand = DumpCommands.Memory;
@@ -1957,7 +1957,7 @@ namespace ETWAnalyzer.Commands
                         myCommand = DumpCommands.Power;
                         break;
                     case "testrun":
-                        myCommand = DumpCommands.TestRuns;
+                        myCommand = DumpCommands.TestRun;
                         break;
                     case "threadpool":
                         myCommand = DumpCommands.ThreadPool;
@@ -2125,7 +2125,7 @@ namespace ETWAnalyzer.Commands
                     case DumpCommands.Power:
                         lret = PowerExamples + Environment.NewLine + PowerHelpString;
                         break;
-                    case DumpCommands.Exceptions:
+                    case DumpCommands.Exception:
                         lret = ExceptionExamples + Environment.NewLine + ExceptionHelpString;
                         break;
                     case DumpCommands.Memory:
@@ -2137,10 +2137,10 @@ namespace ETWAnalyzer.Commands
                     case DumpCommands.Stats:
                         lret = StatsExamples + Environment.NewLine + StatsHelpString;
                         break;
-                    case DumpCommands.TestRuns:
+                    case DumpCommands.TestRun:
                         lret = TestRunExamples + Environment.NewLine + TestRunHelpString;
                         break;
-                    case DumpCommands.Versions:
+                    case DumpCommands.Version:
                         lret = VersionExamples + Environment.NewLine + VersionHelpString;
                         break;
                     case DumpCommands.ThreadPool:
@@ -2182,7 +2182,7 @@ namespace ETWAnalyzer.Commands
         public override void Run()
         {
             string decompressedETL = null;
-            if (myCommand < DumpCommands.TestRuns && myCommand != DumpCommands.None)
+            if (myCommand < DumpCommands.TestRun && myCommand != DumpCommands.None)
             {
                 string ext = Path.GetExtension(myEtlFileOrZip);
                 if (ext == TestRun.ExtractExtension)
@@ -2229,7 +2229,7 @@ namespace ETWAnalyzer.Commands
                             OneLine = OneLine,
                         };
                         break;
-                    case DumpCommands.Versions:
+                    case DumpCommands.Version:
                         ThrowIfFileOrDirectoryIsInvalid(FileOrDirectoryQueries);
                         myCurrentDumper = new DumpModuleVersions()
                         {
@@ -2492,7 +2492,7 @@ namespace ETWAnalyzer.Commands
                             ShowDiff = ShowDiff,
                         };
                         break;
-                    case DumpCommands.Exceptions:
+                    case DumpCommands.Exception:
                         ThrowIfFileOrDirectoryIsInvalid(FileOrDirectoryQueries);
                         myCurrentDumper = new DumpExceptions
                         {
@@ -2639,7 +2639,7 @@ namespace ETWAnalyzer.Commands
                         };
                         break;
 
-                    case DumpCommands.TestRuns:
+                    case DumpCommands.TestRun:
                         ThrowIfFileOrDirectoryIsInvalid(FileOrDirectoryQueries);
                         myCurrentDumper = new TestRunDumper
                         {
@@ -2984,7 +2984,7 @@ namespace ETWAnalyzer.Commands
                 DumpCommands.Disk => DumpDisk.ValidSortOrders,
                 DumpCommands.File => DumpFile.ValidSortOrders,
                 DumpCommands.Memory => DumpMemory.ValidSortOrders,
-                DumpCommands.Exceptions => DumpExceptions.ValidSortOrders,
+                DumpCommands.Exception => DumpExceptions.ValidSortOrders,
                 DumpCommands.Dns => DumpDns.ValidSortOrders,
                 DumpCommands.TCP => context switch
                 {

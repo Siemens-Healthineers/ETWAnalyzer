@@ -21,6 +21,11 @@ namespace ETWAnalyzer.Extract.Modules
         IReadOnlyList<IPdbIdentifier> UnresolvedPdbs { get; }
 
         /// <summary>
+        /// Count of all Pdbs which should be loaded. The not loaded ones are in <seealso cref="UnresolvedPdbs"/>. 
+        /// </summary>
+        public int TotalPdbCount { get; }
+
+        /// <summary>
         /// Find Module Definition for a loaded module in a process.
         /// </summary>
         /// <param name="moduleName">Module name</param>

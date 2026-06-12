@@ -40,6 +40,11 @@ namespace ETWAnalyzer.Extract.Modules
         IReadOnlyList<IPdbIdentifier> IModuleContainer.UnresolvedPdbs { get => UnresolvedPdbs; }
 
         /// <summary>
+        /// Count of all Pdbs which should be loaded. The not loaded ones are in UnresolvedPdbs. 
+        /// </summary>
+        public int TotalPdbCount { get; set; }
+
+        /// <summary>
         /// Common strings like file names, directories, file descriptions ... go here into this global list so we can reference in other instances the strings by index 
         /// to save space in the generate json file. This sacrifices readability for a smaller Json file.
         /// </summary>

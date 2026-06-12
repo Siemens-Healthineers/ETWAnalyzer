@@ -29,7 +29,7 @@ namespace ETWAnalyzer.EventDump
         /// <summary>
         /// Dump TestRuns from a specific directory
         /// </summary>
-        TestRuns = 500,
+        TestRun = 500,
 
         /// <summary>
         /// Print all events by count
@@ -39,7 +39,7 @@ namespace ETWAnalyzer.EventDump
         /// <summary>
         /// Dump Module version of use ETL file
         /// </summary>
-        Versions,
+        Version,
 
         /// <summary>
         /// Dump costs of methods of all files in a directory or an extracted json file
@@ -49,7 +49,7 @@ namespace ETWAnalyzer.EventDump
         /// <summary>
         /// Dump Exceptions
         /// </summary>
-        Exceptions,
+        Exception,
 
         /// <summary>
         /// Dump Memory statistics

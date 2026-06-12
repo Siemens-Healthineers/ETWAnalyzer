@@ -14,5 +14,6 @@ using System.Runtime.Versioning;
 [assembly: InternalsVisibleTo("ETWAnalyzer")]
 [assembly: InternalsVisibleTo("ETWAnalyzer_uTest")]
 [assembly: InternalsVisibleTo("ETWAnalyzer_iTest")]
+[assembly: InternalsVisibleTo("ETWAnalyzer.McpServer")]
 [assembly: InternalsVisibleTo("ProfilingDataManager")]
                                            
