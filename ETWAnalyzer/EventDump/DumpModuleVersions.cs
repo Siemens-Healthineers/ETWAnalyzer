@@ -236,7 +236,7 @@ namespace ETWAnalyzer.EventDump
                 {
                     ColorConsole.WriteEmbeddedColorLine($"  Missing Pdb {missing.MissingPdb.Name} {missing.MissingPdb.Age} {missing.MissingPdb.Id}");
                 }
-                ColorConsole.WriteEmbeddedColorLine($"[red]Total {data.Modules.UnresolvedPdbs.Count}/{data.Modules.TotalPdbCount} pdbs missing, {added.Count} pdbs have CPU Samples and match the pdb name filter.[/red]");
+                ColorConsole.WriteEmbeddedColorLine($"[red]Total {data.Modules.UnresolvedPdbs.Count}/{data.Modules.TotalPdbCount} pdbs missing, {added.Count} missing pdbs have CPU Samples and match the pdb name filter.[/red]");
             }
 
             lret.AddRange(added);
