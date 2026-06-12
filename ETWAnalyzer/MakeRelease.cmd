@@ -22,6 +22,13 @@ dotnet build !ScriptLocation!\..\ETWAnalyzer.McpServer\ETWAnalyzer.McpServer.csp
 dotnet publish !ScriptLocation!\..\ETWAnalyzer.McpServer\ETWAnalyzer.McpServer.csproj /p:Configuration=Release -f !ScriptTargetFW! -r !ScriptRID! /p:SelfContained=true /p:PublishReadyToRun=true /p:PublishSingleFile=false /p:PublishDir=!BinMCPServerNet10!
 dotnet publish !ScriptLocation!\ETWAnalyzer.csproj /p:Configuration=Release -f !ScriptTargetFW! -r !ScriptRID! /p:SelfContained=true /p:PublishReadyToRun=true /p:PublishSingleFile=false /p:PublishDir=!BinFolderNet10!
 
+REM Make the bundled ETWAnalyzer.exe runnable inside the MCP server folder.
+REM Publishing McpServer copies ETWAnalyzer.dll/.exe but NOT ETWAnalyzer.deps.json
+REM (only the entry project gets a .deps.json), so its apphost cannot start.
+REM The standalone ETWAnalyzer publish above produces a matching .deps.json
+REM (same TFM/RID/Config); copy it next to the bundled apphost so both exes run.
+copy /Y "!BinFolderNet10!\ETWAnalyzer.deps.json" "!BinMCPServerNet10!\ETWAnalyzer.deps.json"
+
 dotnet build !ScriptLocation!\..\ETWAnalyzer.Reader\ETWAnalyzer.Reader.csproj  /p:Configuration=Release -f net48
 dotnet pack  !ScriptLocation!\..\ETWAnalyzer.Reader\ETWAnalyzer.Reader.csproj  /p:Configuration=Release 
 
