@@ -232,9 +232,12 @@ namespace ETWAnalyzer.EventDump
 
             if (!IsCSVEnabled)
             {
-                foreach (var missing in added.OrderBy(x=>x.MissingPdb.Name))
+                if (ShowTotal != TotalModes.Total)
                 {
-                    ColorConsole.WriteEmbeddedColorLine($"  Missing Pdb {missing.MissingPdb.Name} {missing.MissingPdb.Age} {missing.MissingPdb.Id}");
+                    foreach (var missing in added.OrderBy(x => x.MissingPdb.Name))
+                    {
+                        ColorConsole.WriteEmbeddedColorLine($"  Missing Pdb {missing.MissingPdb.Name} {missing.MissingPdb.Age} {missing.MissingPdb.Id}");
+                    }
                 }
                 ColorConsole.WriteEmbeddedColorLine($"[red]Total {data.Modules.UnresolvedPdbs.Count}/{data.Modules.TotalPdbCount} pdbs missing, {added.Count} missing pdbs have CPU Samples and match the pdb name filter.[/red]");
             }

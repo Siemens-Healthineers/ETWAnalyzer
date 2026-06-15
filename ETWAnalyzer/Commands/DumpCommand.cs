@@ -51,7 +51,7 @@ namespace ETWAnalyzer.Commands
         "            -dll xx.dll              All file versions of that dll are printed. If -dll * is used all file versions are printed." + Environment.NewLine +
         "            -topn dd [nn]             Valid when -dll ... is used. Limit output to last dd processes where optionally nn are skipped from alphabetically sorted list." + Environment.NewLine + 
         "            -ShowTotal None           When None omit per process summary of loaded vs visible modules. When Total do not print all matching modules to console. " + Environment.NewLine +  
-        "            -MissingPdb filter        Print a filtered summary of all unresolved pdbs which could not be resolved during extraction and would lead to unresolved methods in CPU Sampling/CSwitch data." + Environment.NewLine +
+        "            -MissingPdb [filter]      Print a filtered summary of all unresolved pdbs which could not be resolved during extraction and would lead to unresolved methods in CPU Sampling/CSwitch data. Filter is optional and defaults to * which matches all missing pdbs." + Environment.NewLine +
         "            -VersionFilter filter     Filter against module path and version strings. Multiple filters are separated by ;. Wildcards are * and ?. Exclusion filters start with !" + Environment.NewLine +
         "            -ModuleFilter  filter     Extracted data from Config\\DllToBuildMapping.json. Print only version information for module. Multiple filters are separated by ;. Wildcards are * and ?. Exclusion filters start with !" + Environment.NewLine;
         static readonly string ProcessHelpStringHeader =
@@ -1490,7 +1490,7 @@ namespace ETWAnalyzer.Commands
                         ProviderFilter = new KeyValuePair<string, Func<string, bool>>(providerFilter, Matcher.CreateMatcher(providerFilter));
                         break;
                     case "-missingpdb":
-                        string pdbFilter = GetNextNonArg("-missingpdb");
+                        string pdbFilter = GetNextNonArg("-missingpdb", false) ?? "*"; // filter is optional. Default to * which matches all missing pdbs.
                         MissingPdbFilter = new KeyValuePair<string, Func<string, bool>>(pdbFilter, Matcher.CreateMatcher(pdbFilter));
                         ModulePrintMode = DumpModuleVersions.PrintMode.Pdb;
                         break;
