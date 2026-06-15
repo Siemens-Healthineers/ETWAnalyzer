@@ -293,6 +293,7 @@ namespace ETWAnalyzer.Extractors
             {
                 // The sort uses the default comparer which uses the IComparable interface implementation of PdbIdentifier
                 myResults.Modules.UnresolvedPdbs.Sort();
+                myResults.Modules.TotalPdbCount = myPendingSymbols.Result.Pdbs.Count;
             }
 
             

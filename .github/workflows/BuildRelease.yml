@@ -42,13 +42,20 @@ jobs:
         - name: Build Release
           run: ${{ github.workspace }}\ETWAnalyzer\MakeRelease.cmd
             
-        - name: Upload .NET 10 Binaries
+        - name: Upload .NET 10 Binaries Not Self Contained  
           uses: actions/upload-artifact@v7
           with:
-            name: Net10Binaries
-            path: ${{ github.workspace }}/bin/Release/ETWAnalyzer_Net10.zip
+            name: ETWAnalyzerMCP
+            path: ${{ github.workspace }}/bin/Release/Net10-NotSelfContained
             retention-days: 90
 
+        - name: Upload MCP Server and ETWAnalyzer Self Contained
+          uses: actions/upload-artifact@v7
+          with:
+            name: ETWAnalyzerMCP_SelfContained
+            path: ${{ github.workspace }}/bin/Release/publishMCPNet10
+            retention-days: 90
+            
         - name: Upload Nuget Package
           uses: actions/upload-artifact@v7
           with:
@@ -60,5 +67,5 @@ jobs:
           uses: actions/upload-artifact@v7
           with:
             name: Samples_Binaries_Zip
-            path: ${{ github.workspace }}/bin/Release/Samples_Binaries.zip
+            path: ${{ github.workspace }}/Samples/bin/x64/Release
             retention-days: 90

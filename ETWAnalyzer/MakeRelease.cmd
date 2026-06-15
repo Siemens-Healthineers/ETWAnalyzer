@@ -4,30 +4,38 @@ echo Build Targets
 setlocal enabledelayedexpansion
 set ScriptLocation=%~d0%~p0
 set BinFolderNet10=!ScriptLocation!..\bin\Release\net10.0-windows\win-x64
+set BinMCPServerNet10=!ScriptLocation!..\bin\Release\publishMCPNet10
 set BinSamplesFolder=!ScriptLocation!..\Samples\bin\x64\Release
+set BinNotSelfContained=!ScriptLocation!..\bin\Release\Net10-NotSelfContained
 
 set ObjFolder=!ScriptLocation!\obj
+set ObjFolderMCPServer=!ScriptLocation!\..\ETWAnalyzer.McpServer\obj
+set ObjFolderReader=!ScriptLocation!\..\ETWAnalyzer.Reader\obj
 
-set ReleaseZipNet10=!ScriptLocation!\..\bin\Release\ETWAnalyzer_Net10.zip
-set ReleaseSamples=!ScriptLocation!..\bin\Release\Samples_Binaries.zip
+set ScriptPublishProfile=!ScriptLocation!\Properties\PublishProfiles\Net10_SelfContained.pubxml
+set ScriptTargetFW=net10.0-windows
+set ScriptRID=win-x64
 
-del !ReleaseZipNet10! 2> NUL
-del !ReleaseSamples! 2> NUL
+call :CleanTempFiles
 
-rd /q /s !BinFolderNet10!
-rd /q /s !BinSamplesFolder!
-rd /q /s !ObjFolder!
+dotnet build !ScriptLocation!\..\ETWAnalyzer.McpServer\ETWAnalyzer.McpServer.csproj /p:Configuration=Release -o !BinNotSelfContained!
+dotnet publish !ScriptLocation!\..\ETWAnalyzer.McpServer\ETWAnalyzer.McpServer.csproj /p:Configuration=Release -f !ScriptTargetFW! -r !ScriptRID! /p:SelfContained=true /p:PublishReadyToRun=true /p:PublishSingleFile=false /p:PublishDir=!BinMCPServerNet10!
+dotnet publish !ScriptLocation!\ETWAnalyzer.csproj /p:Configuration=Release -f !ScriptTargetFW! -r !ScriptRID! /p:SelfContained=true /p:PublishReadyToRun=true /p:PublishSingleFile=false /p:PublishDir=!BinFolderNet10!
 
-dotnet publish !ScriptLocation!\ETWAnalyzer.csproj /p:PublishProfile=!ScriptLocation!\ETWAnalyzer\Properties\PublishProfiles\Net10_SelfContained.pubxml /p:Configuration=Release /p:TargetFramework=net10.0-windows /p:PublishDir=!BinFolderNet10!
+REM Make the bundled ETWAnalyzer.exe runnable inside the MCP server folder.
+REM Publishing McpServer copies ETWAnalyzer.dll/.exe but NOT ETWAnalyzer.deps.json
+REM (only the entry project gets a .deps.json), so its apphost cannot start.
+REM The standalone ETWAnalyzer publish above produces a matching .deps.json
+REM (same TFM/RID/Config); copy it next to the bundled apphost so both exes run.
+copy /Y "!BinFolderNet10!\ETWAnalyzer.deps.json" "!BinMCPServerNet10!\ETWAnalyzer.deps.json"
+
 dotnet build !ScriptLocation!\..\ETWAnalyzer.Reader\ETWAnalyzer.Reader.csproj  /p:Configuration=Release -f net48
 dotnet pack  !ScriptLocation!\..\ETWAnalyzer.Reader\ETWAnalyzer.Reader.csproj  /p:Configuration=Release 
 
-msbuild /p:Configuration=Release /p:Platform=x64 /p:OutDir=!BinSamplesFolder! !ScriptLocation!\..\Samples\EventLeak\EventLeak.vcxproj 
+msbuild /p:Configuration=Release /p:Platform=x64 /p:OutDir=!BinSamplesFolder!\ !ScriptLocation!\..\Samples\EventLeak\EventLeak.vcxproj 
 
 call :DelFile "!BinFolderNet10!"
-
-7z a  !ReleaseZipNet10! -r "!BinFolderNet10!\*.*"
-7z a  !ReleaseSamples! -r "!BinSamplesFolder!\*.*"
+call :DelFile "!BinMCPServerNet10!"
 
 goto :EOF
 
@@ -38,4 +46,16 @@ echo Delete superflous files
 del ETWAnalyzer_Trace.log 2> NUL
 rd /q /s x86
 rd /q /s arm64
+exit /B 1
+
+:CleanTempFiles
+
+rd /q /s !BinFolderNet10! 2> NUL
+rd /q /s !BinSamplesFolder! 2> NUL
+rd /q /s !ObjFolder! 2> NUL
+rd /q /s !ObjFolderMCPServer! 2> NUL
+rd /q /s !ObjFolderReader! 2> NUL
+rd /q /s !BinMCPServerNet10! 2> NUL
+rd /q /s !BinNotSelfContained! 2> NUL
+
 exit /B 1
