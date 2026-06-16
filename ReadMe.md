@@ -17,6 +17,14 @@ one or a collection of thousands of ETL files.
 After extraction ETWAnalyzer has many query commands to make the data much more accessible. It can query one or many files where the output is either printed to console, 
 or written to a CSV file for further analysis. 
 
+ETWAnalyzer also can run as MCP server which is essentially ```ETWAnalyzer -console``` for AI access. To integrate ETWAnalyzer as stdio MCP server run ```ETWAnalyzer.exe -MCP```. This 
+can give surprising insights while keeping token usage low because AI frequently limits the the ouptput with -topn and related filters. 
+See 
+
+   - [Copilot CLI MCP Integration](https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/add-mcp-servers)
+   - [Visual Studio Code MCP Integration](https://code.visualstudio.com/docs/agent-customization/mcp-servers)
+   - [Visual Studio MCP Integration](https://learn.microsoft.com/en-us/visualstudio/ide/mcp-servers?view=visualstudio)
+
 The Json files can also be accessed via a C# interface [**IETWExtract**](ETWAnalyzer.Reader/Documentation/ProgramaticAccess.md) which enables you to write custom analyzers by referencing the Nuget package ETWAnalyzer.Reader.
 
 Compressed Json files are much faster to query than the input ETL files without slow symbol server lookups.
