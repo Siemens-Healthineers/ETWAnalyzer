@@ -16,7 +16,7 @@ set ScriptRID=win-x64
 
 call :CleanTempFiles
 
-rem dotnet build !ScriptLocation!\ETWAnalyzer.csproj /p:Configuration=Release -o !BinNotSelfContained!
+dotnet build !ScriptLocation!\ETWAnalyzer.csproj /p:Configuration=Release -o !BinNotSelfContained!
 dotnet publish !ScriptLocation!\ETWAnalyzer.csproj /p:Configuration=Release -f !ScriptTargetFW! -r !ScriptRID! /p:SelfContained=true /p:PublishReadyToRun=true /p:PublishSingleFile=false /p:PublishDir=!BinFolderNet10SelfContained!
 
 dotnet build !ScriptLocation!\..\ETWAnalyzer.Reader\ETWAnalyzer.Reader.csproj  /p:Configuration=Release -f net48

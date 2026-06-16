@@ -46,7 +46,7 @@ jobs:
           uses: actions/upload-artifact@v7
           with:
             name: ETWAnalyzer
-            path: ${{ github.workspace }}/bin/Release/net10.0-windows/win-x64
+            path: ${{ github.workspace }}/bin/Release/Net10-NotSelfContained
             retention-days: 90
 
         - name: Upload ETWAnalyzer Self Contained
