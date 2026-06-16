@@ -1,7 +1,10 @@
 //// SPDX-FileCopyrightText:  © 2026 Siemens Healthcare GmbH
 //// SPDX-License-Identifier:   MIT
 
-namespace ETWAnalyzer.McpServer
+using System;
+using System.IO;
+
+namespace ETWAnalyzer.Commands.MCPServer
 {
     /// <summary>
     /// Captures console output during command execution by temporarily redirecting Console.Out.

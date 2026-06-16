@@ -21,6 +21,7 @@ namespace ETWAnalyzer.Commands
         internal const string LoadSymbolArg = "-loadsymbol";
         internal const string ConsoleArg = "-console";
         internal const string ConvertTimeCommand = "-converttime";
+        internal const string MCPServerCommand = "-mcp";
 
         /// <summary>
         /// Create a command 
@@ -53,6 +54,9 @@ namespace ETWAnalyzer.Commands
                     case ConvertTimeCommand:
                         lret = new ConvertTimeCommand(args);
                         break;  
+                    case MCPServerCommand:
+                        lret = new MCPServer.MCPServerCommand(args);
+                        break;
                     default:
                         break;
                 }

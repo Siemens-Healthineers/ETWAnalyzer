@@ -1,12 +1,22 @@
 //// SPDX-FileCopyrightText:  © 2026 Siemens Healthcare GmbH
 //// SPDX-License-Identifier:   MIT
 
+#nullable enable
+
+// MCP tool methods are public for the MCP server runtime and self-documented via [Description] attributes.
+// Suppress CS1591 (missing XML doc comment) for this file only.
+#pragma warning disable CS1591
+
 using ETWAnalyzer.Commands;
 using ETWAnalyzer.EventDump;
 using ModelContextProtocol.Server;
+using System;
+using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
+using System.Text;
 
-namespace ETWAnalyzer.McpServer.Tools
+namespace ETWAnalyzer.Commands.MCPServer.Tools
 {
     /// <summary>
     /// MCP tools that operate on loaded ETW data in-process using the same pattern as ConsoleCommand.
@@ -24,7 +34,7 @@ namespace ETWAnalyzer.McpServer.Tools
             [Description("If true, search directories recursively. Default: false")] bool recursive = false)
         {
             string[] paths = filePaths.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-            return EtwSession.Instance.Load(paths, keepOldFiles, recursive);
+            return MCPSession.Instance.Load(paths, keepOldFiles, recursive);
         }
 
         [McpServerTool(Name = "etw_unload")]
@@ -35,14 +45,14 @@ namespace ETWAnalyzer.McpServer.Tools
             string[] paths = string.IsNullOrWhiteSpace(filePaths)
                 ? Array.Empty<string>()
                 : filePaths.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-            return EtwSession.Instance.Unload(paths);
+            return MCPSession.Instance.Unload(paths);
         }
 
         [McpServerTool(Name = "etw_list")]
         [Description("List all currently loaded ETW files in the session.")]
         public static string ListFiles()
         {
-            return EtwSession.Instance.ListFiles();
+            return MCPSession.Instance.ListFiles();
         }
 
         [McpServerTool(Name = "etw_dump_cpu")]
@@ -223,7 +233,7 @@ namespace ETWAnalyzer.McpServer.Tools
         /// </summary>
         private static string ExecuteDumpCommand(DumpCommands dumpType, string arguments)
         {
-            var session = EtwSession.Instance;
+            var session = MCPSession.Instance;
             if (session.LoadedFiles == null || session.LoadedFiles.Length == 0)
             {
                 return "Error: No files are loaded. Use etw_load to load files first.";

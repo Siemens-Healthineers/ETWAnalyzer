@@ -29,6 +29,8 @@ namespace ETWAnalyzer.Commands
             "        Resolve method names from an extracted Json file." + Environment.NewLine +
             " ETWAnalyzer [green]-ConvertTime[/green] -filedir xxx.json -time ..." + Environment.NewLine +
             "        Convert a time string to an ETW session time in seconds and back." + Environment.NewLine +
+            " ETWAnalyzer [green]-MCP[/green]" + Environment.NewLine +
+            "        Run ETWAnalyzer as an MCP (Model Context Protocol) server over stdio which exposes the dump commands as MCP tools." + Environment.NewLine +
             "[yellow]Examples:[/yellow] " + Environment.NewLine +
             "[green]Get more help on specific option[/green]" + Environment.NewLine +
             "    ETWAnalyzer -help [Extract, Dump, Convert or Loadsymbol]" + Environment.NewLine +
@@ -88,6 +90,9 @@ namespace ETWAnalyzer.Commands
                         break;
                     case CommandFactory.LoadSymbolArg:
                         Retriever = () => LoadSymbolCommand.HelpString;
+                        break;
+                    case CommandFactory.MCPServerCommand:
+                        Retriever = () => MCPServer.MCPServerCommand.HelpString;
                         break;
                     case ArgParser.NoColorArg:
                         ColorConsole.EnableColor = false;

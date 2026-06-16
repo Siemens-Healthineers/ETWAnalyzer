@@ -1,25 +1,31 @@
 //// SPDX-FileCopyrightText:  © 2026 Siemens Healthcare GmbH
 //// SPDX-License-Identifier:   MIT
 
+#nullable enable
+
 using ETWAnalyzer.Extract;
 using ETWAnalyzer.Infrastructure;
 using ETWAnalyzer.ProcessTools;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 
-namespace ETWAnalyzer.McpServer
+namespace ETWAnalyzer.Commands.MCPServer
 {
     /// <summary>
     /// Stateful session that mirrors the ConsoleCommand pattern.
     /// Files are loaded once and reused across multiple MCP tool calls.
     /// </summary>
-    internal class EtwSession
+    internal class MCPSession
     {
         private static readonly object myLock = new();
-        private static EtwSession? myInstance;
+        private static MCPSession? myInstance;
 
         /// <summary>
         /// Singleton instance shared across all MCP tool calls.
         /// </summary>
-        public static EtwSession Instance
+        public static MCPSession Instance
         {
             get
             {
@@ -27,7 +33,7 @@ namespace ETWAnalyzer.McpServer
                 {
                     lock (myLock)
                     {
-                        myInstance ??= new EtwSession();
+                        myInstance ??= new MCPSession();
                     }
                 }
                 return myInstance;
@@ -44,7 +50,7 @@ namespace ETWAnalyzer.McpServer
         /// </summary>
         public Lazy<SingleTest>[]? LoadedFiles => myInputFiles;
 
-        private EtwSession()
+        private MCPSession()
         {
             ColorConsole.EnableColor = false; // Disable color output for MCP server context to render faster
         }

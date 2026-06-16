@@ -45,15 +45,15 @@ jobs:
         - name: Upload .NET 10 Binaries Not Self Contained  
           uses: actions/upload-artifact@v7
           with:
-            name: ETWAnalyzerMCP
-            path: ${{ github.workspace }}/bin/Release/Net10-NotSelfContained
+            name: ETWAnalyzer
+            path: ${{ github.workspace }}/bin/Release/net10.0-windows/win-x64
             retention-days: 90
 
-        - name: Upload MCP Server and ETWAnalyzer Self Contained
+        - name: Upload ETWAnalyzer Self Contained
           uses: actions/upload-artifact@v7
           with:
-            name: ETWAnalyzerMCP_SelfContained
-            path: ${{ github.workspace }}/bin/Release/publishMCPNet10
+            name: ETWAnalyzer_SelfContained
+            path: ${{ github.workspace }}/bin/Release/publishSelfContained
             retention-days: 90
             
         - name: Upload Nuget Package
