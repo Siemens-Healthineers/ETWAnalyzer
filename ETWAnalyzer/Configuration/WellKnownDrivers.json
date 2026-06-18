@@ -3418,347 +3418,347 @@
     {
       "ModuleName": "tbmninifilter.sys",
       "Company": "Confluera Inc",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "trfsfilter.sys",
       "Company": "NetSecurity Corp",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "ReveFltMgr.sys",
       "Company": "REVE Antivirus",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "ReveProcProtection.sys",
       "Company": "REVE Antivirus",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "zwPxeSvr.sys",
       "Company": "SecureLink Inc.",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "zwASatom.sys",
       "Company": "SecureLink Inc.",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "wscm.sys",
       "Company": "Fujitsu Social Science",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "IMFFilter.sys",
       "Company": "IObit Information Tech",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "CSFlt.sys",
       "Company": "ConeSecurity Inc",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "PWProtect.sys",
       "Company": "PerfectWorld Ltd",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "Osiris.sys",
       "Company": "Binary Defense Systems",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "ospfile_mini.sys",
       "Company": "OKUMA Corp",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "SoftFilterxxx.sys",
       "Company": "WidgetNuri Corp",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "RansomDefensexxx.sys",
       "Company": "WidgetNuri Corp",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "RanPodFS.sys",
       "Company": "Pooyan System",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "ksfsflt.sys",
       "Company": "Beijing Kingsoft",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "AppCheckD.sys",
       "Company": "CheckMAL Inc",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "spellmon.sys",
       "Company": "SpellSecurity",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "WhiteShield.sys",
       "Company": "Meidensha Corp",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "reaqtor.sys",
       "Company": "ReaQta Ltd.",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "SE46Filter.sys",
       "Company": "Technology Nexus AB",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "FileScan.sys",
       "Company": "NPcore Ltd",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "ECATDriver.sys",
       "Company": "EMC",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "pfkrnl.sys",
       "Company": "FXSEC LTD",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "epicFilter.sys",
       "Company": "Hidden Reflex",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "EdnemFsFilter.sys",
       "Company": "Dakota State University",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "b9kernel.sys",
       "Company": "Bit9 Inc.",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "eeCtrl.sys",
       "Company": "Symantec",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "eraser.sys (Retired)",
       "Company": "Symantec",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "SRTSP.sys",
       "Company": "Symantec",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "SRTSPIT.sys - ia64 systems",
       "Company": "Symantec",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "SRTSP64.SYS - x64 systems",
       "Company": "Symantec",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "a2ertpx86.sys",
       "Company": "Emsi Software GmbH",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "a2ertpx64.sys",
       "Company": "Emsi Software GmbH",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "a2gffx86.sys - x86",
       "Company": "Emsi Software GmbH",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "a2gffx64.sys - x64",
       "Company": "Emsi Software GmbH",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "a2gffi64.sys - IA64",
       "Company": "Emsi Software GmbH",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "a2acc.sys",
       "Company": "Emsi Software GmbH",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "a2acc64.sys on x64 systems",
       "Company": "Emsi Software GmbH",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "FlightRecorder.sys",
       "Company": "Malwarebytes Inc",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "si32_file.sys",
       "Company": "Scargo Inc",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "si64_file.sys",
       "Company": "Scargo Inc",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "mbam.sys",
       "Company": "Malwarebytes Inc",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "lnvscenter.sys",
       "Company": "Lenovo",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "EnigmaFileMonDriver.sys",
       "Company": "EnigmaSoft",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "KUBWKSP.sys",
       "Company": "Netlor SAS",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "hcp_kernel_acq.sys",
       "Company": "refractionPOINT",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "SegiraFlt.sys",
       "Company": "Segira LLC",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "wdocsafe.sys",
       "Company": "Cheetah Mobile Inc.",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "lbprotect.sys",
       "Company": "Cheetah Mobile Inc.",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "eamonm.sys",
       "Company": "ESET, spol. s r.o.",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "klam.sys",
       "Company": "Kaspersky Lab",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "MaxProc64.sys",
       "Company": "Max Secure Software",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "MaxProtector.sys",
       "Company": "Max Secure Software",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "maxcryptmon.sys",
       "Company": "Max Secure Software",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "SDActMon.sys",
       "Company": "Max Secure Software",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "TmKmSnsr.sys",
       "Company": "Trend Micro Inc.",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "fileflt.sys",
       "Company": "Trend Micro Inc.",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "TmEsFlt.sys",
       "Company": "Trend Micro Inc.",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "TmEyes.sys",
       "Company": "Trend Micro Inc.",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "tmevtmgr.sys",
       "Company": "Trend Micro Inc.",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "tmpreflt.sys",
       "Company": "Trend Micro Inc.",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "TmXPFlt.sys",
       "Company": "Trend Micro Inc.",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "vcMFilter.sys",
       "Company": "SGRI Co., LTD.",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "SAFsFilter.sys",
       "Company": "Lightspeed Systems Inc.",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "vsepflt.sys",
       "Company": "VMware, Inc.",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "VFileFilter.sys(renamed)",
       "Company": "VMware, Inc.",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "sfavflt.sys",
       "Company": "Sangfor Technologies",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "drivesentryfilterdriver2lite.sys",
       "Company": "DriveSentry Inc",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "hsmflt.sys",
@@ -3773,1302 +3773,1302 @@
     {
       "ModuleName": "vrSDetri.sys",
       "Company": "ETRI",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "vrSDetrix.sys",
       "Company": "ETRI",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "AhkSvPro.sys",
       "Company": "Ahkun Co.",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "AhkUsbFW.sys",
       "Company": "Ahkun Co.",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "AhkAMFlt.sys",
       "Company": "Ahkun Co.",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "majoradvapi.sys",
       "Company": "Beijing Majorsec",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "PSINPROC.SYS",
       "Company": "Panda Security",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "PSINFILE.SYS",
       "Company": "Panda Security",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "amfsm.sys - Windows XP/2003 x64",
       "Company": "Panda Security",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "amm8660.sys - Windows Vista x86",
       "Company": "Panda Security",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "amm6460.sys - Windows Vista x64",
       "Company": "Panda Security",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "PerfectWorldAntiCheatSys.sys",
       "Company": "Perfect World Co. Ltd",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "ADSpiderDoc.sys",
       "Company": "Digitalonnet",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "BkavAutoFlt.sys",
       "Company": "Bkav Corporation",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "BkavSdFlt.sys",
       "Company": "Bkav Corporation",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "easyanticheat.sys",
       "Company": "EasyAntiCheat Solutions",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "5nine.cbt.sys",
       "Company": "5nine Software Inc.",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "caavFltr.sys",
       "Company": "Computer Assoc",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "ino_fltr.sys",
       "Company": "Computer Assoc",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "SECOne_USB.sys",
       "Company": "GRGBanking Equipment",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "SECOne_Proc10.sys",
       "Company": "GRGBanking Equipment",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "SECOne_REG10.sys",
       "Company": "GRGBanking Equipment",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "SECOne_FileMon10.sys",
       "Company": "GRGBanking Equipment",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "WCSDriver.sys",
       "Company": "White Cloud Security",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "360qpesv.sys",
       "Company": "360 Software (Beijing)",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "dsark.sys",
       "Company": "Qihoo 360",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "360avflt.sys",
       "Company": "Qihoo 360",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "sciptflt.sys",
       "Company": "SECUI Corporation",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "scifsflt.sys",
       "Company": "SECUI Corporation",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "ANVfsm.sys",
       "Company": "Arcdo",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "CDrRSFlt.sys",
       "Company": "Arcdo",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "mfdriver.sys",
       "Company": "Imperva Inc.",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "EPSMn.sys",
       "Company": "SGA",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "TxFileFilter.sys",
       "Company": "Beijing Venus",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "VTSysFlt.sys",
       "Company": "Beijing Venus",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "TesMon.sys",
       "Company": "Tencent",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "QQSysMonX64.sys",
       "Company": "Tencent",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "QQSysMon.sys",
       "Company": "Tencent",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "TSysCare.sys",
       "Company": "Shenzhen Tencent Computer Systems Company Limited",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "TFsFlt.sys",
       "Company": "Shenzhen Tencent Computer Systems Company Limited",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "avmf.sys",
       "Company": "Authentium",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "BDFileDefend.sys",
       "Company": "Baidu (beijing)",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "BDsdKit.sys",
       "Company": "Baidu online network technology (beijing)Co.",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "bd0003.sys",
       "Company": "Baidu online network technology (beijing)Co.",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "Bfilter.sys",
       "Company": "Baidu (Hong Kong) Limited",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "NeoKerbyFilter",
       "Company": "NeoAutus",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "egnfsflt.sys",
       "Company": "Egnyte Inc",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "RsFlt.sys",
       "Company": "Redstor Limited",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "trpmnflt.sys",
       "Company": "TRAPMINE A.S.",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "PLGFltr.sys",
       "Company": "Paretologic",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "WrdWizSecure64.sys",
       "Company": "WardWiz",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "wrdwizscanner.sys",
       "Company": "WardWiz",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "AshAvScan.sys",
       "Company": "Ashampoo GmbH & Co. KG",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "Zyfm.sys",
       "Company": "ZhengYong InfoTech LTD.",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "csaav.sys",
       "Company": "Cisco Systems",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "oavfm.sys",
       "Company": "HSM IT-Services Gmbh",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "SegMD.sys",
       "Company": "Segurmatica",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "SegMP.sys",
       "Company": "Segurmatica",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "SegF.sys",
       "Company": "Segurmatica",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "eeyehv.sys",
       "Company": "eEye Digital Security",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "eeyehv64.sys",
       "Company": "eEye Digital Security",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "CpAvFilter.sys",
       "Company": "CodeProof Technologies Inc",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "CpAvKernel.sys",
       "Company": "CodeProof Technologies Inc",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "NovaShield.sys",
       "Company": "Securitas Technologies,Inc.",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "SheedAntivirusFilterDriver.sys",
       "Company": "SheedSoft Ltd",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "bSyirmf.sys",
       "Company": "BLACKFORT SECURITY",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "bSysp.sys",
       "Company": "BLACKFORT SECURITY",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "bSydf.sys",
       "Company": "BLACKFORT SECURITY",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "bSywl.sys",
       "Company": "BLACKFORT SECURITY",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "bSyrtm.sys",
       "Company": "BLACKFORT SECURITY",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "bSyaed.sys",
       "Company": "BLACKFORT SECURITY",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "bSyar.sys",
       "Company": "BLACKFORT SECURITY",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "BdFileSpy.sys",
       "Company": "BullGuard",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "npxgd.sys",
       "Company": "INCA Internet Co.",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "npxgd64.sys",
       "Company": "INCA Internet Co.",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "tkpl2k.sys",
       "Company": "INCA Internet Co.",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "tkpl2k64.sys",
       "Company": "INCA Internet Co.",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "GKFF.sys",
       "Company": "INCA Internet Co.",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "GKFF64.sys",
       "Company": "INCA Internet Co.",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "tkdac2k.sys",
       "Company": "INCA Internet Co.",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "tkdacxp.sys",
       "Company": "INCA Internet Co.",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "tkdacxp64.sys",
       "Company": "INCA Internet Co.",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "tksp2k.sys",
       "Company": "INCA Internet Co.",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "tkspxp.sys",
       "Company": "INCA Internet Co.",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "tkspxp64.sys",
       "Company": "INCA Internet Co.",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "tkfsft.sys",
       "Company": "INCA Internet Co., Ltd",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "tkfsft64.sys - 64bit",
       "Company": "INCA Internet Co., Ltd",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "tkfsavxp.sys - 32bit",
       "Company": "INCA Internet Co., Ltd",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "tkfsavxp64.sys - 64bit",
       "Company": "INCA Internet Co., Ltd",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "SMDrvNt.sys",
       "Company": "AhnLab, Inc.",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "ATamptNt.sys",
       "Company": "AhnLab, Inc.",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "V3Flt2k.sys",
       "Company": "AhnLab, Inc.",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "V3MifiNt.sys",
       "Company": "Ahnlab",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "V3Ift2k.sys",
       "Company": "Ahnlab",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "V3IftmNt.sys (Old name)",
       "Company": "Ahnlab",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "ArfMonNt.sys",
       "Company": "Ahnlab",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "AhnRghLh.sys",
       "Company": "Ahnlab",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "AszFltNt.sys",
       "Company": "Ahnlab",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "OMFltLh.sys",
       "Company": "Ahnlab",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "V3Flu2k.sys",
       "Company": "Ahnlab",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "TfFregNt.sys",
       "Company": "AhnLab Inc.",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "AdcVcsNT.sys",
       "Company": "Ahnlab",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "vcdriv.sys",
       "Company": "Greatsoft Corp.Ltd",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "vcreg.sys",
       "Company": "Greatsoft Corp.Ltd",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "vchle.sys",
       "Company": "Greatsoft Corp.Ltd",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "NxFsMon.sys",
       "Company": "Novatix Corporation",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "AntiLeakFilter.sys",
       "Company": "Individual developer (Soft3304)",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "NanoAVMF.sys",
       "Company": "Panda Software",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "shldflt.sys",
       "Company": "Panda Software",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "nprosec.sys",
       "Company": "Norman ASA",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "nregsec.sys",
       "Company": "Norman ASA",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "issregistry.sys",
       "Company": "IBM",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "THFilter.sys",
       "Company": "Sybonic Systems Inc",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "pervac.sys",
       "Company": "PerSystems SA",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "avgmfx86.sys",
       "Company": "AVG Grisoft",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "avgmfx64.sys",
       "Company": "AVG Grisoft",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "avgmfi64.sys",
       "Company": "AVG Grisoft",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "avgmfrs.sys (retired)",
       "Company": "AVG Grisoft",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "FortiAptFilter.sys",
       "Company": "Fortinet Inc.",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "fortimon2.sys",
       "Company": "Fortinet Inc.",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "fortirmon.sys",
       "Company": "Fortinet Inc.",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "fortishield.sys",
       "Company": "Fortinet Inc.",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "mscan-rt.sys",
       "Company": "SecureBrain Corporation",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "sysdiag.sys",
       "Company": "Huorong Security",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "agentrtm64.sys",
       "Company": "WINS CO. LTD",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "rswmon.sys",
       "Company": "WINS CO. LTD",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "mwfsmfltr.sys",
       "Company": "MicroWorld Software Services Pvt. Ltd.",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "gtkdrv.sys",
       "Company": "GridinSoft LLC",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "GbpKm.sys",
       "Company": "GAS Tecnologia",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "crnsysm.sys",
       "Company": "Coranti Inc.",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "crncache32.sys",
       "Company": "Coranti Inc.",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "crncache64.sys",
       "Company": "Coranti Inc.",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "egambit.sys",
       "Company": "TEHTRI-Security",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "drwebfwft.sys",
       "Company": "Doctor Web",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "DwShield.sys",
       "Company": "Doctor Web",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "DwShield64.sys",
       "Company": "Doctor Web",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "IProtect.sys",
       "Company": "EveryZone Inc.",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "TvFiltr.sys",
       "Company": "EveryZone INC.",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "TvDriver.sys",
       "Company": "EveryZone INC.",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "TvSPFltr.sys",
       "Company": "EveryZone INC.",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "TvPtFile.sys",
       "Company": "EveryZone INC.",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "TvMFltr.sys",
       "Company": "Everyzone",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "SophosED.sys",
       "Company": "Sophos",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "savonaccess.sys",
       "Company": "Sophos",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "sld.sys",
       "Company": "Sophos",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "OADevice.sys",
       "Company": "Tall Emu",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "pwipf6.sys",
       "Company": "PWI, Inc.",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "EstRkmon.sys",
       "Company": "ESTsoft corp.",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "EstRkr.sys - 64bit",
       "Company": "ESTsoft corp.",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "dwprot.sys",
       "Company": "Doctor Web",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "Spiderg3.sys",
       "Company": "Doctor Web Ltd.",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "STKrnl64.sys",
       "Company": "Verdasys Inc",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "UFDFilter.sys",
       "Company": "Yoggie",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "SCFltr.sys",
       "Company": "SecurityCoverage, Inc.",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "fildds.sys",
       "Company": "Filseclab",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "fsfilter.sys",
       "Company": "MastedCode Ltd",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "fpav_rtp.sys",
       "Company": "f-protect",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "cwdriver.sys",
       "Company": "Leith Bade",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "AYFilter.sys",
       "Company": "ESTsoft",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "Rtw.sys",
       "Company": "ESTsoft",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "RSRtw.sys",
       "Company": "ESTsecurity Corp",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "RSPCRtw.sys",
       "Company": "ESTsecurity Corp",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "HookSys.sys",
       "Company": "Beijing Rising Information Technology Corporation Limited",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "snscore.sys",
       "Company": "S.N.Safe&Software",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "ssvhook.sys",
       "Company": "SecuLution GmbH",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "strapvista.sys",
       "Company": "AvSoft Technologies",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "strapvista64.sys",
       "Company": "AvSoft Technologies",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "sascan.sys",
       "Company": "SecureAge Technology",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "savant.sys",
       "Company": "Savant Protection, Inc.",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "VrARnFlt.sys",
       "Company": "HAURI",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "VrBBDFlt.sys",
       "Company": "HAURI",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "vrSDfmx.sys",
       "Company": "HAURI",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "vrSDam.sys",
       "Company": "HAURI",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "VRAPTFLT.sys",
       "Company": "HAURI Inc.",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "VrAptDef.sys",
       "Company": "HAURI",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "VrSdCore.sys",
       "Company": "HAURI",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "VrFsFtM.sys",
       "Company": "HAURI",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "VrFsFtMX.sys(AMD64)",
       "Company": "HAURI",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "vradfil2.sys",
       "Company": "HAURI",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "fsgk.sys",
       "Company": "f-secure",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "bouncer.sys",
       "Company": "CoreTrace Corporation",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "PCTCore64.sys",
       "Company": "PC Tools Pty. Ltd.",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "PCTCore.sys (Old name)",
       "Company": "PC Tools Pty. Ltd.",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "ikfilesec.sys",
       "Company": "PC Tools Pty. Ltd.",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "ZxFsFilt.sys",
       "Company": "Australian Projects",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "antispyfilter.sys",
       "Company": "C-NetMedia Inc",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "PZDrvXP.sys",
       "Company": "VisionPower Co.,Ltd.",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "ggc.sys",
       "Company": "Quick Heal TechnologiesPvt. Ltd.",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "catflt.sys",
       "Company": "Quick Heal TechnologiesPvt. Ltd.",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "snsrflt.sys",
       "Company": "Quick Heal Technologies Pvt. Ltd.",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "bdsflt.sys",
       "Company": "Quick Heal Technologies Pvt. Ltd.",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "arwflt.sys",
       "Company": "Quick Heal Technologies Pvt. Ltd.",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "csagent.sys",
       "Company": "CrowdStrike Ltd.",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "CSDeviceControl.sys",
       "Company": "CrowdStrike Ltd.",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "CSFirmwareAnalysis.sys",
       "Company": "CrowdStrike Ltd.",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "kmkuflt.sys",
       "Company": "Komoku Inc.",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "ntguard.sys",
       "Company": "IKARUS Security",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "epdrv.sys",
       "Company": "McAfee Inc.",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "mfencoas.sys",
       "Company": "McAfee Inc.",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "mfehidk.sys",
       "Company": "McAfee Inc.",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "swin.sys",
       "Company": "McAfee Inc.",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "CyvrFsfd.sys",
       "Company": "Palo Alto Networks",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "cyvrlpc.sys",
       "Company": "Palo Alto Networks",
-      "Category": "ANTI-VIRUS"
+      "Category": "Antivirus"
     },
     {
       "ModuleName": "cyverak.sys",
       "Company": "Palo Alto Networks",
-      "Category": "ANTI-VIRUS"
+      "Category": "Antivirus"
     },
     {
       "ModuleName": "cmdccav.sys",
       "Company": "Comodo Group Inc.",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "cmdguard.sys",
       "Company": "Comodo Group Inc.",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "K7Sentry.sys",
       "Company": "K7 Computing Private Ltd.",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "nsminflt.sys",
       "Company": "NHN",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "nsminflt64.sys",
       "Company": "NHN",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "nvcmflt.sys",
       "Company": "Norman",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "dgsafe.sys",
       "Company": "KINGSOFT",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "issfltr.sys",
       "Company": "ISS",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "hbflt.sys",
       "Company": "BitDefender SRL",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "vlflt.sys",
       "Company": "BitDefender SRL",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "bdsvm.sys",
       "Company": "Bitdefender",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "gzflt.sys",
       "Company": "BitDefender SRL",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "bddevflt.sys",
       "Company": "BitDefender SRL",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "ignis.sys",
       "Company": "BitDefender SRL",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "AVCKF.SYS",
       "Company": "BitDefender SRL",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "bdfsfltr.sys",
       "Company": "Softwin",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "bdfm.sys",
       "Company": "Softwin",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "gemma.sys",
       "Company": "BitDefender SRL",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "Atc.sys",
       "Company": "BitDefender SRL",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "AVC3.SYS",
       "Company": "BitDefender SRL",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "TRUFOS.SYS",
       "Company": "BitDefender SRL",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "kavnsi.sys",
       "Company": "AVNOS",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "CiscoSAM.sys",
       "Company": "Cisco Systems",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "immunetselfprotect.sys",
       "Company": "Cisco Systems",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "immunetprotect.sys",
       "Company": "Cisco Systems",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "CiscoAMPCEFWDriver.sys",
       "Company": "Cisco Systems",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "CiscoAMPHeurDriver.sys",
       "Company": "Cisco Systems",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "HookCentre.sys",
       "Company": "G Data",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "PktIcpt.sys",
       "Company": "G Data",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "MiniIcpt.sys",
       "Company": "G Data",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "acdrv.sys",
       "Company": "OnMoon Company LLC",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "tmfsdrv2.sys",
       "Company": "Teramind",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "avgntflt.sys",
       "Company": "Avira GmbH",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "klbg.sys",
       "Company": "Kaspersky Lab",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "kldback.sys",
       "Company": "Kaspersky Lab",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "kldlinf.sys",
       "Company": "Kaspersky Lab",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "kldtool.sys",
       "Company": "Kaspersky Lab",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "klif.sys",
       "Company": "Kaspersky Lab",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "hsmltwhl.sys",
       "Company": "Hitachi Solutions",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "hssfwhl.sys",
       "Company": "Hitachi Solutions",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "DeepInsFS.sys",
       "Company": "Deep Instinct Ltd.",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "avfsmn.sys",
       "Company": "Anvisoft",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "lbd.sys",
       "Company": "Lavasoft AB",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "pavdrv.sys",
       "Company": "Panzor Cybersecurity",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "rvsmon.sys",
       "Company": "CJSC Returnil Software",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "KawachFsMinifilter.sys",
       "Company": "Sequretek IT",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "securoFSD_x64.sys",
       "Company": "knowwheresoft Ltd",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "WRAEKernel.sys",
       "Company": "Webroot Inc.",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "WRKrn.sys",
       "Company": "Webroot Inc.",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "WRCore.sys",
       "Company": "Webroot Inc.",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "ssfmonm.sys",
       "Company": "Webroot Software, Inc.",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "ODFsFimFilter.sys",
       "Company": "Odyssey Cyber Security",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "ODFsTokenFilter.sys",
       "Company": "Odyssey Cyber Security",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "ODFsFilter.sys",
       "Company": "Odyssey Cyber Security",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "vk_fsf.sys",
       "Company": "AxBx",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "VirtualAgent.sys",
       "Company": "Symantec",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "mvfs.sys",
@@ -5988,7 +5988,7 @@
     {
       "ModuleName": "mpFilter.sys",
       "Company": "Microsoft",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "ldusbro.sys",
@@ -7698,7 +7698,7 @@
     {
       "ModuleName": "WdFilter.sys",
       "Company": "Microsoft",
-      "Category": "FSFILTER ANTI-VIRUS"
+      "Category": "FSFILTER Antivirus"
     },
     {
       "ModuleName": "qafilter.sys",
@@ -8534,7 +8534,11 @@
       "ModuleName": "Parity.sys",
       "Company": "BroadCom Carbon Black",
       "Category": "FSFilter Activity Monitor"
+    },
+    {
+      "ModuleName": "elastic-endpoint-driver.sys",
+      "Company": "Elastic Defend",
+      "Category": "FSFilter Antivirus"
     }
-
   ]
 }
