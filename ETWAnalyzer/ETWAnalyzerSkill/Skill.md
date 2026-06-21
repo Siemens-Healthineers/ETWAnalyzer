@@ -1,6 +1,6 @@
 ---
-name: ETWAnalyzer-mcp
-description: This skill should be used to interact with the ETWAnalyzer MCP (Model Context Protocol) server. The MCP server provides tools to analyze ETW (Event Tracing for Windows) performance traces without needing to manually run command-line tools.
+name: ETWAnalyzer
+description: This skill should be used to interact with the ETWAnalyzer (Model Context Protocol) server. The MCP server provides tools to analyze ETW (Event Tracing for Windows) performance traces without needing to manually run command-line tools.
 version: 0.1.0
 ---
 
@@ -560,7 +560,7 @@ etw_dump_cpu:
 1. **Start broad, then narrow:**
    - Begin with `-topN 10` to see big picture
    - Drill down with `-ProcessName` filters
-   - Use `-Methods *pattern*` for specific investigations
+   - Use `-Methods *pattern*` or `-Stacktags *pattern*` for specific investigations
 
 2. **Use appropriate metrics:**
    - CPU analysis: Focus on `-topNMethods` and stacktags
@@ -630,6 +630,6 @@ etw_dump_process → "-Crash"
 
 ## Version Information
 
-This documentation is based on ETWAnalyzer version 6.x+ with MCP server integration.
+This documentation is based on ETWAnalyzer version 4.5.0.1+ with MCP server integration.
 
 For questions or issues with the MCP server, contact the ETWAnalyzer team or file an issue on the GitHub repository.

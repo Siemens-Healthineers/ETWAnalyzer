@@ -457,7 +457,7 @@ namespace ETWAnalyzer
             foreach (var item in sorted)
             {
                 string id = item.Value.Id == 0xffff ? "" : item.Value.Id.ToString(CultureInfo.InvariantCulture); // for classic events that is 0xffff and clutters up the output
-                string str = $"{item.Key,-55} Count: {item.Value.Count,13:N0} SizeInBytes: {item.Value.Size,14:N0} Id: {id,5} Name: {item.Value.ProviderName,-47} PGUID: {item.Value.ProviderGUID} Task: {item.Value.TaskGuid} OpCode: {((int)item.Value.OpCode),4} Keywords: 0x{((long)item.Value.Keywords):X0}";
+                string str = $"{item.Key,-55} Count: {item.Value.Count.WithDigitGrouping().WithWidth(13)} SizeInBytes: {item.Value.Size.WithDigitGrouping().WithWidth(14)} Id: {id,5} Name: {item.Value.ProviderName,-47} PGUID: {item.Value.ProviderGUID} Task: {item.Value.TaskGuid} OpCode: {((int)item.Value.OpCode),4} Keywords: 0x{((long)item.Value.Keywords):X0}";
                 lret.Add(str);
                 ColorConsole.WriteLine(str);
             }

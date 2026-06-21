@@ -721,7 +721,7 @@ namespace ETWAnalyzer.EventDump
                 if( MapCount > 0)
                 {
                     ColorConsole.WriteEmbeddedColorLine($"File Map/Unmap Count {MapCount}/{UnmapCount} - {MapCount-UnmapCount} outstanding", color);
-                    ColorConsole.WriteEmbeddedColorLine($"File Map/Unmap Size  {MapSize:N0}/{UnmapSize:N0} - {MapSize-UnmapSize:N0} bytes outstanding", color);
+                    ColorConsole.WriteEmbeddedColorLine($"File Map/Unmap Size  {MapSize.WithDigitGrouping()}/{UnmapSize.WithDigitGrouping()} - {(MapSize-UnmapSize).WithDigitGrouping()} bytes outstanding", color);
                 }
 
             }
@@ -916,7 +916,7 @@ namespace ETWAnalyzer.EventDump
             foreach (IFileMapEvent fileMapEvent in ev.ObjTrace.FileMapEvents)
             {
                 PrintEventHeader(fileMapEvent, ev.Extract, "Map");
-                Console.WriteLine($"0x{fileMapEvent.ViewBase:X}-0x{fileMapEvent.ViewBase + fileMapEvent.ViewSize:X} Size: {fileMapEvent.ViewSize.ToString("N0").WithWidth(13)} bytes, Offset: {fileMapEvent.ByteOffset} Stack: {GetStack(ev.Stacks, fileMapEvent.StackIdx)}");
+                Console.WriteLine($"0x{fileMapEvent.ViewBase:X}-0x{fileMapEvent.ViewBase + fileMapEvent.ViewSize:X} Size: {fileMapEvent.ViewSize.WithDigitGrouping().WithWidth(13)} bytes, Offset: {fileMapEvent.ByteOffset} Stack: {GetStack(ev.Stacks, fileMapEvent.StackIdx)}");
             }
 
             foreach (IFileMapEvent fileUnmapEvent in ev.ObjTrace.FileUnmapEvents)

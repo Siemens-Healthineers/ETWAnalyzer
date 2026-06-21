@@ -377,11 +377,11 @@ namespace ETWAnalyzer.EventDump
                     }
 
                     string fileReadTime = $"{fileEvent.FileReadTimeInus / Million:F5}";
-                    string fileReadKB = $"{fileEvent.FileReadSizeInBytes / Kilo:N0}";
-                    string fileReadMaxPosKB = $"{fileEvent.FileReadMaxPos / Kilo:N0}";
+                    string fileReadKB = $"{(fileEvent.FileReadSizeInBytes / Kilo).WithDigitGrouping()}";
+                    string fileReadMaxPosKB = $"{(fileEvent.FileReadMaxPos / Kilo).WithDigitGrouping()}";
                     string fileWriteTime = $"{fileEvent.FileWriteTimeInus / Million:F5}";
-                    string fileWriteMaxPos = $"{fileEvent.FileWriteMaxFilePos / Kilo:N0}";
-                    string fileWriteKB = $"{fileEvent.FileWriteSizeInBytes / Kilo:N0}";
+                    string fileWriteMaxPos = $"{(fileEvent.FileWriteMaxFilePos / Kilo).WithDigitGrouping()}";
+                    string fileWriteKB = $"{(fileEvent.FileWriteSizeInBytes / Kilo).WithDigitGrouping()}";
                     string fileOpenCloseTime = $"{ (fileEvent.FileOpenTimeInus + fileEvent.FileCloseTimeInus) / Million:F5}";
 
                     decimal readMBPerSeconds = (fileEvent.FileReadSizeInBytes / Million) / ((fileEvent.FileReadTimeInus + 1.0m) / Million);
@@ -434,9 +434,9 @@ namespace ETWAnalyzer.EventDump
                     string dynamicPerProcessColumntotalString = FormatDynamicColumnTotal(totalPerProcessDynamicColumn);
                     dynamicPerProcessColumntotalString = sortOrderHeadline != null ? $"{dynamicPerProcessColumntotalString,sortOrderColumnWidth-1} " : "";
 
-                    string fileReadKB = $"{totalPerProcessFileReadSizeInBytes / Kilo:N0}";
+                    string fileReadKB = $"{(totalPerProcessFileReadSizeInBytes / Kilo).WithDigitGrouping()}";
                     string fileReadTimeS = $"{totalPerProcessFileReadTimeInus / Million:F5}";
-                    string fileWriteKB = $"{totalPerProcessFileWriteSizeInBytes / Kilo:N0}";
+                    string fileWriteKB = $"{(totalPerProcessFileWriteSizeInBytes / Kilo).WithDigitGrouping()}";
                     string fileWriteTimeS = $"{totalPerProcessFileWriteTimeInus / Million:F5}";
                     string fileOpenCloseTimeS = $"{totalPerProcessFileOpenCloseTimeInus/ Million:F5}";
                     string fileTotalTimeS = $"{(totalPerProcessFileReadTimeInus + totalPerProcessFileWriteTimeInus + totalPerProcessFileOpenCloseTimeInus) / Million:F5}";
@@ -514,9 +514,9 @@ namespace ETWAnalyzer.EventDump
                     string dynamicTotalString = FormatDynamicColumnTotal(dynamicColumnTotal);
                     dynamicTotalString = sortOrderHeadline != null ? $"{dynamicTotalString,sortOrderColumnWidth - 1} " : "";
 
-                    string fileReadKB = $"{totalFileReadSizeInBytes / Kilo:N0}";
+                    string fileReadKB = $"{(totalFileReadSizeInBytes / Kilo).WithDigitGrouping()}";
                     string fileReadTimeS = $"{totalFileReadTimeInus / Million:F5}";
-                    string fileWriteKB = $"{totalFileWriteSizeInBytes / Kilo:N0}";
+                    string fileWriteKB = $"{(totalFileWriteSizeInBytes / Kilo).WithDigitGrouping()}";
                     string fileWriteTimeS = $"{totalFileWriteTimeInus / Million:F5}";
                     string fileOpenCloseTimeS = $"{totalFileOpenCloseTimeInus / Million:F5}";
                     string fileTotalTimeS = $"{(totalFileReadTimeInus + totalFileWriteTimeInus + totalFileOpenCloseTimeInus) / Million:F5}";
@@ -603,17 +603,17 @@ namespace ETWAnalyzer.EventDump
         {
             string total = SortOrder switch
             {
-                SortOrders.Length => $"{totalValue / Kilo:N0} KB",
-                SortOrders.MaxReadPos => $"{totalValue / Kilo:N0} KB",
-                SortOrders.MaxWritePos => $"{totalValue / Kilo:N0} KB",
+                SortOrders.Length => $"{(totalValue / Kilo).WithDigitGrouping()} KB",
+                SortOrders.MaxReadPos => $"{(totalValue / Kilo).WithDigitGrouping()} KB",
+                SortOrders.MaxWritePos => $"{(totalValue / Kilo).WithDigitGrouping()} KB",
                 SortOrders.OpenCloseTime => "",  // already part of summary
                 SortOrders.ReadSize => "",       // already part of summary
                 SortOrders.ReadTime => "",       // already part of summary
-                SortOrders.Size => $"{totalValue / Kilo:N0} KB",
+                SortOrders.Size => $"{(totalValue / Kilo).WithDigitGrouping()} KB",
                 SortOrders.Time => "",          // already part of summary
-                SortOrders.Count => $"{totalValue:N0}",
-                SortOrders.TotalCount => $"{totalValue:N0}",
-                SortOrders.TotalSize => $"{totalValue/ Kilo:N0} KB",
+                SortOrders.Count => $"{totalValue.WithDigitGrouping()}",
+                SortOrders.TotalCount => $"{totalValue.WithDigitGrouping()}",
+                SortOrders.TotalSize => $"{(totalValue / Kilo).WithDigitGrouping()} KB",
                 SortOrders.TotalTime => "",      // already part of summary
                 SortOrders.WriteSize => "",      // already part of summary
                 SortOrders.WriteTime => "",      // already part of summary
@@ -738,11 +738,11 @@ namespace ETWAnalyzer.EventDump
             }
             else if (totalSortOrderSizeInBytes != null)
             {
-                totalSortOrderCell = $"{totalSortOrderSizeInBytes.Value / Kilo:N0}" + " KB";
+                totalSortOrderCell = $"{(totalSortOrderSizeInBytes.Value / Kilo).WithDigitGrouping()}" + " KB";
             }
             else if (totalSortOrderPos != null)
             {
-                totalSortOrderCell = $"{totalSortOrderPos.Value / Kilo:N0}" + " KB";
+                totalSortOrderCell = $"{(totalSortOrderPos.Value / Kilo).WithDigitGrouping()}" + " KB";
             }
             else if (totalSortOrderCount != null)
             {

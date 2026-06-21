@@ -53,6 +53,7 @@ namespace ETWAnalyzer.Commands.MCPServer
         private MCPSession()
         {
             ColorConsole.EnableColor = false; // Disable color output for MCP server context to render faster
+            StringFormatExtensions.NoDigitGrouping = true; // Disable digit grouping for MCP server context to prevent confusing the AI agent with thousands separators in numbers
         }
 
         /// <summary>

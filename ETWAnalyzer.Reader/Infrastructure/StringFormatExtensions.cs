@@ -17,6 +17,28 @@ namespace ETWAnalyzer.Infrastructure
         internal static char[] NewLineChars = Environment.NewLine.ToCharArray();   
 
         /// <summary>
+        /// When set to true the <see cref="WithDigitGrouping(IFormattable)"/> and <see cref="WidthFormat(string, object, int)"/> methods
+        /// omit the N0 digit grouping (thousands separator) and use the natural number format instead.
+        /// Enabled by the -NoDigitSep dump command flag.
+        /// </summary>
+        public static bool NoDigitGrouping { get; set; }
+
+        /// <summary>
+        /// Format a numeric value with N0 (digit grouping, e.g. 1,234,567) or with the natural format without digit grouping (e.g. 1234567)
+        /// when <see cref="NoDigitGrouping"/> is set.
+        /// </summary>
+        /// <param name="value">Numeric value to format.</param>
+        /// <returns>Formatted string.</returns>
+        public static string WithDigitGrouping(this IFormattable value)
+        {
+            if (value == null)
+            {
+                return "";
+            }
+            return value.ToString(NoDigitGrouping ? null : "N0", null);
+        }
+
+        /// <summary>
         /// Format a string with the format expression and then adds spaces before, after the string until the desired width for tabular output is reached.
         /// </summary>
         /// <param name="fmt"></param>
@@ -25,6 +47,10 @@ namespace ETWAnalyzer.Infrastructure
         /// <returns></returns>
         public static string WidthFormat(this string fmt, object arg, int width)
         {
+            if (NoDigitGrouping && fmt == "N0")
+            {
+                fmt = "";
+            }
             string str = string.Format("{0:"+fmt+"}", arg);
             return str.WithWidth(width);
         }

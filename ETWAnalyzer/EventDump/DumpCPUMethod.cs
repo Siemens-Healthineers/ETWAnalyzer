@@ -635,7 +635,7 @@ namespace ETWAnalyzer.EventDump
                 if ((ShowTotal != null && ShowTotal != TotalModes.None))
                 {
                     long cpuTotal = filtered.Select(x => (long)x.CPUMs).Sum();
-                    CpuString = $" [green]CPU {cpuTotal:N0} ms[/green] ";
+                    CpuString = $" [green]CPU {cpuTotal.WithDigitGrouping()} ms[/green] ";
                 }
                 PrintFileName(file.JsonExtractFileWhenPresent, CpuString, file.PerformedAt, file.Extract.MainModuleVersion?.ToString());
             }
@@ -688,7 +688,7 @@ namespace ETWAnalyzer.EventDump
         {
             string fileName = this.Merge ? $" {sourceFile}" : "";
 
-            string cpuStr = cpu.ToString("N0");
+            string cpuStr = cpu.WithDigitGrouping();
 
             string sessionIdStr = ShowDetails ? $"{process.SessionId,7} " : "";
 
@@ -910,9 +910,9 @@ namespace ETWAnalyzer.EventDump
 
             if ((ShowTotal != null && ShowTotal != TotalModes.None) && !IsCSVEnabled)
             {
-                string crossFileTotal = (overallWaitTotal == 0 ? "Total " : $"[magenta]Total {overallCPUTotal + overallWaitTotal:N0} ms[/magenta] ") +
-                                                                       $"[green]CPU {overallCPUTotal:N0} ms[/green] " +
-                                         (overallWaitTotal == 0 ? "" : $"[yellow]Wait {overallWaitTotal:N0} ms[/yellow]");
+                string crossFileTotal = (overallWaitTotal == 0 ? "Total " : $"[magenta]Total {(overallCPUTotal + overallWaitTotal).WithDigitGrouping()} ms[/magenta] ") +
+                                                                       $"[green]CPU {overallCPUTotal.WithDigitGrouping()} ms[/green] " +
+                                         (overallWaitTotal == 0 ? "" : $"[yellow]Wait {overallWaitTotal.WithDigitGrouping()} ms[/yellow]");
                 ColorConsole.WriteEmbeddedColorLine(crossFileTotal);
             }
         }
@@ -1391,7 +1391,7 @@ namespace ETWAnalyzer.EventDump
                     long diff = group.ETWMaxBy(x => x.PerformedAt).CPUMs - cpu;
 
                     var processTotal = subgroup.First();
-                    PrintCPUTotal(cpu, processTotal.ProcessPriority, processTotal.CoreUsageCount, processTotal.Process, String.Join(" ", subgroup.Select(x => Path.GetFileNameWithoutExtension(x.SourceFile)).ToHashSet()) + $" Diff: {diff:N0} ms ", subgroup.First().SessionStart, subgroup.FirstOrDefault().Module);
+                    PrintCPUTotal(cpu, processTotal.ProcessPriority, processTotal.CoreUsageCount, processTotal.Process, String.Join(" ", subgroup.Select(x => Path.GetFileNameWithoutExtension(x.SourceFile)).ToHashSet()) + $" Diff: {diff.WithDigitGrouping()} ms ", subgroup.First().SessionStart, subgroup.FirstOrDefault().Module);
                 }
             }
         }

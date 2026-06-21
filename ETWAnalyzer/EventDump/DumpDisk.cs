@@ -222,9 +222,9 @@ namespace ETWAnalyzer.EventDump
                 if (!IsCSVEnabled)
                 {
                     ColorConsole.WriteEmbeddedColorLine(
-                        $"[magenta]Totals {(totalFlushtimeInus + totalReadTimeInus + totalWriteTimeInus) / Million:F2} s {(totalReadBytes + totalWriteBytes) / Million:N0} MB[/magenta] " +
-                        $"[green]r {totalReadTimeInus / Million:F2} s {totalReadBytes / Million:N0} MB[/green] " +
-                        $"[yellow]w {totalWriteTimeInus / Million:F2} s {totalWriteBytes / Million:N0} MB[/yellow] " +
+                        $"[magenta]Totals {(totalFlushtimeInus + totalReadTimeInus + totalWriteTimeInus) / Million:F2} s {((totalReadBytes + totalWriteBytes) / Million).WithDigitGrouping()} MB[/magenta] " +
+                        $"[green]r {totalReadTimeInus / Million:F2} s {(totalReadBytes / Million).WithDigitGrouping()} MB[/green] " +
+                        $"[yellow]w {totalWriteTimeInus / Million:F2} s {(totalWriteBytes / Million).WithDigitGrouping()} MB[/yellow] " +
                         $"[cyan]f {totalFlushtimeInus / Million:F2} s[/cyan] " +
                         $"{byFileOrNoGroup.Count()} accessed file/s. Process Count: {new HashSet<ETWProcess>(byFileOrNoGroup.SelectMany(x => x.Processes)).Count}"
                         );

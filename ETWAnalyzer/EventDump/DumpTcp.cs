@@ -622,26 +622,26 @@ namespace ETWAnalyzer.EventDump
                     string connection = $"{match.Connection.LocalIpAndPort.ToString().WithWidth(localIPLen)} -> {match.Connection.RemoteIpAndPort.ToString().WithWidth(remoteIPLen)}";
 
                     // retransmission % can only be calculated by sent packets and retransmission events excluding client retransmissions
-                    string retransPercent = (100.0f * match.Retransmissions.Where(x => x.IsClientRetransmission.GetValueOrDefault() == false).Count() / match.Connection.DatagramsSent).ToString("N0");
+                    string retransPercent = (100.0f * match.Retransmissions.Where(x => x.IsClientRetransmission.GetValueOrDefault() == false).Count() / match.Connection.DatagramsSent).WithDigitGrouping();
 
                     // Delay on the other hand can be calculated by all Retransmit events.
-                    string totalRetransDelay = match.Retransmissions.Sum(x => x.RetransmitDiff().TotalMilliseconds).ToString("N0");
+                    string totalRetransDelay = match.Retransmissions.Sum(x => x.RetransmitDiff().TotalMilliseconds).WithDigitGrouping();
 
                     string[] lineData = new string[]
                     {
                         connection,
-                        match.Connection.DatagramsReceived.ToString("N0"),
-                        match.Connection?.Statistics?.SegmentsIn == null ? "" : match.Connection?.Statistics.SegmentsIn.Value.ToString("N0"),
-                        match.Connection.DatagramsSent.ToString("N0"),
-                        match.Connection?.Statistics?.SendPostedPosted == null ? "" : match.Connection?.Statistics.SendPostedPosted.Value.ToString("N0"),
-                        match.Connection?.Statistics?.SendPostedInjected == null ? "" : match.Connection?.Statistics.SendPostedInjected.Value.ToString("N0"),
-                        match.Connection?.Statistics?.SegmentsOut == null ? "" : match.Connection?.Statistics.SegmentsOut.Value.ToString("N0"),
-                        match.Connection.BytesReceived.ToString("N0") + " B",
-                        match.Connection?.Statistics?.DataBytesIn == null ? "" : match.Connection?.Statistics.DataBytesIn.Value.ToString("N0") + " B",
-                        match.Connection.BytesSent.ToString("N0") + " B",
-                        match.Connection?.Statistics?.DataBytesOut == null ? "" : match.Connection?.Statistics.DataBytesOut.Value.ToString("N0") + " B",
+                        match.Connection.DatagramsReceived.WithDigitGrouping(),
+                        match.Connection?.Statistics?.SegmentsIn == null ? "" : match.Connection?.Statistics.SegmentsIn.Value.WithDigitGrouping(),
+                        match.Connection.DatagramsSent.WithDigitGrouping(),
+                        match.Connection?.Statistics?.SendPostedPosted == null ? "" : match.Connection?.Statistics.SendPostedPosted.Value.WithDigitGrouping(),
+                        match.Connection?.Statistics?.SendPostedInjected == null ? "" : match.Connection?.Statistics.SendPostedInjected.Value.WithDigitGrouping(),
+                        match.Connection?.Statistics?.SegmentsOut == null ? "" : match.Connection?.Statistics.SegmentsOut.Value.WithDigitGrouping(),
+                        match.Connection.BytesReceived.WithDigitGrouping() + " B",
+                        match.Connection?.Statistics?.DataBytesIn == null ? "" : match.Connection?.Statistics.DataBytesIn.Value.WithDigitGrouping() + " B",
+                        match.Connection.BytesSent.WithDigitGrouping() + " B",
+                        match.Connection?.Statistics?.DataBytesOut == null ? "" : match.Connection?.Statistics.DataBytesOut.Value.WithDigitGrouping() + " B",
                         GetTotalString(match, TotalColumnWidth),
-                        match.Retransmissions.Count.ToString("N0"),
+                        match.Retransmissions.Count.WithDigitGrouping(),
                         retransPercent,
                         totalRetransDelay,
                         match.RetransMinMs.ToString("F0") +" ms",
@@ -695,7 +695,7 @@ namespace ETWAnalyzer.EventDump
                         return SortOrder switch
                         {
                             SortOrders.TotalCount => "N0".WidthFormat(totalDatagramsReceived + totalDatagramsSent, width),
-                            SortOrders.TotalSize => $"{totalBytesReceived + totalBytesSent:N0} Bytes".WithWidth(width),
+                            SortOrders.TotalSize => $"{(totalBytesReceived + totalBytesSent).WithDigitGrouping()} Bytes".WithWidth(width),
                             _ => ""
                         };
                     }
@@ -1295,8 +1295,8 @@ namespace ETWAnalyzer.EventDump
         {
             return SortOrder switch
             {
-                SortOrders.TotalCount => (data.Connection.DatagramsReceived + data.Connection.DatagramsSent).ToString("N0"),
-                SortOrders.TotalSize => (data.Connection.BytesReceived + data.Connection.BytesSent).ToString("N0")+ " Bytes",
+                SortOrders.TotalCount => (data.Connection.DatagramsReceived + data.Connection.DatagramsSent).WithDigitGrouping(),
+                SortOrders.TotalSize => (data.Connection.BytesReceived + data.Connection.BytesSent).WithDigitGrouping()+ " Bytes",
                 _ => "",
             };
         }
