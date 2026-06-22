@@ -48,6 +48,22 @@ namespace TraceLoggingTester
                 TestSource.Log.WriteDateTime(new DateTime(2000, 1, 1));
                 TestSource.Log.WriteTimeSpan(TimeSpan.FromSeconds(42));
                 TestSource.Log.WriteGuid(Guid.Parse("00000000-0000-0000-0000-000000000001"));
+                TestSource.Log.WriteStructure(new NestedData
+                {
+                    Name = "Struct Hello",
+                    Number = i,
+                    Inner = new InnerData
+                    {
+                        Flag = true,
+                        Value = 3.14,
+                    }
+                });
+                TestSource.Log.WriteProperties(new[]
+                {
+                    new KeyValueData { Key = "HostName", Value = "Dev14" },
+                    new KeyValueData { Key = "IsLoadSuccess", Value = (i % 2 == 0).ToString() },
+                    new KeyValueData { Key = "Iteration", Value = i.ToString() },
+                });
 
                 /*  Not supported data types by .NET EventSourced API SocketAddress, IPAddress and SecurityIdentifier
                     But they are supported by TraceProcesing library
@@ -143,6 +159,27 @@ namespace TraceLoggingTester
             WriteEvent(7, numbers);
         }
 
+        /// <summary>
+        /// Write an event which contains a nested structure with its own nested structure.
+        /// TraceLogging emits these as Structure fields which ETWAnalyzer flattens with a dotted name e.g. Data.Inner.Flag
+        /// </summary>
+        [Event(8)]
+        public void WriteStructure(NestedData data)
+        {
+            WriteEvent(8, data);
+        }
+
+        /// <summary>
+        /// Write an event which contains a list of structures e.g. a set of telemetry key/value properties.
+        /// TraceLogging emits these as a StructureList field which ETWAnalyzer serializes as a list of readable
+        /// {Key=xx; Value=yy} strings since a variable number of structures cannot be flattened into a dotted name.
+        /// </summary>
+        [Event(9)]
+        public void WriteProperties(KeyValueData[] properties)
+        {
+            WriteEvent(9, properties);
+        }
+
         /* The API supports only anonymous types or types decorated with the EventDataAttribute. Non-compliant type: IPAddress dataType.
         public void WriteIPAddress(IPAddress address)
         {
@@ -177,5 +214,36 @@ namespace TraceLoggingTester
             WriteEvent(10, socketAddress);
         }
          */
+    }
+
+    /// <summary>
+    /// Payload with a nested structure. TraceLogging serializes EventData decorated types as Structure fields.
+    /// </summary>
+    [EventData]
+    public sealed class NestedData
+    {
+        public string Name { get; set; } = "";
+        public int Number { get; set; }
+        public InnerData Inner { get; set; } = new InnerData();
+    }
+
+    /// <summary>
+    /// Nested structure inside <see cref="NestedData"/> to exercise recursively nested Structure fields.
+    /// </summary>
+    [EventData]
+    public sealed class InnerData
+    {
+        public bool Flag { get; set; }
+        public double Value { get; set; }
+    }
+
+    /// <summary>
+    /// Key/value pair structure used to exercise StructureList fields (a list of structures) e.g. telemetry properties.
+    /// </summary>
+    [EventData]
+    public sealed class KeyValueData
+    {
+        public string Key { get; set; } = "";
+        public string Value { get; set; } = "";
     }
 }

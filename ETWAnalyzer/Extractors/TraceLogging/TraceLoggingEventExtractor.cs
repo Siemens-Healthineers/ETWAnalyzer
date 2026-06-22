@@ -162,13 +162,18 @@ namespace ETWAnalyzer.Extractors.TraceLogging
                     if ( data.EventDescriptors.TryGetValue(ev.Id, out TraceLoggingEventDescriptor descriptor) == false)
                     {
                         // Store event type data
+                        // list properties are serialized as the list e.g. Strings and a second field e.g. String.Count which we do not need since we know the collection size already
+                        // Structure fields are flattened recursively with a dotted prefix e.g. StructName.FieldName
+                        List<string> fieldNames = new();
+                        List<string> listNames = new();
+                        CollectFieldNames(ev.Fields, null, fieldNames, listNames);
+
                         descriptor = new TraceLoggingEventDescriptor
                         {
                             EventId = ev.Id,
                             Name = ev.TaskName,
-                            // list properties are serialized as the list e.g. Strings and a second field e.g. String.Count which we do not need since we know the collection size already
-                            FieldNames = ev.Fields.Where(field => myPrimitiveEventTypes.Contains(field.Type) && !IsCountField(field.Name)).Select(field => field.Name).ToList(),
-                            ListNames = ev.Fields.Where(field => myListTypes.Contains(field.Type)).Select(field => field.Name).ToList(),
+                            FieldNames = fieldNames,
+                            ListNames = listNames,
                         };
                         data.EventDescriptors.Add(ev.Id, descriptor);
                     }
@@ -203,57 +208,7 @@ namespace ETWAnalyzer.Extractors.TraceLogging
                         TimeStamp = ev.Timestamp.ConvertToTime(),
                     };
 
-                    foreach (var field in ev.Fields)
-                    {
-                        if(IsCountField(field.Name))
-                        {
-                            // Skip count fields, we do not need them
-                            continue;
-                        }   
-
-                        if (myPrimitiveEventTypes.Contains(field.Type))  // Currently we only support basic type field fields 
-                        {
-                            // stringify field in culture invariant, round tripable format where possible
-                            var str = Formatter[field.Type](field.Type, field.AsObject());
-                            if (!String.IsNullOrEmpty(str))
-                            {
-                                logEv.Fields.Add(field.Name, str);
-                            }
-                        }
-                        else if (myListTypes.Contains(field.Type))
-                        {
-                            List<string> list = field.Type switch
-                            {
-                                GenericEventFieldType.BooleanList => field.AsBooleanList?.Select(x => x.ToString(CultureInfo.InvariantCulture)).ToList(),
-                                GenericEventFieldType.ByteList => field.AsByteList?.Select(x => x.ToString(CultureInfo.InvariantCulture)).ToList(),
-                                GenericEventFieldType.CharList => field.AsCharList?.Select(x => x.ToString(CultureInfo.InvariantCulture)).ToList(),
-                                GenericEventFieldType.DateTimeList => field.AsDateTimeList?.Select(x => x.ToString("o")).ToList(),
-                                GenericEventFieldType.DoubleList => field.AsDoubleList?.Select(x => x.ToString(CultureInfo.InvariantCulture)).ToList(),
-                                GenericEventFieldType.GuidList => field.AsGuidList?.Select(x => x.ToString()).ToList(),
-                                GenericEventFieldType.Int16List => field.AsInt16List?.Select(x => x.ToString(CultureInfo.InvariantCulture)).ToList(),
-                                GenericEventFieldType.Int32List => field.AsInt32List?.Select(x => x.ToString(CultureInfo.InvariantCulture)).ToList(),
-                                GenericEventFieldType.Int64List => field.AsInt64List?.Select(x => x.ToString(CultureInfo.InvariantCulture)).ToList(),
-                                GenericEventFieldType.IPAddressList => field.AsIPAddressList?.Select(x => x.ToString()).ToList(),
-                                GenericEventFieldType.SByteList => field.AsSByteList?.Select(x => x.ToString(CultureInfo.InvariantCulture)).ToList(),
-                                GenericEventFieldType.SecurityIdentifierList => field.AsSecurityIdentifierList?.Select(x => x.ToString()).ToList(),
-                                GenericEventFieldType.SingleList => field.AsSingleList?.Select(x => x.ToString(CultureInfo.InvariantCulture)).ToList(),
-                                GenericEventFieldType.SocketAddressList => field.AsSocketAddressList?.Select(x => x.ToString()).ToList(),
-                                GenericEventFieldType.StringList => field.AsStringList?.ToList(),
-                                GenericEventFieldType.StructureList => field.AsStructureList?.Select(x => x.ToString()).ToList(),
-                                GenericEventFieldType.TimeSpanList => field.AsTimeSpanList?.Select(x => x.ToString()).ToList(),
-                                GenericEventFieldType.UInt16List => field.AsUInt16List?.Select(x => x.ToString(CultureInfo.InvariantCulture)).ToList(),
-                                GenericEventFieldType.UInt32List => field.AsUInt32List?.Select(x => x.ToString(CultureInfo.InvariantCulture)).ToList(),
-                                GenericEventFieldType.UInt64List => field.AsUInt64List?.Select(x => x.ToString(CultureInfo.InvariantCulture)).ToList(),
-                                _ => null
-                            };
-
-                            logEv.Lists.Add(field.Name, list);
-                        }
-                        else
-                        {
-                            throw new NotSupportedException(providerName + " event " + ev.TaskName + " " + ev.Id + " field " + field.Name + " has unsupported type " + field.Type); 
-                        }
-                    }
+                    AddFields(ev.Fields, null, logEv, providerName, ev.TaskName, ev.Id);
 
                     data.Events.Add(logEv);
                 }
@@ -263,6 +218,163 @@ namespace ETWAnalyzer.Extractors.TraceLogging
             results.TraceLogging = traceLoggingData;
 
             ReleaseMemory();
+        }
+
+        /// <summary>
+        /// Recursively collect the field and list names of an event including the fields of nested structures.
+        /// Structure fields are flattened with a dotted prefix e.g. StructName.FieldName so they fit into the
+        /// existing flat field/list model.
+        /// </summary>
+        /// <param name="fields">Top level event fields or nested structure fields.</param>
+        /// <param name="prefix">Name prefix of the enclosing structure or null for top level fields.</param>
+        /// <param name="fieldNames">Collected primitive field names.</param>
+        /// <param name="listNames">Collected list field names.</param>
+        internal static void CollectFieldNames(IEnumerable<IGenericEventField> fields, string prefix, List<string> fieldNames, List<string> listNames)
+        {
+            foreach (var field in fields)
+            {
+                if (IsCountField(field.Name))
+                {
+                    continue;
+                }
+
+                string name = prefix == null ? field.Name : prefix + "." + field.Name;
+
+                if (myPrimitiveEventTypes.Contains(field.Type))
+                {
+                    fieldNames.Add(name);
+                }
+                else if (myListTypes.Contains(field.Type))
+                {
+                    listNames.Add(name);
+                }
+                else if (field.Type == GenericEventFieldType.Structure)
+                {
+                    CollectFieldNames(field.AsStructure, name, fieldNames, listNames);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Recursively add the field values of an event including the fields of nested structures.
+        /// Structure fields are flattened with a dotted prefix e.g. StructName.FieldName so they fit into the
+        /// existing flat field/list model.
+        /// </summary>
+        /// <param name="fields">Top level event fields or nested structure fields.</param>
+        /// <param name="prefix">Name prefix of the enclosing structure or null for top level fields.</param>
+        /// <param name="logEv">Event to add the field values to.</param>
+        /// <param name="providerName">Provider name used for error messages.</param>
+        /// <param name="eventName">Event name used for error messages.</param>
+        /// <param name="eventId">Event id used for error messages.</param>
+        internal static void AddFields(IEnumerable<IGenericEventField> fields, string prefix, TraceLoggingEvent logEv, string providerName, string eventName, int eventId)
+        {
+            foreach (var field in fields)
+            {
+                if (IsCountField(field.Name))
+                {
+                    // Skip count fields, we do not need them
+                    continue;
+                }
+
+                string name = prefix == null ? field.Name : prefix + "." + field.Name;
+
+                if (myPrimitiveEventTypes.Contains(field.Type))  // Currently we only support basic type field fields 
+                {
+                    // stringify field in culture invariant, round tripable format where possible
+                    var str = Formatter[field.Type](field.Type, field.AsObject());
+                    if (!String.IsNullOrEmpty(str))
+                    {
+                        logEv.Fields.Add(name, str);
+                    }
+                }
+                else if (myListTypes.Contains(field.Type))
+                {
+                    logEv.Lists.Add(name, GetListValues(field));
+                }
+                else if (field.Type == GenericEventFieldType.Structure)
+                {
+                    // A structure is a nested set of fields. Flatten its primitive/list fields recursively with a dotted prefix.
+                    AddFields(field.AsStructure, name, logEv, providerName, eventName, eventId);
+                }
+                else
+                {
+                    throw new NotSupportedException(providerName + " event " + eventName + " " + eventId + " field " + field.Name + " has unsupported type " + field.Type);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Stringify the values of a list field in a culture invariant, where possible round trip able format.
+        /// Structure lists are serialized to a readable {Name=Value; ...} string per structure since the flat
+        /// field/list model cannot store a variable number of nested structures otherwise.
+        /// </summary>
+        /// <param name="field">List field to read the values from.</param>
+        /// <returns>List of stringified values or null if the field has no value.</returns>
+        internal static List<string> GetListValues(IGenericEventField field)
+        {
+            return field.Type switch
+            {
+                GenericEventFieldType.BooleanList => field.AsBooleanList?.Select(x => x.ToString(CultureInfo.InvariantCulture)).ToList(),
+                GenericEventFieldType.ByteList => field.AsByteList?.Select(x => x.ToString(CultureInfo.InvariantCulture)).ToList(),
+                GenericEventFieldType.CharList => field.AsCharList?.Select(x => x.ToString(CultureInfo.InvariantCulture)).ToList(),
+                GenericEventFieldType.DateTimeList => field.AsDateTimeList?.Select(x => x.ToString("o")).ToList(),
+                GenericEventFieldType.DoubleList => field.AsDoubleList?.Select(x => x.ToString(CultureInfo.InvariantCulture)).ToList(),
+                GenericEventFieldType.GuidList => field.AsGuidList?.Select(x => x.ToString()).ToList(),
+                GenericEventFieldType.Int16List => field.AsInt16List?.Select(x => x.ToString(CultureInfo.InvariantCulture)).ToList(),
+                GenericEventFieldType.Int32List => field.AsInt32List?.Select(x => x.ToString(CultureInfo.InvariantCulture)).ToList(),
+                GenericEventFieldType.Int64List => field.AsInt64List?.Select(x => x.ToString(CultureInfo.InvariantCulture)).ToList(),
+                GenericEventFieldType.IPAddressList => field.AsIPAddressList?.Select(x => x.ToString()).ToList(),
+                GenericEventFieldType.SByteList => field.AsSByteList?.Select(x => x.ToString(CultureInfo.InvariantCulture)).ToList(),
+                GenericEventFieldType.SecurityIdentifierList => field.AsSecurityIdentifierList?.Select(x => x.ToString()).ToList(),
+                GenericEventFieldType.SingleList => field.AsSingleList?.Select(x => x.ToString(CultureInfo.InvariantCulture)).ToList(),
+                GenericEventFieldType.SocketAddressList => field.AsSocketAddressList?.Select(x => x.ToString()).ToList(),
+                GenericEventFieldType.StringList => field.AsStringList?.ToList(),
+                GenericEventFieldType.StructureList => field.AsStructureList?.Select(x => FormatStructure(x)).ToList(),
+                GenericEventFieldType.TimeSpanList => field.AsTimeSpanList?.Select(x => x.ToString()).ToList(),
+                GenericEventFieldType.UInt16List => field.AsUInt16List?.Select(x => x.ToString(CultureInfo.InvariantCulture)).ToList(),
+                GenericEventFieldType.UInt32List => field.AsUInt32List?.Select(x => x.ToString(CultureInfo.InvariantCulture)).ToList(),
+                GenericEventFieldType.UInt64List => field.AsUInt64List?.Select(x => x.ToString(CultureInfo.InvariantCulture)).ToList(),
+                _ => null
+            };
+        }
+
+        /// <summary>
+        /// Serialize a single structure (the fields of one structure instance) to a readable string e.g. {Key=xx; Value=yy}.
+        /// Used for structure lists where the variable number of structures cannot be flattened into the field/list model.
+        /// Nested primitives, lists and structures are rendered recursively.
+        /// </summary>
+        /// <param name="fields">Fields of one structure instance.</param>
+        /// <returns>Readable representation of the structure.</returns>
+        internal static string FormatStructure(IEnumerable<IGenericEventField> fields)
+        {
+            IEnumerable<string> parts = fields
+                .Where(field => !IsCountField(field.Name))
+                .Select(field => field.Name + "=" + FormatFieldValue(field));
+            return "{" + String.Join("; ", parts) + "}";
+        }
+
+        /// <summary>
+        /// Serialize the value of a single field to a readable string. Primitive types use the round trip able
+        /// formatters, lists are rendered as [v1, v2, ...] and nested structures are rendered recursively.
+        /// </summary>
+        /// <param name="field">Field to serialize.</param>
+        /// <returns>Readable representation of the field value.</returns>
+        internal static string FormatFieldValue(IGenericEventField field)
+        {
+            if (myPrimitiveEventTypes.Contains(field.Type))
+            {
+                return Formatter[field.Type](field.Type, field.AsObject());
+            }
+            else if (myListTypes.Contains(field.Type))
+            {
+                return "[" + String.Join(", ", GetListValues(field) ?? new List<string>()) + "]";
+            }
+            else if (field.Type == GenericEventFieldType.Structure)
+            {
+                return FormatStructure(field.AsStructure);
+            }
+
+            return "";
         }
 
         private void ReleaseMemory()
