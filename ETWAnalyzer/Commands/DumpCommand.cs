@@ -88,7 +88,7 @@ namespace ETWAnalyzer.Commands
         "            -ProcessName/pn x;y.exe    Filter by process name or process id. Exclusion filters start with !, Multiple filters are separated by ;" + Environment.NewLine +
         "                                       E.g. cmd;!1234 will filter for all cmd.exe instances excluding cmd.exe(1234). The wildcards * and ? are supported for all filter strings." + Environment.NewLine +
         "            -Parent         x;y.exe    Same as -ProcessName but it will filter for parent process names/ids. Useful with -SortBy Tree to show child processes of specific parent processes as process tree." + Environment.NewLine +
-        "            -CmdLine substring         Restrict output to processes with a matching command line substring." + Environment.NewLine +
+        "            -CmdLine string            Restrict output to processes with a matching command line string. * and ? Wildcards are supported." + Environment.NewLine +
         "            -NewProcess 0/1/-1/-2/2    If not present all processes are dumped. " + Environment.NewLine +
         "                                       0 All processes which have been running from trace start-end. " + Environment.NewLine +
         "                                       1 Processes which have been started and potentially exited during the trace." + Environment.NewLine +
@@ -142,7 +142,7 @@ namespace ETWAnalyzer.Commands
         "  CPU -filedir/fd Extract\\ or xx.json7z [-recursive] [-csv xx.csv] [-NoCSVSeparator] [-ProcessFmt timefmt] [-Methods method1;method2...] [-FirstLastDuration/fld [firsttimefmt] [lasttimefmt]] [-MinMaxCSwitchCount xx yy] [-MinMaxReadyAvgus xx yy]" + Environment.NewLine +
         "       [-ThreadCount] [-SortBy [CPU/Wait/CPUWait/CPUWaitReady/ReadyAvg/CSwitchCount/StackDepth/First/Last/TestTime/StartTime] [-StackTags tag1;tag2] [-CutMethod xx-yy] [-ShowOnMethod] [-ShowModuleInfo [Driver] or [filter]] [-NoCmdLine] [-NoDigitSep] [-Clip]" + Environment.NewLine +
         "       [-Details [-NoFrequency] [-Normalize]] [-NoReady] [-NoCoreUsage] [-ShowCoreNumber] [-ShowTotal Total, Process, Method] [-topn dd nn] [-topNMethods dd nn] [-ZeroTime/zt Marker/First/Last/ProcessStart filter] [-ZeroProcessName/zpn filter] " + Environment.NewLine +
-        "       [-includeDll] [-includeArgs] [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd] [-MinMaxMsTestTimes xx-yy ...] [-ProcessName/pn xx.exe(pid)] [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-CmdLine substring]" + Environment.NewLine +
+        "       [-includeDll] [-includeArgs] [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd] [-MinMaxMsTestTimes xx-yy ...] [-ProcessName/pn xx.exe(pid)] [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-CmdLine string]" + Environment.NewLine +
         "       [-ShowFullFileName/-sffn]" + Environment.NewLine;
         static readonly string CPUHelpString = CPUHelpStringHeader + 
         "       Print CPU, Wait and Ready duration of selected methods of one extracted Json or a directory of Json files. To get output -extract CPU, All or Default must have been used during extraction." + Environment.NewLine +
@@ -205,7 +205,7 @@ namespace ETWAnalyzer.Commands
         static readonly string MemoryHelpStringHeader =
         "  Memory -filedir/fd Extract\\ or xx.json7z [-recursive] [-csv xx.csv] [-NoCSVSeparator] [-TopN dd nn] [-TimeFmt s,Local,LocalTime,UTC,UTCTime,Here,HereTime] [-TimeDigits d] [-ProcessFmt timefmt] [-TotalMemory] [-MinDiffMB dd] " + Environment.NewLine +
         "          [-SortBy Commit/WorkingSet/SharedCommit/Diff] [-GlobalDiffMB dd] [-MinMaxWorkingSetMiB xx yy] [-MinMaxWorkingSetPrivateMiB xx yy] [-MinMaxCommitMiB xx yy] [-MinMaxSharedCommitMiB xx yy] [-NoDigitSep] [-Clip] [-NoCmdLine] [-Details] " + Environment.NewLine +
-        "          [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd] [-MinMaxMsTestTimes xx-yy ...] [-ProcessName/pn xx.exe(pid)] [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-CmdLine substring]" + Environment.NewLine +
+        "          [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd] [-MinMaxMsTestTimes xx-yy ...] [-ProcessName/pn xx.exe(pid)] [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-CmdLine string]" + Environment.NewLine +
         "          [-ShowFullFileName/-sffn] [-ShowModuleInfo [Driver] or [filter]] [-ShowTotal [File,None]] [-ProcessFmt timefmt] "+ Environment.NewLine;
         static readonly string MemoryHelpString = MemoryHelpStringHeader +
         "          Print memory (Working Set, Committed Memory) of all or some processes from extracted Json files. To get output -extract Memory, All or Default must have been used during extraction." + Environment.NewLine +
@@ -229,7 +229,7 @@ namespace ETWAnalyzer.Commands
         "  Exception -filedir/fd Extract\\ or xx.json7z [-Type xx] [-Message xx] [-Showstack] [-MaxMessage dd] [-CutStack dd-yy] [-Stackfilter xx] [-recursive] [-csv xx.csv] [-NoCSVSeparator] " + Environment.NewLine +
         "             [-TimeFmt s,Local,LocalTime,UTC,UTCTime,Here,HereTime] [-TimeDigits d] [-ProcessFmt timefmt] [-NoCmdLine] [-NoDigitSep] [-Clip] [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd] [-MinMaxMsTestTimes xx-yy ...]" + Environment.NewLine +
         "             [-MinMaxExTime minS [maxS]] [-ZeroTime/zt Marker/First/Last/ProcessStart filter] [-ZeroProcessName/zpn filter]" + Environment.NewLine +
-        "             [-ProcessName/pn xx.exe(pid)] [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-CmdLine substring]" + Environment.NewLine +
+        "             [-ProcessName/pn xx.exe(pid)] [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-CmdLine string]" + Environment.NewLine +
         "             [-ShowFullFileName/-sffn] [-ShowModuleInfo [filter]] [-Details]" + Environment.NewLine;
         static readonly string ExceptionHelpString = ExceptionHelpStringHeader +
         "             Print Managed Exceptions from extracted Json file. To get output -extract Exception, All or Default must have been used during extraction." + Environment.NewLine +
@@ -256,7 +256,7 @@ namespace ETWAnalyzer.Commands
         static readonly string DiskHelpStringHeader =
         "  Disk -filedir/fd Extract\\ or xx.json7z [-DirLevel dd] [-PerProcess] [-filename *C:*] [-MinMax[Read/Write/Total][Size/Time] xx yy] [-TopN dd nn] [-SortBy order] [-FileOperation op] [-ReverseFileName/rfn] [-Merge] [-recursive] [-csv xx.csv] [-NoCSVSeparator]" + Environment.NewLine + 
         "        [-TopNProcesses dd nn] [-TimeFmt s,Local,LocalTime,UTC,UTCTime,Here,HereTime] [-TimeDigits d] [-NoDigitSep] [-Clip] [-TestsPerRun dd - SkipNTests dd] [-TestRunIndex dd - TestRunCount dd] [-MinMaxMsTestTimes xx-yy ...] [-ProcessName/pn xx.exe(pid)]" + Environment.NewLine +
-        "        [-Column xx;yy] [-Details] [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-CmdLine substring]" + Environment.NewLine +
+        "        [-Column xx;yy] [-Details] [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-CmdLine string]" + Environment.NewLine +
         "        [-ShowFullFileName/-sffn]" + Environment.NewLine;
         static readonly string DiskHelpString = DiskHelpStringHeader +
         "        Print disk IO metrics to console or to a CSV file if -csv is used. To get output -extract Disk, All or Default must have been used during extraction." + Environment.NewLine +
@@ -282,7 +282,7 @@ namespace ETWAnalyzer.Commands
         static readonly string FileHelpStringHeader =
         "  File -filedir/fd Extract\\ or xx.json7z [-DirLevel dd] [-PerProcess] [-filename *C:*] [-ShowTotal [Total/Process/File/None]] [-TopN dd nn] [-SortBy order] [-FileOperation op] [-ReverseFileName/rfn] [-Merge] [-Details] [-recursive] " + Environment.NewLine +
         "        [-TopNProcesses dd nn] [-csv xx.csv] [-NoCSVSeparator] [-TimeFmt s,Local,LocalTime,UTC,UTCTime,Here,HereTime] [-TimeDigits d] [-ProcessFmt timefmt] [-NoDigitSep] [-Clip] [-TestsPerRun dd -SkipNTests dd] " + Environment.NewLine +
-        "        [-TestRunIndex dd -TestRunCount dd] [-MinMaxMsTestTimes xx-yy ...] [-ProcessName/pn xx.exe(pid)] [-NoCmdLine] [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-CmdLine substring]" + Environment.NewLine +
+        "        [-TestRunIndex dd -TestRunCount dd] [-MinMaxMsTestTimes xx-yy ...] [-ProcessName/pn xx.exe(pid)] [-NoCmdLine] [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-CmdLine string]" + Environment.NewLine +
         "        [-ShowFullFileName/-sffn] [-MinMax[Read/Write/Total][Size/Time] xx yy] [-MinMaxTotalCount xx yy] [-ShowModuleInfo [filter]] [-Column xx;yy]" + Environment.NewLine;
         static readonly string FileHelpString = FileHelpStringHeader +
         "        Print File IO metrics to console or to a CSV file if -csv is used. To get output -extract File, All or Default must have been used during extraction." + Environment.NewLine +
@@ -322,7 +322,7 @@ namespace ETWAnalyzer.Commands
 
         static readonly string ThreadPoolHelpStringHeader =
         "  ThreadPool -filedir/fd Extract\\ or xx.json7z [-TimeFmt s,Local,LocalTime,UTC,UTCTime,Here,HereTime] [-TimeDigits d] [-recursive] [-csv xx.csv] [-NoCSVSeparator] [-NoCmdLine] [-NoDigitSep] [-Clip] " + Environment.NewLine +
-        "              [-TestsPerRun dd - SkipNTests dd][-TestRunIndex dd - TestRunCount dd] [-MinMaxMsTestTimes xx-yy ...] [-ProcessName / pn xxx; yyy] [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-CmdLine substring]" + Environment.NewLine;
+        "              [-TestsPerRun dd - SkipNTests dd][-TestRunIndex dd - TestRunCount dd] [-MinMaxMsTestTimes xx-yy ...] [-ProcessName / pn xxx; yyy] [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-CmdLine string]" + Environment.NewLine;
         static readonly string ThreadPoolHelpString = ThreadPoolHelpStringHeader + 
         "             Print Threadpool Starvation incidents. To get output -extract ThreadPoool or All must have been used during extraction. " + Environment.NewLine +
         "             During recording the Microsoft-Windows-DotNETRuntime ETW provider with Keyword ThreadingKeyword (0x10000) must have been enabled. " + Environment.NewLine +
@@ -330,7 +330,7 @@ namespace ETWAnalyzer.Commands
 
         static readonly string MarkHelpStringHeader =
         "  Mark -filedir/fd Extract\\ or xx.json7z [-MarkerFilter xx] [-ZeroTime marker filter] [-MinMaxMarkDiffTime min [max]] [-recursive] [-csv xx.csv] [-NoCSVSeparator] [-TimeFmt s,Local,LocalTime,UTC,UTCTime,Here,HereTime] [-TimeDigits d] [-NoCmdLine] [-NoDigitSep]  [-Clip] " + Environment.NewLine +
-        "        [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd] [-MinMaxMsTestTimes xx-yy ...] [-ProcessName/pn xx.exe(pid)] [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-CmdLine substring]" + Environment.NewLine;
+        "        [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd] [-MinMaxMsTestTimes xx-yy ...] [-ProcessName/pn xx.exe(pid)] [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-CmdLine string]" + Environment.NewLine;
         static readonly string MarkHelpString = MarkHelpStringHeader +
         "        Print ETW Marker events" + Environment.NewLine +
         "        -MarkerFilter xx          Filter for specific marker events. Multiple filters are separated by ; Exclusion filters start with ! Supported wildcards are * and ?" + Environment.NewLine +
@@ -339,14 +339,14 @@ namespace ETWAnalyzer.Commands
 
         static readonly string PMCHelpStringHeader =
         "  PMC -filedir/fd Extract\\ or xx.json7z [-NoCounters] [-recursive] [-csv xx.csv] [-NoCSVSeparator] [-NoCmdLine] [-NoDigitSep] [-Clip] " + Environment.NewLine +
-        "       [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd] [-MinMaxMsTestTimes xx-yy ...] [-ProcessName/pn xx.exe(pid)] [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-CmdLine substring]" + Environment.NewLine;
+        "       [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd] [-MinMaxMsTestTimes xx-yy ...] [-ProcessName/pn xx.exe(pid)] [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-CmdLine string]" + Environment.NewLine;
         static readonly string PMCHelpString = PMCHelpStringHeader +
         "       Print CPU PMC (Performance Monitoring Counters. To see data you need to record PMC data with ETW in counting mode together with Context Switch events. Sampling counters are not supported yet." + Environment.NewLine +
         "       -NoCounters                Do not display raw counter values. Just CPI and CacheMiss % are shown." + Environment.NewLine;
 
         static readonly string LBRHelpStringHeader =
         "  LBR -filedir/fd Extract\\ or xx.json7z [-recursive] [-csv xx.csv] [-NoCSVSeparator] [-NoCmdLine] [-NoDigitSep] [-Clip] [-MinMaxCount xx yy] " + Environment.NewLine +
-        "       [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd] [-MinMaxMsTestTimes xx-yy ...] [-ProcessName/pn xx.exe(pid)] [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-CmdLine substring]" + Environment.NewLine;
+        "       [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd] [-MinMaxMsTestTimes xx-yy ...] [-ProcessName/pn xx.exe(pid)] [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-CmdLine string]" + Environment.NewLine;
         static readonly string LBRHelpString = LBRHelpStringHeader +
         "       Print CPU LBR (Last Branch Record CPU data). This gives you a sampled method call estimate. To see data you need to record LBR data with ETW." + Environment.NewLine +
         "       -ShowCaller                Show callee/caller of LBR Traces." + Environment.NewLine +
@@ -362,7 +362,7 @@ namespace ETWAnalyzer.Commands
         static readonly string DnsHelpStringHeader =
         "  Dns -filedir/fd Extract\\ or xx.json7z [-DnsQueryFilter xx] [-Details] [-ShowProcess] [-ShowAdapter] [-ShowReturnCode] [-TopN dd nn] [-TopNDetails dd nn] [-SortBy Time/Count] [-MinMaxTotalTime min [max]] [-MinMaxTime min [max]] [-recursive] " + Environment.NewLine +
         "       [-TimeFmt s,Local,LocalTime,UTC,UTCTime,Here,HereTime] [-TimeDigits d] [-csv xx.csv] [-NoCSVSeparator] [-NoCmdLine] [-NoDigitSep] [-Clip] [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd] [-MinMaxMsTestTimes xx-yy ...] [-ProcessName/pn xx.exe(pid)] " + Environment.NewLine +
-        "       [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-CmdLine substring]" + Environment.NewLine;
+        "       [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-CmdLine string]" + Environment.NewLine;
         static readonly string DnsHelpString = DnsHelpStringHeader +
         "       Print Dns summary and delay metrics. To see data you need to enable the Microsoft-Windows-DNS-Client ETW provider" + Environment.NewLine +
         "       -Details                   Display time, duration, process, resolved IP of every Dns request." + Environment.NewLine +
@@ -382,7 +382,7 @@ namespace ETWAnalyzer.Commands
         "       [-MinMaxLastReceivedS xx yy] [-MinMaxLastSentS xx yy] [-Column xx;yy] [-MinMaxConnect xx yy] [-MinMaxDisconnect xx zz] [-KeepAlive] [-MinMaxReceiveDelayS xx yy] [-MinMaxSentDelayS xx yy] [-MinMaxStatBytes/In/Out xx yy] [-MinMaxStatPackets/In/Out xx yy]  [-MinMaxPost xx yy] [-MinMaxInject xx yy]" + Environment.NewLine +
         "       [-Reset] [-MinMaxClientResetS xx yy]" + Environment.NewLine + 
         "       [-TimeFmt s,Local,LocalTime,UTC,UTCTime,Here,HereTime] [-TimeDigits d] [-csv xx.csv] [-NoCSVSeparator] [-NoCmdLine] [-NoDigitSep] [-Clip] [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd] [-MinMaxMsTestTimes xx-yy ...] [-ProcessName/pn xx.exe(pid)] " + Environment.NewLine +
-        "       [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-CmdLine substring] [-recursive] [-ZeroTime/zt Marker/First/Last/ProcessStart filter] [-ZeroProcessName/zpn filter] [-ShowTotal [File/None]] [-ProcessFmt timefmt] " + Environment.NewLine;
+        "       [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-CmdLine string] [-recursive] [-ZeroTime/zt Marker/First/Last/ProcessStart filter] [-ZeroProcessName/zpn filter] [-ShowTotal [File/None]] [-ProcessFmt timefmt] " + Environment.NewLine;
         static readonly string TcpHelpString = TcpHelpStringHeader +
         "       Print TCP summary and retransmit metrics. To see data you need to enable the Microsoft-Windows-TCPIP ETW provider. Data is sorted by retransmission count by default." + Environment.NewLine +
         "       It can detect send retransmissions and duplicate received packets which show up as client retransmission events." + Environment.NewLine + 
@@ -425,7 +425,7 @@ namespace ETWAnalyzer.Commands
         "             [-TimeFmt s,Local,LocalTime,UTC,UTCTime,Here,HereTime] [-TimeDigits d] [-csv xx.csv] [-NoCSVSeparator] [-NoCmdLine] [-NoDigitSep] [-Clip] [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd] [-MinMaxMsTestTimes xx-yy ...] [-ProcessName/pn xx.exe(pid)] " + Environment.NewLine +
         "             [-RelatedProcess xx.exe(pid)] [-MinMaxDuration minS [maxS]] [-MinMaxId min [max]] [-CreateStack filter] [-DestroyStack filter] [-StackFilter filter] [-Object filter] [-ObjectName filter] [-Handle filter] [-ShowRef]" + Environment.NewLine +
         "             [-ShowStack] [-Type filter] [-Leak] [-MultiProcess] [-Map [0,1]] [-PtrInMap 0x...] [-MinMaxMapSize min [max]] [-MinMaxTime min [max]] [-Overlapped] [-Showtotal Total,File,None]" + Environment.NewLine +
-        "             [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-CmdLine substring]" + Environment.NewLine;
+        "             [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-CmdLine string]" + Environment.NewLine;
         static readonly string ObjectRefHelpString = ObjectRefHelpStringHeader +
         "             -ProcessName/pn xx.exe(pid) Filter for processes which did create the object." + Environment.NewLine +
         "             -RelatedProcess xx.exe(pid) Filter in all events for this process. You can also use a negative filter to exclude specific processes like -pn *creator.exe -realatedprocess !other.exe" + Environment.NewLine +    
@@ -455,12 +455,21 @@ namespace ETWAnalyzer.Commands
         static readonly string TraceLogHelpStringHeader =
         "  TraceLog -filedir/fd Extract\\ or xx.json7z " + Environment.NewLine +
         "             [-TimeFmt s,Local,LocalTime,UTC,UTCTime,Here,HereTime] [-TimeDigits d] [-csv xx.csv] [-NoCSVSeparator] [-NoCmdLine] [-NoDigitSep] [-Clip] [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd] [-MinMaxMsTestTimes xx-yy ...] [-ProcessName/pn xx.exe(pid)] " + Environment.NewLine +
-        "             [-Provider prov1;guid*]" + Environment.NewLine +
-        "             [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-CmdLine substring]" + Environment.NewLine;
+        "             [-Provider prov1:evName1,evName2;prov2:id1,id2] [-SortBy Count/Name/Id] [-Column xx;yy] [-Message string]" + Environment.NewLine +
+        "             [-MinMaxTime minS [maxS]] [-MaxCount dd]" + Environment.NewLine +
+        "             [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-CmdLine string]" + Environment.NewLine;
 
         static readonly string TraceLogHelpString = TraceLogHelpStringHeader +
         "  By default it prints just the provider summary per provider. To view individual events of a provider use the -Provider filter." + Environment.NewLine + 
         "             -Provider prov1;guid*       Filter for specific ETW provider by name or Guid. Multiple filters are separated by ; Exclusion filters start with ! Supported wildcards are * and ?." + Environment.NewLine +
+        "                                         To select specific events of a provider append a : followed by a comma separated list of event names or event ids. E.g. -Provider prov1:evName1,evName2;prov2:id1,id2" + Environment.NewLine +
+        "                                         Event names are matched as case insensitive substrings (wildcards * and ? are supported, e.g. prov1:* selects all events) while event ids are matched exactly. To exclude an event name or id prefix it with ! E.g. -Provider prov1:!Verbose" + Environment.NewLine +
+        "                                         When a provider is selected without an event list an event summary (event name, id and count) is printed for that provider." + Environment.NewLine +
+        "             -SortBy Count/Name/Id       Sort order of the provider event summary. Default is Count. Name sorts by event name and Id sorts by event id." + Environment.NewLine +
+       $"             -Column xx;yy               Configure visible columns of the detailed event output. Prefix with ! to disable, + to add to default columns. Wildcards * and ? are supported. Valid: {String.Join(";", DumpTraceLog.ColumnNames)}." + Environment.NewLine +
+        "             -Message string             Filter for events whose message (the payload field name=value pairs) contains the string e.g. -Message Value. Multiple filters are separated by ; Exclusion filters start with ! Wildcards * and ? are supported." + Environment.NewLine +
+        "             -MinMaxTime minS [maxS]     Remove all events which are not within time filter. Time is specified in ETW session time in seconds." + Environment.NewLine +
+        "             -MaxCount dd                Display at most dd trace messages." + Environment.NewLine +
         "             -ProcessName/pn xx.exe(pid) Filter for processes which did create the object." + Environment.NewLine +
         "  "
             ;
@@ -710,7 +719,7 @@ namespace ETWAnalyzer.Commands
        $"             [-Details] [-SortBy {String.Join(';', DumpVirtualAlloc.ColumnNames)}]" + Environment.NewLine +
         "             [-MinMaxNotReleasedSize xx yy] [-MinMaxNotReleasedCount xx yy] [-MinMaxAllocTime xx yy]" + Environment.NewLine +
         "             [-TimeFmt s,Local,LocalTime,UTC,UTCTime,Here,HereTime] [-TimeDigits d]" + Environment.NewLine +
-        "             [-Column col1;col2;...] [-ProcessName/pn xx.exe(pid)] [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-CmdLine substring]" + Environment.NewLine;
+        "             [-Column col1;col2;...] [-ProcessName/pn xx.exe(pid)] [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-CmdLine string]" + Environment.NewLine;
 
         static readonly string VirtualAllocHelpString = VirtualAllocHelpStringHeader +
         " Dump VirtualAlloc events with summary and details about unreleased allocations (committed memory). Shows top allocation stacks and individual allocation events." + Environment.NewLine +
@@ -857,6 +866,10 @@ namespace ETWAnalyzer.Commands
             NotReleasedCount,
             NotReleasedSize,
             MaxCommitSize,
+
+            // TraceLog event summary sort orders
+            Id,
+            Name,
 
         }
 
@@ -1217,7 +1230,12 @@ namespace ETWAnalyzer.Commands
 
 
         // Dump Tracelog specific flags
-        public KeyValuePair<string, Func<string, bool>> ProviderFilter { get; private set; } = new KeyValuePair<string, Func<string, bool>>(null, _ => true);
+        public TraceLoggingProviderFilter ProviderFilter { get; private set; }
+
+        /// <summary>
+        /// Display at most this number of trace messages. Default is no limit.
+        /// </summary>
+        public int MaxCount { get; private set; } = int.MaxValue;
 
         // Dump VirtualAlloc specific flags
         public SkipTakeRange TopNStacks { get; private set; } = new(10, 0);
@@ -1491,7 +1509,7 @@ namespace ETWAnalyzer.Commands
                         break;
                     case "-provider":
                         string providerFilter = GetNextNonArg("-provider");
-                        ProviderFilter = new KeyValuePair<string, Func<string, bool>>(providerFilter, Matcher.CreateMatcher(providerFilter));
+                        ProviderFilter = new TraceLoggingProviderFilter(providerFilter);
                         break;
                     case "-missingpdb":
                         string pdbFilter = GetNextNonArg("-missingpdb", false) ?? "*"; // filter is optional. Default to * which matches all missing pdbs.
@@ -1510,6 +1528,9 @@ namespace ETWAnalyzer.Commands
                     case "-message":
                         string messageFilter = GetNextNonArg("-message");
                         MessageFilter =         new KeyValuePair<string, Func<string, bool>>(messageFilter, Matcher.CreateMatcher(messageFilter));
+                        break;
+                    case "-maxcount":
+                        MaxCount = int.Parse(GetNextNonArg("-maxcount"), CultureInfo.InvariantCulture);
                         break;
                     case "-stackfilter":
                     case "-sf":
@@ -2026,6 +2047,7 @@ namespace ETWAnalyzer.Commands
                 DumpCommands.File => new HashSet<string>(DumpFile.ColumnNames, StringComparer.OrdinalIgnoreCase),
                 DumpCommands.Disk => new HashSet<string>(DumpDisk.ColumnNames, StringComparer.OrdinalIgnoreCase),
                 DumpCommands.VirtualAlloc => new HashSet<string>(DumpVirtualAlloc.ColumnNames, StringComparer.OrdinalIgnoreCase),
+                DumpCommands.TraceLog => new HashSet<string>(DumpTraceLog.ColumnNames, StringComparer.OrdinalIgnoreCase),
                 _ => throw new NotSupportedException($"The command {myCommand} does not support explicit column configuration (yet).")
             };
 
@@ -2907,6 +2929,12 @@ namespace ETWAnalyzer.Commands
                             ShowTotal = ShowTotal,
                             ProviderFilter = ProviderFilter,
                             TopN = TopN,
+                            SortOrder = SortOrder,
+                            ColumnConfiguration = ColumnConfiguration,
+                            MergeColumnConfig = MergeColumnConfig,
+                            MessageFilter = MessageFilter,
+                            MinMaxTime = MinMaxTime,
+                            MaxCount = MaxCount,
                         };
                         break;
 
@@ -2996,6 +3024,8 @@ namespace ETWAnalyzer.Commands
                     _ => DumpTcp.SupportedSortOrders,
                 },
                 DumpCommands.VirtualAlloc => DumpVirtualAlloc.ValidSortOrders,
+
+                DumpCommands.TraceLog => DumpTraceLog.ValidSortOrders,
 
                 _ => (SortOrders[]) Enum.GetValues(typeof(SortOrders)),
             };

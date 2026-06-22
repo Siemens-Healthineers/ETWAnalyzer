@@ -27,7 +27,60 @@ namespace ETWAnalyzer.EventDump
 
         public DumpCommand.TotalModes? ShowTotal { get; internal set; }
         public SkipTakeRange TopN { get; internal set; } = new();
-        public KeyValuePair<string, Func<string, bool>> ProviderFilter { get; internal set; }
+        public TraceLoggingProviderFilter ProviderFilter { get; internal set; }
+        public DumpCommand.SortOrders SortOrder { get; internal set; }
+
+        /// <summary>
+        /// Filter for the event message (the payload field name=value pairs). Matches events whose message contains the substring.
+        /// </summary>
+        public KeyValuePair<string, Func<string, bool>> MessageFilter { get; internal set; } = new(null, _ => true);
+
+        /// <summary>
+        /// Remove all events which are not within this time filter. Time is specified in ETW session time in seconds.
+        /// </summary>
+        public MinMaxRange<double> MinMaxTime { get; internal set; } = new();
+
+        /// <summary>
+        /// Display at most this number of trace messages.
+        /// </summary>
+        public int MaxCount { get; internal set; } = int.MaxValue;
+
+        /// <summary>
+        /// Used by context sensitive help to print the allowed values for the -SortBy clause of the provider event summary.
+        /// </summary>
+        static internal readonly DumpCommand.SortOrders[] ValidSortOrders = new[]
+        {
+            DumpCommand.SortOrders.Count,
+            DumpCommand.SortOrders.Name,
+            DumpCommand.SortOrders.Id,
+            DumpCommand.SortOrders.Default,
+        };
+
+        const string Col_Provider = "Provider";
+        const string Col_EventName = "EventName";
+        const string Col_Id = "Id";
+        const string Col_Message = "Message";
+
+        /// <summary>
+        /// Valid column names which can be configured for the detailed (individual event) output via -Column.
+        /// </summary>
+        public static string[] ColumnNames =
+        {
+            Col_Time, Col_Provider, Col_EventName, Col_Id, Col_Message,
+        };
+
+        bool GetColumnEnable(string columnName)
+        {
+            return columnName switch
+            {
+                Col_Time => GetOverrideFlag(Col_Time, true),
+                Col_Provider => GetOverrideFlag(Col_Provider, true),
+                Col_EventName => GetOverrideFlag(Col_EventName, true),
+                Col_Id => GetOverrideFlag(Col_Id, true),
+                Col_Message => GetOverrideFlag(Col_Message, true),
+                _ => throw new NotSupportedException($"Column {columnName} is not configurable."),
+            };
+        }
 
         internal class MatchData
         {
@@ -38,8 +91,23 @@ namespace ETWAnalyzer.EventDump
 
         public override List<MatchData> ExecuteInternal()
         {
-
             List<MatchData> lret = ReadFileData();
+
+            if (!MinMaxTime.IsDefault)
+            {
+                lret = lret.Where(x => MinMaxTime.IsWithin((x.Event.TimeStamp - x.File.Extract.SessionStart).TotalSeconds)).ToList();
+            }
+
+            if (MessageFilter.Key != null)
+            {
+                lret = lret.Where(x => MessageFilter.Value(GetEventMessageText(x.Event).TrimEnd())).ToList();
+            }
+
+            if (lret.Count > MaxCount)
+            {
+                lret = lret.Take(MaxCount).ToList();
+            }
+
             if (IsCSVEnabled)
             {
                 WriteCSVData(lret);
@@ -54,45 +122,212 @@ namespace ETWAnalyzer.EventDump
 
         private void PrintMatches(List<MatchData> matches)
         {
-            Totals fileTotal = new();
-            Totals allFileTotal = new();
-            string fileName = null;
-
-            foreach (var ev in matches.OrderBy(x => x.File.PerformedAt))
+            foreach (var fileGroup in matches.GroupBy(x => x.File).OrderBy(x => x.Key.PerformedAt))
             {
-                fileTotal.Add(ev.Event);
-                allFileTotal.Add(ev.Event);
+                TestDataFile file = fileGroup.Key;
+                PrintFileName(file.FileName, null, file.PerformedAt, file.Extract.MainModuleVersion?.ToString());
 
-                if (ev.File.FileName != fileName)
+                if (ProviderFilter != null)
                 {
-                    if (ShowTotal != DumpCommand.TotalModes.None && fileName != null)
+                    foreach (var providerGroup in fileGroup.GroupBy(x => x.Event.TypeInformation.ProviderName))
                     {
-                        fileTotal.PrintTotals(ConsoleColor.Yellow, ShowTotal, TopN, UsePrettyProcessName);
-                    }
+                        ITraceLoggingEventDescriptor typeInfo = providerGroup.First().Event.TypeInformation;
 
-                    PrintFileName(ev.File.FileName, null, ev.File.PerformedAt, ev.File.Extract.MainModuleVersion?.ToString());
-                    fileName = ev.File.FileName;    
+                        if (ProviderFilter.HasEventFilterForProvider(typeInfo.ProviderName, typeInfo.ProviderGuid))
+                        {
+                            PrintProviderEvents(providerGroup);
+                        }
+                        else
+                        {
+                            PrintProviderEventSummary(providerGroup);
+                        }
+                    }
                 }
 
-                if( ProviderFilter.Key != null)
+                if (ShowTotal != DumpCommand.TotalModes.None)
                 {
-                    KeyValuePair<string,string>[] fieldRow = ev.Event.TypeInformation.FieldNames.Select(field => new KeyValuePair<string,string>(field,ev.Event.TryGetField(field))).ToArray();
-                    KeyValuePair<string, IReadOnlyList<string>>[] fieldList = ev.Event.TypeInformation.ListNames.Select(list => new KeyValuePair<string, IReadOnlyList<string>>(list, ev.Event.TryGetList(list))).ToArray();
-
-                    foreach(var field in fieldRow)
+                    Totals fileTotal = new();
+                    foreach (var ev in fileGroup)
                     {
-                        ColorConsole.WriteEmbeddedColorLine($"{GetDateTimeString(ev.Event.TimeStamp, ev.File.Extract.SessionStart, TimeFormatOption)} [yellow]{field.Key}[/yellow] {field.Value} ", null, true);
+                        fileTotal.Add(ev.Event);
                     }
-                    ColorConsole.WriteLine("");
+                    fileTotal.PrintTotals(ConsoleColor.Yellow, ShowTotal, TopN, UsePrettyProcessName);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Print all individual events of a provider which was selected with an explicit event name/id list.
+        /// A header row is printed for the enabled columns and the values are aligned below their headers.
+        /// The printed columns can be configured via -Column (Time, Provider, EventName, Id, Message).
+        /// </summary>
+        /// <param name="providerEvents">Events of a single provider.</param>
+        private void PrintProviderEvents(IEnumerable<MatchData> providerEvents)
+        {
+            List<MatchData> events = providerEvents as List<MatchData> ?? providerEvents.ToList();
+            if (events.Count == 0)
+            {
+                return;
+            }
+
+            bool showTime = GetColumnEnable(Col_Time);
+            bool showProvider = GetColumnEnable(Col_Provider);
+            bool showEventName = GetColumnEnable(Col_EventName);
+            bool showId = GetColumnEnable(Col_Id);
+            bool showMessage = GetColumnEnable(Col_Message);
+
+            // Pre-render the time strings once and determine the column widths so the header aligns with the values below it.
+            string[] times = new string[events.Count];
+            int timeWidth = Col_Time.Length;
+            int providerWidth = Col_Provider.Length;
+            int eventNameWidth = Col_EventName.Length;
+            int idWidth = Col_Id.Length;
+
+            for (int i = 0; i < events.Count; i++)
+            {
+                ITraceLoggingEvent ev = events[i].Event;
+                times[i] = GetDateTimeString(ev.TimeStamp, events[i].File.Extract.SessionStart, TimeFormatOption);
+                timeWidth = Math.Max(timeWidth, times[i].Length);
+                providerWidth = Math.Max(providerWidth, ev.TypeInformation.ProviderName.Length);
+                eventNameWidth = Math.Max(eventNameWidth, ev.TypeInformation.Name.Length);
+                idWidth = Math.Max(idWidth, ev.EventId.ToString().Length);
+            }
+
+            StringBuilder header = new();
+            if (showTime)
+            {
+                header.Append($"{Col_Time.WithWidth(-timeWidth)} ");
+            }
+            if (showProvider)
+            {
+                header.Append($"[magenta]{Col_Provider.WithWidth(-providerWidth)}[/magenta] ");
+            }
+            if (showEventName)
+            {
+                header.Append($"[yellow]{Col_EventName.WithWidth(-eventNameWidth)}[/yellow] ");
+            }
+            if (showId)
+            {
+                header.Append($"{Col_Id.WithWidth(-idWidth)} ");
+            }
+            if (showMessage)
+            {
+                header.Append(Col_Message);
+            }
+            ColorConsole.WriteEmbeddedColorLine(header.ToString().TrimEnd());
+
+            for (int i = 0; i < events.Count; i++)
+            {
+                ITraceLoggingEvent ev = events[i].Event;
+                StringBuilder line = new();
+
+                if (showTime)
+                {
+                    line.Append($"{times[i].WithWidth(-timeWidth)} ");
+                }
+                if (showProvider)
+                {
+                    line.Append($"[magenta]{ev.TypeInformation.ProviderName.WithWidth(-providerWidth)}[/magenta] ");
+                }
+                if (showEventName)
+                {
+                    line.Append($"[yellow]{ev.TypeInformation.Name.WithWidth(-eventNameWidth)}[/yellow] ");
+                }
+                if (showId)
+                {
+                    line.Append($"{ev.EventId.ToString().WithWidth(-idWidth)} ");
+                }
+                if (showMessage)
+                {
+                    line.Append(GetEventMessage(ev));
                 }
 
+                ColorConsole.WriteEmbeddedColorLine(line.ToString().TrimEnd());
             }
+        }
 
-            if (ShowTotal != DumpCommand.TotalModes.None && fileName != null)
+        /// <summary>
+        /// Build the message column of an event from its payload fields as a space separated list of name value pairs.
+        /// </summary>
+        /// <param name="ev">Event whose payload fields are concatenated.</param>
+        /// <returns>Message string with embedded color markup for the field names.</returns>
+        private static string GetEventMessage(ITraceLoggingEvent ev)
+        {
+            StringBuilder message = new();
+            foreach (string field in ev.TypeInformation.FieldNames)
             {
-                fileTotal.PrintTotals(ConsoleColor.Yellow, ShowTotal, TopN, UsePrettyProcessName);
+                message.Append($"[green]{field}[/green]={ev.TryGetField(field)} ");
             }
 
+            return message.ToString();
+        }
+
+        /// <summary>
+        /// Build the plain text message of an event without color markup. Used by the -Message filter to match substring values.
+        /// </summary>
+        /// <param name="ev">Event whose payload fields are concatenated.</param>
+        /// <returns>Message string without color markup.</returns>
+        private static string GetEventMessageText(ITraceLoggingEvent ev)
+        {
+            StringBuilder message = new();
+            foreach (string field in ev.TypeInformation.FieldNames)
+            {
+                message.Append($"{field}={ev.TryGetField(field)} ");
+            }
+
+            return message.ToString();
+        }
+
+        /// <summary>
+        /// Print a summary of all events of a provider which was selected without an explicit event name/id list.
+        /// Each distinct event is printed with its count, name and id. The sort order is controlled by <see cref="SortOrder"/>.
+        /// </summary>
+        /// <param name="providerEvents">Events of a single provider.</param>
+        private void PrintProviderEventSummary(IEnumerable<MatchData> providerEvents)
+        {
+            ITraceLoggingEventDescriptor typeInfo = providerEvents.First().Event.TypeInformation;
+            ColorConsole.WriteEmbeddedColorLine($"[yellow]{typeInfo.ProviderName}[/yellow]");
+
+            IEnumerable<EventSummary> summary = providerEvents
+                .GroupBy(x => new { x.Event.TypeInformation.Name, x.Event.EventId })
+                .Select(g => new EventSummary(g.Key.Name, g.Key.EventId, g.Count()));
+
+            foreach (EventSummary entry in SortEventSummary(summary))
+            {
+                ColorConsole.WriteEmbeddedColorLine($"\t[green]{entry.Count.WithDigitGrouping(),10}[/green] [yellow]{entry.Name}[/yellow] (Id: {entry.Id})");
+            }
+        }
+
+        /// <summary>
+        /// Sort the provider event summary by the configured <see cref="SortOrder"/>. Default is by ascending event count.
+        /// </summary>
+        /// <param name="summary">Unsorted event summary.</param>
+        /// <returns>Sorted event summary.</returns>
+        private IEnumerable<EventSummary> SortEventSummary(IEnumerable<EventSummary> summary)
+        {
+            return SortOrder switch
+            {
+                DumpCommand.SortOrders.Name => summary.OrderBy(x => x.Name, StringComparer.OrdinalIgnoreCase),
+                DumpCommand.SortOrders.Id => summary.OrderBy(x => x.Id),
+                _ => summary.OrderBy(x => x.Count),
+            };
+        }
+
+        /// <summary>
+        /// One line of the provider event summary which describes a distinct event by its name, id and occurrence count.
+        /// </summary>
+        class EventSummary
+        {
+            public EventSummary(string name, int id, int count)
+            {
+                Name = name;
+                Id = id;
+                Count = count;
+            }
+
+            public string Name { get; }
+            public int Id { get; }
+            public int Count { get; }
         }
 
         class Totals
@@ -243,25 +478,21 @@ namespace ETWAnalyzer.EventDump
                         continue;
                     }
 
-                    bool bFirst = true;
-                    bool bCancel = false;
-
                     foreach (KeyValuePair<string, ITraceLoggingProvider> eventByProvider in file.Extract.TraceLogging.EventsByProvider)
                     {
-                        if( bCancel )
+                        ITraceLoggingProvider provider = eventByProvider.Value;
+
+                        if (ProviderFilter != null && !ProviderFilter.IsMatchingProvider(provider.ProviderName, provider.ProviderId))
                         {
-                            break;
+                            continue;
                         }
 
-                        foreach (ITraceLoggingEvent eventData in eventByProvider.Value.Events.OrderBy(x=>x.TimeStamp))
+                        foreach (ITraceLoggingEvent eventData in provider.Events.OrderBy(x=>x.TimeStamp))
                         {
-                            if(bFirst && ProviderFilter.Key != null && ( !ProviderFilter.Value(eventData.TypeInformation.ProviderName) && !ProviderFilter.Value(eventData.TypeInformation.ProviderGuid.ToString())) )
+                            if (ProviderFilter != null && !ProviderFilter.IsMatchingEvent(eventData.TypeInformation.ProviderName, eventData.TypeInformation.ProviderGuid, eventData.TypeInformation.Name, eventData.EventId))
                             {
-                                bCancel = true;
                                 continue;
                             }
-
-                            bFirst = false;
 
                             if ( !IsMatchingProcessAndCmdLine(file, eventData.Process.ToProcessKey()) )
                             {
