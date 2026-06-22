@@ -69,12 +69,15 @@ namespace ETWAnalyzer_uTest.EventDump
             // Counts: Mango(Id 5) x2, Alpha(Id 10) x3, Zebra(Id 20) x1
             int[] eventIds = new[] { 10, 10, 10, 20, 5, 5 };
 
+            ETWProcess process = new() { ProcessID = 1234, ProcessName = "Test.exe" };
+
             List<DumpTraceLog.MatchData> lret = new();
             foreach (int id in eventIds)
             {
                 TraceLoggingEvent ev = new()
                 {
                     EventId = id,
+                    ThreadId = 4711,
                     TimeStamp = new DateTimeOffset(2000, 1, 1, 0, 0, 0, TimeSpan.Zero),
                     TypeInformation = provider.EventDescriptors[id],
                     Fields = new Dictionary<string, string> { { "Payload", $"Value{id}" } },
@@ -84,6 +87,7 @@ namespace ETWAnalyzer_uTest.EventDump
                 {
                     File = file,
                     Event = ev,
+                    Process = process,
                 });
             }
 
@@ -112,12 +116,15 @@ namespace ETWAnalyzer_uTest.EventDump
                 (20, 20),
             };
 
+            ETWProcess process = new() { ProcessID = 1234, ProcessName = "Test.exe" };
+
             List<DumpTraceLog.MatchData> lret = new();
             foreach ((int id, int offsetSeconds) in events)
             {
                 TraceLoggingEvent ev = new()
                 {
                     EventId = id,
+                    ThreadId = 4711,
                     TimeStamp = sessionStart.AddSeconds(offsetSeconds),
                     TypeInformation = provider.EventDescriptors[id],
                     Fields = new Dictionary<string, string> { { "Payload", $"Value{id}" } },
@@ -127,6 +134,53 @@ namespace ETWAnalyzer_uTest.EventDump
                 {
                     File = file,
                     Event = ev,
+                    Process = process,
+                });
+            }
+
+            return lret;
+        }
+
+        /// <summary>
+        /// Create one event per provider descriptor on a distinct thread id so the -TID filter can be exercised.
+        /// Alpha(Id 10) is logged on thread 100, Zebra(Id 20) on thread 200 and Mango(Id 5) on thread 300.
+        /// </summary>
+        List<DumpTraceLog.MatchData> CreateThreadTestData()
+        {
+            TraceLoggingProvider provider = CreateProvider();
+
+            TestDataFile file = new("Test", "C:\\temp\\Test.json", new DateTime(2000, 1, 1), 500, 1, "TestMachine", null)
+            {
+                Extract = new ETWExtract(),
+            };
+
+            // Event id -> thread id which did log the event
+            (int Id, uint ThreadId)[] events = new[]
+            {
+                (10, 100u),
+                (20, 200u),
+                (5, 300u),
+            };
+
+            ETWProcess process = new() { ProcessID = 1234, ProcessName = "Test.exe" };
+
+            List<DumpTraceLog.MatchData> lret = new();
+            foreach ((int id, uint threadId) in events)
+            {
+                TraceLoggingEvent ev = new()
+                {
+                    EventId = id,
+                    ThreadId = threadId,
+                    TimeStamp = new DateTimeOffset(2000, 1, 1, 0, 0, 0, TimeSpan.Zero),
+                    TypeInformation = provider.EventDescriptors[id],
+                    Fields = new Dictionary<string, string> { { "Payload", $"Value{id}" } },
+                };
+
+                lret.Add(new DumpTraceLog.MatchData
+                {
+                    File = file,
+                    Event = ev,
+                    Process = process,
                 });
             }
 
@@ -274,11 +328,12 @@ namespace ETWAnalyzer_uTest.EventDump
             testOutput.Flush();
             IReadOnlyList<string> lines = testOutput.GetSingleLines();
 
-            // A header row is printed with all enabled column names
-            Assert.Contains(lines, x => x.Contains("Time") && x.Contains("Provider") && x.Contains("EventName") && x.Contains("Id") && x.Contains("Message"));
+            // A header row is printed with all enabled column names. PID and TID are enabled by default, ProcessName is not.
+            Assert.Contains(lines, x => x.Contains("Time") && x.Contains("PID") && x.Contains("TID") && x.Contains("Provider") && x.Contains("EventName") && x.Contains("Id") && x.Contains("Message"));
+            Assert.DoesNotContain(lines, x => x.Contains("ProcessName"));
 
-            // Each individual event is printed with provider, event name, id and message column
-            Assert.Contains(lines, x => x.Contains("TestProvider") && x.Contains("Alpha") && x.Contains("Payload=Value10"));
+            // Each individual event is printed with pid, tid, provider, event name, id and message column
+            Assert.Contains(lines, x => x.Contains("1234") && x.Contains("4711") && x.Contains("TestProvider") && x.Contains("Alpha") && x.Contains("Payload=Value10"));
             Assert.Contains(lines, x => x.Contains("TestProvider") && x.Contains("Zebra") && x.Contains("Payload=Value20"));
         }
 
@@ -359,6 +414,62 @@ namespace ETWAnalyzer_uTest.EventDump
             // Neither the Id header nor the Id values are printed any more
             string header = lines.First(x => x.Contains("EventName"));
             Assert.DoesNotContain("Id", header);
+        }
+
+        [Fact]
+        public void Detailed_Output_Can_Add_ProcessName_Column()
+        {
+            using var testOutput = new ExceptionalPrinter(myWriter, true);
+            using CultureSwitcher invariant = new();
+
+            DumpTraceLog dumper = new()
+            {
+                myUTestData = CreateTestData(),
+                ProviderFilter = new TraceLoggingProviderFilter("TestProvider:*"),
+                ShowTotal = DumpCommand.TotalModes.None,
+                // ProcessName is not enabled by default. Add it on top of the default columns.
+                ColumnConfiguration = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase) { { "ProcessName", true } },
+                MergeColumnConfig = true,
+            };
+
+            dumper.ExecuteInternal();
+
+            testOutput.Flush();
+            IReadOnlyList<string> lines = testOutput.GetSingleLines();
+
+            // The ProcessName header and the process name value are now printed in addition to the default columns
+            string header = lines.First(x => x.Contains("EventName"));
+            Assert.Contains("ProcessName", header);
+            Assert.Contains(lines, x => x.Contains("Test.exe") && x.Contains("Alpha"));
+        }
+
+        [Fact]
+        public void Detailed_Output_Can_Exclude_PID_And_TID_Columns()
+        {
+            using var testOutput = new ExceptionalPrinter(myWriter, true);
+            using CultureSwitcher invariant = new();
+
+            DumpTraceLog dumper = new()
+            {
+                myUTestData = CreateTestData(),
+                ProviderFilter = new TraceLoggingProviderFilter("TestProvider:*"),
+                ShowTotal = DumpCommand.TotalModes.None,
+                ColumnConfiguration = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase) { { "PID", false }, { "TID", false } },
+            };
+
+            dumper.ExecuteInternal();
+
+            testOutput.Flush();
+            IReadOnlyList<string> lines = testOutput.GetSingleLines();
+
+            // The default columns except PID and TID are still printed
+            Assert.Contains(lines, x => x.Contains("Alpha") && x.Contains("Payload=Value10"));
+
+            // Neither the PID/TID headers nor their values are printed any more
+            string header = lines.First(x => x.Contains("EventName"));
+            Assert.DoesNotContain("PID", header);
+            Assert.DoesNotContain("TID", header);
+            Assert.DoesNotContain(lines, x => x.Contains("4711"));
         }
 
         [Fact]
@@ -551,6 +662,90 @@ namespace ETWAnalyzer_uTest.EventDump
             List<DumpTraceLog.MatchData> matches = dumper.ExecuteInternal();
 
             Assert.Equal(6, matches.Count);
+        }
+
+        [Fact]
+        public void TID_Filter_Matches_Single_Thread()
+        {
+            using var testOutput = new ExceptionalPrinter(myWriter, true);
+            using CultureSwitcher invariant = new();
+
+            DumpTraceLog dumper = new()
+            {
+                myUTestData = CreateThreadTestData(),
+                ProviderFilter = new TraceLoggingProviderFilter("TestProvider:*"),
+                ShowTotal = DumpCommand.TotalModes.None,
+                TIDFilter = new KeyValuePair<string, Func<string, bool>>("200", Matcher.CreateMatcher("200")),
+            };
+
+            List<DumpTraceLog.MatchData> matches = dumper.ExecuteInternal();
+
+            // Only the single Zebra(Id 20) event which was logged on thread 200 remains.
+            Assert.Single(matches);
+            Assert.Equal("Zebra", matches[0].Event.TypeInformation.Name);
+            Assert.Equal(200u, matches[0].Event.ThreadId);
+        }
+
+        [Fact]
+        public void TID_Filter_Matches_Multiple_Threads()
+        {
+            using var testOutput = new ExceptionalPrinter(myWriter, true);
+            using CultureSwitcher invariant = new();
+
+            DumpTraceLog dumper = new()
+            {
+                myUTestData = CreateThreadTestData(),
+                ProviderFilter = new TraceLoggingProviderFilter("TestProvider:*"),
+                ShowTotal = DumpCommand.TotalModes.None,
+                TIDFilter = new KeyValuePair<string, Func<string, bool>>("100;300", Matcher.CreateMatcher("100;300")),
+            };
+
+            List<DumpTraceLog.MatchData> matches = dumper.ExecuteInternal();
+
+            // Threads 100 (Alpha) and 300 (Mango) remain, thread 200 (Zebra) is filtered out.
+            Assert.Equal(2, matches.Count);
+            Assert.Contains(matches, x => x.Event.ThreadId == 100u);
+            Assert.Contains(matches, x => x.Event.ThreadId == 300u);
+            Assert.DoesNotContain(matches, x => x.Event.ThreadId == 200u);
+        }
+
+        [Fact]
+        public void TID_Filter_Supports_Exclusion()
+        {
+            using var testOutput = new ExceptionalPrinter(myWriter, true);
+            using CultureSwitcher invariant = new();
+
+            DumpTraceLog dumper = new()
+            {
+                myUTestData = CreateThreadTestData(),
+                ProviderFilter = new TraceLoggingProviderFilter("TestProvider:*"),
+                ShowTotal = DumpCommand.TotalModes.None,
+                TIDFilter = new KeyValuePair<string, Func<string, bool>>("!200", Matcher.CreateMatcher("!200")),
+            };
+
+            List<DumpTraceLog.MatchData> matches = dumper.ExecuteInternal();
+
+            // Everything except the event logged on thread 200 (Zebra) remains.
+            Assert.Equal(2, matches.Count);
+            Assert.DoesNotContain(matches, x => x.Event.ThreadId == 200u);
+        }
+
+        [Fact]
+        public void No_TID_Filter_Keeps_All_Events()
+        {
+            using var testOutput = new ExceptionalPrinter(myWriter, true);
+            using CultureSwitcher invariant = new();
+
+            DumpTraceLog dumper = new()
+            {
+                myUTestData = CreateThreadTestData(),
+                ProviderFilter = new TraceLoggingProviderFilter("TestProvider:*"),
+                ShowTotal = DumpCommand.TotalModes.None,
+            };
+
+            List<DumpTraceLog.MatchData> matches = dumper.ExecuteInternal();
+
+            Assert.Equal(3, matches.Count);
         }
     }
 }

@@ -456,7 +456,7 @@ namespace ETWAnalyzer.Commands
         "  TraceLog -filedir/fd Extract\\ or xx.json7z " + Environment.NewLine +
         "             [-TimeFmt s,Local,LocalTime,UTC,UTCTime,Here,HereTime] [-TimeDigits d] [-csv xx.csv] [-NoCSVSeparator] [-NoCmdLine] [-NoDigitSep] [-Clip] [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd] [-MinMaxMsTestTimes xx-yy ...] [-ProcessName/pn xx.exe(pid)] " + Environment.NewLine +
         "             [-Provider prov1:evName1,evName2;prov2:id1,id2] [-SortBy Count/Name/Id] [-Column xx;yy] [-Message string]" + Environment.NewLine +
-        "             [-MinMaxTime minS [maxS]] [-MaxCount dd]" + Environment.NewLine +
+        "             [-MinMaxTime minS [maxS]] [-MaxCount dd] [-TID tid1;tid2]" + Environment.NewLine +
         "             [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-CmdLine string]" + Environment.NewLine;
 
         static readonly string TraceLogHelpString = TraceLogHelpStringHeader +
@@ -467,9 +467,11 @@ namespace ETWAnalyzer.Commands
         "                                         When a provider is selected without an event list an event summary (event name, id and count) is printed for that provider." + Environment.NewLine +
         "             -SortBy Count/Name/Id       Sort order of the provider event summary. Default is Count. Name sorts by event name and Id sorts by event id." + Environment.NewLine +
        $"             -Column xx;yy               Configure visible columns of the detailed event output. Prefix with ! to disable, + to add to default columns. Wildcards * and ? are supported. Valid: {String.Join(";", DumpTraceLog.ColumnNames)}." + Environment.NewLine +
+        "                                         ProcessName is not enabled by default. To show it use e.g. -Column +ProcessName" + Environment.NewLine +
         "             -Message string             Filter for events whose message (the payload field name=value pairs) contains the string e.g. -Message Value. Multiple filters are separated by ; Exclusion filters start with ! Wildcards * and ? are supported." + Environment.NewLine +
         "             -MinMaxTime minS [maxS]     Remove all events which are not within time filter. Time is specified in ETW session time in seconds." + Environment.NewLine +
         "             -MaxCount dd                Display at most dd trace messages." + Environment.NewLine +
+        "             -TID tid1;tid2              Filter for events which were logged by the given thread ids. Multiple filters are separated by ; Exclusion filters start with ! Wildcards * and ? are supported." + Environment.NewLine +
         "             -ProcessName/pn xx.exe(pid) Filter for processes which did create the object." + Environment.NewLine +
         "  "
             ;
@@ -710,8 +712,14 @@ namespace ETWAnalyzer.Commands
         " ETWAnalyzer -fd xx.json7z -dump ObjectRef -ShowTotal Process -TopN 10" + Environment.NewLine;
 
         static readonly string TraceLogExamples = ExamplesHelpString +
-        "[green]Dump all tracelog events[/green]" + Environment.NewLine +
-        " ETWAnalyzer -fd xx.json7z -dump TraceLog";
+        "[green]Show which tracelog providers have been active in trace. Print a per process/provider summary[/green]" + Environment.NewLine +
+        " ETWAnalyzer -fd xx.json7z -dump TraceLog" + Environment.NewLine +
+        "[green]Show a per process summary which events name and id, sorted by count have been logged.[/green]" + Environment.NewLine +
+        " ETWAnalyzer -fd xx.json7z -dump TraceLog -Provider Microsoft-VisualStudio-Common"+ Environment.NewLine +
+        "[green]Show detailed events sorted by time for a given provider.[/green]" + Environment.NewLine +
+        " ETWAnalyzer -fd xx.json7z -dump TraceLog -Provider Microsoft-VisualStudio-Common:vs/telemetryapi/commandlineflags" + Environment.NewLine +
+        "[green]Show detailed events which match a specific substring but limit amount of data to 10[/green]" + Environment.NewLine + 
+        " ETWAnalyzer -fd xx.json7z -dump TraceLog -Provider Microsoft-VisualStudio-Common:vs* -message *18.5* -MaxCount 10";
 
         static readonly string VirtualAllocHelpStringHeader =
         "  VirtualAlloc -filedir/fd Extract\\ or xx.json7z" + Environment.NewLine +
@@ -1233,6 +1241,11 @@ namespace ETWAnalyzer.Commands
         public TraceLoggingProviderFilter ProviderFilter { get; private set; }
 
         /// <summary>
+        /// Filter for the thread id which did log the event.
+        /// </summary>
+        public KeyValuePair<string, Func<string, bool>> TIDFilter { get; private set; } = new(null, _ => true);
+
+        /// <summary>
         /// Display at most this number of trace messages. Default is no limit.
         /// </summary>
         public int MaxCount { get; private set; } = int.MaxValue;
@@ -1531,6 +1544,10 @@ namespace ETWAnalyzer.Commands
                         break;
                     case "-maxcount":
                         MaxCount = int.Parse(GetNextNonArg("-maxcount"), CultureInfo.InvariantCulture);
+                        break;
+                    case "-tid":
+                        string tidFilter = GetNextNonArg("-tid");
+                        TIDFilter =             new KeyValuePair<string, Func<string, bool>>(tidFilter, Matcher.CreateMatcher(tidFilter));
                         break;
                     case "-stackfilter":
                     case "-sf":
@@ -2933,6 +2950,7 @@ namespace ETWAnalyzer.Commands
                             ColumnConfiguration = ColumnConfiguration,
                             MergeColumnConfig = MergeColumnConfig,
                             MessageFilter = MessageFilter,
+                            TIDFilter = TIDFilter,
                             MinMaxTime = MinMaxTime,
                             MaxCount = MaxCount,
                         };

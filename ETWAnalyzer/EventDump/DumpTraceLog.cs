@@ -10,6 +10,7 @@ using ETWAnalyzer.ProcessTools;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -36,6 +37,11 @@ namespace ETWAnalyzer.EventDump
         public KeyValuePair<string, Func<string, bool>> MessageFilter { get; internal set; } = new(null, _ => true);
 
         /// <summary>
+        /// Filter for the thread id which did log the event. Matches events whose thread id matches the filter.
+        /// </summary>
+        public KeyValuePair<string, Func<string, bool>> TIDFilter { get; internal set; } = new(null, _ => true);
+
+        /// <summary>
         /// Remove all events which are not within this time filter. Time is specified in ETW session time in seconds.
         /// </summary>
         public MinMaxRange<double> MinMaxTime { get; internal set; } = new();
@@ -56,6 +62,8 @@ namespace ETWAnalyzer.EventDump
             DumpCommand.SortOrders.Default,
         };
 
+        const string Col_PID = "PID";
+        const string Col_TID = "TID";
         const string Col_Provider = "Provider";
         const string Col_EventName = "EventName";
         const string Col_Id = "Id";
@@ -63,10 +71,11 @@ namespace ETWAnalyzer.EventDump
 
         /// <summary>
         /// Valid column names which can be configured for the detailed (individual event) output via -Column.
+        /// PID and TID are enabled by default, ProcessName is not.
         /// </summary>
         public static string[] ColumnNames =
         {
-            Col_Time, Col_Provider, Col_EventName, Col_Id, Col_Message,
+            Col_Time, Col_PID, Col_TID, Col_ProcessName, Col_Provider, Col_EventName, Col_Id, Col_Message,
         };
 
         bool GetColumnEnable(string columnName)
@@ -74,6 +83,9 @@ namespace ETWAnalyzer.EventDump
             return columnName switch
             {
                 Col_Time => GetOverrideFlag(Col_Time, true),
+                Col_PID => GetOverrideFlag(Col_PID, true),
+                Col_TID => GetOverrideFlag(Col_TID, true),
+                Col_ProcessName => GetOverrideFlag(Col_ProcessName, false),
                 Col_Provider => GetOverrideFlag(Col_Provider, true),
                 Col_EventName => GetOverrideFlag(Col_EventName, true),
                 Col_Id => GetOverrideFlag(Col_Id, true),
@@ -96,6 +108,11 @@ namespace ETWAnalyzer.EventDump
             if (!MinMaxTime.IsDefault)
             {
                 lret = lret.Where(x => MinMaxTime.IsWithin((x.Event.TimeStamp - x.File.Extract.SessionStart).TotalSeconds)).ToList();
+            }
+
+            if (TIDFilter.Key != null)
+            {
+                lret = lret.Where(x => TIDFilter.Value(x.Event.ThreadId.ToString(CultureInfo.InvariantCulture))).ToList();
             }
 
             if (MessageFilter.Key != null)
@@ -171,6 +188,9 @@ namespace ETWAnalyzer.EventDump
             }
 
             bool showTime = GetColumnEnable(Col_Time);
+            bool showPID = GetColumnEnable(Col_PID);
+            bool showTID = GetColumnEnable(Col_TID);
+            bool showProcessName = GetColumnEnable(Col_ProcessName);
             bool showProvider = GetColumnEnable(Col_Provider);
             bool showEventName = GetColumnEnable(Col_EventName);
             bool showId = GetColumnEnable(Col_Id);
@@ -178,16 +198,25 @@ namespace ETWAnalyzer.EventDump
 
             // Pre-render the time strings once and determine the column widths so the header aligns with the values below it.
             string[] times = new string[events.Count];
+            string[] processNames = new string[events.Count];
             int timeWidth = Col_Time.Length;
+            int pidWidth = Col_PID.Length;
+            int tidWidth = Col_TID.Length;
+            int processNameWidth = Col_ProcessName.Length;
             int providerWidth = Col_Provider.Length;
             int eventNameWidth = Col_EventName.Length;
             int idWidth = Col_Id.Length;
 
+            // calculate the column widths by iterating over all events and determining the maximum width of each column.
             for (int i = 0; i < events.Count; i++)
             {
                 ITraceLoggingEvent ev = events[i].Event;
                 times[i] = GetDateTimeString(ev.TimeStamp, events[i].File.Extract.SessionStart, TimeFormatOption);
+                processNames[i] = events[i].Process.GetProcessName(UsePrettyProcessName);
                 timeWidth = Math.Max(timeWidth, times[i].Length);
+                pidWidth = Math.Max(pidWidth, events[i].Process.ProcessID.ToString().Length);
+                tidWidth = Math.Max(tidWidth, ev.ThreadId.ToString().Length);
+                processNameWidth = Math.Max(processNameWidth, processNames[i].Length);
                 providerWidth = Math.Max(providerWidth, ev.TypeInformation.ProviderName.Length);
                 eventNameWidth = Math.Max(eventNameWidth, ev.TypeInformation.Name.Length);
                 idWidth = Math.Max(idWidth, ev.EventId.ToString().Length);
@@ -197,6 +226,18 @@ namespace ETWAnalyzer.EventDump
             if (showTime)
             {
                 header.Append($"{Col_Time.WithWidth(-timeWidth)} ");
+            }
+            if (showPID)
+            {
+                header.Append($"{Col_PID.WithWidth(-pidWidth)} ");
+            }
+            if (showTID)
+            {
+                header.Append($"{Col_TID.WithWidth(-tidWidth)} ");
+            }
+            if (showProcessName)
+            {
+                header.Append($"[cyan]{Col_ProcessName.WithWidth(-processNameWidth)}[/cyan] ");
             }
             if (showProvider)
             {
@@ -224,6 +265,18 @@ namespace ETWAnalyzer.EventDump
                 if (showTime)
                 {
                     line.Append($"{times[i].WithWidth(-timeWidth)} ");
+                }
+                if (showPID)
+                {
+                    line.Append($"{events[i].Process.ProcessID.ToString().WithWidth(-pidWidth)} ");
+                }
+                if (showTID)
+                {
+                    line.Append($"{ev.ThreadId.ToString().WithWidth(-tidWidth)} ");
+                }
+                if (showProcessName)
+                {
+                    line.Append($"[cyan]{processNames[i].WithWidth(-processNameWidth)}[/cyan] ");
                 }
                 if (showProvider)
                 {
