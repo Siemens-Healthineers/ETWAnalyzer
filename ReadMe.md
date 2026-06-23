@@ -55,6 +55,7 @@ See [Documentation Folder in Repo](https://github.com/Siemens-Healthineers/ETWAn
 - [TCP](ETWAnalyzer/Documentation/DumpTCPCommand.md)
 - [TestRun](ETWAnalyzer/Documentation/DumpTestRunCommand.md)
 - [ThreadPool](ETWAnalyzer/Documentation/DumpThreadPoolCommand.md) 
+- [TraceLog](ETWAnalyzer/Documentation/DumpTracelogCommand.md)
 - [Version](ETWAnalyzer/Documentation/DumpVersionCommand.md)
 - [VirtualAlloc](ETWAnalyzer/Documentation/DumpVirtualAllocCommand.md)
 
