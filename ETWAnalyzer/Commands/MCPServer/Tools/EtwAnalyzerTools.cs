@@ -199,8 +199,16 @@ namespace ETWAnalyzer.Commands.MCPServer.Tools
             return ExecuteDumpCommand(DumpCommands.PMC, arguments);
         }
 
+        [McpServerTool(Name = "etw_dump_tracelog")]
+        [Description("Dump Tracelogging events.")]
+        public static string DumpTraceLog(
+        [Description("Arguments for the tracelog dump command (e.g. '-pn sorter' to limit to a specific process, To dump an overview '-provider *', to dump all events from all providers '-provider *:*')")] string arguments = "")
+        {
+            return ExecuteDumpCommand(DumpCommands.TraceLog, arguments);
+        }
+
         [McpServerTool(Name = "etw_help")]
-        [Description("Get help for ETWAnalyzer dump commands. Shows available options and their descriptions.")]
+        [Description("Get help for ETWAnalyzer dump commands. Shows available options and their descriptions and usage examples.")]
         public static string Help(
             [Description("Specific dump command to get help for (e.g. 'CPU', 'Process', 'Memory'). Leave empty for general help.")] string command = "")
         {

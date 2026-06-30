@@ -116,6 +116,7 @@ etw_unload:
 | `etw_dump_virtualalloc` | VirtualAlloc memory allocations | `-Details`, `-ShowStack`, `-TopNStacks` |
 | `etw_dump_threadpool` | .NET ThreadPool starvation events | `-ProcessName` |
 | `etw_dump_marker` | ETW marker events | `-MarkerFilter`, `-ZeroTime` |
+| `etw_dump_tracelog` | Tracelogging events | `-Provider *:*` |
 | `etw_dump_power` | Power profile settings | `-details`, `-Diff` |
 | `etw_dump_pmc` | Performance Monitoring Counters | `-pn` |
 | `etw_dump_lbr` | Last Branch Record CPU profiling | `-pn`, `-topnmethods`, `-showcaller` |

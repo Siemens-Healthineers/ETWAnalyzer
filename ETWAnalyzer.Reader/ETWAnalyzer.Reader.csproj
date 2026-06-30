@@ -15,8 +15,8 @@
     <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
     <PackageProjectUrl>https://github.com/Siemens-Healthineers/ETWAnalyzer</PackageProjectUrl>
     <PackageReadmeFile>ProgramaticAccess.md</PackageReadmeFile>
-    <Version>4.5.0.3</Version>
-    <FileVersion>4.5.0.3</FileVersion>
+    <Version>4.5.0.4</Version>
+    <FileVersion>4.5.0.4</FileVersion>
     <NoWarn>NU5100;NU1904</NoWarn>
     <EmbedAllSources>true</EmbedAllSources>
     <BaseOutputPath>..\bin</BaseOutputPath>
