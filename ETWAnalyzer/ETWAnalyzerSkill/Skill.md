@@ -157,7 +157,7 @@ etw_dump_process:
 **Top processes with method breakdown:**
 ```
 etw_dump_cpu:
-  arguments: "-topN 5 -topNMethods 20"
+  arguments: "-topN 5 -topNMethods 150"
 ```
 
 **Analyze specific process with stacktags:**
@@ -166,10 +166,22 @@ etw_dump_cpu:
   arguments: "-ProcessName *syngo.Viewing* -StackTags * -ShowTotal Process"
 ```
 
+**Find methods waiting longest:**
+```
+etw_dump_cpu:
+  arguments: "-Methods * -topNMethods 150 -SortBy wait"
+```
+
+**Find top CPU consumer methods deepest in stacktrace. Useful to find CPU hogs which a nearly stacktrace view by using aggregates.**
+```
+etw_dump_cpu:
+  arguments: "-Methods * -topNMethods 150 -SortBy stackdepth"
+```
+
 **Find methods consuming most CPU:**
 ```
 etw_dump_cpu:
-  arguments: "-Methods * -topNMethods 50 -SortBy CPU"
+  arguments: "-Methods * -topNMethods 150 -SortBy CPU"
 ```
 
 **Show first/last occurrence of methods (for duration analysis):**
@@ -294,7 +306,7 @@ etw_dump_dns:
 
 ### 9. Extended CPU Metrics
 
-**Show detailed CPU data with frequency and ready times:**
+**Show detailed CPU data with frequency and ready percentile times:**
 ```
 etw_dump_cpu:
   arguments: "-topN 3 -topNMethods 10 -Details"
@@ -365,12 +377,15 @@ etw_dump_cpu:
    etw_dump_process → "-ProcessFmt s -SortBy StartTime"
    
 3. Analyze startup CPU
-   etw_dump_cpu → "-ProcessName myapp.exe -Methods * -fld s s -SortBy First"
+   etw_dump_cpu → "-ProcessName myapp.exe -Methods * -fld s s -SortBy CPU -topnmethods 150"
+
+4. Analyze startup wait
+   etw_dump_cpu → "-ProcessName myapp.exe -Methods * -fld s s -SortBy wait -topnmethods 150"
    
-4. Check for file I/O delays
+5. Check for file I/O delays
    etw_dump_file → "-ProcessName myapp.exe -PerProcess"
    
-5. Look for network delays
+6. Look for network delays
    etw_dump_tcp → "-ProcessName myapp.exe"
    etw_dump_dns → "-MinMaxTime 50ms"
 ```
@@ -593,7 +608,7 @@ etw_dump_process → "-SortBy StartTime"
 etw_dump_cpu → "-topN 10"
 
 # CPU deep dive
-etw_dump_cpu → "-ProcessName myapp* -StackTags * -ShowTotal Method -topNMethods 50"
+etw_dump_cpu → "-ProcessName myapp* -StackTags * -ShowTotal Method -topNMethods 150"
 
 # Memory investigation
 etw_dump_memory → "-topN 10 -Details"
