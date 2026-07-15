@@ -377,7 +377,7 @@ namespace ETWAnalyzer.Commands
         "       -DnsQueryFilter xx        Filter by host name. Multiple filters are separated by ;" + Environment.NewLine;
 
         static readonly string TcpHelpStringHeader =
-        "  Tcp -filedir/fd Extract\\ or xx.json7z [-IpPort xx] [-ShowRetransmits] [-TopN dd nn] [-SortBy ReceivedCount/SentCount/ReceivedSize/SentSize/TotalCount/TotalSize/ConnectTime/DisconnectTime/RetransmissionCount/RetransmissionTime/MaxRetransmissionTime/LastSentTime/LastReceivedTime/MaxReceiveDelay/MaxReceiveDelay/SendRate/ReceiveRate]" + Environment.NewLine +
+        "  Tcp -filedir/fd Extract\\ or xx.json7z [-IpPort xx] [-SourceIpPort xx] [-RemoteIpPort xx] [-ShowRetransmits] [-TopN dd nn] [-SortBy ReceivedCount/SentCount/ReceivedSize/SentSize/TotalCount/TotalSize/ConnectTime/DisconnectTime/RetransmissionCount/RetransmissionTime/MaxRetransmissionTime/LastSentTime/LastReceivedTime/MaxReceiveDelay/MaxReceiveDelay/SendRate/ReceiveRate]" + Environment.NewLine +
         "       [-SortRetransmitBy Delay/Time] [-Issue [Post]] [-MinMaxRetransDelayMs xx-yy] [-MinMaxRetransBytes xx-yy] [-MinMaxRetransCount xx-yy] [-MinMaxSentBytes xx-yy] [-MinMaxReceivedBytes xx-yy] [-TopNRetrans dd nn] [-OnlyClientRetransmit] [-Details] [-Stats] [-Tcb 0xdddddd]" + Environment.NewLine +
         "       [-MinMaxLastReceivedS xx yy] [-MinMaxLastSentS xx yy] [-Column xx;yy] [-MinMaxConnect xx yy] [-MinMaxDisconnect xx zz] [-KeepAlive] [-MinMaxReceiveDelayS xx yy] [-MinMaxSentDelayS xx yy] [-MinMaxSendMBs xx yy] [-MinMaxRecMBs xx yy] [-MinMaxStatBytes/In/Out xx yy] [-MinMaxStatPackets/In/Out xx yy]  [-MinMaxPost xx yy] [-MinMaxInject xx yy]" + Environment.NewLine +
         "       [-Reset] [-MinMaxClientResetS xx yy]" + Environment.NewLine + 
@@ -391,7 +391,9 @@ namespace ETWAnalyzer.Commands
         "       -MinMaxPost xx yy          Filter for connections which have posted to TCP send queue (via ws2_32.dll!send) xx-yy send requests" + Environment.NewLine +
         "       -MinMaxInject xx yy        Filter for connections which have injected xx-yy packets in the TCP send path. This is usually done by Firewall which will remove posted packets and inject them later again." + Environment.NewLine +   
 		"  Generic filters" + Environment.NewLine + 		
-        "       -IpPort xx                 Filter for substrings in source/destination IP and port." + Environment.NewLine +		
+        "       -IpPort xx                 Filter for substrings in the combined source+destination IP and port (no separator). Supports * ? wildcards, ; for multiple and ! to exclude." + Environment.NewLine +
+        "       -SourceIpPort xx           Filter matching only the source (local) IP:port, e.g. -SourceIpPort 10.1.221.12:* or -SourceIpPort *:5000. Combine with -RemoteIpPort to constrain both sides independently." + Environment.NewLine +
+        "       -RemoteIpPort xx           Filter matching only the remote (destination) IP:port, e.g. -RemoteIpPort 10.1.221.13:443." + Environment.NewLine +
         "       -ShowTotal [File,None]     Show totals per file. Default is File. None will turn off totals." + Environment.NewLine +
         "       -GroupBy [SourceIpPortRemoteIp,SourceIpRemoteIp]  Aggregate connections. SourceIpPortRemoteIp groups by source IP:port and remote IP regardless of the target port (sourceIP:port -> targetIP:*)." + Environment.NewLine +
         "                                  SourceIpRemoteIp groups by source IP and remote IP regardless of source and remote port (sourceIP:* -> remote:*). Byte/packet/retransmission counts are summed and send/receive rates are byte weighted averaged." + Environment.NewLine +
@@ -1225,6 +1227,16 @@ namespace ETWAnalyzer.Commands
 
         // Dump Tcp specific flags
         public KeyValuePair<string, Func<string, bool>> IpPortFilter { get; private set; } = new(null, _ => true);
+
+        /// <summary>
+        /// TCP only: filter matching only the source (local) IP:port of a connection.
+        /// </summary>
+        public KeyValuePair<string, Func<string, bool>> SourceIpPortFilter { get; private set; } = new(null, _ => true);
+
+        /// <summary>
+        /// TCP only: filter matching only the remote (destination) IP:port of a connection.
+        /// </summary>
+        public KeyValuePair<string, Func<string, bool>> RemoteIpPortFilter { get; private set; } = new(null, _ => true);
         public MinMaxRange<double> MinMaxRetransDelayS { get; private set; } = new();
         public MinMaxRange<int> MinMaxRetransBytes { get; private set; } = new(2, null);  // by default filter retransmitted packets which are not 0 or 1 bytes which are often just ACKs or keepalive packets.
         public KeyValuePair<string, Func<string, bool>> TcbFilter { get; private set; } = new(null, _ => true);
@@ -1621,6 +1633,14 @@ namespace ETWAnalyzer.Commands
                     case "-ipport":
                         string ipPortFilter = GetNextNonArg("-ipport");
                         IpPortFilter =          new KeyValuePair<string, Func<string, bool>>(ipPortFilter, Matcher.CreateMatcher(ipPortFilter));
+                        break;
+                    case "-sourceipport":
+                        string sourceIpPortFilter = GetNextNonArg("-sourceipport");
+                        SourceIpPortFilter =    new KeyValuePair<string, Func<string, bool>>(sourceIpPortFilter, Matcher.CreateMatcher(sourceIpPortFilter));
+                        break;
+                    case "-remoteipport":
+                        string remoteIpPortFilter = GetNextNonArg("-remoteipport");
+                        RemoteIpPortFilter =    new KeyValuePair<string, Func<string, bool>>(remoteIpPortFilter, Matcher.CreateMatcher(remoteIpPortFilter));
                         break;
                     case "-tcb":
                         string tcpFilter = GetNextNonArg("-tcb");
@@ -2879,6 +2899,8 @@ namespace ETWAnalyzer.Commands
                             ShowStats = ShowStats,
                             TopNRetrans = TopNRetrans,
                             IpPortFilter = IpPortFilter,
+                            SourceIpPortFilter = SourceIpPortFilter,
+                            RemoteIpPortFilter = RemoteIpPortFilter,
                             SortOrder = SortOrder,
                             RetransSortOrder = RetransSortOrder,
                             MinMaxRetransDelayS = MinMaxRetransDelayS,

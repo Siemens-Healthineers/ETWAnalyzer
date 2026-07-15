@@ -63,6 +63,16 @@ namespace ETWAnalyzer.EventDump
         public KeyValuePair<string, Func<string, bool>> IpPortFilter { get; internal set; } = new KeyValuePair<string, Func<string, bool>>(null, x => true);
 
         /// <summary>
+        /// Filter which matches only the source (local) IP:port of a connection. Supports * and ? wildcards.
+        /// </summary>
+        public KeyValuePair<string, Func<string, bool>> SourceIpPortFilter { get; internal set; } = new KeyValuePair<string, Func<string, bool>>(null, x => true);
+
+        /// <summary>
+        /// Filter which matches only the remote (destination) IP:port of a connection. Supports * and ? wildcards.
+        /// </summary>
+        public KeyValuePair<string, Func<string, bool>> RemoteIpPortFilter { get; internal set; } = new KeyValuePair<string, Func<string, bool>>(null, x => true);
+
+        /// <summary>
         /// Filter for every Tcp Retransmission time
         /// </summary>
         public MinMaxRange<double> MinMaxRetransDelayS { get; internal set; }
@@ -1097,6 +1107,30 @@ namespace ETWAnalyzer.EventDump
             }
         }
 
+        /// <summary>
+        /// Apply the -IpPort (combined), -SourceIpPort (local endpoint) and -RemoteIpPort (remote endpoint) filters.
+        /// </summary>
+        /// <returns>true when the connection passes all endpoint filters.</returns>
+        bool PassesIpPortFilters(SocketConnection localIPAndPort, SocketConnection remoteIPAndPort)
+        {
+            if (IpPortFilter.Value?.Invoke(localIPAndPort.ToString() + remoteIPAndPort.ToString()) == false)
+            {
+                return false;
+            }
+
+            if (SourceIpPortFilter.Value?.Invoke(localIPAndPort.ToString()) == false)
+            {
+                return false;
+            }
+
+            if (RemoteIpPortFilter.Value?.Invoke(remoteIPAndPort.ToString()) == false)
+            {
+                return false;
+            }
+
+            return true;
+        }
+
         private List<MatchData> ReadFileData()
         {
             if (myUTestData != null)
@@ -1157,7 +1191,7 @@ namespace ETWAnalyzer.EventDump
                     }
                 } 
 
-                if (IpPortFilter.Value?.Invoke(localIPAndPort.ToString() + remoteIPAndPort.ToString()) == false)
+                if (!PassesIpPortFilters(localIPAndPort, remoteIPAndPort))
                 {
                     continue;
                 }
@@ -1221,7 +1255,7 @@ namespace ETWAnalyzer.EventDump
                     }
                 }
 
-                if (IpPortFilter.Value?.Invoke(localIPAndPort.ToString() + remoteIPAndPort.ToString()) == false)
+                if (!PassesIpPortFilters(localIPAndPort, remoteIPAndPort))
                 {
                     continue;
                 }

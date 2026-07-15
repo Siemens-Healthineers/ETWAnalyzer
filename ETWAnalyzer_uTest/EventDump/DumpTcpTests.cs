@@ -53,6 +53,24 @@ namespace ETWAnalyzer_uTest.EventDump
             Assert.Equal(value, tcpDumper.GroupBy.ToString());
         }
 
+        [Fact]
+        public void SourceAndRemoteIpPort_Filters_Are_Parsed_And_Match_Independently()
+        {
+            var args = new string[] { "-dump", "TCP", "-SourceIpPort", "10.1.221.12:*", "-RemoteIpPort", "*:443" };
+            DumpCommand dump = (DumpCommand)CommandFactory.CreateCommand(args);
+            dump.Parse();
+            dump.Run();
+            DumpTcp tcpDumper = (DumpTcp)dump.myCurrentDumper;
+
+            // source filter matches only the local endpoint
+            Assert.True(tcpDumper.SourceIpPortFilter.Value("10.1.221.12:5000"));
+            Assert.False(tcpDumper.SourceIpPortFilter.Value("10.1.221.13:5000"));
+
+            // remote filter matches only the remote endpoint
+            Assert.True(tcpDumper.RemoteIpPortFilter.Value("10.1.221.13:443"));
+            Assert.False(tcpDumper.RemoteIpPortFilter.Value("10.1.221.13:80"));
+        }
+
         public List<string> Messages { get; set; } = new List<string>();
 
         private ITestOutputHelper myWriter;
