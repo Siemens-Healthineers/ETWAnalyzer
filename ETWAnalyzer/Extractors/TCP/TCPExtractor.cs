@@ -182,6 +182,7 @@ namespace ETWAnalyzer.Extractors.TCP
 
             UpdateLastSentAndMaxSendDelay(results, sentByConnection);
             UpdateMaxReceiveDelay(results, receivedByConnection);
+            UpdateSendReceiveRates(results, sentByConnection.Item2, receivedByConnection);
             UpdateKeepAliveStatistics(results);
             UpdatePostedStatistics(results, sentByConnection.Item1);
             DetectSendOrderIssues(results, sentByConnection, connect2Idx);
@@ -276,6 +277,99 @@ namespace ETWAnalyzer.Extractors.TCP
                     conn.Statistics.MaxReceiveDelayS = GetMaxDelayBetweenPackets(received);
                 }
             }
+        }
+
+        /// <summary>
+        /// Maximum gap in seconds between two consecutive send/receive events which still belong to the same
+        /// burst (transfer window). If the gap is larger a new burst is started. This is used to calculate the
+        /// average send/receive rate while data was actively transferred excluding idle times between bursts.
+        /// </summary>
+        const double BurstGapS = 0.350d;
+
+        /// <summary>
+        /// Calculate the average send and receive rate in bytes/second per connection based on the individual
+        /// send/receive event timestamps. See <see cref="GetWeightedAverageBurstRate"/> for the used algorithm.
+        /// </summary>
+        private void UpdateSendReceiveRates(ETWExtract results, ILookup<TcpRequestConnect, TcpDataTransferSend> sentByConnection, ILookup<TcpRequestConnect, TcpDataTransferReceive> receivedByConnection)
+        {
+            foreach (IGrouping<TcpRequestConnect, TcpDataTransferSend> sent in sentByConnection)
+            {
+                TcpDataTransferSend firstSent = sent.First();
+                TcpConnection conn = Find(firstSent.Tcb, firstSent.Timestamp, results);
+                if (conn != null)
+                {
+                    conn.Statistics.AverageSendRate = GetWeightedAverageBurstRate(sent.Select(x => (x.Timestamp, (long)x.BytesSent)));
+                }
+            }
+
+            foreach (IGrouping<TcpRequestConnect, TcpDataTransferReceive> received in receivedByConnection)
+            {
+                TcpDataTransferReceive firstReceived = received.First();
+                TcpConnection conn = Find(firstReceived.Tcb, firstReceived.Timestamp, results);
+                if (conn != null)
+                {
+                    conn.Statistics.AverageReceiveRate = GetWeightedAverageBurstRate(received.Select(x => (x.Timestamp, (long)x.NumBytes)));
+                }
+            }
+        }
+
+        /// <summary>
+        /// Calculate an average transfer rate in bytes/second from individual send/receive events.
+        /// The events are grouped into bursts where consecutive events are at most <see cref="BurstGapS"/> apart.
+        /// For each burst with at least two events the burst rate is calculated as the sum of transferred bytes in
+        /// the burst divided by the burst duration (time between first and last event of the burst).
+        /// The returned value is the weighted average of all burst rates weighted by the transferred bytes per burst.
+        /// Single event bursts and zero duration bursts are ignored because no meaningful rate can be derived from them.
+        /// </summary>
+        /// <param name="events">Timestamp and transferred bytes of each send/receive event.</param>
+        /// <returns>Weighted average rate in bytes/second or null when no rate could be calculated.</returns>
+        internal static double? GetWeightedAverageBurstRate(IEnumerable<(DateTimeOffset Timestamp, long Bytes)> events)
+        {
+            List<(DateTimeOffset Timestamp, long Bytes)> ordered = events.OrderBy(x => x.Timestamp).ToList();
+            if (ordered.Count < 2)
+            {
+                return null;
+            }
+
+            double weightedRateSum = 0.0d;  // sum of burstRate * burstBytes
+            double totalBytes = 0.0d;       // sum of burstBytes used as weight
+
+            int burstStart = 0;
+            for (int i = 1; i <= ordered.Count; i++)
+            {
+                bool endOfBurst = (i == ordered.Count) || (ordered[i].Timestamp - ordered[i - 1].Timestamp).TotalSeconds > BurstGapS;
+                if (endOfBurst)
+                {
+                    int burstEnd = i - 1;
+                    if (burstEnd > burstStart) // burst needs at least two events to span a time range
+                    {
+                        double durationS = (ordered[burstEnd].Timestamp - ordered[burstStart].Timestamp).TotalSeconds;
+                        if (durationS > 0)
+                        {
+                            long burstBytes = 0;
+                            for (int j = burstStart; j <= burstEnd; j++)
+                            {
+                                burstBytes += ordered[j].Bytes;
+                            }
+
+                            if (burstBytes > 0)
+                            {
+                                double burstRate = burstBytes / durationS;
+                                weightedRateSum += burstRate * burstBytes;
+                                totalBytes += burstBytes;
+                            }
+                        }
+                    }
+                    burstStart = i;
+                }
+            }
+
+            if (totalBytes == 0.0d)
+            {
+                return null;
+            }
+
+            return weightedRateSum / totalBytes;
         }
 
         private void UpdateKeepAliveStatistics(ETWExtract results)

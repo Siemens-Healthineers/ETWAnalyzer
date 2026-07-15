@@ -377,9 +377,9 @@ namespace ETWAnalyzer.Commands
         "       -DnsQueryFilter xx        Filter by host name. Multiple filters are separated by ;" + Environment.NewLine;
 
         static readonly string TcpHelpStringHeader =
-        "  Tcp -filedir/fd Extract\\ or xx.json7z [-IpPort xx] [-ShowRetransmits] [-TopN dd nn] [-SortBy ReceivedCount/SentCount/ReceivedSize/SentSize/TotalCount/TotalSize/ConnectTime/DisconnectTime/RetransmissionCount/RetransmissionTime/MaxRetransmissionTime/LastSentTime/LastReceivedTime/MaxReceiveDelay/MaxReceiveDelay]" + Environment.NewLine +
+        "  Tcp -filedir/fd Extract\\ or xx.json7z [-IpPort xx] [-ShowRetransmits] [-TopN dd nn] [-SortBy ReceivedCount/SentCount/ReceivedSize/SentSize/TotalCount/TotalSize/ConnectTime/DisconnectTime/RetransmissionCount/RetransmissionTime/MaxRetransmissionTime/LastSentTime/LastReceivedTime/MaxReceiveDelay/MaxReceiveDelay/SendRate/ReceiveRate]" + Environment.NewLine +
         "       [-SortRetransmitBy Delay/Time] [-Issue [Post]] [-MinMaxRetransDelayMs xx-yy] [-MinMaxRetransBytes xx-yy] [-MinMaxRetransCount xx-yy] [-MinMaxSentBytes xx-yy] [-MinMaxReceivedBytes xx-yy] [-TopNRetrans dd nn] [-OnlyClientRetransmit] [-Details] [-Stats] [-Tcb 0xdddddd]" + Environment.NewLine +
-        "       [-MinMaxLastReceivedS xx yy] [-MinMaxLastSentS xx yy] [-Column xx;yy] [-MinMaxConnect xx yy] [-MinMaxDisconnect xx zz] [-KeepAlive] [-MinMaxReceiveDelayS xx yy] [-MinMaxSentDelayS xx yy] [-MinMaxStatBytes/In/Out xx yy] [-MinMaxStatPackets/In/Out xx yy]  [-MinMaxPost xx yy] [-MinMaxInject xx yy]" + Environment.NewLine +
+        "       [-MinMaxLastReceivedS xx yy] [-MinMaxLastSentS xx yy] [-Column xx;yy] [-MinMaxConnect xx yy] [-MinMaxDisconnect xx zz] [-KeepAlive] [-MinMaxReceiveDelayS xx yy] [-MinMaxSentDelayS xx yy] [-MinMaxSendMBs xx yy] [-MinMaxRecMBs xx yy] [-MinMaxStatBytes/In/Out xx yy] [-MinMaxStatPackets/In/Out xx yy]  [-MinMaxPost xx yy] [-MinMaxInject xx yy]" + Environment.NewLine +
         "       [-Reset] [-MinMaxClientResetS xx yy]" + Environment.NewLine + 
         "       [-TimeFmt s,Local,LocalTime,UTC,UTCTime,Here,HereTime] [-TimeDigits d] [-csv xx.csv] [-NoCSVSeparator] [-NoCmdLine] [-NoDigitSep] [-Clip] [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd] [-MinMaxMsTestTimes xx-yy ...] [-ProcessName/pn xx.exe(pid)] " + Environment.NewLine +
         "       [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-CmdLine string] [-recursive] [-ZeroTime/zt Marker/First/Last/ProcessStart filter] [-ZeroProcessName/zpn filter] [-ShowTotal [File/None]] [-ProcessFmt timefmt] " + Environment.NewLine;
@@ -396,7 +396,7 @@ namespace ETWAnalyzer.Commands
         "       -TopN dd nn                Show top n connection by current sort order" + Environment.NewLine +
         "       -TopNRetrans dd nn         Show top n retransmission events when -ShowRetransmit is used" + Environment.NewLine +
         "       -SortBy [...]              Default sort order is total bytes. Valid sort orders are ReceivedCount/SentCount/ReceivedSize/SentSize/TotalCount/TotalSize/ConnectTime/DisconnectTime/RetransmissionCount/RetransmissionTime/MaxRetransmissionTime" + Environment.NewLine +
-        "                                  LastSentTime/LastReceivedTime/MaxReceiveDelay/MaxReceiveDelay. Sort applies to totals per connection. RetransmissionTime is the sum of all Delays. MaxRetransmissionTime sorts connections by highest max retransmission delay." + Environment.NewLine +
+        "                                  LastSentTime/LastReceivedTime/MaxReceiveDelay/MaxReceiveDelay/SendRate/ReceiveRate. Sort applies to totals per connection. RetransmissionTime is the sum of all Delays. MaxRetransmissionTime sorts connections by highest max retransmission delay." + Environment.NewLine +
         "       -Column xx;yy              Enable specific columns which are printed or exclude them by prepending them with !, or use + to add columns to default columns. Column wildards are supported. E.g. -column !Retrans* will hide all columns which start with Retrans in their name." + Environment.NewLine +
        $"                                  Valid column names are {String.Join(";", DumpTcp.ColumnNames.Take(10))}" + Environment.NewLine +
        $"                                  {String.Join(";", DumpTcp.ColumnNames.Skip(10))}" + Environment.NewLine +
@@ -414,6 +414,7 @@ namespace ETWAnalyzer.Commands
         "       -MinMaxConnectionDurationS xx yy Filter connections which have a duration of at least xx yy seconds." + Environment.NewLine +
         "       -MinMaxLast/Sent/ReceivedS xx yy Filter connections for last send (-MinMaxLastSent)/receive (-MinMaxReceivedS) time in s. Use -MinMaxLastReceivedS 0 0 to find connections which have received no data. Use -MinMaxLastSentS 0 0 to find connections with no send activity." + Environment.NewLine +
         "       -MinMaxSent/Receive/DelayS xx yy Filter connections which have a send (-MinMaxSentDelayS)/receive (-MinMaxReceiveDelayS) delay between two packets of xx yy seconds. Useful to check if some keepalive mechanism is active." + Environment.NewLine +
+        "       -MinMaxSendMBs/RecMBs xx yy Filter connections by average send (-MinMaxSendMBs)/receive (-MinMaxRecMBs) rate in MB/s. The rate is the weighted average of all send/receive bursts (events at most 350ms apart) weighted by transferred bytes per burst." + Environment.NewLine +
         "       -KeepAlive                 Filter connections which have TCP keepalive enabled. If the connection lifetime is  too short this might skip connections because no keepalive packet was sent." + Environment.NewLine + 
         "       -Details                   Show retransmit Max/Median/Min, connect/disconnect time, used TCP template setting, TCB pointer, ..." + Environment.NewLine +
         "       -Stats                     Show connection statistics collected by OS during connection close or at trace start for an existing connection (can go missing due to event loss). This includes transmitted byte/packet counts over connection lifetime." + Environment.NewLine +
@@ -858,6 +859,8 @@ namespace ETWAnalyzer.Commands
             LastSentTime,
             MaxSendDelay,
             MaxReceiveDelay,
+            SendRate,
+            ReceiveRate,
             ClientResetTime,
             Post,
             Inject,
@@ -1225,6 +1228,8 @@ namespace ETWAnalyzer.Commands
         public MinMaxRange<double> MinMaxReceivedS { get; private set; } = new();
         public MinMaxRange<double> MinMaxReceiveDelayS { get; private set; } = new();
         public MinMaxRange<double> MinMaxSentDelayS { get; private set; } = new();
+        public MinMaxRange<double> MinMaxSendRateMBps { get; private set; } = new();
+        public MinMaxRange<double> MinMaxReceiveRateMBps { get; private set; } = new();
 
         public MinMaxRange<double> MinMaxSentS { get; private set; } = new();
 
@@ -1664,6 +1669,12 @@ namespace ETWAnalyzer.Commands
                         break;
                     case "-minmaxsentdelays":
                         MinMaxSentDelayS = GetDoubleRange("-minmaxsentdelays", Units.SameUnit); 
+                        break;
+                    case "-minmaxsendmbs":
+                        MinMaxSendRateMBps = GetDoubleRange("-minmaxsendmbs", Units.SameUnit);
+                        break;
+                    case "-minmaxrecmbs":
+                        MinMaxReceiveRateMBps = GetDoubleRange("-minmaxrecmbs", Units.SameUnit);
                         break;
                     case "-minmaxlastsents":
                         MinMaxSentS = GetDoubleRange("-minmaxlastsents", Units.SameUnit);
@@ -2858,6 +2869,8 @@ namespace ETWAnalyzer.Commands
                             MinMaxSentS = MinMaxSentS,
                             MinMaxSentDelayS = MinMaxSentDelayS,
                             MinMaxReceiveDelayS = MinMaxReceiveDelayS,
+                            MinMaxSendRateMBps = MinMaxSendRateMBps,
+                            MinMaxReceiveRateMBps = MinMaxReceiveRateMBps,
                             MinMaxClientResetS = MinMaxClientResetS,
                             MinMaxInject = MinMaxInject,
                             MinMaxPost = MinMaxPost,

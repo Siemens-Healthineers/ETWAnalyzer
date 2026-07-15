@@ -465,5 +465,64 @@ namespace ETWAnalyzer_uTest.Extractors
 
             return extract;
         }
+
+        static (DateTimeOffset Timestamp, long Bytes) Ev(double seconds, long bytes)
+        {
+            return (DateTimeOffset.MinValue.AddSeconds(seconds), bytes);
+        }
+
+        [Fact]
+        public void WeightedAverageBurstRate_Returns_Null_For_Less_Than_Two_Events()
+        {
+            Assert.Null(TCPExtractor.GetWeightedAverageBurstRate(new (DateTimeOffset, long)[0]));
+            Assert.Null(TCPExtractor.GetWeightedAverageBurstRate(new[] { Ev(0, 1000) }));
+        }
+
+        [Fact]
+        public void WeightedAverageBurstRate_Single_Burst_Is_Bytes_Divided_By_Duration()
+        {
+            // two events 100ms apart, 100 + 200 bytes => 300 bytes / 0.1s = 3000 B/s
+            double? rate = TCPExtractor.GetWeightedAverageBurstRate(new[] { Ev(0.0, 100), Ev(0.1, 200) });
+            Assert.Equal(3000.0d, rate.Value, 3);
+        }
+
+        [Fact]
+        public void WeightedAverageBurstRate_Splits_Bursts_On_Gap_Above_350ms_And_Weights_By_Bytes()
+        {
+            // Burst A: t0, t0.1 with 100+100 bytes => 2000 B/s weight 200
+            // gap of 900ms (> 350ms) starts a new burst
+            // Burst B: t1.0, t1.1 with 300+300 bytes => 6000 B/s weight 600
+            // weighted average = (2000*200 + 6000*600) / 800 = 5000 B/s
+            double? rate = TCPExtractor.GetWeightedAverageBurstRate(new[]
+            {
+                Ev(0.0, 100), Ev(0.1, 100),
+                Ev(1.0, 300), Ev(1.1, 300),
+            });
+            Assert.Equal(5000.0d, rate.Value, 3);
+        }
+
+        [Fact]
+        public void WeightedAverageBurstRate_Ignores_Single_Event_Bursts()
+        {
+            // isolated event at t2.0 (gap > 350ms on both sides) has no duration and is ignored,
+            // only the first burst t0..t0.1 with 100+100 bytes => 2000 B/s contributes
+            double? rate = TCPExtractor.GetWeightedAverageBurstRate(new[]
+            {
+                Ev(0.0, 100), Ev(0.1, 100),
+                Ev(2.0, 5000),
+            });
+            Assert.Equal(2000.0d, rate.Value, 3);
+        }
+
+        [Fact]
+        public void WeightedAverageBurstRate_Gap_Exactly_350ms_Stays_In_Same_Burst()
+        {
+            // gap of exactly 350ms does not split the burst => 100+100+100 bytes / 0.7s
+            double? rate = TCPExtractor.GetWeightedAverageBurstRate(new[]
+            {
+                Ev(0.0, 100), Ev(0.35, 100), Ev(0.70, 100),
+            });
+            Assert.Equal(300.0d / 0.70d, rate.Value, 3);
+        }
     }
 }

@@ -36,6 +36,8 @@ namespace ETWAnalyzer.EventDump
             SortOrders.MaxRetransmissionTime,
             SortOrders.LastReceivedTime,
             SortOrders.LastSentTime,
+            SortOrders.SendRate,
+            SortOrders.ReceiveRate,
             SortOrders.Post,
             SortOrders.Inject,
         };
@@ -95,6 +97,16 @@ namespace ETWAnalyzer.EventDump
         public bool KeepAliveFilter { get; internal set; }
         public MinMaxRange<double> MinMaxSentDelayS { get; internal set; }
         public MinMaxRange<double> MinMaxReceiveDelayS { get; internal set; }
+
+        /// <summary>
+        /// Filter by average send rate in MB/s (bytes/s divided by 1024*1024).
+        /// </summary>
+        public MinMaxRange<double> MinMaxSendRateMBps { get; internal set; } = new();
+
+        /// <summary>
+        /// Filter by average receive rate in MB/s (bytes/s divided by 1024*1024).
+        /// </summary>
+        public MinMaxRange<double> MinMaxReceiveRateMBps { get; internal set; } = new();
         public static IssueTypes ValidIssueTypes { get; internal set; }
         public IssueTypes IssueType { get; internal set; }
         public MinMaxRange<ulong> MinMaxInject { get; internal set; } = new();
@@ -127,7 +139,7 @@ namespace ETWAnalyzer.EventDump
                     {   Col_CSVOptions, "Directory", Col_FileName, Col_Date, Col_TestCase, Col_TestTimeinms, Col_Baseline, Col_Process, Col_ProcessName, "Start Time", "End Time", "Duration in s",
                         "SourceIP","Source Port", "DestinationIP", "Destination Port", "TCB", "ConnectionIdx", "Sent Packets (Total per connection)", "Sent Bytes (Total per connection)", "Received Packets (Total per connection)", "Received Bytes (Total per connection)",
                         "Retransmitted Packets (Total per connection)", "% Retransmitted Packets (Total per connection)", "TCP Template", "Connection Open Time", "Connection Close Time", Col_ClientResetTime,
-                        Col_LastSentTime, Col_LastReceivedTime, Col_KeepAlive, Col_MaxReceiveDelay, Col_MaxSendDelay, Col_StatBytesIn, Col_StatBytesOut, Col_StatSegmentsIn, Col_StatSegmentsOut,
+                        Col_LastSentTime, Col_LastReceivedTime, Col_KeepAlive, Col_MaxReceiveDelay, Col_MaxSendDelay, "SendRate (MB/s)", "ReceiveRate (MB/s)", Col_StatBytesIn, Col_StatBytesOut, Col_StatSegmentsIn, Col_StatSegmentsOut,
                         Col_ResetTime,
                         "Posted Packets", "Injected Packets",
                     };
@@ -187,6 +199,8 @@ namespace ETWAnalyzer.EventDump
                                 tcpEvent.Connection?.Statistics?.KeepAlive == null ? "" : tcpEvent.Connection.Statistics?.KeepAlive.Value.ToString(),
                                 tcpEvent.Connection?.Statistics?.MaxReceiveDelayS == null ? "" : tcpEvent.Connection?.Statistics?.MaxReceiveDelayS.Value.ToString($"F{base.OverridenOrDefaultTimePrecision}"),
                                 tcpEvent.Connection?.Statistics?.MaxSendDelayS == null ? "" : tcpEvent.Connection?.Statistics?.MaxSendDelayS.Value.ToString($"F{base.OverridenOrDefaultTimePrecision}"),
+                                tcpEvent.Connection?.Statistics?.AverageSendRate == null ? "" : (tcpEvent.Connection.Statistics.AverageSendRate.Value / BytesPerMB).ToString("F3"),
+                                tcpEvent.Connection?.Statistics?.AverageReceiveRate == null ? "" : (tcpEvent.Connection.Statistics.AverageReceiveRate.Value / BytesPerMB).ToString("F3"),
                                 tcpEvent.Connection?.Statistics?.DataBytesIn == null ? 0 : tcpEvent.Connection?.Statistics?.DataBytesIn.Value,
                                 tcpEvent.Connection?.Statistics?.DataBytesOut == null ? 0 : tcpEvent.Connection?.Statistics?.DataBytesOut.Value,
                                 tcpEvent.Connection?.Statistics?.SegmentsIn == null ? 0 : tcpEvent.Connection?.Statistics?.SegmentsIn.Value,
@@ -234,6 +248,8 @@ namespace ETWAnalyzer.EventDump
                        tcpEvent.Connection?.Statistics?.KeepAlive == null ? "" : tcpEvent.Connection?.Statistics?.KeepAlive.Value.ToString(),
                        tcpEvent.Connection?.Statistics?.MaxReceiveDelayS == null ? "" : tcpEvent.Connection?.Statistics?.MaxReceiveDelayS.Value.ToString($"F{base.OverridenOrDefaultTimePrecision}"),
                        tcpEvent.Connection?.Statistics?.MaxSendDelayS == null ? "" : tcpEvent.Connection?.Statistics?.MaxSendDelayS.Value.ToString($"F{base.OverridenOrDefaultTimePrecision}"),
+                       tcpEvent.Connection?.Statistics?.AverageSendRate == null ? "" : (tcpEvent.Connection.Statistics.AverageSendRate.Value / BytesPerMB).ToString("F3"),
+                       tcpEvent.Connection?.Statistics?.AverageReceiveRate == null ? "" : (tcpEvent.Connection.Statistics.AverageReceiveRate.Value / BytesPerMB).ToString("F3"),
                        tcpEvent.Connection?.Statistics?.DataBytesIn == null ? 0 : tcpEvent.Connection?.Statistics?.DataBytesIn.Value,
                        tcpEvent.Connection?.Statistics?.DataBytesOut == null ? 0 : tcpEvent.Connection?.Statistics?.DataBytesOut.Value,
                        tcpEvent.Connection?.Statistics?.SegmentsIn == null ? 0 : tcpEvent.Connection?.Statistics?.SegmentsIn.Value,
@@ -277,6 +293,8 @@ namespace ETWAnalyzer.EventDump
         const string Col_KeepAlive = "KeepAlive";
         const string Col_MaxSendDelay = "MaxSendDelay";
         const string Col_MaxReceiveDelay = "MaxReceiveDelay";
+        const string Col_SendRate = "SendRate";
+        const string Col_ReceiveRate = "ReceiveRate";
         const string Col_StatBytesIn = "StatBytesIn";
         const string Col_StatBytesOut = "StatBytesOut";
         const string Col_StatSegmentsIn = "StatPacketsIn";
@@ -289,6 +307,11 @@ namespace ETWAnalyzer.EventDump
 
 
         const int PointerWidth = 16;
+
+        /// <summary>
+        /// Number of bytes per MB used to convert the send/receive rate from bytes/second to MB/second for display.
+        /// </summary>
+        const double BytesPerMB = 1024.0 * 1024.0;
 
         bool GetEnable(string columnName)
         {
@@ -316,6 +339,8 @@ namespace ETWAnalyzer.EventDump
                 Col_KeepAlive => GetOverrideFlag(Col_KeepAlive, ShowDetails),
                 Col_MaxReceiveDelay => GetOverrideFlag(Col_MaxReceiveDelay, ShowDetails),
                 Col_MaxSendDelay => GetOverrideFlag(Col_MaxSendDelay, ShowDetails),
+                Col_SendRate => GetOverrideFlag(Col_SendRate, true),
+                Col_ReceiveRate => GetOverrideFlag(Col_ReceiveRate, true),
                 Col_StatBytesIn => GetOverrideFlag(Col_StatBytesIn, ShowStats),
                 Col_StatBytesOut => GetOverrideFlag(Col_StatBytesOut, ShowStats),
                 Col_StatSegmentsIn => GetOverrideFlag(Col_StatSegmentsIn, ShowStats),
@@ -335,7 +360,7 @@ namespace ETWAnalyzer.EventDump
         /// </summary>
         public static string[] ColumnNames =
         {
-            Col_Connection,Col_ReceivedPackets,Col_StatSegmentsIn,Col_SentPackets,Col_StatSegmentsOut,Col_ReceivedBytes,Col_StatBytesIn,Col_SentBytes,Col_StatBytesOut,  
+            Col_Connection,Col_ReceivedPackets,Col_StatSegmentsIn,Col_SentPackets,Col_StatSegmentsOut,Col_ReceivedBytes,Col_ReceiveRate,Col_StatBytesIn,Col_SentBytes,Col_SendRate,Col_StatBytesOut,  
             Col_Total,Col_RetransmitCount,Col_RetransmitPercent, 
             Col_RetransmitDelay,Col_RetransmitMin,Col_RetransmitMedian,Col_RetransmitMax,
             Col_Template,Col_ConnectTime,Col_DisconnectTime,Col_ResetTime,Col_ClientResetTime,Col_LastSentTime, Col_LastReceivedTime,Col_KeepAlive, Col_MaxReceiveDelay, Col_MaxSendDelay,
@@ -434,6 +459,13 @@ namespace ETWAnalyzer.EventDump
                 Color = ConsoleColor.Green,
             }, new()
             {
+                Title = "ReceiveRate MB/s",
+                Name = Col_ReceiveRate,
+                Enabled = GetEnable(Col_ReceiveRate),
+                DataWidth = 10 + " MB/s".Length,
+                Color = ConsoleColor.Green,
+            }, new()
+            {
                 Title = "Stat BytesIn",
                 Name = Col_StatBytesIn,
                 Enabled = GetEnable(Col_StatBytesIn),
@@ -445,6 +477,13 @@ namespace ETWAnalyzer.EventDump
                 Name = Col_SentBytes,
                 Enabled = GetEnable(Col_SentBytes),
                 DataWidth = BytesCountWidth + " B".Length,
+                Color = ConsoleColor.Red,
+            }, new()
+            {
+                Title = "SendRate MB/s",
+                Name = Col_SendRate,
+                Enabled = GetEnable(Col_SendRate),
+                DataWidth = 10 + " MB/s".Length,
                 Color = ConsoleColor.Red,
             }, new()
             {
@@ -637,8 +676,10 @@ namespace ETWAnalyzer.EventDump
                         match.Connection?.Statistics?.SendPostedInjected == null ? "" : match.Connection?.Statistics.SendPostedInjected.Value.WithDigitGrouping(),
                         match.Connection?.Statistics?.SegmentsOut == null ? "" : match.Connection?.Statistics.SegmentsOut.Value.WithDigitGrouping(),
                         match.Connection.BytesReceived.WithDigitGrouping() + " B",
+                        match.Connection?.Statistics?.AverageReceiveRate == null ? "" : (match.Connection.Statistics.AverageReceiveRate.Value / BytesPerMB).ToString("F3") + " MB/s",
                         match.Connection?.Statistics?.DataBytesIn == null ? "" : match.Connection?.Statistics.DataBytesIn.Value.WithDigitGrouping() + " B",
                         match.Connection.BytesSent.WithDigitGrouping() + " B",
+                        match.Connection?.Statistics?.AverageSendRate == null ? "" : (match.Connection.Statistics.AverageSendRate.Value / BytesPerMB).ToString("F3") + " MB/s",
                         match.Connection?.Statistics?.DataBytesOut == null ? "" : match.Connection?.Statistics.DataBytesOut.Value.WithDigitGrouping() + " B",
                         GetTotalString(match, TotalColumnWidth),
                         match.Retransmissions.Count.WithDigitGrouping(),
@@ -1049,6 +1090,16 @@ namespace ETWAnalyzer.EventDump
                     continue;
                 }
 
+                if (!MinMaxSendRateMBps.IsWithin((connection?.Statistics?.AverageSendRate ?? 0.0d) / BytesPerMB))
+                {
+                    continue;
+                }
+
+                if (!MinMaxReceiveRateMBps.IsWithin((connection?.Statistics?.AverageReceiveRate ?? 0.0d) / BytesPerMB))
+                {
+                    continue;
+                }
+
                 // filter by connection reset
                 if (Reset && connection.RetransmitTimeout == null)
                 {
@@ -1263,6 +1314,8 @@ namespace ETWAnalyzer.EventDump
                 SortOrders.LastSentTime => connection?.Statistics?.LastSent != null ? connection.Statistics.LastSent.Value.Ticks : 0m,
                 SortOrders.MaxReceiveDelay => connection?.Statistics?.MaxReceiveDelayS != null ? (decimal) connection.Statistics.MaxReceiveDelayS.Value : 0m,
                 SortOrders.MaxSendDelay => connection?.Statistics?.MaxSendDelayS != null ? (decimal)connection.Statistics.MaxSendDelayS.Value : 0m,
+                SortOrders.SendRate => connection?.Statistics?.AverageSendRate != null ? (decimal)connection.Statistics.AverageSendRate.Value : 0m,
+                SortOrders.ReceiveRate => connection?.Statistics?.AverageReceiveRate != null ? (decimal)connection.Statistics.AverageReceiveRate.Value : 0m,
                 SortOrders.Post => connection?.Statistics?.SendPostedPosted != null ? connection.Statistics.SendPostedPosted.Value : 0m,
                 SortOrders.Inject => connection?.Statistics?.SendPostedInjected != null ? connection.Statistics.SendPostedInjected.Value : 0m,
                 _ => match.Retransmissions.Count,

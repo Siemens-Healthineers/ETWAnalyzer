@@ -73,5 +73,21 @@ namespace ETWAnalyzer.Extract.Network.Tcp
         /// Time when connection did receive a connection reset (RST) packet from client
         /// </summary>
         DateTimeOffset? RstReceivedTime { get; }
+
+        /// <summary>
+        /// Average send rate in bytes/second calculated from individual send events. Send events are grouped
+        /// into bursts (windows) where consecutive send events are at most 350ms apart. For each burst the average
+        /// send rate is calculated and then a weighted average across all bursts weighted by the sent bytes per burst is returned.
+        /// This gives the effective transfer rate while data was actively sent excluding idle times between bursts.
+        /// </summary>
+        double? AverageSendRate { get; }
+
+        /// <summary>
+        /// Average receive rate in bytes/second calculated from individual receive events. Receive events are grouped
+        /// into bursts (windows) where consecutive receive events are at most 350ms apart. For each burst the average
+        /// receive rate is calculated and then a weighted average across all bursts weighted by the received bytes per burst is returned.
+        /// This gives the effective transfer rate while data was actively received excluding idle times between bursts.
+        /// </summary>
+        double? AverageReceiveRate { get; }
     }
 }

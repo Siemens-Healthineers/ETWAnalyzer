@@ -77,6 +77,22 @@ namespace ETWAnalyzer.Extract.Network.Tcp
         public DateTimeOffset? RstReceivedTime { get; internal set; }
 
         /// <summary>
+        /// Average send rate in bytes/second calculated from individual send events. Send events are grouped
+        /// into bursts (windows) where consecutive send events are at most 350ms apart. For each burst the average
+        /// send rate is calculated and then a weighted average across all bursts weighted by the sent bytes per burst is returned.
+        /// This gives the effective transfer rate while data was actively sent excluding idle times between bursts.
+        /// </summary>
+        public double? AverageSendRate { get; internal set; }
+
+        /// <summary>
+        /// Average receive rate in bytes/second calculated from individual receive events. Receive events are grouped
+        /// into bursts (windows) where consecutive receive events are at most 350ms apart. For each burst the average
+        /// receive rate is calculated and then a weighted average across all bursts weighted by the received bytes per burst is returned.
+        /// This gives the effective transfer rate while data was actively received excluding idle times between bursts.
+        /// </summary>
+        public double? AverageReceiveRate { get; internal set; }
+
+        /// <summary>
         /// Used by Json Serializer to create a new instance of this class.
         /// Each input value name must match the property name case insensitive, or we will get some properties not deserialized. 
         /// </summary>
@@ -92,8 +108,11 @@ namespace ETWAnalyzer.Extract.Network.Tcp
         /// <param name="sendPostedInjected"></param>
         /// <param name="sendPostedPosted"></param>
         /// <param name="rstReceivedTime"></param>
+        /// <param name="averageSendRate"></param>
+        /// <param name="averageReceiveRate"></param>
         public TcpConnectionStatistics(DateTimeOffset? lastSent, DateTimeOffset? lastReceived, bool? keepAlive, double? maxSendDelayS, double? maxReceiveDelayS, 
-              ulong? dataBytesIn, ulong? dataBytesOut, ulong? segmentsIn, ulong? segmentsOut, ulong? sendPostedPosted, ulong? sendPostedInjected, DateTimeOffset? rstReceivedTime)
+              ulong? dataBytesIn, ulong? dataBytesOut, ulong? segmentsIn, ulong? segmentsOut, ulong? sendPostedPosted, ulong? sendPostedInjected, DateTimeOffset? rstReceivedTime,
+              double? averageSendRate = null, double? averageReceiveRate = null)
         {
             LastSent = lastSent;
             LastReceived = lastReceived;
@@ -106,7 +125,9 @@ namespace ETWAnalyzer.Extract.Network.Tcp
             SegmentsOut = segmentsOut;
             SendPostedPosted = sendPostedPosted;
             SendPostedInjected = sendPostedInjected;
-            RstReceivedTime = rstReceivedTime;  
+            RstReceivedTime = rstReceivedTime;
+            AverageSendRate = averageSendRate;
+            AverageReceiveRate = averageReceiveRate;
         }
     }
 }
