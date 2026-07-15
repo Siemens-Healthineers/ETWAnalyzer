@@ -382,7 +382,7 @@ namespace ETWAnalyzer.Commands
         "       [-MinMaxLastReceivedS xx yy] [-MinMaxLastSentS xx yy] [-Column xx;yy] [-MinMaxConnect xx yy] [-MinMaxDisconnect xx zz] [-KeepAlive] [-MinMaxReceiveDelayS xx yy] [-MinMaxSentDelayS xx yy] [-MinMaxSendMBs xx yy] [-MinMaxRecMBs xx yy] [-MinMaxStatBytes/In/Out xx yy] [-MinMaxStatPackets/In/Out xx yy]  [-MinMaxPost xx yy] [-MinMaxInject xx yy]" + Environment.NewLine +
         "       [-Reset] [-MinMaxClientResetS xx yy]" + Environment.NewLine + 
         "       [-TimeFmt s,Local,LocalTime,UTC,UTCTime,Here,HereTime] [-TimeDigits d] [-csv xx.csv] [-NoCSVSeparator] [-NoCmdLine] [-NoDigitSep] [-Clip] [-TestsPerRun dd -SkipNTests dd] [-TestRunIndex dd -TestRunCount dd] [-MinMaxMsTestTimes xx-yy ...] [-ProcessName/pn xx.exe(pid)] " + Environment.NewLine +
-        "       [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-CmdLine string] [-recursive] [-ZeroTime/zt Marker/First/Last/ProcessStart filter] [-ZeroProcessName/zpn filter] [-ShowTotal [File/None]] [-ProcessFmt timefmt] " + Environment.NewLine;
+        "       [-NewProcess 0/1/-1/-2/2] [-PlainProcessNames] [-CmdLine string] [-recursive] [-ZeroTime/zt Marker/First/Last/ProcessStart filter] [-ZeroProcessName/zpn filter] [-ShowTotal [File/None]] [-GroupBy [SourceIpPortRemoteIp/SourceIpRemoteIp]] [-ProcessFmt timefmt] " + Environment.NewLine;
         static readonly string TcpHelpString = TcpHelpStringHeader +
         "       Print TCP summary and retransmit metrics. To see data you need to enable the Microsoft-Windows-TCPIP ETW provider. Data is sorted by retransmission count by default." + Environment.NewLine +
         "       It can detect send retransmissions and duplicate received packets which show up as client retransmission events." + Environment.NewLine + 
@@ -393,6 +393,8 @@ namespace ETWAnalyzer.Commands
 		"  Generic filters" + Environment.NewLine + 		
         "       -IpPort xx                 Filter for substrings in source/destination IP and port." + Environment.NewLine +		
         "       -ShowTotal [File,None]     Show totals per file. Default is File. None will turn off totals." + Environment.NewLine +
+        "       -GroupBy [SourceIpPortRemoteIp,SourceIpRemoteIp]  Aggregate connections. SourceIpPortRemoteIp groups by source IP:port and remote IP regardless of the target port (sourceIP:port -> targetIP:*)." + Environment.NewLine +
+        "                                  SourceIpRemoteIp groups by source IP and remote IP regardless of source and remote port (sourceIP:* -> remote:*). Byte/packet/retransmission counts are summed and send/receive rates are byte weighted averaged." + Environment.NewLine +
         "       -TopN dd nn                Show top n connection by current sort order" + Environment.NewLine +
         "       -TopNRetrans dd nn         Show top n retransmission events when -ShowRetransmit is used" + Environment.NewLine +
         "       -SortBy [...]              Default sort order is total bytes. Valid sort orders are ReceivedCount/SentCount/ReceivedSize/SentSize/TotalCount/TotalSize/ConnectTime/DisconnectTime/RetransmissionCount/RetransmissionTime/MaxRetransmissionTime" + Environment.NewLine +
@@ -910,6 +912,29 @@ namespace ETWAnalyzer.Commands
         }
 
         /// <summary>
+        /// TCP only: how connections are grouped/aggregated for -Dump TCP -GroupBy.
+        /// </summary>
+        internal enum GroupByModes
+        {
+            /// <summary>
+            /// No aggregation. Every connection is printed on its own line.
+            /// </summary>
+            None,
+
+            /// <summary>
+            /// Aggregate connections by their source IP:port and remote/target IP address regardless of the target port.
+            /// Shown as sourceIP:port -&gt; targetIP:*
+            /// </summary>
+            SourceIpPortRemoteIp,
+
+            /// <summary>
+            /// Aggregate connections by their source IP and remote/target IP address regardless of source and target port.
+            /// Shown as sourceIP:* -&gt; targetIP:*
+            /// </summary>
+            SourceIpRemoteIp,
+        }
+
+        /// <summary>
         /// Describes how the -zerotime filter string is used to define the zero timepoint from where all trace absolute times are subtracted.
         /// </summary>
         internal enum ZeroTimeModes
@@ -1122,6 +1147,11 @@ namespace ETWAnalyzer.Commands
         public DumpBase.TimeFormats? FirstTimeFormat { get; private set; }
         public DumpBase.TimeFormats? LastTimeFormat { get; private set; }
         public TotalModes? ShowTotal { get; private set; }
+
+        /// <summary>
+        /// TCP only: aggregate connections by target IP or source+target IP. See <see cref="GroupByModes"/>.
+        /// </summary>
+        public GroupByModes GroupByMode { get; private set; } = GroupByModes.None;
         
         // Dump Memory specific Flags
         public bool TotalMemory { get; private set; }
@@ -1628,6 +1658,11 @@ namespace ETWAnalyzer.Commands
                         string showTotal = GetNextNonArg("-showtotal");
                         ParseEnum<TotalModes>("ShowTotal values", showTotal,
                                              () => { ShowTotal = (TotalModes)Enum.Parse(typeof(TotalModes), showTotal, true); });
+                        break;
+                    case "-groupby":
+                        string groupBy = GetNextNonArg("-groupby");
+                        ParseEnum<GroupByModes>("GroupBy values", groupBy,
+                                             () => { GroupByMode = (GroupByModes)Enum.Parse(typeof(GroupByModes), groupBy, true); });
                         break;
                     case "-showprocess":
                         ShowProcess = true;
@@ -2837,6 +2872,7 @@ namespace ETWAnalyzer.Commands
                             ColumnConfiguration = ColumnConfiguration,
                             MergeColumnConfig = MergeColumnConfig,
                             ShowTotal = ShowTotal,
+                            GroupBy = GroupByMode,
                             NoCmdLine = NoCmdLine,
                             TopN = TopN,
                             ShowDetails = ShowDetails,

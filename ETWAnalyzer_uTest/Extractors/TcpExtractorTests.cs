@@ -14,6 +14,8 @@ using System.Net;
 using Microsoft.Windows.EventTracing.Processes;
 using System.Security.Cryptography;
 using ETWAnalyzer.Extract.Network.Tcp;
+using ETWAnalyzer.Infrastructure;
+using System.IO;
 using System.ComponentModel.DataAnnotations;
 using ETWAnalyzer_uTest.Extract;
 using ETWAnalyzer.Extractors;
@@ -469,6 +471,82 @@ namespace ETWAnalyzer_uTest.Extractors
         static (DateTimeOffset Timestamp, long Bytes) Ev(double seconds, long bytes)
         {
             return (DateTimeOffset.MinValue.AddSeconds(seconds), bytes);
+        }
+
+        [Fact]
+        public void TcpConnectionStatistics_Aggregate_Rates_Survive_JsonRoundTrip()
+        {
+            // Guards against the constructor parameter names drifting away from the property names which would
+            // silently drop the aggregate rates on deserialization (Json.NET matches ctor parameters to property names).
+            TcpConnectionStatistics stats = new(null, null, null, null, null, null, null, null, null, null, null, null,
+                averageSendRate: 1000, averageReceiveRate: 2000,
+                aggregatedSendRateBySourceIPPortTargetIP: 11, aggregatedReceiveRateBySourceIPPortTargetIP: 22,
+                aggregatedSendRateBySourceIPTargetIP: 33, aggregatedReceiveRateBySourceIPTargetIP: 44);
+
+            using MemoryStream stream = new();
+            ExtractSerializer.Serialize(stream, stats);
+            stream.Position = 0;
+            TcpConnectionStatistics deser = ExtractSerializer.Deserialize<TcpConnectionStatistics>(stream);
+
+            Assert.Equal(1000.0d, deser.AverageSendRate.Value, 3);
+            Assert.Equal(2000.0d, deser.AverageReceiveRate.Value, 3);
+            Assert.Equal(11.0d, deser.AggregatedSendRateBySourceIPPortTargetIP.Value, 3);
+            Assert.Equal(22.0d, deser.AggregatedReceiveRateBySourceIPPortTargetIP.Value, 3);
+            Assert.Equal(33.0d, deser.AggregatedSendRateBySourceIPTargetIP.Value, 3);
+            Assert.Equal(44.0d, deser.AggregatedReceiveRateBySourceIPTargetIP.Value, 3);
+        }
+
+        [Fact]
+        public void Extraction_Computes_Aggregate_SendRates_Per_GroupBy()
+        {
+            TCPExtractor extractor = new TCPExtractor();
+            ETWExtract extract = CreateExtract();
+
+            const string Remote = "20.20.20.20:40000";
+            const string SrcA = "10.10.10.10:100";
+            const string SrcB = "10.10.10.10:101";
+
+            StaticTraceProcessorContext.MetaData = new TraceMetaDataMock();
+
+            // Connection A sends 100+100 bytes at 0.2s/0.3s => burst 200 B / 0.1s = 2000 B/s
+            // Connection B sends 300+300 bytes at 1.0s/1.1s => burst 600 B / 0.1s = 6000 B/s
+            // Both share source IP and target IP, so TargetSourceIP combines them:
+            //   weighted = (2000*200 + 6000*600) / (200+600) = 5000 B/s
+            IGenericEvent[] events = new IGenericEvent[]
+            {
+                CreateConnect(   Time.T0_1, Pid.OneDrive, TCB.One, SrcA, Remote),
+                CreatePost(      Time.T0_2, Pid.OneDrive, TCB.One, SequenceNr.S_1000, 100),
+                CreateSend(      Time.T0_2, Pid.OneDrive, TCB.One, SequenceNr.S_1000, 100),
+                CreatePost(      Time.T0_3, Pid.OneDrive, TCB.One, SequenceNr.S_2000, 100),
+                CreateSend(      Time.T0_3, Pid.OneDrive, TCB.One, SequenceNr.S_2000, 100),
+                CreateDisconnect(Time.T0_5, Pid.OneDrive, TCB.One, SrcA, Remote),
+
+                CreateConnect(   Time.T0_9, Pid.OneDrive, TCB.One, SrcB, Remote),
+                CreatePost(      Time.T1_0, Pid.OneDrive, TCB.One, SequenceNr.S_1000, 300),
+                CreateSend(      Time.T1_0, Pid.OneDrive, TCB.One, SequenceNr.S_1000, 300),
+                CreatePost(      Time.T1_1, Pid.OneDrive, TCB.One, SequenceNr.S_2000, 300),
+                CreateSend(      Time.T1_1, Pid.OneDrive, TCB.One, SequenceNr.S_2000, 300),
+                CreateDisconnect(Time.T1_5, Pid.OneDrive, TCB.One, SrcB, Remote),
+            };
+
+            extractor.ExtractFromGenericEvents(extract, events);
+            IETWExtract iExtract = extract;
+
+            Assert.Equal(2, iExtract.Network.TcpData.Connections.Count);
+            ITcpConnection a = iExtract.Network.TcpData.Connections.Single(x => x.LocalIpAndPort.ToString() == SrcA);
+            ITcpConnection b = iExtract.Network.TcpData.Connections.Single(x => x.LocalIpAndPort.ToString() == SrcB);
+
+            // per connection burst rates
+            Assert.Equal(2000.0d, a.Statistics.AverageSendRate.Value, 3);
+            Assert.Equal(6000.0d, b.Statistics.AverageSendRate.Value, 3);
+
+            // TargetIP groups by source port so it equals the per connection rate
+            Assert.Equal(2000.0d, a.Statistics.AggregatedSendRateBySourceIPPortTargetIP.Value, 3);
+            Assert.Equal(6000.0d, b.Statistics.AggregatedSendRateBySourceIPPortTargetIP.Value, 3);
+
+            // TargetSourceIP combines both connections (same source and target IP)
+            Assert.Equal(5000.0d, a.Statistics.AggregatedSendRateBySourceIPTargetIP.Value, 3);
+            Assert.Equal(5000.0d, b.Statistics.AggregatedSendRateBySourceIPTargetIP.Value, 3);
         }
 
         [Fact]

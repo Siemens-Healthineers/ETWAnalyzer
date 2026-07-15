@@ -288,17 +288,29 @@ namespace ETWAnalyzer.Extractors.TCP
 
         /// <summary>
         /// Calculate the average send and receive rate in bytes/second per connection based on the individual
-        /// send/receive event timestamps. See <see cref="GetWeightedAverageBurstRate"/> for the used algorithm.
+        /// send/receive event timestamps. In addition aggregate send/receive rates are calculated across all connections
+        /// which share the same source IP:port and target IP (GroupBy SourceIpPortRemoteIp) or the same source IP and target IP
+        /// (GroupBy SourceIpRemoteIp) by combining their send/receive events into one burst stream.
+        /// See <see cref="GetWeightedAverageBurstRate"/> for the used algorithm.
         /// </summary>
         private void UpdateSendReceiveRates(ETWExtract results, ILookup<TcpRequestConnect, TcpDataTransferSend> sentByConnection, ILookup<TcpRequestConnect, TcpDataTransferReceive> receivedByConnection)
         {
+            // Combined send/receive events per grouping key used to calculate the aggregated rates shown by -GroupBy.
+            Dictionary<(string, int, string), List<(DateTimeOffset, long)>> sendByTargetIP = new();
+            Dictionary<(string, string), List<(DateTimeOffset, long)>> sendByTargetSourceIP = new();
+            Dictionary<(string, int, string), List<(DateTimeOffset, long)>> receiveByTargetIP = new();
+            Dictionary<(string, string), List<(DateTimeOffset, long)>> receiveByTargetSourceIP = new();
+
             foreach (IGrouping<TcpRequestConnect, TcpDataTransferSend> sent in sentByConnection)
             {
                 TcpDataTransferSend firstSent = sent.First();
                 TcpConnection conn = Find(firstSent.Tcb, firstSent.Timestamp, results);
                 if (conn != null)
                 {
-                    conn.Statistics.AverageSendRate = GetWeightedAverageBurstRate(sent.Select(x => (x.Timestamp, (long)x.BytesSent)));
+                    List<(DateTimeOffset, long)> events = sent.Select(x => (x.Timestamp, (long)x.BytesSent)).ToList();
+                    conn.Statistics.AverageSendRate = GetWeightedAverageBurstRate(events);
+                    AddAggregateEvents(sendByTargetIP, SourceIPPortTargetIPKey(conn), events);
+                    AddAggregateEvents(sendByTargetSourceIP, SourceIPTargetIPKey(conn), events);
                 }
             }
 
@@ -308,9 +320,52 @@ namespace ETWAnalyzer.Extractors.TCP
                 TcpConnection conn = Find(firstReceived.Tcb, firstReceived.Timestamp, results);
                 if (conn != null)
                 {
-                    conn.Statistics.AverageReceiveRate = GetWeightedAverageBurstRate(received.Select(x => (x.Timestamp, (long)x.NumBytes)));
+                    List<(DateTimeOffset, long)> events = received.Select(x => (x.Timestamp, (long)x.NumBytes)).ToList();
+                    conn.Statistics.AverageReceiveRate = GetWeightedAverageBurstRate(events);
+                    AddAggregateEvents(receiveByTargetIP, SourceIPPortTargetIPKey(conn), events);
+                    AddAggregateEvents(receiveByTargetSourceIP, SourceIPTargetIPKey(conn), events);
                 }
             }
+
+            // Calculate the aggregated burst rate per group and assign it to every connection which belongs to that group.
+            Dictionary<(string, int, string), double?> sendRateTargetIP = sendByTargetIP.ToDictionary(x => x.Key, x => GetWeightedAverageBurstRate(x.Value));
+            Dictionary<(string, string), double?> sendRateTargetSourceIP = sendByTargetSourceIP.ToDictionary(x => x.Key, x => GetWeightedAverageBurstRate(x.Value));
+            Dictionary<(string, int, string), double?> receiveRateTargetIP = receiveByTargetIP.ToDictionary(x => x.Key, x => GetWeightedAverageBurstRate(x.Value));
+            Dictionary<(string, string), double?> receiveRateTargetSourceIP = receiveByTargetSourceIP.ToDictionary(x => x.Key, x => GetWeightedAverageBurstRate(x.Value));
+
+            foreach (TcpConnection conn in results.Network.TcpData.Connections)
+            {
+                if (sendRateTargetIP.TryGetValue(SourceIPPortTargetIPKey(conn), out double? sTip))
+                {
+                    conn.Statistics.AggregatedSendRateBySourceIPPortTargetIP = sTip;
+                }
+                if (sendRateTargetSourceIP.TryGetValue(SourceIPTargetIPKey(conn), out double? sTsip))
+                {
+                    conn.Statistics.AggregatedSendRateBySourceIPTargetIP = sTsip;
+                }
+                if (receiveRateTargetIP.TryGetValue(SourceIPPortTargetIPKey(conn), out double? rTip))
+                {
+                    conn.Statistics.AggregatedReceiveRateBySourceIPPortTargetIP = rTip;
+                }
+                if (receiveRateTargetSourceIP.TryGetValue(SourceIPTargetIPKey(conn), out double? rTsip))
+                {
+                    conn.Statistics.AggregatedReceiveRateBySourceIPTargetIP = rTsip;
+                }
+            }
+        }
+
+        static (string, int, string) SourceIPPortTargetIPKey(TcpConnection conn) => (conn.LocalIpAndPort.Address, conn.LocalIpAndPort.Port, conn.RemoteIpAndPort.Address);
+
+        static (string, string) SourceIPTargetIPKey(TcpConnection conn) => (conn.LocalIpAndPort.Address, conn.RemoteIpAndPort.Address);
+
+        static void AddAggregateEvents<TKey>(Dictionary<TKey, List<(DateTimeOffset, long)>> dict, TKey key, List<(DateTimeOffset, long)> events)
+        {
+            if (!dict.TryGetValue(key, out List<(DateTimeOffset, long)> list))
+            {
+                list = new List<(DateTimeOffset, long)>();
+                dict[key] = list;
+            }
+            list.AddRange(events);
         }
 
         /// <summary>

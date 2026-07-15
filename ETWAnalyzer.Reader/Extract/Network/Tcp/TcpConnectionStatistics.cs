@@ -93,6 +93,30 @@ namespace ETWAnalyzer.Extract.Network.Tcp
         public double? AverageReceiveRate { get; internal set; }
 
         /// <summary>
+        /// Aggregated send rate in bytes/second across all connections which share the same source IP:port and target IP
+        /// address (regardless of the target port). Shown by -Dump TCP -GroupBy SourceIpPortRemoteIp.
+        /// </summary>
+        public double? AggregatedSendRateBySourceIPPortTargetIP { get; internal set; }
+
+        /// <summary>
+        /// Aggregated receive rate in bytes/second across all connections which share the same source IP:port and target IP
+        /// address (regardless of the target port). Shown by -Dump TCP -GroupBy SourceIpPortRemoteIp.
+        /// </summary>
+        public double? AggregatedReceiveRateBySourceIPPortTargetIP { get; internal set; }
+
+        /// <summary>
+        /// Aggregated send rate in bytes/second across all connections which share the same source IP and target IP address
+        /// (regardless of source and target port). Shown by -Dump TCP -GroupBy SourceIpRemoteIp.
+        /// </summary>
+        public double? AggregatedSendRateBySourceIPTargetIP { get; internal set; }
+
+        /// <summary>
+        /// Aggregated receive rate in bytes/second across all connections which share the same source IP and target IP address
+        /// (regardless of source and target port). Shown by -Dump TCP -GroupBy SourceIpRemoteIp.
+        /// </summary>
+        public double? AggregatedReceiveRateBySourceIPTargetIP { get; internal set; }
+
+        /// <summary>
         /// Used by Json Serializer to create a new instance of this class.
         /// Each input value name must match the property name case insensitive, or we will get some properties not deserialized. 
         /// </summary>
@@ -110,9 +134,15 @@ namespace ETWAnalyzer.Extract.Network.Tcp
         /// <param name="rstReceivedTime"></param>
         /// <param name="averageSendRate"></param>
         /// <param name="averageReceiveRate"></param>
+        /// <param name="aggregatedSendRateBySourceIPPortTargetIP"></param>
+        /// <param name="aggregatedReceiveRateBySourceIPPortTargetIP"></param>
+        /// <param name="aggregatedSendRateBySourceIPTargetIP"></param>
+        /// <param name="aggregatedReceiveRateBySourceIPTargetIP"></param>
         public TcpConnectionStatistics(DateTimeOffset? lastSent, DateTimeOffset? lastReceived, bool? keepAlive, double? maxSendDelayS, double? maxReceiveDelayS, 
               ulong? dataBytesIn, ulong? dataBytesOut, ulong? segmentsIn, ulong? segmentsOut, ulong? sendPostedPosted, ulong? sendPostedInjected, DateTimeOffset? rstReceivedTime,
-              double? averageSendRate = null, double? averageReceiveRate = null)
+              double? averageSendRate = null, double? averageReceiveRate = null,
+              double? aggregatedSendRateBySourceIPPortTargetIP = null, double? aggregatedReceiveRateBySourceIPPortTargetIP = null,
+              double? aggregatedSendRateBySourceIPTargetIP = null, double? aggregatedReceiveRateBySourceIPTargetIP = null)
         {
             LastSent = lastSent;
             LastReceived = lastReceived;
@@ -128,6 +158,10 @@ namespace ETWAnalyzer.Extract.Network.Tcp
             RstReceivedTime = rstReceivedTime;
             AverageSendRate = averageSendRate;
             AverageReceiveRate = averageReceiveRate;
+            AggregatedSendRateBySourceIPPortTargetIP = aggregatedSendRateBySourceIPPortTargetIP;
+            AggregatedReceiveRateBySourceIPPortTargetIP = aggregatedReceiveRateBySourceIPPortTargetIP;
+            AggregatedSendRateBySourceIPTargetIP = aggregatedSendRateBySourceIPTargetIP;
+            AggregatedReceiveRateBySourceIPTargetIP = aggregatedReceiveRateBySourceIPTargetIP;
         }
     }
 }

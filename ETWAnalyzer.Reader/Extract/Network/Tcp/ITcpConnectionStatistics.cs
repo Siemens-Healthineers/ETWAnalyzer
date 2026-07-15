@@ -89,5 +89,31 @@ namespace ETWAnalyzer.Extract.Network.Tcp
         /// This gives the effective transfer rate while data was actively received excluding idle times between bursts.
         /// </summary>
         double? AverageReceiveRate { get; }
+
+        /// <summary>
+        /// Aggregated send rate in bytes/second across all connections which share the same source IP:port and target IP
+        /// address (regardless of the target port). Calculated during extraction from the combined send events of all these
+        /// connections using the same burst based weighted average as <see cref="AverageSendRate"/>. Shown by -Dump TCP -GroupBy SourceIpPortRemoteIp.
+        /// </summary>
+        double? AggregatedSendRateBySourceIPPortTargetIP { get; }
+
+        /// <summary>
+        /// Aggregated receive rate in bytes/second across all connections which share the same source IP:port and target IP
+        /// address (regardless of the target port). Shown by -Dump TCP -GroupBy SourceIpPortRemoteIp.
+        /// </summary>
+        double? AggregatedReceiveRateBySourceIPPortTargetIP { get; }
+
+        /// <summary>
+        /// Aggregated send rate in bytes/second across all connections which share the same source IP and target IP address
+        /// (regardless of source and target port). Calculated during extraction from the combined send events of all these
+        /// connections using the same burst based weighted average as <see cref="AverageSendRate"/>. Shown by -Dump TCP -GroupBy SourceIpRemoteIp.
+        /// </summary>
+        double? AggregatedSendRateBySourceIPTargetIP { get; }
+
+        /// <summary>
+        /// Aggregated receive rate in bytes/second across all connections which share the same source IP and target IP address
+        /// (regardless of source and target port). Shown by -Dump TCP -GroupBy SourceIpRemoteIp.
+        /// </summary>
+        double? AggregatedReceiveRateBySourceIPTargetIP { get; }
     }
 }

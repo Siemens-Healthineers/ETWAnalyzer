@@ -80,6 +80,11 @@ namespace ETWAnalyzer.EventDump
         public TotalModes? ShowTotal { get; internal set; }
 
         /// <summary>
+        /// Aggregate connections by target IP or source+target IP. See <see cref="GroupByModes"/>.
+        /// </summary>
+        public GroupByModes GroupBy { get; internal set; } = GroupByModes.None;
+
+        /// <summary>
         /// Show per file totals
         /// </summary>
         bool IsSummary => ShowTotal switch
@@ -368,6 +373,171 @@ namespace ETWAnalyzer.EventDump
             Col_EventTime,Col_PostMode,Col_SndNext,Col_Issue,
         };
 
+        /// <summary>
+        /// Aggregate connections into synthetic connections with summed byte/packet/retransmission counts and byte weighted
+        /// average send/receive rates. The grouping depends on <see cref="GroupBy"/>:
+        /// <see cref="GroupByModes.SourceIpPortRemoteIp"/> groups by source IP:port and target IP (source port preserved, target port collapsed),
+        /// <see cref="GroupByModes.SourceIpRemoteIp"/> groups by source IP and target IP (both ports collapsed).
+        /// </summary>
+        /// <param name="matches">Per connection match data of one file.</param>
+        /// <returns>One aggregated <see cref="MatchData"/> per group.</returns>
+        internal List<MatchData> AggregateConnections(IEnumerable<MatchData> matches)
+        {
+            List<MatchData> lret = new();
+
+            // For SourceIpRemoteIp the source port is collapsed to 0 as well, for SourceIpPortRemoteIp the source port is part of the key.
+            Func<MatchData, (string LocalAddress, int LocalPort, string RemoteAddress)> keySelector =
+                GroupBy == GroupByModes.SourceIpRemoteIp
+                    ? (x => (x.Connection.LocalIpAndPort.Address, 0, x.Connection.RemoteIpAndPort.Address))
+                    : (x => (x.Connection.LocalIpAndPort.Address, x.Connection.LocalIpAndPort.Port, x.Connection.RemoteIpAndPort.Address));
+
+            foreach (var byIp in matches.GroupBy(keySelector))
+            {
+                List<MatchData> connections = byIp.ToList();
+
+                ulong bytesReceived = (ulong)connections.Sum(x => (decimal)x.Connection.BytesReceived);
+                ulong bytesSent = (ulong)connections.Sum(x => (decimal)x.Connection.BytesSent);
+                int datagramsReceived = connections.Sum(x => x.Connection.DatagramsReceived);
+                int datagramsSent = connections.Sum(x => x.Connection.DatagramsSent);
+
+                // Use the aggregate send/receive rate computed during extraction from the combined burst stream of all
+                // connections in this group. All connections in the group carry the same value so read it from the first one.
+                ITcpConnectionStatistics firstStats = connections[0].Connection.Statistics;
+                double? sendRate = GroupBy == GroupByModes.SourceIpRemoteIp ? firstStats?.AggregatedSendRateBySourceIPTargetIP : firstStats?.AggregatedSendRateBySourceIPPortTargetIP;
+                double? receiveRate = GroupBy == GroupByModes.SourceIpRemoteIp ? firstStats?.AggregatedReceiveRateBySourceIPTargetIP : firstStats?.AggregatedReceiveRateBySourceIPPortTargetIP;
+
+                TcpConnectionStatistics stats = new(
+                    lastSent: MaxDate(connections.Select(x => x.Connection.Statistics?.LastSent)),
+                    lastReceived: MaxDate(connections.Select(x => x.Connection.Statistics?.LastReceived)),
+                    keepAlive: connections.Any(x => x.Connection.Statistics?.KeepAlive == true) ? true : (bool?)null,
+                    maxSendDelayS: MaxDouble(connections.Select(x => x.Connection.Statistics?.MaxSendDelayS)),
+                    maxReceiveDelayS: MaxDouble(connections.Select(x => x.Connection.Statistics?.MaxReceiveDelayS)),
+                    dataBytesIn: SumNullable(connections.Select(x => x.Connection.Statistics?.DataBytesIn)),
+                    dataBytesOut: SumNullable(connections.Select(x => x.Connection.Statistics?.DataBytesOut)),
+                    segmentsIn: SumNullable(connections.Select(x => x.Connection.Statistics?.SegmentsIn)),
+                    segmentsOut: SumNullable(connections.Select(x => x.Connection.Statistics?.SegmentsOut)),
+                    sendPostedPosted: SumNullable(connections.Select(x => x.Connection.Statistics?.SendPostedPosted)),
+                    sendPostedInjected: SumNullable(connections.Select(x => x.Connection.Statistics?.SendPostedInjected)),
+                    rstReceivedTime: MaxDate(connections.Select(x => x.Connection.Statistics?.RstReceivedTime)),
+                    averageSendRate: sendRate,
+                    averageReceiveRate: receiveRate);
+
+                // Connections are grouped by source IP:port and remote IP so the source port is preserved. Only the target port is collapsed.
+                TcpConnection aggregated = new(
+                    tcb: 0,
+                    localipandPort: new SocketConnection(byIp.Key.LocalAddress, byIp.Key.LocalPort),
+                    remoteipAndPort: new SocketConnection(byIp.Key.RemoteAddress, 0),
+                    timeStampOpen: MinDate(connections.Select(x => x.Connection.TimeStampOpen)),
+                    timeStampClose: MaxDate(connections.Select(x => x.Connection.TimeStampClose)),
+                    lastTcpTemplate: null,
+                    bytesSent: bytesSent,
+                    datagramsSent: datagramsSent,
+                    bytesReceived: bytesReceived,
+                    datagramsReceived: datagramsReceived,
+                    processIdx: ETWProcessIndex.Invalid,
+                    retransmitTimeout: MaxDate(connections.Select(x => x.Connection.RetransmitTimeout)),
+                    statistics: stats);
+
+                List<ITcpRetransmission> retransmissions = connections.SelectMany(x => x.Retransmissions).ToList();
+                List<double> retransMs = retransmissions.Select(x => x.RetransmitDiff().TotalMilliseconds).ToList();
+
+                ETWProcess[] distinctProcesses = connections.Select(x => x.Process).Where(x => x != null).Distinct().ToArray();
+                string processLabel = distinctProcesses.Length == 1 ? distinctProcesses[0].GetProcessWithId(UsePrettyProcessName) : $"Multiple ({distinctProcesses.Length})";
+
+                MatchData first = connections[0];
+
+                lret.Add(new MatchData
+                {
+                    Connection = aggregated,
+                    Retransmissions = retransmissions,
+                    RetransMedianMs = retransMs.Count > 0 ? retransMs.Median() : 0.0d,
+                    RetransMinMs = retransMs.Count > 0 ? retransMs.Min() : 0.0d,
+                    RetransMaxms = retransMs.Count > 0 ? retransMs.Max() : 0.0d,
+                    Process = distinctProcesses.Length > 0 ? distinctProcesses[0] : first.Process,
+                    Session = first.Session,
+                    ConnectionIndex = 0,
+                    InputConnectionCount = connections.Count,
+                    IsAggregate = true,
+                    AggregateProcessLabel = processLabel,
+                });
+            }
+
+            return lret;
+        }
+
+        static ulong? SumNullable(IEnumerable<ulong?> values)
+        {
+            ulong? sum = null;
+            foreach (ulong? v in values)
+            {
+                if (v != null)
+                {
+                    sum = (sum ?? 0UL) + v.Value;
+                }
+            }
+            return sum;
+        }
+
+        static double? MaxDouble(IEnumerable<double?> values)
+        {
+            double? max = null;
+            foreach (double? v in values)
+            {
+                if (v != null && (max == null || v.Value > max.Value))
+                {
+                    max = v;
+                }
+            }
+            return max;
+        }
+
+        static DateTimeOffset? MaxDate(IEnumerable<DateTimeOffset?> values)
+        {
+            DateTimeOffset? max = null;
+            foreach (DateTimeOffset? v in values)
+            {
+                if (v != null && (max == null || v.Value > max.Value))
+                {
+                    max = v;
+                }
+            }
+            return max;
+        }
+
+        static DateTimeOffset? MinDate(IEnumerable<DateTimeOffset?> values)
+        {
+            DateTimeOffset? min = null;
+            foreach (DateTimeOffset? v in values)
+            {
+                if (v != null && (min == null || v.Value < min.Value))
+                {
+                    min = v;
+                }
+            }
+            return min;
+        }
+
+        /// <summary>
+        /// Local endpoint display string. For -GroupBy SourceIpPortRemoteIp the source IP:port is shown, for -GroupBy SourceIpRemoteIp the
+        /// source port is collapsed and shown as sourceIP:*.
+        /// </summary>
+        string GetLocalEndpoint(MatchData match)
+        {
+            if (match.IsAggregate && GroupBy == GroupByModes.SourceIpRemoteIp)
+            {
+                return $"{match.Connection.LocalIpAndPort.Address}:*";
+            }
+            return match.Connection.LocalIpAndPort.ToString();
+        }
+
+        /// <summary>
+        /// Remote endpoint display string. For aggregated rows the target port is replaced by * and the number of aggregated connections is appended.
+        /// </summary>
+        string GetRemoteEndpoint(MatchData match)
+        {
+            return match.IsAggregate ? $"{match.Connection.RemoteIpAndPort.Address}:* ({match.InputConnectionCount})" : match.Connection.RemoteIpAndPort.ToString();
+        }
+
         private void PrintMatches(List<MatchData> data)
         {
             if( data.Count == 0 )
@@ -382,12 +552,17 @@ namespace ETWAnalyzer.EventDump
                 return;
             }
 
-            var byFile = data.GroupBy(x => x.Session.FileName).OrderBy(x => x.First().Session.SessionStart);
+            var byFileRaw = data.GroupBy(x => x.Session.FileName).OrderBy(x => x.First().Session.SessionStart);
 
-            MatchData[] allPrinted = byFile.SelectMany(x => x.SortAscendingGetTopNLast(SortBy, x=>x.Connection.BytesReceived+x.Connection.BytesSent, null, TopN)).ToArray(); 
+            // When grouping is enabled replace the per connection rows by one aggregated row per group per file.
+            List<KeyValuePair<string, List<MatchData>>> byFile = byFileRaw
+                .Select(x => new KeyValuePair<string, List<MatchData>>(x.Key, GroupBy != GroupByModes.None ? AggregateConnections(x) : x.ToList()))
+                .ToList();
 
-            int localIPLen = allPrinted.Max(x => x.Connection.LocalIpAndPort.ToString().Length);
-            int remoteIPLen = allPrinted.Max(x => x.Connection.RemoteIpAndPort.ToString().Length);
+            MatchData[] allPrinted = byFile.SelectMany(x => x.Value.SortAscendingGetTopNLast(SortBy, x=>x.Connection.BytesReceived+x.Connection.BytesSent, null, TopN)).ToArray(); 
+
+            int localIPLen = allPrinted.Max(x => GetLocalEndpoint(x).Length);
+            int remoteIPLen = allPrinted.Max(x => GetRemoteEndpoint(x).Length);
             int tcpTemplateLen = allPrinted.Max(x => x.Connection.LastTcpTemplate?.Length) ?? 8;
 
             const int PacketCountWidth = 9;
@@ -636,7 +811,7 @@ namespace ETWAnalyzer.EventDump
 
             foreach (var file in byFile)
             {
-                ColorConsole.WriteEmbeddedColorLine($"{file.First().Session.SessionStart,-22} {GetPrintFileName(file.Key)} {file.First().Session.Baseline}", ConsoleColor.Cyan);
+                ColorConsole.WriteEmbeddedColorLine($"{file.Value.First().Session.SessionStart,-22} {GetPrintFileName(file.Key)} {file.Value.First().Session.Baseline}", ConsoleColor.Cyan);
                 int printedFiles = 0;
 
                 // for total calculations
@@ -648,7 +823,7 @@ namespace ETWAnalyzer.EventDump
                 double totalSumRetransDelay = 0;
                 int totalConnectCounter = 0;
 
-                foreach (var match in file.SortAscendingGetTopNLast(SortBy, x => x.Connection.BytesReceived + x.Connection.BytesSent, null, TopN))
+                foreach (var match in file.Value.SortAscendingGetTopNLast(SortBy, x => x.Connection.BytesReceived + x.Connection.BytesSent, null, TopN))
                 {
                     totalDatagramsReceived += match.Connection.DatagramsReceived;
                     totalDatagramsSent += match.Connection.DatagramsSent;
@@ -658,7 +833,7 @@ namespace ETWAnalyzer.EventDump
                     totalSumRetransDelay += match.Retransmissions.Sum(x => x.RetransmitDiff().TotalMilliseconds);
                     totalConnectCounter += match.InputConnectionCount;
 
-                    string connection = $"{match.Connection.LocalIpAndPort.ToString().WithWidth(localIPLen)} -> {match.Connection.RemoteIpAndPort.ToString().WithWidth(remoteIPLen)}";
+                    string connection = $"{GetLocalEndpoint(match).WithWidth(localIPLen)} -> {GetRemoteEndpoint(match).WithWidth(remoteIPLen)}";
 
                     // retransmission % can only be calculated by sent packets and retransmission events excluding client retransmissions
                     string retransPercent = (100.0f * match.Retransmissions.Where(x => x.IsClientRetransmission.GetValueOrDefault() == false).Count() / match.Connection.DatagramsSent).WithDigitGrouping();
@@ -699,9 +874,9 @@ namespace ETWAnalyzer.EventDump
                         match.Connection?.Statistics?.MaxReceiveDelayS == null ? "" : match.Connection?.Statistics.MaxReceiveDelayS.Value.ToString($"F{base.OverridenOrDefaultTimePrecision}"),
                         match.Connection?.Statistics?.MaxSendDelayS == null ? "" : match.Connection?.Statistics.MaxSendDelayS.Value.ToString($"F{base.OverridenOrDefaultTimePrecision}"),
                         $"0x{"X".WidthFormat(match.Connection.Tcb, PointerWidth)}",
-                        match.Process.GetProcessWithId(UsePrettyProcessName),
-                        GetProcessTags(match.Process, match.Session.AdjustedSessionStart),
-                        NoCmdLine ? "" : match.Process.CommandLineNoExe,
+                        match.IsAggregate ? match.AggregateProcessLabel : match.Process.GetProcessWithId(UsePrettyProcessName),
+                        match.IsAggregate ? "" : GetProcessTags(match.Process, match.Session.AdjustedSessionStart),
+                        match.IsAggregate || NoCmdLine ? "" : match.Process.CommandLineNoExe,
                     };
 
                     if (ShowTotal != TotalModes.Total)  // omit connection details in total mode
@@ -1376,6 +1551,16 @@ namespace ETWAnalyzer.EventDump
             public double RetransMaxms { get; internal set; }
             public int InputConnectionCount { get; internal set; }
             public ITcpPostIssue Issue { get; internal set; }
+
+            /// <summary>
+            /// True when this row is an aggregate of several connections (e.g. -GroupBy SourceIpPortRemoteIp).
+            /// </summary>
+            public bool IsAggregate { get; internal set; }
+
+            /// <summary>
+            /// Process column text for aggregated rows. When several processes are aggregated it describes them (e.g. "Multiple (3)").
+            /// </summary>
+            public string AggregateProcessLabel { get; internal set; }
         }
 
         public class ETWSession
