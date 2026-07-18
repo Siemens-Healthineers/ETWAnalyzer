@@ -114,9 +114,11 @@ namespace ETWAnalyzer
             { "CPUProcessorGroups", m => m.CPUProcessorGroups},
             { "Disk",               m => FormatDisks(m.Disks) },
             { "HyperThreading",     m => m.CPUHyperThreadingEnabled?.ToString() },
-            { "SessionStart",       m => m.SessionStart },
-            { "SessionEnd",         m => m.SessionEnd},
+            { "SessionStart",       m => FormatTimeWithMicroseconds(m.SessionStart) },
+            { "SessionEnd",         m => FormatTimeWithMicroseconds(m.SessionEnd) },
             { "SessionDurationS",    m => (int) (m.SessionEnd-m.SessionStart).TotalSeconds },
+            { "ExtractStartTime",   m => FormatTimeWithMicroseconds(m.ExtractStartTime) },
+            { "ExtractEndTime",     m => FormatTimeWithMicroseconds(m.ExtractEndTime) },
             { "BootTime", m => m.BootTime },
             { "BootToSessionStart", m => m.BootTime == default ? TimeSpan.Zero :  m.SessionStart - m.BootTime},
             { "Model",              m => m.Model },
@@ -176,6 +178,20 @@ namespace ETWAnalyzer
             return lret.TrimEnd(); ;
         }
 
+        /// <summary>
+        /// Format a session/extract time stamp with microsecond (us) precision.
+        /// Returns null for unset (default/null) values so the property is skipped in the output.
+        /// </summary>
+        static string FormatTimeWithMicroseconds(DateTimeOffset? time)
+        {
+            if (time == null || time.Value == default)
+            {
+                return null;
+            }
+
+            return time.Value.ToString("yyyy-MM-dd HH:mm:ss.ffffff zzz", CultureInfo.InvariantCulture);
+        }
+
         private static string FormatDisks(IReadOnlyList<IDiskLayout> disks)
         {
             if( disks == null )
@@ -215,6 +231,8 @@ namespace ETWAnalyzer
             public int CPUSpeedMHz;
             public DateTimeOffset SessionStart;
             public DateTimeOffset SessionEnd;
+            public DateTimeOffset? ExtractStartTime;
+            public DateTimeOffset? ExtractEndTime;
             public DateTimeOffset BootTime;
             public string Model;
             public string AdDomain;
@@ -330,6 +348,8 @@ namespace ETWAnalyzer
                                 CPUHyperThreadingEnabled = file.Extract.CPUHyperThreadingEnabled,
                                 SessionStart = file.Extract.SessionStart,
                                 SessionEnd = file.Extract.SessionEnd,
+                                ExtractStartTime = file.Extract.ExtractStartTime,
+                                ExtractEndTime = file.Extract.ExtractEndTime,
                                 BootTime = file.Extract.BootTime,
                                 Model = file.Extract.Model,
                                 AdDomain = file.Extract.AdDomain,

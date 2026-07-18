@@ -72,6 +72,27 @@ If you prefer to have the output in uncompressed .json files, use the `-NoCompre
 To make the JSON files more readable, you can add the `-Indent` option, which will format the JSON with proper indentation.
 
 
+## Extract a Time Region
+By default the whole trace is extracted. With `-extractRegion` you can extract the CPU, Disk, File, TCP and Stacktag data only for one or more
+trace relative time regions. The times are given in seconds since trace/session start as start/end pairs:
+```
+ETWAnalyzer -extract CPU Disk File TCP -fd c:\issue1\xxx.etl -extractRegion 1.0 2.0 3.0 4.0
+```
+This produces one extract file per region where the region is appended to the file name:
+```
+xxx_Time_1.0-2.0.json7z
+xxx_Time_3.0-4.0.json7z
+```
+An end value prefixed with `+` is treated as a duration relative to its start time, so the following extracts the region 1.0 - 3.0 seconds:
+```
+ETWAnalyzer -extract CPU Disk File TCP -fd c:\issue1\xxx.etl -extractRegion 1.0 +2
+```
+Only the CPU, Disk, File, TCP and Stacktag extractors honor the time region. All other extractors (e.g. Memory, Module, Exception) are extracted
+unfiltered and are contained in every region file. Each extracted Json additionally contains the properties `ExtractStartTime` and
+`ExtractEndTime` which describe the absolute start/end time of the extracted region. These can also be printed via 
+`-dump Stats -properties ExtractStartTime,ExtractEndTime`.
+
+
 # Common Issues
 ## High Memory Consumption
 ETWAnalyzer loads symbols which needs several GB of memory. E.g. the chrome pdb alone is over 2 GB in size. But the highest memory costs arise from parsing context switch events which 

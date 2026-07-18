@@ -45,6 +45,10 @@ namespace ETWAnalyzer.Extractors
 
             foreach (IDiskActivity diskActivity in myDiskIO.Result.Activity)
             {
+                if (!IsInTimeRange(diskActivity.InitializeTime))
+                {
+                    continue;
+                }
                 diskActivity.Add(data);
             }
 

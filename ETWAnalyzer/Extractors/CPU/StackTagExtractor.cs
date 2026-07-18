@@ -202,6 +202,11 @@ namespace ETWAnalyzer.Extractors.CPU
                 // Get Stack Tag information from CPU Sampling data
                 foreach (ICpuSample sample in mySamplingData.Result.Samples)
                 {
+                    if (!IsInTimeRange(sample.Timestamp))
+                    {
+                        continue;
+                    }
+
                     DateTimeOffset createTime = DateTimeOffset.MinValue;
                     if ((sample?.Process?.CreateTime).HasValue)
                     {
@@ -227,6 +232,11 @@ namespace ETWAnalyzer.Extractors.CPU
             {
                 foreach (ICpuThreadActivity slice in myCpuSchedlingData.Result.ThreadActivity)
                 {
+                    if (!IsInTimeRange(slice.StartTime))
+                    {
+                        continue;
+                    }
+
                     string waitTag = slice.SwitchIn.Stack?.GetStackTagPath(mapper);
                     if (waitTag == null)
                     {

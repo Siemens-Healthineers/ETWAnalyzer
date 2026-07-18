@@ -33,6 +33,7 @@ namespace ETWAnalyzer.Commands.MCPServer.Tools
             [Description("If true, add to existing loaded files instead of replacing them. Default: false")] bool keepOldFiles = false,
             [Description("If true, search directories recursively. Default: false")] bool recursive = false)
         {
+            Logger.Info($"MCP etw_load(filePaths='{filePaths}', keepOldFiles={keepOldFiles}, recursive={recursive})");
             string[] paths = filePaths.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
             return MCPSession.Instance.Load(paths, keepOldFiles, recursive);
         }
@@ -42,6 +43,7 @@ namespace ETWAnalyzer.Commands.MCPServer.Tools
         public static string Unload(
             [Description("Optional: Comma-separated file paths to unload. If empty, all files are unloaded.")] string filePaths = "")
         {
+            Logger.Info($"MCP etw_unload(filePaths='{filePaths}')");
             string[] paths = string.IsNullOrWhiteSpace(filePaths)
                 ? Array.Empty<string>()
                 : filePaths.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
@@ -52,6 +54,7 @@ namespace ETWAnalyzer.Commands.MCPServer.Tools
         [Description("List all currently loaded ETW files in the session.")]
         public static string ListFiles()
         {
+            Logger.Info("MCP etw_list()");
             return MCPSession.Instance.ListFiles();
         }
 
@@ -207,11 +210,40 @@ namespace ETWAnalyzer.Commands.MCPServer.Tools
             return ExecuteDumpCommand(DumpCommands.TraceLog, arguments);
         }
 
+        [McpServerTool(Name = "etw_extract")]
+        [Description("Extract ETW data from one or more .etl/.7z/.zip files (or a directory containing them) into Json7z extract files. " +
+                     "The generated extract files are written by default to an 'Extract' subfolder besides the input file and can afterwards be loaded with etw_load and analyzed with the etw_dump_* commands. " +
+                     "The returned text lists the produced extract file paths.")]
+        public static string Extract(
+            [Description("Path to the input .etl/.7z/.zip file or a directory containing such files.")] string etlFile,
+            [Description("Space separated list of extractors to run e.g. 'All', 'Default' or 'CPU Disk File TCP Stacktag'. Default: 'All'.")] string extractors = "All",
+            [Description("Symbol server. Default is Microsoft. There are shortcuts defined in ETWAnalyzer.dll.config und SymbolServerxx xml nodes.")] string symbolServer = "MS",
+            [Description("Optional additional -extract arguments e.g. '-keeptemp -outdir C:\\Extract'.")] string arguments = "")
+        {
+            return ExecuteExtractCommand(etlFile, extractors, symbolServer, null, arguments);
+        }
+
+        [McpServerTool(Name = "etw_extract_timerange")]
+        [Description("Extract ETW data for one or more trace relative time regions (seconds since trace start). " +
+                     "Only the CPU, Disk, File, TCP and Stacktag extractors honor the time region, all other extractors are extracted unfiltered. " +
+                     "Each region produces a separate extract file with the region appended to the file name (e.g. xxx_Time_1.0-2.0.json7z) and the extract contains the ExtractStartTime/ExtractEndTime properties. " +
+                     "The generated files can be loaded with etw_load and analyzed with the etw_dump_* commands.")]
+        public static string ExtractTimeRange(
+            [Description("Path to the input .etl/.7z/.zip file or a directory containing such files.")] string etlFile,
+            [Description("Space separated start/end pairs in seconds since trace start e.g. '1.0 2.0 3.0 4.0' extracts the regions 1.0-2.0 and 3.0-4.0. An end value prefixed with + is a duration relative to its start, e.g. '1.0 +2' extracts the region 1.0-3.0.")] string regions,
+            [Description("Space separated list of extractors to run. Default: 'CPU Disk File TCP Stacktag'.")] string extractors = "CPU Disk File TCP Stacktag",
+            [Description("Symbol server. Default is Microsoft. There are shortcuts defined in ETWAnalyzer.dll.config und SymbolServerxx xml nodes.")] string symbolServer = "MS",
+            [Description("Optional additional -extract arguments e.g. '-keeptemp -outdir C:\\Extract'.")] string arguments = "")
+        {
+            return ExecuteExtractCommand(etlFile, extractors, symbolServer, regions, arguments);
+        }
+
         [McpServerTool(Name = "etw_help")]
         [Description("Get help for ETWAnalyzer dump commands. Shows available options and their descriptions and usage examples.")]
         public static string Help(
             [Description("Specific dump command to get help for (e.g. 'CPU', 'Process', 'Memory'). Leave empty for general help.")] string command = "")
         {
+            Logger.Info($"MCP etw_help(command='{command}')");
             if (string.IsNullOrWhiteSpace(command))
             {
                 return DumpCommand.HelpString;
@@ -241,6 +273,7 @@ namespace ETWAnalyzer.Commands.MCPServer.Tools
         /// </summary>
         private static string ExecuteDumpCommand(DumpCommands dumpType, string arguments)
         {
+            Logger.Info($"MCP etw_dump_{GetParseString(dumpType)}(arguments='{arguments}')");
             var session = MCPSession.Instance;
             if (session.LoadedFiles == null || session.LoadedFiles.Length == 0)
             {
@@ -273,6 +306,73 @@ namespace ETWAnalyzer.Commands.MCPServer.Tools
             }
 
             return capture.GetOutput();
+        }
+
+        /// <summary>
+        /// Builds and runs an ETWAnalyzer -extract command in-process (forced single threaded via -child so no child processes are spawned)
+        /// and captures its console output. Used by the etw_extract and etw_extract_timerange tools.
+        /// </summary>
+        /// <param name="etlFile">Input .etl/.7z/.zip file or directory.</param>
+        /// <param name="extractors">Space separated extractor names (e.g. "All" or "CPU Disk File TCP Stacktag").</param>
+        /// <param name="symbolServer">Symbol server. Either a predefined name from or the usual symbol server declaration.</param>
+        /// <param name="regions">Optional space separated -extractRegion start/end pairs, or null to extract the whole trace.</param>
+        /// <param name="arguments">Optional additional -extract arguments.</param>
+        /// <returns>Captured console output of the extraction.</returns>
+        private static string ExecuteExtractCommand(string etlFile, string extractors, string? symbolServer, string? regions, string arguments)
+        {
+            Logger.Info($"MCP etw_extract(etlFile='{etlFile}', extractors='{extractors}', symbolServer='{symbolServer}', regions='{regions}', arguments='{arguments}')");
+            if (string.IsNullOrWhiteSpace(etlFile))
+            {
+                return "Error: No input file specified. Provide the path to an .etl/.7z/.zip file or a directory containing such files.";
+            }
+
+            var args = new List<string> { "-extract" };
+            args.AddRange(SplitArguments(string.IsNullOrWhiteSpace(extractors) ? "All" : extractors));
+            args.Add("-filedir");
+            args.Add(etlFile);
+            args.Add("-allCPU");
+
+            if (!String.IsNullOrEmpty(symbolServer))
+            {
+                args.Add("-SymServer");
+                args.Add(symbolServer);
+            }
+
+            if (!string.IsNullOrWhiteSpace(regions))
+            {
+                args.Add("-extractRegion");
+                args.AddRange(SplitArguments(regions));
+            }
+
+            args.AddRange(SplitArguments(arguments));
+
+            // Run in-process without spawning child ETWAnalyzer processes and without color escape codes to keep the output clean for the AI agent.
+            if (!args.Any(a => a.Equals("-child", StringComparison.OrdinalIgnoreCase)))
+            {
+                args.Add("-child");
+            }
+            if (!args.Any(a => a.Equals("-nocolor", StringComparison.OrdinalIgnoreCase)))
+            {
+                args.Add("-nocolor");
+            }
+
+            using var capture = new ConsoleOutputCapture();
+            try
+            {
+                var extractCommand = new ExtractCommand(args.ToArray());
+                extractCommand.Parse();
+                extractCommand.Run();
+            }
+            catch (Exception ex)
+            {
+                string errOutput = capture.GetOutput();
+                return string.IsNullOrEmpty(errOutput)
+                    ? $"Error executing extract: {ex.Message}"
+                    : errOutput + Environment.NewLine + $"Error: {ex.Message}";
+            }
+
+            string output = capture.GetOutput();
+            return string.IsNullOrWhiteSpace(output) ? "Extraction completed. No output was produced." : output;
         }
 
         /// <summary>

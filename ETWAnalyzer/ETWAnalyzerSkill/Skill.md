@@ -31,12 +31,15 @@ The ETWAnalyzer MCP server exposes ETWAnalyzer functionality as callable tools t
 
 ### Prerequisites
 
-1. **Extracted ETW data**: ETWAnalyzer works with extracted JSON files (.json7z or .json), not raw .etl files
-2. **File path**: Know the full path to your extracted trace file(s)
+1. **Extracted ETW data**: ETWAnalyzer works with extracted JSON files (.json7z or .json). Raw .etl/.7z/.zip files can be converted into extracts with `etw_extract` / `etw_extract_timerange`
+   For extraction use the default MS symbol server or check config file ETWAnalyzer.dll.config which is besides ETWAnalyzer.exe. Look for xml nodes with name attribute values like SymbolServerxx where xx is symbol server shorthand name. Ask back
+   which symbol server should be used and remember it for future extractions.
+2. **File path**: Know the full path to your .etl file or extracted trace file(s)
 
 ### Basic Workflow
 
 ```
+0. Optional: Extract .etl → etw_extract / etw_extract_timerange (produces .json7z files)
 1. Load trace file(s)    → etw_load
 2. Query data            → etw_dump_* (cpu, memory, process, etc.)
 3. Analyze results       → Interpret output
@@ -97,6 +100,30 @@ etw_unload:
 ---
 
 ## Available Tools
+
+### Data Extraction Tools
+
+These tools convert raw `.etl` / `.7z` / `.zip` recordings into `.json7z` extract files which can then be loaded with `etw_load` and analyzed with the `etw_dump_*` tools.
+
+| Tool | Purpose | Key Arguments |
+|------|---------|---------------|
+| `etw_extract` | Extract ETW data from an .etl/.7z/.zip file or directory into .json7z extract files | `etlFile`, `extractors` (default `All`), `arguments` (e.g. `-symServer MS -outdir ...`) |
+| `etw_extract_timerange` | Extract only one or more trace relative time regions (seconds since trace start). Only CPU/Disk/File/TCP/Stacktag honor the region; each region is written to its own `xxx_Time_<start>-<end>.json7z` file containing ExtractStartTime/ExtractEndTime | `etlFile`, `regions` (e.g. `1.0 2.0 3.0 4.0` or `1.0 +2`), `extractors` (default `CPU Disk File TCP Stacktag`), `arguments` |
+
+**Extract a full trace:**
+```
+etw_extract:
+  etlFile: "C:\Traces\Issue.etl"
+  extractors: "All"
+```
+
+**Extract only specific time regions (start end pairs, seconds since trace start):**
+```
+etw_extract_timerange:
+  etlFile: "C:\Traces\Issue.etl"
+  regions: "1.0 2.0 3.0 4.0"
+```
+An end value prefixed with `+` is a duration relative to its start, so `regions: "1.0 +2"` extracts the region 1.0 - 3.0 seconds.
 
 ### Core Analysis Tools
 

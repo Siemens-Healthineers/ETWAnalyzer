@@ -109,6 +109,9 @@ namespace ETWAnalyzer.Commands
          " -allExceptions       By default exceptions are filtered away by the rules configured in Configuration\\ExceptionFilters.xml. To get all specify this flag." + Environment.NewLine +
          " -IncludeExitedProcesses By default VirtualAlloc data for processes that have exited during the trace are ignored because they do usually not contribute to a memory leak." + Environment.NewLine +
          " -timeLine dd         When CPU data is extracted additionally extract CPU timeline data with given sampling interval in seconds. This data is only accessible at API level at IETWExtract.CPU.TimeLine." + Environment.NewLine +
+         " -extractRegion s1 e1 [s2 e2 ...]  Extract CPU/Disk/File/TCP/Stacktag data only for one or more trace relative time regions given in seconds since trace start (e.g. -extractRegion 1.0 2.0 3.0 4.0)." + Environment.NewLine +
+         "                      An end value prefixed with + is treated as a duration relative to its start time. E.g. -extractRegion 1.0 +2 extracts the region 1.0 - 3.0 seconds." + Environment.NewLine +
+         "                      Each region is written to a separate extract file with the region appended to the file name (e.g. xxx_Time_1.0-2.0). The extracted Json contains ExtractStartTime/ExtractEndTime. Other extractors are extracted unfiltered." + Environment.NewLine +
          " -symFolder xxx       Default is C:\\Symbols. Path to a short directory name in which links are created from the unzipped ETL files to prevent symbol loading issues due to MAX_PATH limitations." + Environment.NewLine +
          " -child               Force single threaded in-process extraction" + Environment.NewLine +
          " -recursive           Search below -filedir directory recursively for data to extract." + Environment.NewLine +
@@ -160,6 +163,7 @@ namespace ETWAnalyzer.Commands
         internal const string NoSampling = "-nosampling";
         internal const string NoCSwitch = "-nocswitch";
         internal const string NoCompress = "-nocompress";
+        internal const string ExtractRegionArg = "-extractregion";
 
 
 
@@ -286,6 +290,12 @@ namespace ETWAnalyzer.Commands
         /// List to store extracting actions 
         /// </summary>
         List<ExtractorBase> Extractors { get; } = new List<ExtractorBase>() { new MachineDetailsExtractor() };
+
+        /// <summary>
+        /// Set via -extractRegion start end [start end ...]. When present CPU/Disk/File/TCP data is extracted only for the
+        /// given trace relative time regions (seconds since trace start) and each region is written to its own extract file.
+        /// </summary>
+        public List<ETWExtractTimeRange> Regions { get; private set; } = new List<ETWExtractTimeRange>();
 
         /// <summary>
         /// -fd/-filedir
@@ -418,6 +428,9 @@ namespace ETWAnalyzer.Commands
                         break;
                     case NoCompress:
                         Compress = false;
+                        break;
+                    case ExtractRegionArg:   // -extractRegion start end [start end ...]
+                        ParseExtractRegions(GetArgList(ExtractRegionArg));
                         break;
                     case NoTestRunGrouping:
                         TestRun.MaxTimeBetweenTests = TimeSpan.MaxValue;
@@ -555,6 +568,37 @@ namespace ETWAnalyzer.Commands
             ConfigureExtractors(Extractors, myProcessingActionList);
             SetExtractorFilters(Extractors, ExtractAllCPUData, DisableExceptionFilter, TimelineDataExtractionIntervalS, Concurrency, NoReady, IgnoreCPUSampling, IgnoreCSwitchData, IncludeExitedProcesses);
 
+        }
+
+        /// <summary>
+        /// Parse the -extractRegion start end [start end ...] time region pairs.
+        /// </summary>
+        /// <param name="regionArgs">List of numbers. Must be an even count of start/end pairs (seconds since trace start).</param>
+        /// <exception cref="InvalidDataException">When an odd number of values was entered.</exception>
+        void ParseExtractRegions(List<string> regionArgs)
+        {
+            if (regionArgs.Count % 2 != 0)
+            {
+                throw new InvalidDataException($"{ExtractRegionArg} needs an even number of values (start end [start end ...]). Got {regionArgs.Count} values: {String.Join(" ", regionArgs)}");
+            }
+
+            for (int i = 0; i < regionArgs.Count; i += 2)
+            {
+                Regions.Add(new ETWExtractTimeRange(regionArgs[i], regionArgs[i + 1]));
+            }
+        }
+
+        /// <summary>
+        /// Build a fresh, fully configured list of extractors. A new list is required for every extracted time region
+        /// so extractors which keep internal state can be safely reused.
+        /// </summary>
+        /// <returns>Configured extractor list.</returns>
+        List<ExtractorBase> BuildExtractors()
+        {
+            var list = new List<ExtractorBase>() { new MachineDetailsExtractor() };
+            ConfigureExtractors(list, myProcessingActionList);
+            SetExtractorFilters(list, ExtractAllCPUData, DisableExceptionFilter, TimelineDataExtractionIntervalS, Concurrency, NoReady, IgnoreCPUSampling, IgnoreCSwitchData, IncludeExitedProcesses);
+            return list;
         }
 
         /// <summary>
@@ -829,7 +873,11 @@ namespace ETWAnalyzer.Commands
                 Logger.Info($"Pid: {res.ExitedProcess.Id} exited with {res.ReturnCode}, Hex: 0x{(uint)res.ReturnCode:X}");
                 // Exception is already caught in command.Execute Method, so it is necessary to check if file really exists - Program reaches this point
                 fileToAnalyze.JsonExtractFileWhenPresent = null; // force to reevaluate search 
-                if (fileToAnalyze.JsonExtractFileWhenPresent != null && res.ReturnCode == 0)
+
+                // In -extractRegion mode the output files are named with a time region suffix (e.g. _Time_1.0-2.0) so we cannot
+                // detect them via the default JsonExtractFileWhenPresent lookup. Rely on the child process return code instead.
+                bool extractSucceeded = Regions.Count > 0 ? res.ReturnCode == 0 : (fileToAnalyze.JsonExtractFileWhenPresent != null && res.ReturnCode == 0);
+                if (extractSucceeded)
                 {
                     current = Interlocked.Increment(ref mySuccessExtracted);
                 }
@@ -864,7 +912,7 @@ namespace ETWAnalyzer.Commands
                 return;
             }
 
-            IReadOnlyList<string> outFiles = ExtractFile(Extractors, fileToAnalyze.EtlFileNameIfPresent ?? fileToAnalyze.FileName, OutDir, Symbols, HaveToDeleteTemp, AfterUnzipCommand, Compress);
+            IReadOnlyList<string> outFiles = ExtractFile(BuildExtractors, fileToAnalyze.EtlFileNameIfPresent ?? fileToAnalyze.FileName, OutDir, Symbols, HaveToDeleteTemp, AfterUnzipCommand, Compress, Regions);
 
             if( outFiles == null || outFiles.Count == 0 )
             {
@@ -947,17 +995,18 @@ namespace ETWAnalyzer.Commands
         /// <summary>
         /// Extract data from a single ETL or compressed etl file.
         /// </summary>
-        /// <param name="extractors">List of extraction operations</param>
+        /// <param name="extractorFactory">Factory which creates a fresh configured list of extractors for each extracted time region.</param>
         /// <param name="inputETLFileOrZip">etl file or compressed etl file</param>
         /// <param name="outputDirectory">Directory where the extracted data is and temporary files are created</param>
         /// <param name="symbols">Gives access to local and remote symbol folder and servers.</param>
         /// <param name="haveToDeleteTemp">True: Deletes all temp files</param>
         /// <param name="afterUnzipCommand">Command line of exe which is executed after an ETL was extracted.</param>
         /// <param name="bCompress">if true output files are written to a compressed file with extension <see cref="TestRun.CompressedExtractExtension"/></param>
+        /// <param name="regions">Optional trace relative time regions to extract. When null or empty the whole trace is extracted.</param>
         /// <returns>Serialized Json file name</returns>
-        static IReadOnlyList<string> ExtractFile(List<ExtractorBase> extractors, string inputETLFileOrZip, OutDir outputDirectory, SymbolPaths symbols, bool haveToDeleteTemp, string afterUnzipCommand, bool bCompress)
+        static IReadOnlyList<string> ExtractFile(Func<List<ExtractorBase>> extractorFactory, string inputETLFileOrZip, OutDir outputDirectory, SymbolPaths symbols, bool haveToDeleteTemp, string afterUnzipCommand, bool bCompress, IReadOnlyList<ETWExtractTimeRange> regions = null)
         {
-            var singleFile = new ExtractSingleFile(inputETLFileOrZip, extractors, outputDirectory.TempDirectory ?? Path.GetDirectoryName(inputETLFileOrZip), symbols, afterUnzipCommand, bCompress); // unzip
+            var singleFile = new ExtractSingleFile(inputETLFileOrZip, extractorFactory, outputDirectory.TempDirectory ?? Path.GetDirectoryName(inputETLFileOrZip), symbols, afterUnzipCommand, bCompress, regions); // unzip
             return singleFile.Execute(outputDirectory, haveToDeleteTemp);
         }
 

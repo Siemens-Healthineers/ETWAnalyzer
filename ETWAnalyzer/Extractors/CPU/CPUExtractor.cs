@@ -174,6 +174,11 @@ namespace ETWAnalyzer.Extractors.CPU
                         return;
                     }
 
+                    if (!IsInTimeRange(sample.Timestamp))
+                    {
+                        return;
+                    }
+
                     if (hasSamplesWithStacks == false)
                     {
                         hasSamplesWithStacks = sample.Stack != null;
@@ -193,6 +198,11 @@ namespace ETWAnalyzer.Extractors.CPU
                 Parallel.ForEach(myCpuSchedlingData.Result.ThreadActivity, concurrency, (ICpuThreadActivity slice) =>
                 {
                     if (slice?.Process?.ImageName == null)
+                    {
+                        return;
+                    }
+
+                    if (!IsInTimeRange(slice.StartTime))
                     {
                         return;
                     }

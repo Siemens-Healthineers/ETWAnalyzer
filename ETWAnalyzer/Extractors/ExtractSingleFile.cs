@@ -33,14 +33,16 @@ namespace ETWAnalyzer.Extractors
         private readonly string myEtlFile;
 
         /// <summary>
-        /// List of extractors which are executed one by one to retrieve the corresponding data
+        /// Factory which creates a fresh, fully configured list of extractors. A new list is created for every
+        /// extracted time region so extractors which keep internal state can be safely reused.
         /// </summary>
-        private readonly List<ExtractorBase> myExtractors;
+        private readonly Func<List<ExtractorBase>> myExtractorFactory;
 
         /// <summary>
-        /// This class contains the extraction results which is serialized as Json file.
+        /// Time regions (-extractRegion) to extract. When null or empty the whole trace is extracted into a single file.
         /// </summary>
-        readonly ETWExtract myResults = new();
+        private readonly IReadOnlyList<ETWExtractTimeRange> myRegions;
+
         /// <summary>
         /// temp directory where CSV files and such are generated.
         /// </summary>
@@ -76,12 +78,13 @@ namespace ETWAnalyzer.Extractors
         /// Extract data from one ETL file
         /// </summary>
         /// <param name="etlOrZipFile">Input etl file</param>
-        /// <param name="extractors">List of extractors</param>
+        /// <param name="extractorFactory">Factory which creates a fresh configured list of extractors for each extracted time region.</param>
         /// <param name="outTempETLDirectory">Temp folder to extract etl files</param>
         /// <param name="symbols">Symbol server and folders.</param>
         /// <param name="afterUnzipCommand">Execute external application after zip file was uncompressed</param>
         /// <param name="bCompress">if true output files are written to a compressed file with extensione <see cref="TestRun.CompressedExtractExtension"/></param>
-        public ExtractSingleFile(string etlOrZipFile, List<ExtractorBase> extractors, string outTempETLDirectory, SymbolPaths symbols, string afterUnzipCommand, bool bCompress)
+        /// <param name="regions">Optional trace relative time regions (seconds since trace start) to extract. When null or empty the whole trace is extracted.</param>
+        public ExtractSingleFile(string etlOrZipFile, Func<List<ExtractorBase>> extractorFactory, string outTempETLDirectory, SymbolPaths symbols, string afterUnzipCommand, bool bCompress, IReadOnlyList<ETWExtractTimeRange> regions = null)
         {
             if (String.IsNullOrWhiteSpace(etlOrZipFile))
             {
@@ -93,7 +96,8 @@ namespace ETWAnalyzer.Extractors
             }
             myOutTempEtlDirectory = outTempETLDirectory;
             CompressOutput = bCompress;
-            myExtractors = extractors ?? throw new ArgumentNullException(nameof(extractors));
+            myExtractorFactory = extractorFactory ?? throw new ArgumentNullException(nameof(extractorFactory));
+            myRegions = regions;
             mySymbols = symbols;
 
             myEtlFile = ExtractETLIfZipped(etlOrZipFile, outTempETLDirectory, symbols, out myWasExtracted);
@@ -167,65 +171,19 @@ namespace ETWAnalyzer.Extractors
         /// <returns>File name of serialized output Json file</returns>
         internal IReadOnlyList<string> Execute(OutDir outputDirectory, bool haveToDeleteTemp)
         {
-            string outputJsonFile = null;
             List<string> outputFiles = new();
             try
             {
-                TraceProcessorBuilder builder = new TraceProcessorBuilder().WithSettings(new TraceProcessorSettings
-                {
-                    AllowLostEvents = true,
-                    AllowTimeInversion = true,
-                });
+                // When no time regions are given we extract the whole trace which is represented by a single null region.
+                IReadOnlyList<ETWExtractTimeRange> regions = (myRegions != null && myRegions.Count > 0) ? myRegions : new List<ETWExtractTimeRange> { null };
 
-                using ITraceProcessor processor = builder.Build(myEtlFile);
-
-                bool needSymbols = false;
-                foreach (ExtractorBase preParse in myExtractors)
+                foreach (ETWExtractTimeRange region in regions)
                 {
-                    preParse.RegisterParsers(processor);
-                    if (preParse.NeedsSymbols && !needSymbols)
-                    {
-                        needSymbols = true;
-                        myPendingSymbols = processor.UseSymbols();
-                    }
+                    ETWExtract results = ProcessAndExtract(region);
+
+                    string outputJsonFile = GetOutputJsonFileName(outputDirectory, region);
+                    outputFiles.AddRange(SerializeResults(outputJsonFile, results));
                 }
-
-                var sw = Stopwatch.StartNew();
-                // Parse ETL file with registered parsers to be able to access results
-                processor.Process();
-                sw.Stop();
-                string perfMsg = $"Perf: Loading ETL {sw.Elapsed.TotalSeconds:F0}s";
-
-                if (needSymbols)
-                {
-                    sw = Stopwatch.StartNew();
-                    LoadSymbols();
-                    sw.Stop();
-                    perfMsg += $" Perf: Loading symbols {sw.Elapsed.TotalSeconds:F0}s";
-                }
-
-                Logger.Info(perfMsg);
-
-                perfMsg = "Perf: Extraction:";
-                foreach (ExtractorBase options in myExtractors)
-                {
-                    sw = Stopwatch.StartNew();
-                    options.Extract(processor, myResults);
-                    sw.Stop();
-                    perfMsg += $" {options.GetType().Name} {sw.Elapsed.TotalSeconds:F0}s";
-                }
-                Logger.Info(perfMsg);
-                if (outputDirectory.IsDefault)
-                {
-                    outputJsonFile = Path.Combine(outputDirectory.OutputDirectory, ExtractSerializer.ExtractFolder, Path.GetFileNameWithoutExtension(myEtlFile) + Extension);
-                }
-                else
-                {
-                    // when output directory is explicitly set extract to given folder
-                    outputJsonFile = Path.Combine(outputDirectory.OutputDirectory, Path.GetFileNameWithoutExtension(myEtlFile) + Extension);
-                }
-
-                outputFiles = SerializeResults(outputJsonFile, myResults);
             }
             finally
             {
@@ -239,7 +197,100 @@ namespace ETWAnalyzer.Extractors
             return outputFiles;
         }
 
-        void LoadSymbols()
+        /// <summary>
+        /// Process the ETL file once and run all extractors filtered by the given time region into a fresh <see cref="ETWExtract"/>.
+        /// </summary>
+        /// <param name="region">Time region to extract or null to extract the whole trace.</param>
+        /// <returns>Extraction results.</returns>
+        ETWExtract ProcessAndExtract(ETWExtractTimeRange region)
+        {
+            ETWExtract results = new();
+
+            List<ExtractorBase> extractors = myExtractorFactory();
+            foreach (ExtractorBase extractor in extractors)
+            {
+                extractor.TimeRangeFilter = region;
+            }
+
+            TraceProcessorBuilder builder = new TraceProcessorBuilder().WithSettings(new TraceProcessorSettings
+            {
+                AllowLostEvents = true,
+                AllowTimeInversion = true,
+            });
+
+            using ITraceProcessor processor = builder.Build(myEtlFile);
+
+            bool needSymbols = false;
+            foreach (ExtractorBase preParse in extractors)
+            {
+                preParse.RegisterParsers(processor);
+                if (preParse.NeedsSymbols && !needSymbols)
+                {
+                    needSymbols = true;
+                    myPendingSymbols = processor.UseSymbols();
+                }
+            }
+
+            var sw = Stopwatch.StartNew();
+            // Parse ETL file with registered parsers to be able to access results
+            processor.Process();
+            sw.Stop();
+            string perfMsg = $"Perf: Loading ETL {sw.Elapsed.TotalSeconds:F0}s";
+
+            if (needSymbols)
+            {
+                sw = Stopwatch.StartNew();
+                LoadSymbols(results);
+                sw.Stop();
+                perfMsg += $" Perf: Loading symbols {sw.Elapsed.TotalSeconds:F0}s";
+            }
+
+            Logger.Info(perfMsg);
+
+            perfMsg = region == null ? "Perf: Extraction:" : $"Perf: Extraction region {region.ToFileNamePart()}:";
+            foreach (ExtractorBase options in extractors)
+            {
+                sw = Stopwatch.StartNew();
+                options.Extract(processor, results);
+                sw.Stop();
+                perfMsg += $" {options.GetType().Name} {sw.Elapsed.TotalSeconds:F0}s";
+            }
+            Logger.Info(perfMsg);
+
+            // Store the extracted absolute time region so consumers know which part of the trace was extracted.
+            if (region != null)
+            {
+                results.ExtractStartTime = results.ConvertTraceRelativeToAbsoluteTime((float)region.StartS);
+                results.ExtractEndTime = results.ConvertTraceRelativeToAbsoluteTime((float)region.EndS);
+            }
+
+            return results;
+        }
+
+        /// <summary>
+        /// Build the output Json file name. When a time region is given its suffix (e.g. _Time_1.0-2.0) is appended to the file name.
+        /// </summary>
+        /// <param name="outputDirectory">Output directory settings.</param>
+        /// <param name="region">Time region or null.</param>
+        /// <returns>Full path to the main output Json file.</returns>
+        string GetOutputJsonFileName(OutDir outputDirectory, ETWExtractTimeRange region)
+        {
+            string fileNameNoExt = Path.GetFileNameWithoutExtension(myEtlFile);
+            if (region != null)
+            {
+                fileNameNoExt += "_" + region.ToFileNamePart();
+            }
+
+            if (outputDirectory.IsDefault)
+            {
+                return Path.Combine(outputDirectory.OutputDirectory, ExtractSerializer.ExtractFolder, fileNameNoExt + Extension);
+            }
+
+            // when output directory is explicitly set extract to given folder
+            return Path.Combine(outputDirectory.OutputDirectory, fileNameNoExt + Extension);
+        }
+
+        void LoadSymbols(ETWExtract results)
         {
             HashSet<string> requiredPdbs = new();
             HashSet<string> loadedPdbs = new();
@@ -268,15 +319,15 @@ namespace ETWAnalyzer.Extractors
             {
                 if (!pdb.IsLoaded)
                 {
-                    if( myResults.Modules == null )
+                    if( results.Modules == null )
                     {
-                        myResults.Modules = new Extract.Modules.ModuleContainer();
+                        results.Modules = new Extract.Modules.ModuleContainer();
                     }
 
                     // Store unresolved pdbs in module data to be later able to resolve symbols
                     // on a different machine from the extracted data.
                     var pdbIdentifier = new PdbIdentifier(Path.GetFileName(pdb.Path), pdb.Id, pdb.Age);
-                    myResults.Modules.UnresolvedPdbs.Add(pdbIdentifier);
+                    results.Modules.UnresolvedPdbs.Add(pdbIdentifier);
 
                     Logger.Info($"Pdb load failure: {pdb.Id} {pdb.Path}");
                     string notloadedPDBFileName = Path.GetFileName(pdb.Path).ToLowerInvariant();
@@ -289,11 +340,11 @@ namespace ETWAnalyzer.Extractors
                 }
             }
 
-            if( myResults?.Modules != null ) // make json readable and binary search enabled
+            if( results?.Modules != null ) // make json readable and binary search enabled
             {
                 // The sort uses the default comparer which uses the IComparable interface implementation of PdbIdentifier
-                myResults.Modules.UnresolvedPdbs.Sort();
-                myResults.Modules.TotalPdbCount = myPendingSymbols.Result.Pdbs.Count;
+                results.Modules.UnresolvedPdbs.Sort();
+                results.Modules.TotalPdbCount = myPendingSymbols.Result.Pdbs.Count;
             }
 
             

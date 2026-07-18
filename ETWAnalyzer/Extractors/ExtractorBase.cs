@@ -20,6 +20,23 @@ namespace ETWAnalyzer.Extractors
         public bool NeedsSymbols { get; set;  }
 
         /// <summary>
+        /// When set (via -extractRegion) CPU/Disk/File/TCP extractors only extract events which fall into this trace relative time region.
+        /// When null the whole trace is extracted.
+        /// </summary>
+        public ETWExtractTimeRange TimeRangeFilter { get; set; }
+
+        /// <summary>
+        /// Check if a trace relative timestamp is within the currently configured <see cref="TimeRangeFilter"/>.
+        /// Returns true when no filter is set.
+        /// </summary>
+        /// <param name="timestamp">Event timestamp.</param>
+        /// <returns>True when the event should be extracted.</returns>
+        protected bool IsInTimeRange(Microsoft.Windows.EventTracing.Timestamp timestamp)
+        {
+            return TimeRangeFilter == null || TimeRangeFilter.IsWithin(timestamp.TotalSeconds);
+        }
+
+        /// <summary>
         /// Externally set to force reload of symbols in case some essential symbols are missing
         /// </summary>
         public Action ForceSymbolReloadWithRemoteSymbolSever

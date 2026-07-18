@@ -114,6 +114,18 @@ namespace ETWAnalyzer.Extract
         public TimeSpan SessionDuration { get => SessionEnd - SessionStart; }
 
         /// <summary>
+        /// When the data was extracted only for a specific time region (-extractRegion) this contains the absolute start time of the extracted region.
+        /// It is null when the whole trace was extracted.
+        /// </summary>
+        public DateTimeOffset? ExtractStartTime { get; set; }
+
+        /// <summary>
+        /// When the data was extracted only for a specific time region (-extractRegion) this contains the absolute end time of the extracted region.
+        /// It is null when the whole trace was extracted.
+        /// </summary>
+        public DateTimeOffset? ExtractEndTime { get; set; }
+
+        /// <summary>
         /// System boot time
         /// </summary>
         public DateTimeOffset BootTime { get; set; }

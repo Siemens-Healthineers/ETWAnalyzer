@@ -64,7 +64,7 @@ namespace ETWAnalyzer.Extractors.TCP
                 return;
             }
 
-            IGenericEvent[] events = myGenericEvents.Result.Events.Where(IsValidTcpEvent).OrderBy(x => x.Timestamp).ToArray();
+            IGenericEvent[] events = myGenericEvents.Result.Events.Where(IsValidTcpEvent).Where(x => IsInTimeRange(x.Timestamp)).OrderBy(x => x.Timestamp).ToArray();
             ExtractFromGenericEvents(results, events);
 
             ReleaseMemory();

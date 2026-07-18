@@ -57,6 +57,10 @@ namespace ETWAnalyzer.Extractors.FileIO
 
             foreach (IWriteFileActivity fileActivity in myFileIO.Result.WriteFileActivity.Where(HasProcess))
             {
+                if (!IsInTimeRange(fileActivity.StartTime))
+                {
+                    continue;
+                }
                 var fileIO = new FileIOStatistics
                 {
                     Write =
@@ -74,6 +78,10 @@ namespace ETWAnalyzer.Extractors.FileIO
 
             foreach(IReadFileActivity readFileActivity in myFileIO.Result.ReadFileActivity.Where(HasProcess))
             {
+                if (!IsInTimeRange(readFileActivity.StartTime))
+                {
+                    continue;
+                }
                 var fileIO = new FileIOStatistics
                 {
                     Read =
@@ -92,6 +100,10 @@ namespace ETWAnalyzer.Extractors.FileIO
 
             foreach (ICreateFileObjectActivity open in myFileIO.Result.CreateFileObjectActivity.Where(HasProcess))
             {
+                if (!IsInTimeRange(open.StartTime))
+                {
+                    continue;
+                }
                 var fileOpen = new FileIOStatistics
                 {
                     Open = 
@@ -109,6 +121,10 @@ namespace ETWAnalyzer.Extractors.FileIO
 
             foreach(ICloseFileActivity close in myFileIO.Result.CloseFileActivity.Where(HasProcess))
             {
+                if (!IsInTimeRange(close.StartTime))
+                {
+                    continue;
+                }
                 var fileIO = new FileIOStatistics
                 {
                     Close =
@@ -126,6 +142,10 @@ namespace ETWAnalyzer.Extractors.FileIO
             // Include that in Close duration as well
             foreach(ICleanupFileActivity cleanup in myFileIO.Result.CleanupFileActivity.Where(HasProcess))
             {
+                if (!IsInTimeRange(cleanup.StartTime))
+                {
+                    continue;
+                }
                 var fileIO = new FileIOStatistics
                 {
                     Close =
@@ -141,6 +161,10 @@ namespace ETWAnalyzer.Extractors.FileIO
 
             foreach(ISetFileSecurityActivity acl in myFileIO.Result.SetFileSecurityActivity.Where(HasProcess))
             {
+                if (!IsInTimeRange(acl.StartTime))
+                {
+                    continue;
+                }
                 var fileSetSec = new FileIOStatistics
                 {
                     SetSecurity = new FileSetSecurityOperation()
@@ -154,6 +178,10 @@ namespace ETWAnalyzer.Extractors.FileIO
             
             foreach(IDeleteOnCloseFileActivity del in myFileIO.Result.DeleteOnCloseFileActivity.Where(HasProcess))
             {
+                if (!IsInTimeRange(del.StartTime))
+                {
+                    continue;
+                }
                 var fileDelete = new FileIOStatistics
                 {
                     Delete = new FileDeleteOperation()
@@ -165,6 +193,10 @@ namespace ETWAnalyzer.Extractors.FileIO
 
             foreach(var ren in myFileIO.Result.RenameFileActivity.Where(HasProcess))
             {
+                if (!IsInTimeRange(ren.StartTime))
+                {
+                    continue;
+                }
                 var fileRename = new FileIOStatistics
                 {
                     Rename = new FileRenameOperation()
