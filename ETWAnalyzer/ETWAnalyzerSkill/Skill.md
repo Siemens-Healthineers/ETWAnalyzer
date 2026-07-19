@@ -1,7 +1,7 @@
 ---
 name: ETWAnalyzer
 description: This skill should be used to interact with the ETWAnalyzer (Model Context Protocol) server. The MCP server provides tools to analyze ETW (Event Tracing for Windows) performance traces without needing to manually run command-line tools.
-version: 0.1.0
+version: 0.2.0
 ---
 
 # ETWAnalyzer MCP Server - Agent Documentation
@@ -11,6 +11,8 @@ This document describes how to use the ETWAnalyzer MCP (Model Context Protocol).
 ## Overview
 
 The ETWAnalyzer MCP server exposes ETWAnalyzer functionality as callable tools that can:
+- Extract raw ETW recordings (.etl/.7z/.zip) into queryable .json7z extract files
+- Extract only one or more trace relative time sub ranges (seconds since trace start) into separate extract files
 - Load and manage ETW trace files (.json7z/.json extracts)
 - Query CPU, memory, disk, network, exception, and other performance data
 - Analyze cpu issues, memory and handle leaks, thread pool starvation, and other runtime issues
@@ -19,6 +21,7 @@ The ETWAnalyzer MCP server exposes ETWAnalyzer functionality as callable tools t
 ## Table of Contents
 
 - [Getting Started](#getting-started)
+- [Data Extraction](#data-extraction)
 - [Session Management](#session-management)
 - [Available Tools](#available-tools)
 - [Common Patterns](#common-patterns)
@@ -45,6 +48,53 @@ The ETWAnalyzer MCP server exposes ETWAnalyzer functionality as callable tools t
 3. Analyze results       → Interpret output
 4. Optional: Unload      → etw_unload
 ```
+
+---
+
+## Data Extraction
+
+ETWAnalyzer analyzes extracted `.json7z`/`.json` files. Raw ETW recordings (`.etl`, or `.7z`/`.zip` archives containing an `.etl`) must first be
+extracted. The MCP server can perform the extraction in-process so you do not need to run the command-line tool manually.
+
+- Use `etw_extract` to extract a **full** trace.
+- Use `etw_extract_timerange` to extract only one or more **time sub ranges** of the trace.
+
+Both tools accept a single `.etl`/`.7z`/`.zip` file or a directory containing such files. The produced `.json7z` extract files are written by
+default to an `Extract` subfolder besides the input file and can afterwards be loaded with `etw_load`.
+
+### Choosing a Symbol Server
+
+Extraction resolves method names using a symbol server. The default is the Microsoft public symbol server (`MS`). Additional shortcuts may be
+configured in the `ETWAnalyzer.dll.config` file besides `ETWAnalyzer.exe` (look for xml nodes with a `name` attribute like `SymbolServerxx`).
+If unsure which symbol server to use, ask the user and remember the choice for subsequent extractions. Pass it via `arguments`, e.g. `-symServer MS`.
+
+### Extract a Full Trace
+
+```
+etw_extract:
+  etlFile: "C:\Traces\Issue.etl"
+  extractors: "All"
+  arguments: "-symServer MS"
+```
+
+The `extractors` argument selects which data is extracted (default `All`). It is a space separated list, e.g. `CPU Disk File TCP Stacktag`.
+
+### Extract Only Time Sub Ranges
+
+`etw_extract_timerange` extracts only one or more trace relative time regions expressed in **seconds since trace start**. Each region is written to
+its own `xxx_Time_<start>-<end>.json7z` file which additionally records the `ExtractStartTime`/`ExtractEndTime` properties. Only the CPU, Disk,
+File, TCP and Stacktag extractors honor the time region; all other extractors are extracted unfiltered.
+
+```
+etw_extract_timerange:
+  etlFile: "C:\Traces\Issue.etl"
+  regions: "1.0 2.0 3.0 4.0"
+```
+
+The `regions` value is a space separated list of start/end pairs. The example above extracts two regions: 1.0 - 2.0 s and 3.0 - 4.0 s.
+An end value prefixed with `+` is a duration relative to its start, so `regions: "1.0 +2"` extracts the region 1.0 - 3.0 s.
+
+After extraction, load the produced files with `etw_load` and query them with the `etw_dump_*` tools.
 
 ---
 
@@ -468,6 +518,38 @@ etw_dump_cpu:
    
 4. Compare memory usage
    etw_dump_memory → "-ProcessName myapp.exe"
+```
+
+### Example 7: Extracting a Raw .etl Recording
+
+**Scenario:** You only have a raw `.etl` recording and need to analyze it
+
+```
+1. Extract the full trace into .json7z files
+   etw_extract → etlFile: "C:\Traces\Issue.etl", extractors: "All", arguments: "-symServer MS"
+
+2. Load the produced extract
+   etw_load → "C:\Traces\Extract\Issue.json7z"
+
+3. Query the data
+   etw_dump_stats → "-Properties *"
+   etw_dump_cpu   → "-topN 10"
+```
+
+### Example 8: Extracting Only a Time Sub Range
+
+**Scenario:** A large trace where only a few seconds around the problem are relevant
+
+```
+1. Extract only the interesting time window (seconds since trace start)
+   etw_extract_timerange → etlFile: "C:\Traces\Big.etl", regions: "45.0 50.0"
+   (or a duration relative to start: regions: "45.0 +5")
+
+2. Load the time sliced extract
+   etw_load → "C:\Traces\Extract\Big_Time_45-50.json7z"
+
+3. Focus analysis on that window
+   etw_dump_cpu → "-Methods * -topNMethods 50 -SortBy CPU"
 ```
 
 ---
