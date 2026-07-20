@@ -64,7 +64,7 @@ namespace ETWAnalyzer.Extractors.TCP
                 return;
             }
 
-            IGenericEvent[] events = myGenericEvents.Result.Events.Where(IsValidTcpEvent).Where(x => IsInTimeRange(x.Timestamp)).OrderBy(x => x.Timestamp).ToArray();
+            IGenericEvent[] events = myGenericEvents.Result.Events.Where(IsValidTcpEvent).OrderBy(x => x.Timestamp).ToArray();
             ExtractFromGenericEvents(results, events);
 
             ReleaseMemory();
@@ -557,16 +557,28 @@ namespace ETWAnalyzer.Extractors.TCP
                 switch (ev.Id)
                 {
                     case TcpETWConstants.TcpDataTransferSendId:
-                        OnTcpDataTransferSend(ev);           
+                        if (IsInTimeRange(ev.Timestamp))
+                        {
+                            OnTcpDataTransferSend(ev);
+                        }
                         break;
                     case TcpETWConstants.TcpSendPosted:
-                        OnTcpSendPosted(ev);
+                        if (IsInTimeRange(ev.Timestamp))
+                        {
+                            OnTcpSendPosted(ev);
+                        }
                         break;
                     case TcpETWConstants.TcpDataTransferReceive:
-                        OnTcpDataTransferReceive(ev);
+                        if (IsInTimeRange(ev.Timestamp))
+                        {
+                            OnTcpDataTransferReceive(ev);
+                        }
                         break;
                     case TcpETWConstants.TcpDataTransferRetransmitRound:
-                        OnRetransmit(ev);
+                        if (IsInTimeRange(ev.Timestamp))
+                        {
+                            OnRetransmit(ev);
+                        } 
                         break;
                     case TcpETWConstants.TcpTailLossProbe:
                         OnTailLossProbe(ev);
