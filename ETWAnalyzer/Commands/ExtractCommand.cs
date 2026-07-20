@@ -595,10 +595,22 @@ namespace ETWAnalyzer.Commands
         /// <returns>Configured extractor list.</returns>
         List<ExtractorBase> BuildExtractors()
         {
-            var list = new List<ExtractorBase>() { new MachineDetailsExtractor() };
+            var list = new List<ExtractorBase>() { new MachineDetailsExtractor() { UsedExtractOptions = GetUsedExtractOptions() } };
             ConfigureExtractors(list, myProcessingActionList);
             SetExtractorFilters(list, ExtractAllCPUData, DisableExceptionFilter, TimelineDataExtractionIntervalS, Concurrency, NoReady, IgnoreCPUSampling, IgnoreCSwitchData, IncludeExitedProcesses);
             return list;
+        }
+
+        /// <summary>
+        /// Build the extract command line which is stored in the extract as UsedExtractOptions.
+        /// This is reconstructed from the parsed extract arguments instead of <see cref="Environment.CommandLine"/>
+        /// so that when the extraction is triggered in-process (e.g. from the MCP server) the real extract
+        /// options are recorded and not the hosting process command line (e.g. "ETWAnalyzer -MCP").
+        /// </summary>
+        /// <returns>Reconstructed extract command line.</returns>
+        internal string GetUsedExtractOptions()
+        {
+            return "ETWAnalyzer " + String.Join(" ", myOriginalInputArguments ?? Array.Empty<string>());
         }
 
         /// <summary>

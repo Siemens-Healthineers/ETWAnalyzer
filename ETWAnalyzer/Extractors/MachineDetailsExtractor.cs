@@ -43,6 +43,15 @@ namespace ETWAnalyzer.Extractors
         IPendingResult<IMarkDataSource> myETWMarks;
         SpecialEventsParser mySpecialEvents = new SpecialEventsParser();
 
+        /// <summary>
+        /// Actual extract command line which is stored in the extract as UsedExtractOptions.
+        /// When null the process command line (<see cref="Environment.CommandLine"/>) is used as fallback.
+        /// This is set explicitly by <see cref="Commands.ExtractCommand"/> so that when extraction is
+        /// triggered in-process (e.g. from the MCP server) the real extract options are recorded instead
+        /// of the hosting process command line (which would otherwise be e.g. "ETWAnalyzer -MCP").
+        /// </summary>
+        public string UsedExtractOptions { get; set; }
+
         public MachineDetailsExtractor()
         {
         }
@@ -113,7 +122,7 @@ namespace ETWAnalyzer.Extractors
             results.Model = meta?.Model ?? "";
             results.AdDomain = meta?.DomainName ?? "";
             results.IsDomainJoined = meta?.IsDomainJoined ?? false;
-            results.UsedExtractOptions = Environment.CommandLine;
+            results.UsedExtractOptions = UsedExtractOptions ?? Environment.CommandLine;
             results.SourceETLFileName = myTraceMetaData?.TracePath ?? "";
             results.SessionStart = myTraceMetaData?.StartTime ?? DateTimeOffset.MinValue;
             results.SessionEnd = myTraceMetaData?.StopTime ?? DateTimeOffset.MaxValue;
