@@ -58,6 +58,8 @@ namespace ETWAnalyzer
             "SessionStart",
             "SessionEnd",
             "SessionDurationS",
+            "ExtractStartTime",
+            "ExtractEndTime",
             "BootTime",
             "BootToSessionStart",
             "Model",
