@@ -54,7 +54,7 @@ The ETWAnalyzer MCP server exposes ETWAnalyzer functionality as callable tools t
 ## Data Extraction
 
 ETWAnalyzer analyzes extracted `.json7z`/`.json` files. Raw ETW recordings (`.etl`, or `.7z`/`.zip` archives containing an `.etl`) must first be
-extracted. The MCP server can perform the extraction in-process so you do not need to run the command-line tool manually.
+extracted. The MCP server can perform the extraction for you (each extraction job runs in its own ETWAnalyzer.exe process) so you do not need to run the command-line tool manually.
 
 - Use `etw_extract` to extract a **full** trace.
 - Use `etw_extract_timerange` to extract only one or more **time sub ranges** of the trace.

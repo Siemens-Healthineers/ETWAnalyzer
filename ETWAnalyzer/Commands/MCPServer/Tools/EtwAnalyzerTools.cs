@@ -8,11 +8,14 @@
 #pragma warning disable CS1591
 
 using ETWAnalyzer.Commands;
+using ETWAnalyzer.Configuration;
 using ETWAnalyzer.EventDump;
+using ETWAnalyzer.Helper;
 using ModelContextProtocol.Server;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 
@@ -309,8 +312,11 @@ namespace ETWAnalyzer.Commands.MCPServer.Tools
         }
 
         /// <summary>
-        /// Builds and runs an ETWAnalyzer -extract command in-process (forced single threaded via -child so no child processes are spawned)
-        /// and captures its console output. Used by the etw_extract and etw_extract_timerange tools.
+        /// Builds and runs an ETWAnalyzer -extract command in a separate ETWAnalyzer.exe process and captures its
+        /// console output. Used by the etw_extract and etw_extract_timerange tools.
+        /// A dedicated process is spawned for every extraction job because the underlying TraceProcessing library
+        /// does not support parallel in-process extraction. Since the MCP host may invoke the extract tools
+        /// concurrently, running each job in its own process avoids the resulting crashes.
         /// </summary>
         /// <param name="etlFile">Input .etl/.7z/.zip file or directory.</param>
         /// <param name="extractors">Space separated extractor names (e.g. "All" or "CPU Disk File TCP Stacktag").</param>
@@ -346,7 +352,7 @@ namespace ETWAnalyzer.Commands.MCPServer.Tools
 
             args.AddRange(SplitArguments(arguments));
 
-            // Run in-process without spawning child ETWAnalyzer processes and without color escape codes to keep the output clean for the AI agent.
+            // Run directly without spawning a controlling process which is only needed if multiple files would be extracted at once.
             if (!args.Any(a => a.Equals("-child", StringComparison.OrdinalIgnoreCase)))
             {
                 args.Add("-child");
@@ -356,23 +362,59 @@ namespace ETWAnalyzer.Commands.MCPServer.Tools
                 args.Add("-nocolor");
             }
 
-            using var capture = new ConsoleOutputCapture();
+            // Run the extraction in a dedicated ETWAnalyzer.exe process. The TraceProcessing library does not
+            // support parallel in-process extraction and the MCP host may call the extract tools concurrently,
+            // so every job must run in its own process.
+            string commandLine = string.Join(" ", args.Select(QuoteArgumentIfNeeded));
+
             try
             {
-                var extractCommand = new ExtractCommand(args.ToArray());
-                extractCommand.Parse();
-                extractCommand.Run();
+                var command = new ProcessCommand(ConfigFiles.ETWAnalyzerExe, commandLine);
+                ExecResult res = command.Execute(ProcessPriorityClass.BelowNormal);
+
+                Logger.Info($"MCP etw_extract process exited with {res.ReturnCode} (0x{(uint)res.ReturnCode:X})");
+
+                string output = res.AllOutput.TrimEnd(Environment.NewLine.ToCharArray());
+
+                if (res.ReturnCode != 0)
+                {
+                    return string.IsNullOrWhiteSpace(output)
+                        ? $"Error executing extract: ETWAnalyzer.exe exited with return code {res.ReturnCode}."
+                        : output + Environment.NewLine + $"Error: ETWAnalyzer.exe exited with return code {res.ReturnCode}.";
+                }
+
+                return string.IsNullOrWhiteSpace(output) ? "Extraction completed. No output was produced." : output;
             }
             catch (Exception ex)
             {
-                string errOutput = capture.GetOutput();
-                return string.IsNullOrEmpty(errOutput)
-                    ? $"Error executing extract: {ex.Message}"
-                    : errOutput + Environment.NewLine + $"Error: {ex.Message}";
+                Logger.Error($"MCP etw_extract failed: {ex}");
+                return $"Error executing extract: {ex.Message}";
+            }
+        }
+
+        /// <summary>
+        /// Wrap an argument in double quotes when it contains whitespace so it survives the round trip through the
+        /// ETWAnalyzer.exe command line.
+        /// </summary>
+        private static string QuoteArgumentIfNeeded(string argument)
+        {
+            if (string.IsNullOrEmpty(argument))
+            {
+                return "\"\"";
             }
 
-            string output = capture.GetOutput();
-            return string.IsNullOrWhiteSpace(output) ? "Extraction completed. No output was produced." : output;
+            if (argument.IndexOf(' ') < 0 && argument.IndexOf('\t') < 0)
+            {
+                return argument;
+            }
+
+            // Already quoted?
+            if (argument.StartsWith("\"", StringComparison.Ordinal) && argument.EndsWith("\"", StringComparison.Ordinal))
+            {
+                return argument;
+            }
+
+            return "\"" + argument + "\"";
         }
 
         /// <summary>

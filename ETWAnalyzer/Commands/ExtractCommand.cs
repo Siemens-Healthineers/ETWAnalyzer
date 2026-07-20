@@ -610,7 +610,7 @@ namespace ETWAnalyzer.Commands
         /// <returns>Reconstructed extract command line.</returns>
         internal string GetUsedExtractOptions()
         {
-            return "ETWAnalyzer " + String.Join(" ", myOriginalInputArguments ?? Array.Empty<string>());
+            return $"ETWAnalyzer {FileVersionInfo.GetVersionInfo(Process.GetCurrentProcess().MainModule.FileName).FileVersion} " + String.Join(" ", myOriginalInputArguments ?? Array.Empty<string>());
         }
 
         /// <summary>
