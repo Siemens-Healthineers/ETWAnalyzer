@@ -74,6 +74,27 @@ namespace ETWAnalyzer.TraceProcessorHelpers
             Default = 6,
             Automatic = 7,
         }
+
+        /// <summary>
+        /// TCP connection states of the TCPIP_STATE ValueMap which are logged e.g. by the TcpState field of
+        /// TcpDataTransferRetransmitRound (1351). A retransmit in SynSent state is a connection request (SYN) retransmit
+        /// while the other states belong to an already established connection.
+        /// </summary>
+        public enum TCPIP_STATE : UInt32
+        {
+            Closed = 0,
+            Listen = 1,
+            SynSent = 2,
+            SynReceived = 3,
+            Established = 4,
+            FinWait1 = 5,
+            FinWait2 = 6,
+            CloseWait = 7,
+            Closing = 8,
+            LastAck = 9,
+            TimeWait = 10,
+            Max = 11,
+        }
     
         /// <summary>
         /// Fields: Tcb, TemplateType:UInt32 of TCPIP_TEMPLATE_TYPE_ValueMap, MinRto:UInt32, EnableCwndRestart:UInt32, InitialCwnd:UInt32
@@ -99,6 +120,13 @@ namespace ETWAnalyzer.TraceProcessorHelpers
         /// Fields: Tcb, LocalAddress, RemoteAddress, NewState 
         /// </summary>
         public const int TcpDataTransferRestransmit = 1187;
+
+        /// <summary>
+        /// TcpConnectRestransmit. Logged when the SYN packet of a not yet established connection is sent again.
+        /// Each event is one retransmit of the connection request where RexmitCount is the current retry number.
+        /// Fields: Tcb:Pointer, LocalAddressLength, LocalAddress:Binary, RemoteAddressLength, RemoteAddress:Binary, NewState, RexmitCount:UInt32
+        /// </summary>
+        public const int TcpConnectRestransmit = 1186;
 
         /// <summary>
         /// Fields: Tcb, DataBytesOut, DataBytesIn, DataSegmentsOut, DataSegmentsIn, DupAcksIn, BytesRetrans, Timeouts, FastRetran,   
@@ -214,5 +242,15 @@ namespace ETWAnalyzer.TraceProcessorHelpers
         /// Injected field string.
         /// </summary>
         public static string InjectedField = "Injected";
+
+        /// <summary>
+        /// Number of retransmissions of a connection request
+        /// </summary>
+        public const string RexmitCountField = "RexmitCount";
+
+        /// <summary>
+        /// TCP connection state of a TCPIP_STATE ValueMap field (see <see cref="TCPIP_STATE"/>)
+        /// </summary>
+        public const string TcpStateField = "TcpState";
     }
 }

@@ -1407,14 +1407,17 @@ namespace ETWAnalyzer.EventDump
 
                 var retransmissionsForConnection = retransByConnections[connection];
 
-                foreach (var retransmission in retransmissionsForConnection)
+                foreach (ITcpRetransmission retransmission in retransmissionsForConnection)
                 {
                     if (!MinMaxRetransDelayS.IsWithin(retransmission.RetransmitDiff().TotalSeconds))
                     {
                         continue;
                     }
 
-                    if (!MinMaxRetransBytes.IsWithin(retransmission.NumBytes))
+                    // Connection request (SYN) retransmits carry no payload so NumBytes is always 0 which would
+                    // filter them away by the default byte filter. Exclude them from the byte filter.
+                    bool isConnectRetransmit = retransmission.IsConnectRetransmit.GetValueOrDefault();
+                    if (!isConnectRetransmit && !MinMaxRetransBytes.IsWithin(retransmission.NumBytes))
                     {
                         continue;
                     }

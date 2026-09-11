@@ -37,6 +37,13 @@ namespace ETWAnalyzer.Extract.Network.Tcp
         uint SequenceNumber { get;  }
 
         /// <summary>
+        /// When true the retransmission is a resent connection request (SYN) which is based on the
+        /// TcpConnectRestransmit (id 1186) ETW event. Such retransmissions have no payload and therefore
+        /// <see cref="NumBytes"/> and <see cref="SequenceNumber"/> are 0.
+        /// </summary>
+        bool? IsConnectRetransmit { get; }
+
+        /// <summary>
         /// When true it indicates that retransmission was detected as duplicate client transmision which had a byte count > 1
         /// </summary>
         bool? IsClientRetransmission { get; }

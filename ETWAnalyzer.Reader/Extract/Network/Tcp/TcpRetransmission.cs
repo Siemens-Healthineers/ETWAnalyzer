@@ -48,6 +48,13 @@ namespace ETWAnalyzer.Extract.Network.Tcp
         public bool? IsClientRetransmission { get; set; }
 
         /// <summary>
+        /// When true the retransmission is a resent connection request (SYN) which is based on the
+        /// TcpConnectRestransmit (id 1186) ETW event. Such retransmissions have no payload and therefore
+        /// <see cref="NumBytes"/> and <see cref="SequenceNumber"/> are 0.
+        /// </summary>
+        public bool? IsConnectRetransmit { get; set; }
+
+        /// <summary>
         /// Create a new TcpRetransmission instance
         /// </summary>
         /// <param name="connectionIdx"></param>
@@ -56,7 +63,8 @@ namespace ETWAnalyzer.Extract.Network.Tcp
         /// <param name="sequenceNumber"></param>
         /// <param name="numBytes">Number of bytes sent/received</param>
         /// <param name="isClientRetransmission"></param>
-        public TcpRetransmission(ConnectionIdx connectionIdx, DateTimeOffset retransmitTime, DateTimeOffset sendTime, uint sequenceNumber, int numBytes, bool? isClientRetransmission)
+        /// <param name="isConnectRetransmit">When true the retransmission is a resent connection request (SYN).</param>
+        public TcpRetransmission(ConnectionIdx connectionIdx, DateTimeOffset retransmitTime, DateTimeOffset sendTime, uint sequenceNumber, int numBytes, bool? isClientRetransmission, bool? isConnectRetransmit = null)
         {
             ConnectionIdx = connectionIdx;
             RetransmitTime = retransmitTime;
@@ -64,6 +72,7 @@ namespace ETWAnalyzer.Extract.Network.Tcp
             SequenceNumber = sequenceNumber;
             NumBytes = numBytes;
             IsClientRetransmission = isClientRetransmission;
+            IsConnectRetransmit = isConnectRetransmit;
         }
 
         /// <summary>
@@ -75,7 +84,7 @@ namespace ETWAnalyzer.Extract.Network.Tcp
         /// <param name="sequenceNumber"></param>
         /// <param name="numBytes"></param>
         internal TcpRetransmission(ConnectionIdx connectionIdx, DateTimeOffset retransmitTime, DateTimeOffset sendTime, uint sequenceNumber, int numBytes)
-                           :this(connectionIdx,retransmitTime,sendTime,sequenceNumber, numBytes, null)
+                           :this(connectionIdx,retransmitTime,sendTime,sequenceNumber, numBytes, null, null)
         {
         }
 
@@ -85,7 +94,7 @@ namespace ETWAnalyzer.Extract.Network.Tcp
         /// <returns></returns>
         public override string ToString()
         {
-            return $"ConnectionIdx: {ConnectionIdx}, RetransmitTime: {RetransmitTime.ToString(TcpConnection.TimeFmt)} SendTime {SendTime.ToString(TcpConnection.TimeFmt)} Bytes: {NumBytes}, IsClientRetransmission {IsClientRetransmission}";
+            return $"ConnectionIdx: {ConnectionIdx}, RetransmitTime: {RetransmitTime.ToString(TcpConnection.TimeFmt)} SendTime {SendTime.ToString(TcpConnection.TimeFmt)} Bytes: {NumBytes}, IsClientRetransmission {IsClientRetransmission}, IsConnectRetransmit {IsConnectRetransmit}";
         }
     }
 }

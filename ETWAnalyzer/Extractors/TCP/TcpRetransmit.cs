@@ -21,6 +21,14 @@ namespace ETWAnalyzer.Extractors.TCP
         public ulong Tcb { get; set; }
         public uint SndUna { get; set; }
 
+        /// <summary>
+        /// TCP connection state at the time of the retransmit. When the state is
+        /// <see cref="TcpETWConstants.TCPIP_STATE.SynSent"/> the retransmit is a resent connection request (SYN)
+        /// and not a retransmit of payload data of an established connection.
+        /// Null when the event did not contain a TcpState field.
+        /// </summary>
+        public TcpETWConstants.TCPIP_STATE? TcpState { get; set; }
+
         public TcpRequestConnect Connection { get; set; }
 
         public DateTimeOffset Timestamp { get; set; }
@@ -29,6 +37,14 @@ namespace ETWAnalyzer.Extractors.TCP
         {
             Tcb = (ulong) ev.Fields[TcpETWConstants.TcbField].AsAddress.Value;
             SndUna = ev.Fields[TcpETWConstants.SndUnaField].AsUInt32;
+
+            // older OS versions do not log the TcpState field
+            IGenericEventField stateField = ev.Fields[TcpETWConstants.TcpStateField];
+            if (stateField != null)
+            {
+                TcpState = (TcpETWConstants.TCPIP_STATE)stateField.AsUInt32;
+            }
+
             Timestamp = ev.Timestamp.ConvertToTime();
         }
 

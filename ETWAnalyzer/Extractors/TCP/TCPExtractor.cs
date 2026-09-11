@@ -11,6 +11,7 @@ using Microsoft.Windows.EventTracing.Events;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using static ETWAnalyzer.Extract.Network.Tcp.TcpStatistics;
 
 namespace ETWAnalyzer.Extractors.TCP
@@ -148,6 +149,10 @@ namespace ETWAnalyzer.Extractors.TCP
                 }
             }
 
+            // Remember which retransmits were already added from TcpDataTransferRetransmitRound (1351) events so the
+            // TcpConnectRestransmit (1186) events which are logged for the same retry are not counted twice.
+            Dictionary<ConnectionIdx, List<DateTimeOffset>> addedRetransmitTimes = new();
+
             foreach (var retrans in myRetransmits)
             {
                 retrans.Connection = LocateConnection(retrans.Tcb, retrans.Timestamp, results, ref connectionsByTcb);
@@ -168,11 +173,21 @@ namespace ETWAnalyzer.Extractors.TCP
 
                     // store retransmit event with send time of first sent packet. It might be an ACK packet but for now the heuristics should be good enough
                     // to be useful.
-                    results.Network.TcpData.Retransmissions.Add(new TcpRetransmission(connect2Idx[retrans.Connection], retrans.Timestamp,
-                        lastSent.Timestamp, lastSent.SequenceNr, (int) lastSent.BytesSent));
+                    // A retransmit which happens while the connection is still in SynSent state is a resent connection request (SYN).
+                    bool? isConnectRetransmit = retrans.TcpState == null ? (bool?) null : retrans.TcpState == TcpETWConstants.TCPIP_STATE.SynSent;
+                    ConnectionIdx retransIdx = connect2Idx[retrans.Connection];
+                    results.Network.TcpData.Retransmissions.Add(new TcpRetransmission(retransIdx, retrans.Timestamp,
+                        lastSent.Timestamp, lastSent.SequenceNr, (int) lastSent.BytesSent, null, isConnectRetransmit));
+
+                    if (!addedRetransmitTimes.TryGetValue(retransIdx, out List<DateTimeOffset> times))
+                    {
+                        times = new List<DateTimeOffset>();
+                        addedRetransmitTimes[retransIdx] = times;
+                    }
+                    times.Add(retrans.Timestamp);
 
                     // set last send time before retransmissions did start
-                    TcpConnection connection = results.Network.TcpData.Connections[(int)connect2Idx[retrans.Connection]];
+                    TcpConnection connection = results.Network.TcpData.Connections[(int)retransIdx];
                     if (connection.RetransmitTimeout != null) // connection was closed due to retransmit
                     {
                         connection.Statistics.LastSent = retransmittedSent.Last().Timestamp; // last send event 
@@ -189,7 +204,7 @@ namespace ETWAnalyzer.Extractors.TCP
             AddConnectionStatistics(results);
         }
 
-         private ILookup<TcpRequestConnect, TcpTemplateChanged> UpdateConnectionForTemplateChangeEvents(ETWExtract results, ref ILookup<ulong, TcpRequestConnect> connectionsByTcb)
+        private ILookup<TcpRequestConnect, TcpTemplateChanged> UpdateConnectionForTemplateChangeEvents(ETWExtract results, ref ILookup<ulong, TcpRequestConnect> connectionsByTcb)
         {
             foreach (TcpTemplateChanged templateChange in myTemplateChangedEvents)
             {
