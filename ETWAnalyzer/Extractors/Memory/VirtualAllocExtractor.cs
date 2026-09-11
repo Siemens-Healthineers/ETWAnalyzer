@@ -70,6 +70,11 @@ namespace ETWAnalyzer.Extractors.Memory
                     continue;
                 }
 
+                if (!IsInTimeRange(ev.Timestamp))
+                {
+                    continue;
+                }
+
                 DateTimeOffset evTime = ev.Timestamp.ConvertToTime();
                 var processIdx = results.GetProcessIndexByPidAtTime(ev.ProcessId, evTime);
                 if (processIdx == ETWProcessIndex.Invalid)

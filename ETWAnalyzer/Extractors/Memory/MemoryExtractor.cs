@@ -38,15 +38,19 @@ namespace ETWAnalyzer.Extractors
 
         private void AnalyzeWorkingSets(IWorkingSetDataSource workingSets, ETWExtract results)
         {
-            IWorkingSetSnapshot first = workingSets?.Snapshots.FirstOrDefault();
-            if( first == null)
+            // when a time region is extracted use the first/last snapshot of that region to describe the working set change
+            IWorkingSetSnapshot[] snapshots = workingSets?.Snapshots.Where(x => IsInTimeRange(x.Timestamp)).ToArray() ?? Array.Empty<IWorkingSetSnapshot>();
+
+            if(snapshots.Count() < 2)
             {
                 Console.WriteLine("Warning: No Working Set snapshot data present in trace!");
                 return;
             }
+
+            IWorkingSetSnapshot first = snapshots.First();
             results.MemoryUsage.WorkingSetsAtStart = ExtractWorkingSets(first, results);
 
-            IWorkingSetSnapshot last = workingSets.Snapshots.Last();
+            IWorkingSetSnapshot last = snapshots.Last();
             results.MemoryUsage.WorkingSetsAtEnd = ExtractWorkingSets(last, results);
         }
 
@@ -97,13 +101,16 @@ namespace ETWAnalyzer.Extractors
 
         private void AnalyzeMemoryUtilization(IMemoryUtilizationDataSource result, ETWExtract results)
         {
-            IMemoryUtilizationSnapshot firstMemUntilization = result?.Snapshots.FirstOrDefault();
+            // when a time region is extracted use the first/last snapshot of that region to describe the memory utilization change
+            IMemoryUtilizationSnapshot[] snapshots = result?.Snapshots.Where(x => IsInTimeRange(x.Timestamp)).ToArray() ?? Array.Empty<IMemoryUtilizationSnapshot>();
+
+            IMemoryUtilizationSnapshot firstMemUntilization = snapshots.FirstOrDefault();
             if (firstMemUntilization == null)
             {
                 Console.WriteLine("Warning: No Memory Utilization snapshot data present in trace!");
                 return;
             }
-            IMemoryUtilizationSnapshot lastMemoryUtilization = result.Snapshots.LastOrDefault();
+            IMemoryUtilizationSnapshot lastMemoryUtilization = snapshots.LastOrDefault();
             results.MemoryUsage = new MemoryStats(firstMemUntilization.CommitSize.TotalMebibytes, lastMemoryUtilization.CommitSize.TotalMebibytes,
                                                   firstMemUntilization.InUseListSize.TotalMebibytes, lastMemoryUtilization.InUseListSize.TotalMebibytes);
 

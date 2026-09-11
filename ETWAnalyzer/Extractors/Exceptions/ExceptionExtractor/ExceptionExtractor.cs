@@ -123,7 +123,8 @@ namespace ETWAnalyzer.Extractors
             // use the wrong stackwalk event. With grouping by thread we eliminate that entire problem
             foreach (var eventsPerThread in myGenericEvents.Result.Events.Where(x => 
                                                                                 x.ProviderName == DotNetETWConstants.DotNetRuntimeProviderName && 
-                                                                                (x.Id == DotNetETWConstants.ExceptionEventId || x.Id == DotNetETWConstants.ClrStackWalkEventId) )
+                                                                                (x.Id == DotNetETWConstants.ExceptionEventId || x.Id == DotNetETWConstants.ClrStackWalkEventId) &&
+                                                                                IsInTimeRange(x.Timestamp) )
                                                                           .GroupBy(x=>x.ThreadId))
             {
                 foreach (IGenericEvent ev in eventsPerThread)

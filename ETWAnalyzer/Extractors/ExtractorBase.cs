@@ -20,7 +20,7 @@ namespace ETWAnalyzer.Extractors
         public bool NeedsSymbols { get; set;  }
 
         /// <summary>
-        /// When set (via -extractRegion) CPU/Disk/File/TCP extractors only extract events which fall into this trace relative time region.
+        /// When set (via -extractRegion) event based extractors only extract events which fall into this trace relative time region.
         /// When null the whole trace is extracted.
         /// </summary>
         public ETWExtractTimeRange TimeRangeFilter { get; set; }

@@ -82,8 +82,9 @@ The `extractors` argument selects which data is extracted (default `All`). It is
 ### Extract Only Time Sub Ranges
 
 `etw_extract_timerange` extracts only one or more trace relative time regions expressed in **seconds since trace start**. Each region is written to
-its own `xxx_Time_<start>-<end>.json7z` file which additionally records the `ExtractStartTime`/`ExtractEndTime` properties. Only the CPU, Disk,
-File, TCP and Stacktag extractors honor the time region; all other extractors are extracted unfiltered.
+its own `xxx_Time_<start>-<end>.json7z` file which additionally records the `ExtractStartTime`/`ExtractEndTime` properties. All event based
+extractors (CPU, Disk, File, TCP, Stacktag, Exception, Dns, ObjectRef, VirtualAlloc, ThreadPool, TraceLog) honor the time region; extractors
+which describe the machine/trace as a whole (e.g. Module, PMC) are extracted unfiltered.
 
 ```
 etw_extract_timerange:
@@ -158,7 +159,7 @@ These tools convert raw `.etl` / `.7z` / `.zip` recordings into `.json7z` extrac
 | Tool | Purpose | Key Arguments |
 |------|---------|---------------|
 | `etw_extract` | Extract ETW data from an .etl/.7z/.zip file or directory into .json7z extract files | `etlFile`, `extractors` (default `All`), `arguments` (e.g. `-symServer MS -outdir ...`) |
-| `etw_extract_timerange` | Extract only one or more trace relative time regions (seconds since trace start). Only CPU/Disk/File/TCP/Stacktag honor the region; each region is written to its own `xxx_Time_<start>-<end>.json7z` file containing ExtractStartTime/ExtractEndTime | `etlFile`, `regions` (e.g. `1.0 2.0 3.0 4.0` or `1.0 +2`), `extractors` (default `CPU Disk File TCP Stacktag`), `arguments` |
+| `etw_extract_timerange` | Extract only one or more trace relative time regions (seconds since trace start). All event based extractors honor the region; ea
 
 **Extract a full trace:**
 ```

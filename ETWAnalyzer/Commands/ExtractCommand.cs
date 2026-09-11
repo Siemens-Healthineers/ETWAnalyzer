@@ -109,9 +109,9 @@ namespace ETWAnalyzer.Commands
          " -allExceptions       By default exceptions are filtered away by the rules configured in Configuration\\ExceptionFilters.xml. To get all specify this flag." + Environment.NewLine +
          " -IncludeExitedProcesses By default VirtualAlloc data for processes that have exited during the trace are ignored because they do usually not contribute to a memory leak." + Environment.NewLine +
          " -timeLine dd         When CPU data is extracted additionally extract CPU timeline data with given sampling interval in seconds. This data is only accessible at API level at IETWExtract.CPU.TimeLine." + Environment.NewLine +
-         " -extractRegion s1 e1 [s2 e2 ...]  Extract CPU/Disk/File/TCP/Stacktag data only for one or more trace relative time regions given in seconds since trace start (e.g. -extractRegion 1.0 2.0 3.0 4.0)." + Environment.NewLine +
+         " -extractRegion s1 e1 [s2 e2 ...]  Extract data only for one or more trace relative time regions given in seconds since trace start (e.g. -extractRegion 1.0 2.0 3.0 4.0)." + Environment.NewLine +
          "                      An end value prefixed with + is treated as a duration relative to its start time. E.g. -extractRegion 1.0 +2 extracts the region 1.0 - 3.0 seconds." + Environment.NewLine +
-         "                      Each region is written to a separate extract file with the region appended to the file name (e.g. xxx_Time_1.0-2.0). The extracted Json contains ExtractStartTime/ExtractEndTime. Other extractors are extracted unfiltered." + Environment.NewLine +
+         "                      Each region is written to a separate extract file with the region appended to the file name (e.g. xxx_Time_1.0-2.0). The extracted Json contains ExtractStartTime/ExtractEndTime. All event based extractors honor the time region. Extractors without per event time information (e.g. Module, Power) are extracted unfiltered." + Environment.NewLine +
          " -symFolder xxx       Default is C:\\Symbols. Path to a short directory name in which links are created from the unzipped ETL files to prevent symbol loading issues due to MAX_PATH limitations." + Environment.NewLine +
          " -child               Force single threaded in-process extraction" + Environment.NewLine +
          " -recursive           Search below -filedir directory recursively for data to extract." + Environment.NewLine +
@@ -292,7 +292,7 @@ namespace ETWAnalyzer.Commands
         List<ExtractorBase> Extractors { get; } = new List<ExtractorBase>() { new MachineDetailsExtractor() };
 
         /// <summary>
-        /// Set via -extractRegion start end [start end ...]. When present CPU/Disk/File/TCP data is extracted only for the
+        /// Set via -extractRegion start end [start end ...]. When present event based data is extracted only for the
         /// given trace relative time regions (seconds since trace start) and each region is written to its own extract file.
         /// </summary>
         public List<ETWExtractTimeRange> Regions { get; private set; } = new List<ETWExtractTimeRange>();

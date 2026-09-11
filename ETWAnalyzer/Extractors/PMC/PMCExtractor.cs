@@ -117,6 +117,11 @@ namespace ETWAnalyzer.Extractors.PMC
 
             foreach(ILastBranchRecordSnapshot shot in myLBR.Result.Snapshots)
             {
+                if( !IsInTimeRange(shot.Timestamp) )
+                {
+                    continue;
+                }
+
                 IProcess process = myProcesses.Result.GetProcess(shot.Timestamp, shot.ProcessId);
                 if( process ==  null || process.Images == null)
                 {
@@ -214,6 +219,11 @@ namespace ETWAnalyzer.Extractors.PMC
             foreach (var diff in myProcessorCounters.Result.ContextSwitchCounterDeltas)
             {
                 if (diff?.Process?.ImageName == null || diff.Process.Id == 0)
+                {
+                    continue;
+                }
+
+                if (!IsInTimeRange(diff.StartTime))
                 {
                     continue;
                 }

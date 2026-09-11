@@ -73,7 +73,7 @@ To make the JSON files more readable, you can add the `-Indent` option, which wi
 
 
 ## Extract a Time Region
-By default the whole trace is extracted. With `-extractRegion` you can extract the CPU, Disk, File, TCP and Stacktag data only for one or more
+By default the whole trace is extracted. With `-extractRegion` you can extract the event based data only for one or more
 trace relative time regions. The times are given in seconds since trace/session start as start/end pairs:
 ```
 ETWAnalyzer -extract CPU Disk File TCP -fd c:\issue1\xxx.etl -extractRegion 1.0 2.0 3.0 4.0
@@ -87,8 +87,9 @@ An end value prefixed with `+` is treated as a duration relative to its start ti
 ```
 ETWAnalyzer -extract CPU Disk File TCP -fd c:\issue1\xxx.etl -extractRegion 1.0 +2
 ```
-Only the CPU, Disk, File, TCP and Stacktag extractors honor the time region. All other extractors (e.g. Memory, Module, Exception) are extracted
-unfiltered and are contained in every region file. Each extracted Json additionally contains the properties `ExtractStartTime` and
+All event based extractors (CPU, Disk, File, TCP, Stacktag, Exception, Dns, ObjectRef, VirtualAlloc, ThreadPool, PMC, Memory and TraceLog) honor the time region.
+Extractors which describe the machine/trace as a whole (e.g. Module, Power) have no per event time information and are therefore
+extracted unfiltered and contained in every region file. Each extracted Json additionally contains the properties `ExtractStartTime` and
 `ExtractEndTime` which describe the absolute start/end time of the extracted region. These can also be printed via 
 `-dump Stats -properties ExtractStartTime,ExtractEndTime`.
 

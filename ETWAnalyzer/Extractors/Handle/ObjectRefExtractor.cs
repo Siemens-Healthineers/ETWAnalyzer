@@ -408,6 +408,11 @@ namespace ETWAnalyzer.Extractors.Handle
                     continue;
                 }
 
+                if (!IsInTimeRange(ev.TimeStamp))
+                {
+                    continue;
+                }
+
                 DateTimeOffset evTime = ev.TimeStamp.ConvertToTime();
                 var processIdx = results.GetProcessIndexByPidAtTime(ev.ProcessId, evTime);
                 if (processIdx == ETWProcessIndex.Invalid)

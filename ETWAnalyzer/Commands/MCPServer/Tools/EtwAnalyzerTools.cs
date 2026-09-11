@@ -228,7 +228,7 @@ namespace ETWAnalyzer.Commands.MCPServer.Tools
 
         [McpServerTool(Name = "etw_extract_timerange")]
         [Description("Extract ETW data for one or more trace relative time regions (seconds since trace start). " +
-                     "Only the CPU, Disk, File, TCP and Stacktag extractors honor the time region, all other extractors are extracted unfiltered. " +
+                     "All event based extractors honor the time region. Extractors without per event time information (e.g. Module, Power) are extracted unfiltered. " +
                      "Each region produces a separate extract file with the region appended to the file name (e.g. xxx_Time_1.0-2.0.json7z) and the extract contains the ExtractStartTime/ExtractEndTime properties. " +
                      "The generated files can be loaded with etw_load and analyzed with the etw_dump_* commands.")]
         public static string ExtractTimeRange(

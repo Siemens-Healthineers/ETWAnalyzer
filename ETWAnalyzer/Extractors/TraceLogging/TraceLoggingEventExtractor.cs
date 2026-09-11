@@ -159,6 +159,11 @@ namespace ETWAnalyzer.Extractors.TraceLogging
                         continue;
                     }
 
+                    if (!IsInTimeRange(ev.Timestamp))
+                    {
+                        continue;
+                    }
+
                     if ( data.EventDescriptors.TryGetValue(ev.Id, out TraceLoggingEventDescriptor descriptor) == false)
                     {
                         // Store event type data

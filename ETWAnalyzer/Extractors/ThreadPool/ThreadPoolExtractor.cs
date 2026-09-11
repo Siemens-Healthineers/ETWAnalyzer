@@ -51,6 +51,11 @@ namespace ETWAnalyzer.Extractors
                     continue;
                 }
 
+                if (!IsInTimeRange(ins.Timestamp))
+                {
+                    continue;
+                }
+
                 var pk = new ProcessKey(ins.Process.ImageName, ins.Process.Id, ins.Process.CreateTime.HasValue ? ins.Process.CreateTime.Value.ConvertToTime() : default(DateTimeOffset));
 
                 IList<ThreadPoolStarvationInfo> value;

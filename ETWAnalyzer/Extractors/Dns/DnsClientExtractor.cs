@@ -59,6 +59,11 @@ namespace ETWAnalyzer.Extractors.Dns
             
             foreach(var ev in myGenericEvents.Result.Events.Where(IsValidDnsEvent).OrderBy(x=>x.Timestamp).ToArray())
             {
+                if (!IsInTimeRange(ev.Timestamp))
+                {
+                    continue;
+                }
+
                 switch(ev.Id)
                 {
                     case DnsClientETWConstants.DnsQueryClientStart:
