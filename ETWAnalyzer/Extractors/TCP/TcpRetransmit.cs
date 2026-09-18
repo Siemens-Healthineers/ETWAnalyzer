@@ -38,11 +38,19 @@ namespace ETWAnalyzer.Extractors.TCP
             Tcb = (ulong) ev.Fields[TcpETWConstants.TcbField].AsAddress.Value;
             SndUna = ev.Fields[TcpETWConstants.SndUnaField].AsUInt32;
 
-            // older OS versions do not log the TcpState field
-            IGenericEventField stateField = ev.Fields[TcpETWConstants.TcpStateField];
-            if (stateField != null)
+            // Older OS versions do not log the TcpState field. The Fields indexer throws a KeyNotFoundException
+            // when the field is not part of the event manifest.
+            try
             {
-                TcpState = (TcpETWConstants.TCPIP_STATE)stateField.AsUInt32;
+                IGenericEventField stateField = ev.Fields[TcpETWConstants.TcpStateField];
+                if (stateField != null)
+                {
+                    TcpState = (TcpETWConstants.TCPIP_STATE)stateField.AsUInt32;
+                }
+            }
+            catch (KeyNotFoundException)
+            {
+                TcpState = null;
             }
 
             Timestamp = ev.Timestamp.ConvertToTime();
